@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 
 import {JobInformationService} from "./job-information.service";
 import {Job} from "../../model/Job";
@@ -11,6 +11,8 @@ import {
   NzGraphDataDef,
   NzGraphZoomDirective,
 } from "ng-zorro-antd/graph";
+import {Batch} from "../../model/Batch";
+import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
 
 @Component({
   selector: 'app-application-information',
@@ -19,9 +21,10 @@ import {
 })
 export class JobInformationComponent implements OnInit {
   @ViewChild('tpgContainer') private tpgContainer!: ElementRef; // tpg container
-  @ViewChild(NzGraphZoomDirective, { static: true }) zoomController!: NzGraphZoomDirective;
+  @ViewChild(NzGraphZoomDirective, {static: true}) zoomController!: NzGraphZoomDirective;
 
   job: Job; // job entity
+  batch: Batch; // batch entity
 
   tpgSvg: any;            // tpg svg
   tpgSvgSimulation: any;  // tpg graph drawing force simulation
@@ -31,32 +34,51 @@ export class JobInformationComponent implements OnInit {
   nzOperatorGraphData: any; // operator graph data for nz-graph
 
   // Batch data
-  tpgBatchOptions: any[] = [];
-  throughputAndLatency: any[] = [{
-      name: 'Throughput (k tuples/s)',
-      series: []
-    },
-    {
-      name: 'Latency (s)',
-      series: []
-    }];
+  batchOptions: any[] = [];
+  throughputAndLatency: any[] = [
+    {name: 'Throughput (k tuples/s)', series: []},
+    {name: 'Latency (s)', series: []}];
 
+  timePieData: any[] = [{name: 'overhead time time (ms)', value: 0,},
+    {name: 'stream time time (ms)', value: 0,},
+    {name: 'overhead time (ms)', value: 0,}];
 
-  timePieData: any[] = [];
-  operatorLatestBatchNum: {[key: string]: number} = {} // key: operator name, value: latest batch
+  operatorLatestBatchNum: { [key: string]: number } = {} // key: operator name, value: latest batch
 
   // batch-tpg data
   tpgNodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
-  tpgLinks = [{source: 'A', target: 'B', type: 'LD'}, {source: 'A', target: 'N', type: 'LD'}, {source: 'H', target: 'J', type: 'PD'}, {source: 'K', target: 'L', type: 'TD'},
-    {source: 'B', target: 'C', type: 'PD'}, {source: 'C', target: 'D', type: 'LD'}, {source: 'C', target: 'K', type: 'TD'}, {source: 'H', target: 'M', type: 'LD'}, {source: 'M', target: 'N', type: 'PD'},
-    {source: 'E', target: 'F', type: 'TD'}, {source: 'G', target: 'I', type: 'TD'}, {source: 'L', target: 'F', type: 'LD'}];
+  tpgLinks = [{source: 'A', target: 'B', type: 'LD'}, {source: 'A', target: 'N', type: 'LD'}, {
+    source: 'H',
+    target: 'J',
+    type: 'PD'
+  }, {source: 'K', target: 'L', type: 'TD'},
+    {source: 'B', target: 'C', type: 'PD'}, {source: 'C', target: 'D', type: 'LD'}, {
+      source: 'C',
+      target: 'K',
+      type: 'TD'
+    }, {source: 'H', target: 'M', type: 'LD'}, {source: 'M', target: 'N', type: 'PD'},
+    {source: 'E', target: 'F', type: 'TD'}, {source: 'G', target: 'I', type: 'TD'}, {
+      source: 'L',
+      target: 'F',
+      type: 'LD'
+    }];
 
   nodesSelections: any;
   linksSelections: any;
 
   jobStarted = false;
 
-  constructor(private route: ActivatedRoute, private jobInformationService: JobInformationService) {}
+  batchForm: FormGroup<{
+    batch: FormControl<string>;
+    operator: FormControl<string>;
+  }>;
+
+  constructor(private route: ActivatedRoute, private jobInformationService: JobInformationService, private fb: NonNullableFormBuilder) {
+    this.batchForm = this.fb.group({
+      batch: ['', [Validators.required]],
+      operator: ['', [Validators.required]]
+    })
+  }
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -71,16 +93,15 @@ export class JobInformationComponent implements OnInit {
           this.operatorLatestBatchNum["sl"] = 1;  // initialize the latest batch number
           this.OperatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name});
           if (i > 0) {
-            this.OperatorGraphData.edges.push({v: this.job.operators[i-1].id, w: this.job.operators[i].id});
+            this.OperatorGraphData.edges.push({v: this.job.operators[i - 1].id, w: this.job.operators[i].id});
           }
         }
         this.initializeData();
 
         this.drawOperatorGraph();
-        this.drawTpgGraph();
+        // this.drawTpgGraph();
         setInterval(() => {
-          this.updatePerformanceGraph();
-          this.updateTpgGraph();
+          this.update();
         }, 1000);
       });
     });
@@ -94,36 +115,101 @@ export class JobInformationComponent implements OnInit {
   }
 
   /**
-   * Update the performance graph
+   * Update the runtime data
    */
-  updatePerformanceGraph() {
-    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl']).subscribe(res => {
+  update() {
+    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl'].toString()).subscribe(res => {
       if (res) {
-        if (res.batchId < 10) {
-          console.log(res.batchId);
-          this.throughputAndLatency[0].series[res.batchId].value = res.throughput;
-          this.throughputAndLatency[1].series[res.batchId].value = res.avgLatency/100000;
-        } else {
-          this.throughputAndLatency[0].series.push({name: this.operatorLatestBatchNum['sl'].toString() + " batch", value: res.throughput});
-          this.throughputAndLatency[1].series.push({name: this.operatorLatestBatchNum['sl'].toString() + " batch", value: res.avgLatency/100000});
-        }
-        if (this.throughputAndLatency[0].series.length > 10) {
-          this.throughputAndLatency[0].series.shift();
-          this.throughputAndLatency[1].series.shift();
-        }
-        this.throughputAndLatency = this.throughputAndLatency.slice();
+        this.batchOptions.push({
+          value: this.operatorLatestBatchNum['sl'].toString(),
+          label: this.operatorLatestBatchNum['sl'].toString()
+        });
+        this.updatePerformanceGraph(res);
         this.operatorLatestBatchNum['sl']++;  // update the latest batch number
       }
     });
   }
 
-  updateTpgGraph() {
-    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl']).subscribe(res => {
-      if (res) {
-        this.tpgBatchOptions.push({value: this.operatorLatestBatchNum['sl'].toString(), label: this.operatorLatestBatchNum['sl'].toString()});
+  /**
+   * Update the performance graph
+   */
+  updatePerformanceGraph(batch: Batch) {
+    if (batch.batchId < 10) {
+      this.throughputAndLatency[0].series[batch.batchId].value = batch.throughput;
+      this.throughputAndLatency[1].series[batch.batchId].value = batch.avgLatency / 100000;
+    } else {
+      this.throughputAndLatency[0].series.push({
+        name: this.operatorLatestBatchNum['sl'].toString() + " batch",
+        value: batch.throughput
+      });
+      this.throughputAndLatency[1].series.push({
+        name: this.operatorLatestBatchNum['sl'].toString() + " batch",
+        value: batch.avgLatency / 100000
+      });
+    }
+    if (this.throughputAndLatency[0].series.length > 10) {
+      this.throughputAndLatency[0].series.shift();
+      this.throughputAndLatency[1].series.shift();
+    }
+    this.throughputAndLatency = this.throughputAndLatency.slice();
+  }
 
+  updateTpgGraph() {
+    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl'].toString()).subscribe(res => {
+      if (res) {
+        this.tpgNodes = [];
+        this.tpgLinks = [];
+        for (let node of res.tpg) {
+          this.tpgNodes.push({name: node.operationID});
+          for (let edge of node.edges) {
+            this.tpgLinks.push({source: node.operationID, target: edge.dstOperatorID, type: edge.dependencyType});
+          }
+        }
+        // this.drawTpgGraph();
       }
     });
+  }
+
+  /**
+   * Submit the batch form
+   */
+  submitBatchForm(): void {
+    if (this.batchForm.valid) {
+      this.jobInformationService.getBatchById(this.job.jobId, "sl", this.batchForm.controls.batch.value).subscribe(res => {
+        if (res) {
+          this.batch = res;
+          this.updatePieChart(res);
+        }
+      });
+    } else {
+      Object.values(this.batchForm.controls).forEach(control => {
+        if (control.invalid) {
+          control.markAsDirty();
+          control.updateValueAndValidity({onlySelf: true});
+        }
+      });
+    }
+  }
+
+  /**
+   * Update the pie chart
+   * @param batch
+   */
+  updatePieChart(batch: Batch) {
+    this.timePieData = [{
+      name: 'overhead time time (ms)',
+      value: batch.overallTimeBreakdown.overheadTime,
+    },
+      {
+        name: 'stream time time (ms)',
+        value: batch.overallTimeBreakdown.streamTime,
+      },
+      {
+        name: 'overhead time (ms)',
+        value: batch.overallTimeBreakdown.overheadTime,
+      }
+    ];
+    this.timePieData = this.timePieData.slice();
   }
 
 
@@ -131,41 +217,7 @@ export class JobInformationComponent implements OnInit {
    * Draw the statistic graph
    */
   drawStatisticGraph() {
-    this.throughputAndLatency = [
-      {
-        name: 'Throughput (k tuples/s)',
-        series: this.job.periodicalThroughput.map((value, index) => ({
-          name: index.toString() + " s",
-          value: value
-        })),
-      },
-      {
-        name: 'Latency (s)',
-        series: this.job.periodicalLatency.map((value, index) => ({
-          name: index.toString() + " s",
-          value: value
-        })),
-      }
-    ];
-
-    this.timePieData = [
-      {
-        name: 'exploration time (ms)',
-        value: this.job.schedulerTimeBreakdown.exploreTime,
-      },
-      {
-        name: 'tpg construction time (ms)',
-        value: this.job.schedulerTimeBreakdown.constructTime,
-      },
-      {
-        name: 'other time (ms)',
-        value: this.job.schedulerTimeBreakdown.abortTime +
-          this.job.schedulerTimeBreakdown.trackingTime +
-          this.job.schedulerTimeBreakdown.usefulTime,
-      }
-    ];
-
-    this.tpgBatchOptions = [
+    this.batchOptions = [
       {value: '1', label: '1'},
       {value: '2', label: '2'},
       {value: '3', label: '3'},

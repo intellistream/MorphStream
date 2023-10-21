@@ -83,13 +83,37 @@
     </nz-row>
     <nz-row nzJustify="space-between" nzAlign="top" class="job-info-row">
       <nz-col nzSpan="13" class="container">
-        <nz-row nzJustify="space-around">
-          <!--Selector-->
-          <nz-col nzSpan="24" class="selector_container">
-            <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
-              <nz-option *ngFor="let operator of job?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
-            </nz-select>
-          </nz-col>
+        <nz-row nzJustify="space-between">
+          <form nz-form nzLayout="horizontal" style="width: 100%" [formGroup]="batchForm" (ngSubmit)="submitBatchForm()">
+            <div nz-row nzGutter="24">
+              <!--Selector-->
+              <nz-col nzSpan="14" class="selector_container">
+                <nz-form-item>
+                  <nz-form-label nzRequired nzFor="operator">Operator</nz-form-label>
+                  <nz-form-control>
+                    <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%" formControlName="operator">
+                      <nz-option *ngFor="let operator of job?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
+                    </nz-select>
+                  </nz-form-control>
+                </nz-form-item>
+              </nz-col>
+              <nz-col nzSpan="7" class="selector_container">
+                <nz-form-item>
+                  <nz-form-label nzRequired nzFor="batch">Batch</nz-form-label>
+                  <nz-form-control>
+                    <nz-select nzAllowClear nzPlaceHolder="Batch" style="width: 100%" formControlName="batch">
+                      <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
+                    </nz-select>
+                  </nz-form-control>
+                </nz-form-item>
+              </nz-col>
+              <nz-col nzSpan="2" class="selector_container">
+                <nz-form-item>
+                  <button nz-button><span nz-icon nzType="undo" nzTheme="outline"></span></button>
+                </nz-form-item>
+              </nz-col>
+            </div>
+          </form>
         </nz-row>
         <nz-tabset>
           <nz-tab [nzTitle]="performanceHeader">
@@ -138,58 +162,67 @@
               </div>
             </ng-template>
             <nz-descriptions nzBordered>
-              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{job?.nevents}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{job?.minProcessTime}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{job?.maxProcessTime}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{job?.meanProcessTime}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Total Time Used (s)">{{job?.duration}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Average Latency (ms)">{{job?.latency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Overall Throughput (tuple/s)">{{job?.throughput}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Number of Core">{{job?.ncore}}</nz-descriptions-item>
-              <!--     TODO: add a file path variable     -->
-              <nz-descriptions-item nzSpan="3" nzTitle="Output File Path">C:\Users\siqxi\data\E901C1E456140E515FC645602F8AF5A12B7BDC3CDE42D11F7823938B6FBE8919_200.txt</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Batch ID">{{batch?.batchId}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{batch?.batchSize}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{batch?.minLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{batch?.maxLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{batch?.avgLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Total Time Used (s)">{{batch?.batchDuration}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Overall Throughput (tuple/s)">{{batch?.throughput}}</nz-descriptions-item>
             </nz-descriptions>
           </nz-tab>
-          <nz-tab [nzTitle]="OutputFileHeader">
-            <ng-template #OutputFileHeader>
-              <div>
-                <span nz-icon nzType="file-zip" nzTheme="outline" style="margin-right: 2px;"></span> Output File
-              </div>
-            </ng-template>
-          </nz-tab>
+<!--          <nz-tab [nzTitle]="OutputFileHeader">-->
+<!--            <ng-template #OutputFileHeader>-->
+<!--              <div>-->
+<!--                <span nz-icon nzType="file-zip" nzTheme="outline" style="margin-right: 2px;"></span> Output File-->
+<!--              </div>-->
+<!--            </ng-template>-->
+<!--          </nz-tab>-->
         </nz-tabset>
       </nz-col>
       <nz-col nzSpan="10" class="container">
         <nz-row nzJustify="space-between">
-          <!--Selector-->
-          <nz-col nzSpan="14" class="selector_container">
-            <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
-              <nz-option *ngFor="let operator of job?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
-            </nz-select>
-          </nz-col>
-          <nz-col nzSpan="7" class="selector_container">
-            <nz-select nzAllowClear nzPlaceHolder="batch" style="width: 100%">
-              <nz-option *ngFor="let option of tpgBatchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
-            </nz-select>
-          </nz-col>
-          <nz-col nzSpan="2" class="selector_container">
-            <div>
-              <button nz-button [disabled]="true" (click)="onExpandTpgModal()"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
+          <form nz-form nzLayout="horizontal" style="width: 100%">
+            <div nz-row nzGutter="24">
+              <!--Selector-->
+              <nz-col nzSpan="14" class="selector_container">
+                <nz-form-item>
+                  <nz-form-control>
+                    <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
+                      <nz-option *ngFor="let operator of job?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
+                    </nz-select>
+                  </nz-form-control>
+                </nz-form-item>
+              </nz-col>
+              <nz-col nzSpan="7" class="selector_container">
+                <nz-form-item>
+                  <nz-form-control>
+                    <nz-select nzAllowClear nzPlaceHolder="batch" style="width: 100%">
+                      <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
+                    </nz-select>
+                  </nz-form-control>
+                </nz-form-item>
+              </nz-col>
+              <nz-col nzSpan="2" class="selector_container">
+                <div>
+                  <button nz-button [disabled]="true" (click)="onExpandTpgModal()"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
+                </div>
+                <nz-modal
+                  [(nzVisible)]="isTpgModalVisible"
+                  nzTitle="TPG"
+                  [nzContent]="tpgModalContent"
+                  (nzOnCancel)="onClearTpgModal()"
+                  [nzFooter]="null"
+                  nzWidth="1000px"
+                  [nzStyle]="{'top': '10%'}"
+                ></nz-modal>
+                <ng-template #tpgModalContent>
+                  <div id="modal-container">
+                  </div>
+                </ng-template>
+              </nz-col>
             </div>
-            <nz-modal
-              [(nzVisible)]="isTpgModalVisible"
-              nzTitle="TPG"
-              [nzContent]="tpgModalContent"
-              (nzOnCancel)="onClearTpgModal()"
-              [nzFooter]="null"
-              nzWidth="1000px"
-              [nzStyle]="{'top': '10%'}"
-            ></nz-modal>
-            <ng-template #tpgModalContent>
-              <div id="modal-container">
-              </div>
-            </ng-template>
-          </nz-col>
+          </form>
         </nz-row>
         <nz-row>
           <!--TPG Graph-->

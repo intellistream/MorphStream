@@ -26,7 +26,7 @@ export class JobInformationService {
     return this.http.post<boolean>(`http://localhost:8080/api/signal/stop/${jobId}`, null);
   }
 
-  public getBatchById(jobId: string, operatorId: string, batchId: number): Observable<any> {
+  public getBatchById(jobId: string, operatorId: string, batchId: string): Observable<Batch> {
     return this.http.get<Batch>(`http://localhost:8080/batchInfo/get/${jobId}/${batchId}/${operatorId}`);
   }
 }
