@@ -42,11 +42,13 @@ public class BatchInfoService extends AbstractService {
      * @param batchId  batch id
      * @return a batch
      */
-   public Batch findBatchById(String jobId, String operatorId, int batchId) {
-        File directory = new File(PATH+"\\"+operatorId);
+   public Batch findBatchById(String jobId, String operatorId, String batchId) {
+        File directory = new File(PATH+"\\"+jobId+"\\"+operatorId);
         if (directory.exists() && directory.isDirectory()) {
+            System.out.println(batchId + ".json");
             FilenameFilter jsonFilter = (dir, name) -> name.equals(batchId + ".json");
             File[] jsonFiles = directory.listFiles(jsonFilter);
+
             if (jsonFiles != null && jsonFiles.length == 1) {
                 try {
                     return objectMapper.readValue(jsonFiles[0], Batch.class);

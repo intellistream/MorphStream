@@ -32,9 +32,18 @@ export class JobInformationComponent implements OnInit {
 
   // Batch data
   tpgBatchOptions: any[] = [];
-  throughputAndLatency: any[] = [];
+  throughputAndLatency: any[] = [{
+      name: 'Throughput (k tuples/s)',
+      series: []
+    },
+    {
+      name: 'Latency (s)',
+      series: []
+    }];
+
+
   timePieData: any[] = [];
-  latestBatches: {[key: string]: number} = {} // key: operator name, value: latest batch
+  operatorLatestBatchNum: {[key: string]: number} = {} // key: operator name, value: latest batch
 
   // batch-tpg data
   tpgNodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
@@ -58,17 +67,65 @@ export class JobInformationComponent implements OnInit {
 
         // add operators to operator graph
         for (let i = 0; i < this.job.operators.length; i++) {
+          // this.operatorLatestBatchNum[this.job.operators[i].id] = 0;  // initialize the latest batch number
+          this.operatorLatestBatchNum["sl"] = 1;  // initialize the latest batch number
           this.OperatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name});
           if (i > 0) {
             this.OperatorGraphData.edges.push({v: this.job.operators[i-1].id, w: this.job.operators[i].id});
           }
         }
+        this.initializeData();
 
         this.drawOperatorGraph();
         this.drawTpgGraph();
+        setInterval(() => {
+          this.updatePerformanceGraph();
+          this.updateTpgGraph();
+        }, 1000);
       });
     });
   }
+
+  initializeData() {
+    for (let i = 0; i < 10; i++) {
+      this.throughputAndLatency[0].series.push({name: `batch${i}`, value: 0});
+      this.throughputAndLatency[1].series.push({name: `batch${i}`, value: 0});
+    }
+  }
+
+  /**
+   * Update the performance graph
+   */
+  updatePerformanceGraph() {
+    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl']).subscribe(res => {
+      if (res) {
+        if (res.batchId < 10) {
+          console.log(res.batchId);
+          this.throughputAndLatency[0].series[res.batchId].value = res.throughput;
+          this.throughputAndLatency[1].series[res.batchId].value = res.avgLatency/100000;
+        } else {
+          this.throughputAndLatency[0].series.push({name: this.operatorLatestBatchNum['sl'].toString() + " batch", value: res.throughput});
+          this.throughputAndLatency[1].series.push({name: this.operatorLatestBatchNum['sl'].toString() + " batch", value: res.avgLatency/100000});
+        }
+        if (this.throughputAndLatency[0].series.length > 10) {
+          this.throughputAndLatency[0].series.shift();
+          this.throughputAndLatency[1].series.shift();
+        }
+        this.throughputAndLatency = this.throughputAndLatency.slice();
+        this.operatorLatestBatchNum['sl']++;  // update the latest batch number
+      }
+    });
+  }
+
+  updateTpgGraph() {
+    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl']).subscribe(res => {
+      if (res) {
+        this.tpgBatchOptions.push({value: this.operatorLatestBatchNum['sl'].toString(), label: this.operatorLatestBatchNum['sl'].toString()});
+
+      }
+    });
+  }
+
 
   /**
    * Draw the statistic graph

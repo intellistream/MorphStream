@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
-public class WebRunner implements Runnable{
+public class WebRunner implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private static final String PATH = "data/jobs";
 

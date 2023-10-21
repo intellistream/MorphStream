@@ -83,6 +83,14 @@
     </nz-row>
     <nz-row nzJustify="space-between" nzAlign="top" class="job-info-row">
       <nz-col nzSpan="13" class="container">
+        <nz-row nzJustify="space-around">
+          <!--Selector-->
+          <nz-col nzSpan="24" class="selector_container">
+            <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
+              <nz-option *ngFor="let operator of job?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
+            </nz-select>
+          </nz-col>
+        </nz-row>
         <nz-tabset>
           <nz-tab [nzTitle]="performanceHeader">
             <ng-template #performanceHeader>
@@ -160,7 +168,7 @@
             </nz-select>
           </nz-col>
           <nz-col nzSpan="7" class="selector_container">
-            <nz-select nzAllowClear nzPlaceHolder="Branch" style="width: 100%">
+            <nz-select nzAllowClear nzPlaceHolder="batch" style="width: 100%">
               <nz-option *ngFor="let option of tpgBatchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
             </nz-select>
           </nz-col>

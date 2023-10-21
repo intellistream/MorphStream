@@ -27,8 +27,8 @@ public class BatchInfoController {
         return new ResponseEntity<>(batches, org.springframework.http.HttpStatus.OK);
     }
 
-    @GetMapping("/get/{jobId}/{operatorId}/{batchId}")
-    public ResponseEntity<Batch> getBatchById(@PathVariable("jobId") String jobId, @PathVariable("operatorId") String operatorId, @PathVariable("batchId") int batchId) {
+    @GetMapping("/get/{jobId}/{batchId}/{operatorId}")
+    public ResponseEntity<Batch> getBatchById(@PathVariable("jobId") String jobId, @PathVariable("operatorId") String operatorId, @PathVariable("batchId") String batchId) {
         Batch batch = batchInfoService.findBatchById(jobId, operatorId, batchId);
         return new ResponseEntity<>(batch, org.springframework.http.HttpStatus.OK);
     }
