@@ -13,6 +13,7 @@ import {
 } from "ng-zorro-antd/graph";
 import {Batch} from "../../model/Batch";
 import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
+import {NzMessageService} from "ng-zorro-antd/message";
 
 @Component({
   selector: 'app-application-information',
@@ -24,7 +25,8 @@ export class JobInformationComponent implements OnInit {
   @ViewChild(NzGraphZoomDirective, {static: true}) zoomController!: NzGraphZoomDirective;
 
   job: Job; // job entity
-  batch: Batch; // batch entity
+  statisticBatch: Batch; // statistic batch entity
+  tpgBatch: Batch | null = null; // TPG batch entity
 
   tpgSvg: any;            // tpg svg
   tpgSvgSimulation: any;  // tpg graph drawing force simulation
@@ -42,6 +44,8 @@ export class JobInformationComponent implements OnInit {
   timePieData: any[] = [{name: 'overhead time time (ms)', value: 0,},
     {name: 'stream time time (ms)', value: 0,},
     {name: 'overhead time (ms)', value: 0,}];
+
+  tpgData: any[] = [{name: 'TD', value: 0,}, {name: 'LD', value: 0,}, {name: 'PD', value: 0,}];
 
   operatorLatestBatchNum: { [key: string]: number } = {} // key: operator name, value: latest batch
 
@@ -73,11 +77,23 @@ export class JobInformationComponent implements OnInit {
     operator: FormControl<string>;
   }>;
 
-  constructor(private route: ActivatedRoute, private jobInformationService: JobInformationService, private fb: NonNullableFormBuilder) {
+  tpgForm: FormGroup<{
+    batch: FormControl<string>;
+    operator: FormControl<string>;
+  }>;
+
+  constructor(private route: ActivatedRoute,
+              private jobInformationService: JobInformationService,
+              private fb: NonNullableFormBuilder,
+              private message: NzMessageService) {
     this.batchForm = this.fb.group({
       batch: ['', [Validators.required]],
       operator: ['', [Validators.required]]
-    })
+    });
+    this.tpgForm = this.fb.group({
+      batch: ['', [Validators.required]],
+      operator: ['', [Validators.required]]
+    });
   }
 
   ngOnInit(): void {
@@ -173,16 +189,57 @@ export class JobInformationComponent implements OnInit {
   /**
    * Submit the batch form
    */
-  submitBatchForm(): void {
+  submitBatchStatisticForm(): void {
     if (this.batchForm.valid) {
       this.jobInformationService.getBatchById(this.job.jobId, "sl", this.batchForm.controls.batch.value).subscribe(res => {
         if (res) {
-          this.batch = res;
+          this.statisticBatch = res;
           this.updatePieChart(res);
+          this.message.success(`Information of SLCombo Batch ${this.batchForm.controls.batch.value} is Fetched Successfully`);
         }
       });
     } else {
       Object.values(this.batchForm.controls).forEach(control => {
+        if (control.invalid) {
+          control.markAsDirty();
+          control.updateValueAndValidity({onlySelf: true});
+        }
+      });
+    }
+  }
+
+  numOfTD = 0;
+  numOfLD = 0;
+  numOfPD = 0;
+  submitTpgForm(): void {
+    if (this.tpgForm.valid) {
+      this.jobInformationService.getBatchById(this.job.jobId, "sl", this.tpgForm.controls.batch.value).subscribe(res => {
+        if (res) {
+          this.tpgBatch = res;
+          this.tpgNodes = [];
+          this.tpgLinks = [];
+          this.numOfTD = 0;
+          this.numOfLD = 0;
+          this.numOfPD = 0;
+          for (let node of res.tpg) {
+            this.tpgNodes.push({name: node.operationID});
+            for (let edge of node.edges) {
+              this.tpgLinks.push({source: node.operationID, target: edge.dstOperatorID, type: edge.dependencyType});
+              if (edge.dependencyType == "TD") {
+                this.numOfTD++;
+              } else if (edge.dependencyType == "LD") {
+                  this.numOfLD++;
+              } else {
+                  this.numOfPD++;
+              }
+            }
+          }
+          this.tpgData = [{name: 'TD', value: this.numOfTD,}, {name: 'LD', value: this.numOfLD,}, {name: 'PD', value: this.numOfPD,}];
+          this.message.success(`TPG of SLCombo Batch ${this.tpgForm.controls.batch.value} is Fetched Successfully`);
+        }
+      });
+    } else {
+      Object.values(this.tpgForm.controls).forEach(control => {
         if (control.invalid) {
           control.markAsDirty();
           control.updateValueAndValidity({onlySelf: true});
@@ -205,25 +262,11 @@ export class JobInformationComponent implements OnInit {
         value: batch.overallTimeBreakdown.streamTime,
       },
       {
-        name: 'overhead time (ms)',
-        value: batch.overallTimeBreakdown.overheadTime,
+        name: 'transaction time (ms)',
+        value: batch.overallTimeBreakdown.txnTime,
       }
     ];
     this.timePieData = this.timePieData.slice();
-  }
-
-
-  /**
-   * Draw the statistic graph
-   */
-  drawStatisticGraph() {
-    this.batchOptions = [
-      {value: '1', label: '1'},
-      {value: '2', label: '2'},
-      {value: '3', label: '3'},
-      {value: '4', label: '4'},
-      {value: '5', label: '5'}
-    ];
   }
 
   /**
@@ -252,7 +295,7 @@ export class JobInformationComponent implements OnInit {
 
     // @ts-ignore
     this.tpgSvgSimulation = d3.forceSimulation(this.tpgNodes)
-      .force('charge', d3.forceManyBody().strength(-20))
+      .force('charge', d3.forceManyBody().strength(-15))
       .force('link', d3.forceLink(this.tpgLinks).id((d: any) => d.name))
       .force('center', d3.forceCenter(250, 200));
 
@@ -261,8 +304,9 @@ export class JobInformationComponent implements OnInit {
       .enter().append('line')
       .attr('class', 'link')
       .style("stroke", (d: any) => {
+        console.log(d)
         if (d.type == "TD") {
-          return "#94A0CE"
+          return "#94A0C0"
         } else if (d.type == "LD") {
           return "#B7C099"
         } else {
@@ -286,11 +330,41 @@ export class JobInformationComponent implements OnInit {
       .style("fill", "#e79722");
 
     this.tpgSvgSimulation.on('tick', this.simulationTick.bind(this));
+
     this.tpgSvg.call(d3.zoom()
       .extent([[0, 0], [648, 480]])
       .scaleExtent([0.5, 10])
       .on("zoom", this.tpgZoomed.bind(this)));
-    this.tpgSvgSimulation.alpha(1).restart();
+    this.tpgSvgSimulation.alpha(0.3).restart();
+    setInterval(() => {
+      this.tpgSvgSimulation.stop();
+      this.nodesSelections.each(function (d) {
+        d.originalX = d.x;
+        d.originalY = d.y;
+      });
+      }, 2000);
+
+    const tooltip = d3.select(this.tpgContainer.nativeElement)
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('height', '30px')
+        .style('opacity', 0);
+
+    this.nodesSelections.on('mouseover', (event, d) => {
+      tooltip.transition()
+          .duration(200)
+          .style('opacity', 0.9);
+
+      tooltip.html(`Node Name: ${d.name}`)
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 28) + 'px');
+    });
+
+    this.nodesSelections.on('mouseout', () => {
+      tooltip.transition()
+          .duration(500)
+          .style('opacity', 0);
+    });
   }
 
   simulationTick() {
@@ -333,16 +407,22 @@ export class JobInformationComponent implements OnInit {
    * @param transform
    */
   tpgZoomed({transform}) {
+    const { k, x, y } = transform;
     this.tpgSvg.selectAll('.node').attr('transform', transform);
     this.tpgSvg.selectAll('.link').attr('transform', transform);
+    // this.tpgSvg.selectAll('.tooltip').attr('transform', transform);
+    this.tpgSvg.select('.tooltip').attr('transform', `scale(${1 / k})`);
   }
 
-  // TODO: tpg modal is not in use for now
   onExpandTpgModal() {
     this.isTpgModalVisible = true;
+    setTimeout(() => {
+      this.drawTpgGraph();
+    }, 1000);
   }
 
   onClearTpgModal() {
     this.isTpgModalVisible = false;
+    this.drawTpgGraph();
   }
 }

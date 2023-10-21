@@ -27,8 +27,8 @@
           <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{job?.duration}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Start Time" nzSpan="2">{{job?.startTime}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Operation" nzSpan="1">
-            <button nz-button nzType="primary" [disabled]="this.jobStarted" style="margin-right: 20px" (click)="onStart()">Start</button>
-            <button nz-button nzType="primary" [disabled]="!this.jobStarted" style="margin-right: 20px" (click)="onStop()">Stop</button>
+            <button nz-button nzType="primary" [disabled]="this.jobStarted" style="margin-right: 20px" (click)="onStart()"><span nz-icon nzType="poweroff" nzTheme="outline"></span>Start</button>
+            <button nz-button nzType="primary" [disabled]="!this.jobStarted" style="margin-right: 20px" (click)="onStop()"><span nz-icon nzType="stop" nzTheme="outline"></span>Stop</button>
           </nz-descriptions-item>
         </nz-descriptions>
       </nz-col>
@@ -84,7 +84,7 @@
     <nz-row nzJustify="space-between" nzAlign="top" class="job-info-row">
       <nz-col nzSpan="13" class="container">
         <nz-row nzJustify="space-between">
-          <form nz-form nzLayout="horizontal" style="width: 100%" [formGroup]="batchForm" (ngSubmit)="submitBatchForm()">
+          <form nz-form nzLayout="horizontal" style="width: 100%" [formGroup]="batchForm" (ngSubmit)="submitBatchStatisticForm()">
             <div nz-row nzGutter="24">
               <!--Selector-->
               <nz-col nzSpan="14" class="selector_container">
@@ -109,7 +109,7 @@
               </nz-col>
               <nz-col nzSpan="2" class="selector_container">
                 <nz-form-item>
-                  <button nz-button><span nz-icon nzType="undo" nzTheme="outline"></span></button>
+                  <button nz-button nzType="primary"><span nz-icon nzType="search" nzTheme="outline"></span></button>
                 </nz-form-item>
               </nz-col>
             </div>
@@ -162,13 +162,13 @@
               </div>
             </ng-template>
             <nz-descriptions nzBordered>
-              <nz-descriptions-item nzSpan="3" nzTitle="Batch ID">{{batch?.batchId}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{batch?.batchSize}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{batch?.minLatency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{batch?.maxLatency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{batch?.avgLatency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="3" nzTitle="Total Time Used (s)">{{batch?.batchDuration}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="3" nzTitle="Overall Throughput (tuple/s)">{{batch?.throughput}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Batch ID">{{statisticBatch?.batchId}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{statisticBatch?.batchSize}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{statisticBatch?.minLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{statisticBatch?.maxLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{statisticBatch?.avgLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Total Time Used (s)">{{statisticBatch?.batchDuration}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Overall Throughput (tuple/s)">{{statisticBatch?.throughput}}</nz-descriptions-item>
             </nz-descriptions>
           </nz-tab>
 <!--          <nz-tab [nzTitle]="OutputFileHeader">-->
@@ -182,13 +182,14 @@
       </nz-col>
       <nz-col nzSpan="10" class="container">
         <nz-row nzJustify="space-between">
-          <form nz-form nzLayout="horizontal" style="width: 100%">
-            <div nz-row nzGutter="24">
+          <form nz-form [formGroup]="tpgForm" nzLayout="horizontal" style="width: 100%">
+            <div nz-row nzJustify="space-between">
               <!--Selector-->
-              <nz-col nzSpan="14" class="selector_container">
+              <nz-col nzSpan="12" class="selector_container">
                 <nz-form-item>
+                  <nz-form-label nzRequired nzFor="operator"></nz-form-label>
                   <nz-form-control>
-                    <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
+                    <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%" formControlName="operator">
                       <nz-option *ngFor="let operator of job?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
                     </nz-select>
                   </nz-form-control>
@@ -196,18 +197,23 @@
               </nz-col>
               <nz-col nzSpan="7" class="selector_container">
                 <nz-form-item>
+                  <nz-form-label nzRequired nzFor="batch"></nz-form-label>
                   <nz-form-control>
-                    <nz-select nzAllowClear nzPlaceHolder="batch" style="width: 100%">
+                    <nz-select nzAllowClear nzPlaceHolder="batch" style="width: 100% " formControlName="batch">
                       <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
                     </nz-select>
                   </nz-form-control>
                 </nz-form-item>
               </nz-col>
-              <nz-col nzSpan="2" class="selector_container">
-                <div>
-                  <button nz-button [disabled]="true" (click)="onExpandTpgModal()"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
-                </div>
-                <nz-modal
+              <nz-col nzSpan="2" class="selector_container" style="text-align: right;">
+                  <button nz-button (click)="submitTpgForm()" nzType="primary"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
+              </nz-col>
+              <nz-col nzSpan="2" class="selector_container" style="text-align: right;">
+                <button nz-button (click)="onExpandTpgModal()" [disabled]="tpgBatch==null"><span nz-icon nzType="expand" nzTheme="outline"></span></button>
+              </nz-col>
+            </div>
+          </form>
+          <nz-modal
                   [(nzVisible)]="isTpgModalVisible"
                   nzTitle="TPG"
                   [nzContent]="tpgModalContent"
@@ -215,19 +221,32 @@
                   [nzFooter]="null"
                   nzWidth="1000px"
                   [nzStyle]="{'top': '10%'}"
-                ></nz-modal>
-                <ng-template #tpgModalContent>
-                  <div id="modal-container">
-                  </div>
-                </ng-template>
-              </nz-col>
+          >
+          </nz-modal>
+          <ng-template #tpgModalContent>
+            <div id="modal-container">
+              <div id="tpg-container" #tpgContainer></div>
             </div>
-          </form>
+          </ng-template>
         </nz-row>
-        <nz-row>
+        <nz-row style="height: 210px; margin-top: 0">
+          <ngx-charts-advanced-pie-chart
+            [results]="tpgData">
+          </ngx-charts-advanced-pie-chart>
+        </nz-row>
+        <nz-row style="height: 210px; margin-top: 20px">
+          <ngx-charts-bar-vertical
+            [results]="tpgData"
+            [xAxis]="true"
+            [yAxis]="true"
+            [showGridLines]="true"
+            yAxisLabel="Number"
+            [showYAxisLabel]="true"
+            [noBarWhenZero]="false">
+          </ngx-charts-bar-vertical>
+        </nz-row>
           <!--TPG Graph-->
-          <div id="tpg-container" #tpgContainer></div>
-        </nz-row>
+<!--          <div id="tpg-container" #tpgContainer></div>-->
       </nz-col>
     </nz-row>
   </nz-content>

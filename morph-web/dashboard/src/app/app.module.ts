@@ -23,9 +23,6 @@ import { NzButtonModule } from "ng-zorro-antd/button";
 import { JobInformationComponent } from "./pages/application-information/job-information.component";
 import { NzBreadCrumbModule } from "ng-zorro-antd/breadcrumb";
 import { NzProgressModule } from "ng-zorro-antd/progress";
-// import { ApplicationBoardComponent } from "./snippets/application-board/application-board.component";
-// import { InfoScrollWrapperComponent } from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
-// import { OperatorInformationComponent } from "./snippets/operator-information/operator-information.component";
 import { NzCardModule } from "ng-zorro-antd/card";
 import { NzModalModule } from "ng-zorro-antd/modal";
 import { FinishedStatisticsBoardComponent } from "./snippets/finished-statistics-board/finished-statistics-board.component";
@@ -46,6 +43,7 @@ import {CodemirrorModule} from "@ctrl/ngx-codemirror";
 import {NzCollapseModule} from "ng-zorro-antd/collapse";
 import { NzGraphModule } from 'ng-zorro-antd/graph';
 import {NzPopoverModule} from "ng-zorro-antd/popover";
+import {NzMessageModule} from "ng-zorro-antd/message";
 
 registerLocaleData(en);
 
@@ -58,9 +56,6 @@ registerLocaleData(en);
     ApplicationCardComponent,
     ScrollWrapperComponent,
     JobInformationComponent,
-    // ApplicationBoardComponent,
-    // InfoScrollWrapperComponent,
-    // OperatorInformationComponent,
     FinishedStatisticsBoardComponent,
     SubmitNewJobComponent,
     CodeEditorComponent
@@ -98,7 +93,8 @@ registerLocaleData(en);
     CodemirrorModule,
     NzCollapseModule,
     NzGraphModule,
-    NzPopoverModule
+    NzPopoverModule,
+    NzMessageModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
