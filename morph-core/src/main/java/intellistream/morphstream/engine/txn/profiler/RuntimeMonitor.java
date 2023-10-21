@@ -2,7 +2,6 @@ package intellistream.morphstream.engine.txn.profiler;
 
 
 import com.esotericsoftware.minlog.Log;
-import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import communication.dao.Batch;
@@ -11,7 +10,6 @@ import communication.dao.TPGEdge;
 import communication.dao.TPGNode;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
-import org.apache.hadoop.util.hash.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.channel.EventLoopGroup;
@@ -28,26 +26,26 @@ public class RuntimeMonitor extends Thread {
     private static final RuntimeMonitor runtimeMonitor = new RuntimeMonitor();
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, DescriptiveStatistics[]>> opLatencyMap = new ConcurrentHashMap<>(); //operatorID -> latency[batchID][threadID]
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Double>> opThroughputMap = new ConcurrentHashMap<>(); //operatorID -> throughput[batchID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opBatchStartTimeMap = new ConcurrentHashMap<>(); //operatorID -> batchStartTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opBatchEndTimeMap = new ConcurrentHashMap<>(); //operatorID -> batchEndTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opBatchStartTimeMap = new ConcurrentHashMap<>(); //operatorID -> batchStartTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opBatchEndTimeMap = new ConcurrentHashMap<>(); //operatorID -> batchEndTime[batchID][threadID]
     // The following 8 are temporary execution time, updated upon each new event's processing
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opPrepareStartTime = new ConcurrentHashMap<>(); //operatorID -> prepareStartTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opPrepareTime = new ConcurrentHashMap<>(); //operatorID -> prepareTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opPreExeStartTime = new ConcurrentHashMap<>(); //operatorID -> preprocessStartTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opPreExeTime = new ConcurrentHashMap<>(); //operatorID -> preprocessTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opTxnStartTime = new ConcurrentHashMap<>(); //operatorID -> txnStartTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opTxnTime = new ConcurrentHashMap<>(); //operatorID -> txnTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opPostStartTime = new ConcurrentHashMap<>(); //operatorID -> postStartTime[batchID][threadID]
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long[]>> opPostTime = new ConcurrentHashMap<>(); //operatorID -> PostTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opPrepareStartTime = new ConcurrentHashMap<>(); //operatorID -> prepareStartTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opPrepareTime = new ConcurrentHashMap<>(); //operatorID -> prepareTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opPreExeStartTime = new ConcurrentHashMap<>(); //operatorID -> preprocessStartTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opPreExeTime = new ConcurrentHashMap<>(); //operatorID -> preprocessTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opTxnStartTime = new ConcurrentHashMap<>(); //operatorID -> txnStartTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opTxnTime = new ConcurrentHashMap<>(); //operatorID -> txnTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opPostStartTime = new ConcurrentHashMap<>(); //operatorID -> postStartTime[batchID][threadID]
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opPostTime = new ConcurrentHashMap<>(); //operatorID -> PostTime[batchID][threadID]
     // The following 2 keep record of summarized execution time for each event, updated after each event's processing finished
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, DescriptiveStatistics[]>> opStreamTimePerEvent = new ConcurrentHashMap<>(); //operatorID -> batchID -> stream processing time per batch
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, DescriptiveStatistics[]>> opTxnTimePerEvent = new ConcurrentHashMap<>(); //operatorID -> batchID -> txn time per batch
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opStreamTimePerBatch = new ConcurrentHashMap<>(); //operatorID -> batchID -> stream processing time per batch
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opTxnTimePerBatch = new ConcurrentHashMap<>(); //operatorID -> batchID -> txn time per batch
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, ConcurrentHashMap<TPGNode, List<TPGEdge>>>> opTPGMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> TPG
     // General usages
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, AtomicInteger>> opNumThreadCompletedMap = new ConcurrentHashMap<>(); //operatorID -> num of threads that have submitted performance data
     private static final String[] operatorIDs = MorphStreamEnv.get().configuration().getString("operatorIDs").split(",");
     private static final String applicationID = MorphStreamEnv.get().configuration().getString("application");
-    private static final HashMap<String, Long[]> opEmptyLongArrays = new HashMap<>(); //operatorID -> empty long array, used for quick creation of breakdown time arrays for each new batch
+    private static final HashMap<String, long[]> opEmptyLongArrays = new HashMap<>(); //operatorID -> empty long array, used for quick creation of breakdown time arrays for each new batch
     private static final HashMap<String, Integer> operatorThreadNumMap = new HashMap<>(); //operatorID -> its thread number
     private static final HashMap<String, Integer> operatorBatchNumMap = new HashMap<>(); //operatorID -> current batch whose runtime is going to be written to file
     private static final BlockingQueue<Object> readyOperatorQueue = new LinkedBlockingQueue<>(); //ID of operators whose performance data is ready to be shown in the UI
@@ -65,7 +63,7 @@ public class RuntimeMonitor extends Thread {
         for (String operatorID : operatorIDs) {
             operatorThreadNumMap.put(operatorID, MorphStreamEnv.get().configuration().getInt("threadNumOf_" + operatorID, 4));
             operatorBatchNumMap.put(operatorID, 1);
-            opEmptyLongArrays.put(operatorID, new Long[operatorThreadNumMap.get(operatorID)]);
+            opEmptyLongArrays.put(operatorID, new long[operatorThreadNumMap.get(operatorID)]);
 
             opLatencyMap.put(operatorID, new ConcurrentHashMap<>());
             opThroughputMap.put(operatorID, new ConcurrentHashMap<>());
@@ -83,97 +81,83 @@ public class RuntimeMonitor extends Thread {
             opPostTime.put(operatorID, new ConcurrentHashMap<>());
             opTPGMap.put(operatorID, new ConcurrentHashMap<>());
 
-            opStreamTimePerEvent.put(operatorID, new ConcurrentHashMap<>());
-            opTxnTimePerEvent.put(operatorID, new ConcurrentHashMap<>());
+            opStreamTimePerBatch.put(operatorID, new ConcurrentHashMap<>());
+            opTxnTimePerBatch.put(operatorID, new ConcurrentHashMap<>());
         }
 
         runtimeMonitor.start();
     }
 
     public void PREPARE_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventPrepareStartTimes = opPrepareStartTime.get(operatorID);
-        eventPrepareStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventPrepareStartTimes.get(batchID)[threadID] = System.nanoTime();
+        opPrepareStartTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opPrepareStartTime.get(operatorID).get(batchID)[threadID] = System.nanoTime();
     }
 
     public void ACC_PREPARE_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventPrepareTimes = opPrepareTime.get(operatorID);
-        eventPrepareTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventPrepareTimes.get(batchID)[threadID] += System.nanoTime() - opPrepareStartTime.get(operatorID).get(batchID)[threadID];
+        opPrepareTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opPrepareTime.get(operatorID).get(batchID)[threadID] += System.nanoTime() - opPrepareStartTime.get(operatorID).get(batchID)[threadID];
     }
 
     public void PRE_EXE_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventPreExeStartTimes = opPreExeStartTime.get(operatorID);
-        eventPreExeStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventPreExeStartTimes.get(batchID)[threadID] = System.nanoTime();
+        opPreExeStartTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opPreExeStartTime.get(operatorID).get(batchID)[threadID] = System.nanoTime();
     }
 
     public void ACC_PRE_EXE_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventPreExeTimes = opPreExeTime.get(operatorID);
-        eventPreExeTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventPreExeTimes.get(batchID)[threadID] += System.nanoTime() - opPreExeStartTime.get(operatorID).get(batchID)[threadID];
+        opPreExeTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opPreExeTime.get(operatorID).get(batchID)[threadID] += System.nanoTime() - opPreExeStartTime.get(operatorID).get(batchID)[threadID];
     }
 
-    public void TXN_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventTxnStartTimes = opTxnStartTime.get(operatorID);
-        eventTxnStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventTxnStartTimes.get(batchID)[threadID] = System.nanoTime();
+    public void TXN_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per batch
+        opTxnStartTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opTxnStartTime.get(operatorID).get(batchID)[threadID] = System.nanoTime();
     }
 
-    public void TXN_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventTxnTimes = opTxnTime.get(operatorID);
-        eventTxnTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventTxnTimes.get(batchID)[threadID] = System.nanoTime() - opTxnStartTime.get(operatorID).get(batchID)[threadID];
+    public void TXN_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per batch
+        opTxnTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opTxnTime.get(operatorID).get(batchID)[threadID] = System.nanoTime() - opTxnStartTime.get(operatorID).get(batchID)[threadID];
     }
 
-    public void POST_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventPostStartTimes = opPostStartTime.get(operatorID);
-        eventPostStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventPostStartTimes.get(batchID)[threadID] = System.nanoTime();
+    public void POST_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per batch
+        opPostStartTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opPostStartTime.get(operatorID).get(batchID)[threadID] = System.nanoTime();
     }
 
-    public void POST_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
-        ConcurrentHashMap<Integer, Long[]> eventPostTimes = opPostTime.get(operatorID);
-        eventPostTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
-        eventPostTimes.get(batchID)[threadID] = System.nanoTime() - opPostStartTime.get(operatorID).get(batchID)[threadID];
+    public void POST_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per batch
+        opPostTime.get(operatorID).putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
+        opPostTime.get(operatorID).get(batchID)[threadID] = System.nanoTime() - opPostStartTime.get(operatorID).get(batchID)[threadID];
     }
 
     public void UPDATE_TPG(String operatorID, int batchID, TPGNode node, List<TPGEdge> edges) {
-        ConcurrentHashMap<Integer, ConcurrentHashMap<TPGNode, List<TPGEdge>>> batchTPGMap = opTPGMap.get(operatorID);
-        batchTPGMap.putIfAbsent(batchID, new ConcurrentHashMap<>());
-        batchTPGMap.get(batchID).put(node, edges);
+        opTPGMap.get(operatorID).putIfAbsent(batchID, new ConcurrentHashMap<>());
+        opTPGMap.get(operatorID).get(batchID).put(node, edges);
     }
 
     //TODO: Merge this with runtime submission method
-    public void END_TOTAL_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event, keep record for all events' txn and stream-processing time
-        ConcurrentHashMap<Integer, DescriptiveStatistics[]> eventStreamTimes = opStreamTimePerEvent.get(operatorID);
-        ConcurrentHashMap<Integer, DescriptiveStatistics[]> eventTxnTimes = opTxnTimePerEvent.get(operatorID);
-        eventStreamTimes.putIfAbsent(batchID, new DescriptiveStatistics[operatorThreadNumMap.get(operatorID)]);
-        eventTxnTimes.putIfAbsent(batchID, new DescriptiveStatistics[operatorThreadNumMap.get(operatorID)]);
-        if (eventStreamTimes.get(batchID)[threadID] == null) {
-            eventStreamTimes.get(batchID)[threadID] = new DescriptiveStatistics();
-        }
-        if (eventTxnTimes.get(batchID)[threadID] == null) {
-            eventTxnTimes.get(batchID)[threadID] = new DescriptiveStatistics();
-        }
+    public void END_TOTAL_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per batch, keep record for all events' txn and stream-processing time
+        opStreamTimePerBatch.get(operatorID).putIfAbsent(batchID, new long[operatorThreadNumMap.get(operatorID)]);
+        opTxnTimePerBatch.get(operatorID).putIfAbsent(batchID, new long[operatorThreadNumMap.get(operatorID)]);
         long streamTime = opPrepareTime.get(operatorID).get(batchID)[threadID] + opPreExeTime.get(operatorID).get(batchID)[threadID] + opPostTime.get(operatorID).get(batchID)[threadID];
         long txnTime = opTxnTime.get(operatorID).get(batchID)[threadID];
-        eventStreamTimes.get(batchID)[threadID].addValue(streamTime);
-        eventTxnTimes.get(batchID)[threadID].addValue(txnTime);
+        if (streamTime == 0 || txnTime == 0) {
+            LOG.info("Stream or txn time is 0 for operator " + operatorID + " batch " + batchID + " thread " + threadID);
+        }
+        opStreamTimePerBatch.get(operatorID).get(batchID)[threadID] = streamTime;
+        opTxnTimePerBatch.get(operatorID).get(batchID)[threadID] = txnTime;
     }
 
     public void submitRuntimeData(String operatorID, int batchID, int threadID, SynchronizedDescriptiveStatistics latencyStats, long batchStartTime, long batchEndTime) {
-        LOG.info("Batch " + batchID + " runtime data received from operator " + operatorID + " thread " + threadID);
+//        LOG.info("Batch " + batchID + " runtime data received from operator " + operatorID + " thread " + threadID);
         int threadNum = operatorThreadNumMap.get(operatorID);
 
         ConcurrentHashMap<Integer, DescriptiveStatistics[]> batchLatencyStats = opLatencyMap.get(operatorID);
-        ConcurrentHashMap<Integer, Long[]> batchStartTimeStats = opBatchStartTimeMap.get(operatorID);
-        ConcurrentHashMap<Integer, Long[]> batchEndTimeStats = opBatchEndTimeMap.get(operatorID);
+        ConcurrentHashMap<Integer, long[]> batchStartTimeStats = opBatchStartTimeMap.get(operatorID);
+        ConcurrentHashMap<Integer, long[]> batchEndTimeStats = opBatchEndTimeMap.get(operatorID);
         ConcurrentHashMap<Integer, AtomicInteger> numThreadCompletedMap = opNumThreadCompletedMap.get(operatorID);
 
         batchLatencyStats.putIfAbsent(batchID, new DescriptiveStatistics[threadNum]);
-        batchStartTimeStats.putIfAbsent(batchID, new Long[threadNum]);
-        batchEndTimeStats.putIfAbsent(batchID, new Long[threadNum]);
+        batchStartTimeStats.putIfAbsent(batchID, new long[threadNum]);
+        batchEndTimeStats.putIfAbsent(batchID, new long[threadNum]);
         numThreadCompletedMap.putIfAbsent(batchID, new AtomicInteger(0));
 
         batchLatencyStats.get(batchID)[threadID] = latencyStats.copy();
@@ -216,10 +200,15 @@ public class RuntimeMonitor extends Thread {
             totalBatchSize += batchSizeArray[i];
             // overall execution time breakdown
             try {
-                totalStreamTime += (long) Objects.requireNonNull(opStreamTimePerEvent.get(operatorID).get(latestBatchID))[i].getSum();
-                totalTxnTime += (long) Objects.requireNonNull(opTxnTimePerEvent.get(operatorID).get(latestBatchID))[i].getSum();
+                totalStreamTime += opStreamTimePerBatch.get(operatorID).get(latestBatchID)[i];
             } catch (NullPointerException e) {
-                Log.error("Null pointer exception when summarizing execution time breakdown for operator " + operatorID + " batch " + latestBatchID + " thread " + i);
+                Log.info("Stream time is null for operator " + operatorID + " batch " + latestBatchID + " thread " + i);
+                throw e;
+            }
+            try {
+                totalTxnTime += opTxnTimePerBatch.get(operatorID).get(latestBatchID)[i];
+            } catch (NullPointerException e) {
+                Log.info("Txn time is null for operator " + operatorID + " batch " + latestBatchID + " thread " + i);
                 throw e;
             }
         }
@@ -252,7 +241,6 @@ public class RuntimeMonitor extends Thread {
                 throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
                 overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
 
-
         try {
 //            File directory = new File(String.format("%s/%s/%s", dataPath, applicationID, operatorID));
             File directory = new File(String.format("%s/%s/%s", dataPath, "3", operatorID));
@@ -282,29 +270,16 @@ public class RuntimeMonitor extends Thread {
         }
     }
 
+    int batchCount = 0;
+
     @Override
     public void run() {
         try {
-//            ServerBootstrap bootstrap = new ServerBootstrap();
-//            bootstrap.group(bossGroup, workerGroup)
-//                    .channel(NioServerSocketChannel.class)
-//                    .childHandler(webSocketHandler);
-//            Channel channel = bootstrap.bind(5001).sync().channel();
-
             while (true) {
                 String operatorID = (String) readyOperatorQueue.take();
                 saveBatchData(operatorID);
-//                if (webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
-//                    try {
-//                        String operatorID = (String) readyOperatorQueue.take();
-//                        sendDataToFrontend(operatorID);
-//                    } catch (InterruptedException e) {
-//                        Thread.currentThread().interrupt();
-//                        break;
-//                    }
-//                }
+                batchCount = batchCount + 1;
             }
-//            channel.closeFuture().sync(); // block until server is closed
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {

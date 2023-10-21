@@ -19,7 +19,7 @@ public class InputSourceTest extends TestCase {
     public void testApp() throws IOException {
         assertTrue(true);
         InputSource inputSource = new InputSource();
-        inputSource.initialize("/Users/curryzjj/hair-loss/MorphStream/Benchmark/inputs/events.txt", InputSource.InputSourceType.FILE_STRING);
+        inputSource.initialize("/Users/curryzjj/hair-loss/MorphStream/Benchmark/inputs/events.txt", InputSource.InputSourceType.FILE_STRING, 4);
         for (int i = 0; i < 100; i++) {
         }
     }
