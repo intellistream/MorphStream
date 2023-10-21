@@ -139,4 +139,9 @@ public class SLClient extends Client {
         }
     }
 
+    public static void main(String[] args) throws Exception {
+        WebServer.createJobInfoJSON("StreamLedger");
+        startJob(args);
+    }
+
 }

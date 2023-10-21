@@ -32,7 +32,7 @@ public class SignalHandler extends SimpleChannelInboundHandler<SignalRequest> {
             SLClient.startJob(new String[]{});
         } else if (request.getSignal().equals("stop")) {
             log.info("Stop signal received");
-            InputSource.get().insertStopSignal(MorphStreamEnv.get().configuration().getInt("spoutNum")); // notify spout to pass stop signal downstream
+            InputSource.get().insertStopSignal(); // notify spout to pass stop signal downstream
             Response<SignalResponse> response = generateResponse(appId, correlationId, false);
             channelHandlerContext.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(response)));
         } else {

@@ -29,7 +29,7 @@ public class SignalService extends AbstractService {
      * @return true if the job is stopped successfully, false otherwise
      */
     public Boolean onStopSignal(String jobId) {
-        InputSource.get().insertStopSignal(MorphStreamEnv.get().configuration().getInt("spoutNum")); // notify spout to pass stop signal downstream
+        InputSource.get().insertStopSignal(); // notify spout to pass stop signal downstream
         return true;
     }
 }

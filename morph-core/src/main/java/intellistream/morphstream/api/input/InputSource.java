@@ -45,7 +45,9 @@ public class InputSource {
         this.bid = 0;
     }
 
-    public void insertStopSignal(int spoutNum) { //TODO: Modify workload, so that stop signal can be inserted before spout finish reading all events
+    public void insertStopSignal() { //TODO: Modify workload, so that stop signal can be inserted before spout finish reading all events
+//        int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
+        int spoutNum = 4;
         for (int i = 0; i < spoutNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = inputQueues.get(i);
             inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));

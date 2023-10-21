@@ -117,6 +117,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             RuntimeMonitor.get().UPDATE_TPG(operation.stateAccess.getOperatorID(), batchID, node, edges);
         }
 
+        // apply function
+        AppConfig.randomDelay();
+
         /**
          * Start of newly defined txn execution logic
          */

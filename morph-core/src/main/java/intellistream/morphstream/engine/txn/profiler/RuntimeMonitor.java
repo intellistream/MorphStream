@@ -2,6 +2,7 @@ package intellistream.morphstream.engine.txn.profiler;
 
 
 import com.esotericsoftware.minlog.Log;
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import communication.dao.Batch;
@@ -10,6 +11,7 @@ import communication.dao.TPGEdge;
 import communication.dao.TPGNode;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
+import org.apache.hadoop.util.hash.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.channel.EventLoopGroup;
@@ -47,6 +49,7 @@ public class RuntimeMonitor extends Thread {
     private static final String applicationID = MorphStreamEnv.get().configuration().getString("application");
     private static final HashMap<String, Long[]> opEmptyLongArrays = new HashMap<>(); //operatorID -> empty long array, used for quick creation of breakdown time arrays for each new batch
     private static final HashMap<String, Integer> operatorThreadNumMap = new HashMap<>(); //operatorID -> its thread number
+    private static final HashMap<String, Integer> operatorBatchNumMap = new HashMap<>(); //operatorID -> current batch whose runtime is going to be written to file
     private static final BlockingQueue<Object> readyOperatorQueue = new LinkedBlockingQueue<>(); //ID of operators whose performance data is ready to be shown in the UI
     private static final EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
@@ -61,6 +64,7 @@ public class RuntimeMonitor extends Thread {
     public static void Initialize() {
         for (String operatorID : operatorIDs) {
             operatorThreadNumMap.put(operatorID, MorphStreamEnv.get().configuration().getInt("threadNumOf_" + operatorID, 4));
+            operatorBatchNumMap.put(operatorID, 1);
             opEmptyLongArrays.put(operatorID, new Long[operatorThreadNumMap.get(operatorID)]);
 
             opLatencyMap.put(operatorID, new ConcurrentHashMap<>());
@@ -195,7 +199,9 @@ public class RuntimeMonitor extends Thread {
         long totalBatchSize = 0; // total number of events processed by this operator in the latest batch
         long totalStreamTime = 0;
         long totalTxnTime = 0;
-        int latestBatchID = opNumThreadCompletedMap.get(operatorID).keySet().stream().max(Integer::compare).orElseThrow(NullPointerException::new);
+//        int latestBatchID = opNumThreadCompletedMap.get(operatorID).keySet().stream().max(Integer::compare).orElseThrow(NullPointerException::new);
+        int latestBatchID = operatorBatchNumMap.get(operatorID);
+        operatorBatchNumMap.put(operatorID, latestBatchID + 1);
 
         for (int i=0; i<threadNum; i++) {
             // throughput and latency
@@ -209,8 +215,13 @@ public class RuntimeMonitor extends Thread {
             batchSizeArray[i] = batchLatencyStats[i].getN(); //batchSize of each thread
             totalBatchSize += batchSizeArray[i];
             // overall execution time breakdown
-            totalStreamTime += (long) Objects.requireNonNull(opStreamTimePerEvent.get(operatorID).get(latestBatchID))[i].getSum();
-            totalTxnTime += (long) Objects.requireNonNull(opTxnTimePerEvent.get(operatorID).get(latestBatchID))[i].getSum();
+            try {
+                totalStreamTime += (long) Objects.requireNonNull(opStreamTimePerEvent.get(operatorID).get(latestBatchID))[i].getSum();
+                totalTxnTime += (long) Objects.requireNonNull(opTxnTimePerEvent.get(operatorID).get(latestBatchID))[i].getSum();
+            } catch (NullPointerException e) {
+                Log.error("Null pointer exception when summarizing execution time breakdown for operator " + operatorID + " batch " + latestBatchID + " thread " + i);
+                throw e;
+            }
         }
         // throughput
         long batchStartTime = Arrays.stream(batchStartTimeArray).min().orElse(Long.MAX_VALUE);
