@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction.impl.ordered;
 
+import com.esotericsoftware.minlog.Log;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;

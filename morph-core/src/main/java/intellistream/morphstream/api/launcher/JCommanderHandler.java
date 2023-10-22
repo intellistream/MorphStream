@@ -86,13 +86,13 @@ public class JCommanderHandler {
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
-    public int isDynamic = 0;
+    public int isDynamic = 1;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
-    public String schedulerPools = "OP_BFS_A,OG_BFS_A,OG_DFS,OG_DFS_A,OG_NS,OG_NS_A,OP_NS,OP_NS_A,OP_BFS,OP_BFS_A,OP_DFS,OP_DFS_A";
+    public String schedulerPools = "OP_BFS_A,OP_BFS,OP_NS_A,OP_NS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
     public String defaultScheduler = "OP_BFS_A";
     @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
-    public String bottomLine = "";
+    public String bottomLine = "2,1,1,2,0.5,0.5"; //threshold for each TD=2/LD=1/PD=1/SUM(TD+LD)=2/VDD=0.5/R_of_A=0.5 ... based on this to switch between schedulers
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
     public String WorkloadConfig = "";
     /**
@@ -237,7 +237,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 20000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-    public String workloadType = "default";
+    public String workloadType = "default,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew,Down_skew,Down_skew,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort";
+    //OP_BFS -> OP_NS -> OP_NS_A -> OP_NS -> OP_BFS -> OP_NS -> OP_NS_A -> OP_NS
+    //
     @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
     public String eventTypes = "transfer;deposit";
     @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
@@ -247,11 +249,11 @@ public class JCommanderHandler {
     @Parameter(names = {"--valueNameForEvents"}, description = "value names for each type of event, split by ;")
     public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
-    public String eventRatio = "0.5,0.5";
+    public String eventRatio = "50,50";
     @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
     public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
     @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
-    public String stateAccessSkewnessForEvents = "0.5,0.5";
+    public String stateAccessSkewnessForEvents = "0,0";
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
     public String abortRatioForEvents = "0,0";
 

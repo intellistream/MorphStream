@@ -208,6 +208,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int txnOpId = 0;
         Operation headerOperation = null;
         for (Request request : context.requests) {
+            //all requests under the same request share LD
             long bid = request.txn_context.getBID();
             Operation set_op;
             switch (request.accessType) {
@@ -247,7 +248,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //            set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
             tpg.setupOperationTDFD(set_op, request);
             if (txnOpId == 0)
-                headerOperation = set_op;
+                headerOperation = set_op; //TODO: this is the parent for all operations in the txn for LD
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
             set_op.setTxnOpId(txnOpId++);
             set_op.addHeader(headerOperation);

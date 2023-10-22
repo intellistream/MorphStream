@@ -13,6 +13,6 @@ public class FileDataGeneratorTest extends TestCase {
         assertTrue(true);
         MorphStreamEnv.get().databaseInitializer().configure_db();
         FileDataGenerator fileDataGenerator = new FileDataGenerator();
-        fileDataGenerator.prepareInputData();
+        fileDataGenerator.prepareInputData(false);
     }
 }

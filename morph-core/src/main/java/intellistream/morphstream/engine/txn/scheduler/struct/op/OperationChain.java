@@ -102,6 +102,14 @@ public class OperationChain implements Comparable<OperationChain> {
         parentOperations.clear();
     }
 
+    public void updateLDDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation) {
+        parentOperations.add(prevOperation);
+        for (Operation parentOperation : parentOperations) {
+            updateDependencies(childOperation, parentOperation, DependencyType.FD);
+        }
+        parentOperations.clear();
+    }
+
     public void updateNonDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation) {
         parentOperations.add(prevOperation);
         if (childOperation.bid != prevOperation.bid) {
