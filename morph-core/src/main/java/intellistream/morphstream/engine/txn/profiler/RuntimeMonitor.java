@@ -223,7 +223,7 @@ public class RuntimeMonitor extends Thread {
         double accumulativeThroughput = 1 / accumulativeLatency;
 
         long batchDurationSum = Arrays.stream(batchDurationArray).sum();
-        double throughput = totalBatchSize * 1E9 / batchDurationSum;
+        double throughput = totalBatchSize * 1E9 / (batchDurationSum / 4.0);
         opThroughputMap.get(operatorID).put(latestBatchID, throughput); // keep record for throughput history
         // latency
         double latencySum = 0;
@@ -234,9 +234,9 @@ public class RuntimeMonitor extends Thread {
         double minLatency = Arrays.stream(minLatencyArray).min().orElse(Double.MAX_VALUE);
         double maxLatency = Arrays.stream(maxLatencyArray).max().orElse(Double.MIN_VALUE);
         // overall execution breakdown
-        long avgStreamTime = totalStreamTime / totalBatchSize;
-        long avgTxnTime = totalTxnTime / totalBatchSize;
-        long avgTotalTime = batchDurationSum / totalBatchSize;
+        long avgStreamTime = totalStreamTime / (totalBatchSize * 4);
+        long avgTxnTime = totalTxnTime / (totalBatchSize * 4);
+        long avgTotalTime = batchDurationSum / (totalBatchSize * 4);
         long avgOverheadTime = avgTotalTime - avgStreamTime - avgTxnTime;
         OverallTimeBreakdown overallTimeBreakdown = new OverallTimeBreakdown(avgTotalTime, avgStreamTime, avgTxnTime, avgOverheadTime);
 
