@@ -81,8 +81,19 @@ public class SLClient extends Client {
             StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
             StateAccess destTransfer = stateAccessMap.get("destTransfer");
             Double[] stateAccessResults = new Double[2];
-            stateAccessResults[0] = srcTransfer.getStateObject("srcAccountState").getDoubleValue("balance");
-            stateAccessResults[1] = destTransfer.getStateObject("destAccountState").getDoubleValue("balance");
+
+            try {
+                stateAccessResults[0] = srcTransfer.getStateObject("srcAccountState").getDoubleValue("balance");
+            } catch (NullPointerException e) {
+                stateAccessResults[0] = 0.0;
+            }
+
+            try {
+                stateAccessResults[1] = destTransfer.getStateObject("destAccountState").getDoubleValue("balance");
+            } catch (NullPointerException e) {
+                stateAccessResults[1] = 0.0;
+            }
+
             result.setResults(stateAccessResults);
         } else if (Objects.equals(txnName, "deposit")) {
             StateAccess deposit = stateAccessMap.get("deposit");
