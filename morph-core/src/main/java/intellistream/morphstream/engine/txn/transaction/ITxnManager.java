@@ -42,7 +42,7 @@ public interface ITxnManager {
 
     void BeginTransaction(TxnContext txnContext);
 
-    boolean CommitTransaction(TxnContext txn_context);
+    boolean CommitTransaction(TxnContext txn_context, int batchID);
 
     SchedulerContext getSchedulerContext();
 

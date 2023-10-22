@@ -96,12 +96,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
 
+        int stateAccessIndex = 0; // index of state access in the txn, used to generate StateAccessID (OperationID)
         //Each event triggers multiple state accesses
         for (Map.Entry<String, StateAccessDescription> descEntry: txnDescription.getStateAccessDescEntries()) {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
             StateAccessDescription stateAccessDesc = descEntry.getValue();
-            StateAccess stateAccess = new StateAccess(this.getOperatorID(), event.getFlag(), stateAccessDesc);
+            StateAccess stateAccess = new StateAccess(event.getBid() + "_" + stateAccessIndex, this.getOperatorID(), event.getFlag(), stateAccessDesc);
+            stateAccessIndex += 1;
 
             //Each state access involves multiple state objects
             for (StateObjectDescription stateObjDesc: stateAccessDesc.getStateObjDescList()) {
@@ -128,7 +130,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }
 
-        transactionManager.CommitTransaction(txnContext);
+        transactionManager.CommitTransaction(txnContext, currentBatchID);
         eventQueue.add(event);
     }
 

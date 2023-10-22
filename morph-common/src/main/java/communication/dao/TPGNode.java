@@ -13,7 +13,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 public class TPGNode {
-    private String operationID;
+    private String operationID; // state access operation ID = txn.bid + stateAccessIndex (in the txn)
     private String txnType;
     private String targetTable;
     private String targetKey;
