@@ -6,13 +6,13 @@
           <nz-breadcrumb-item>
             <a [routerLink]="['../../']">Overview</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item *ngIf="job?.isRunning">
+          <nz-breadcrumb-item *ngIf="this.jobStarted">
             <a [routerLink]="['../../applications/processing-applications']">Processing Applications</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item *ngIf="!job?.isRunning">
+          <nz-breadcrumb-item *ngIf="!this.jobStarted">
             <a [routerLink]="['../../applications/finished-applications']">Finished Applications</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item>{{job?.name}} <b>[{{job?.isRunning?'Running':'Stopped'}}]</b></nz-breadcrumb-item>
+          <nz-breadcrumb-item>{{job?.name}} <b>[{{this.jobStarted?'Running':'Stopped'}}]</b></nz-breadcrumb-item>
         </nz-breadcrumb>
       </nz-col>
     </div>
@@ -20,7 +20,7 @@
       <nz-col nzSpan="24" class="container" id="job-description-view">
         <nz-descriptions id="job-description" nzBordered>
           <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{job?.nthreads}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Status" nzSpan="1">{{job?.isRunning?"Running":"Stopped"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Status" nzSpan="1">{{this.jobStarted?"Running":"Stopped"}}</nz-descriptions-item>
 <!--          <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>-->
 <!--          <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>-->
           <nz-descriptions-item nzTitle="Number of Operators" nzSpan="2">{{job?.operators?.length}}</nz-descriptions-item>
@@ -51,7 +51,7 @@
                   <nz-list-item-meta-description>Number of instance: {{operator?.numOfInstances}}</nz-list-item-meta-description>
                 </nz-list-item-meta>
                 throughput: {{operatorAccumulativeThroughput['sl']}} tuples/s &nbsp;&nbsp;&nbsp;&nbsp;
-                latency: {{operatorAccumulativeThroughput['sl']}} s
+                latency: {{operatorAccumulativeLatency['sl']}} ms
               </nz-list-item>
             </nz-list>
           </nz-collapse-panel>
@@ -160,7 +160,6 @@
                 >
                   Realtime
                 </label>
-<!--                [disabled]="!job.isRunning"-->
               </nz-col>
             </nz-row>
             <nz-row nzJustify="space-around">
@@ -212,13 +211,6 @@
               <nz-descriptions-item nzSpan="3" nzTitle="Overall Throughput (tuple/s)">{{statisticBatch?.throughput}}</nz-descriptions-item>
             </nz-descriptions>
           </nz-tab>
-<!--          <nz-tab [nzTitle]="OutputFileHeader">-->
-<!--            <ng-template #OutputFileHeader>-->
-<!--              <div>-->
-<!--                <span nz-icon nzType="file-zip" nzTheme="outline" style="margin-right: 2px;"></span> Output File-->
-<!--              </div>-->
-<!--            </ng-template>-->
-<!--          </nz-tab>-->
         </nz-tabset>
       </nz-col>
       <nz-col nzSpan="10" class="container">

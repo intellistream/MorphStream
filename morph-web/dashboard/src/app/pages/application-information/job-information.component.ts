@@ -39,11 +39,11 @@ export class JobInformationComponent implements OnInit {
   batchOptions: any[] = [];
   throughputAndLatency: any[] = [
     {name: 'Throughput (k tuples/s)', series: []},
-    {name: 'Latency (s)', series: []}
+    {name: 'Latency (ms)', series: []}
   ];
   onShowingThroughputAndLatency: any[] = [
     {name: 'Throughput (k tuples/s)', series: []},
-    {name: 'Latency (s)', series: []}
+    {name: 'Latency (ms)', series: []}
   ];
 
   timePieData: any[] = [{name: 'overhead time time (ms)', value: 0,},
@@ -96,6 +96,7 @@ export class JobInformationComponent implements OnInit {
   }>;
 
   runtimeDuration = 0;
+  listenIntervalId: number;     // interval id for listening to the performance data
 
   constructor(private route: ActivatedRoute,
               private jobInformationService: JobInformationService,
@@ -171,12 +172,24 @@ export class JobInformationComponent implements OnInit {
     });
   }
 
+  /**
+   * Update the throughput and latency data
+   */
   updateOnShowingThroughputAndLatency() {
-    // if ( this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1 > this.throughputAndLatency[0].series.length) {
-    //   this.throughputLatencyStartBatch = this.throughputAndLatency[0].series.length - this.throughputLatencyGraphSize + 1;
-    // }
-    this.onShowingThroughputAndLatency[0].series = this.throughputAndLatency[0].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
-    this.onShowingThroughputAndLatency[1].series = this.throughputAndLatency[1].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
+    if (this.realTimePerformanceBoxChecked) {
+      if (this.operatorLatestBatchNum['sl'] - this.throughputLatencyGraphSize + 1 > 0) {
+        this.throughputLatencyStartBatch = this.operatorLatestBatchNum['sl'] - this.throughputLatencyGraphSize + 1;
+        this.onShowingThroughputAndLatency[0].series = this.throughputAndLatency[0].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
+        this.onShowingThroughputAndLatency[1].series = this.throughputAndLatency[1].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
+      } else {
+        this.throughputLatencyStartBatch = 1;
+        this.onShowingThroughputAndLatency[0].series = this.throughputAndLatency[0].series.slice(0, this.throughputLatencyGraphSize);
+        this.onShowingThroughputAndLatency[1].series = this.throughputAndLatency[1].series.slice(0, this.throughputLatencyGraphSize);
+      }
+    } else {
+      this.onShowingThroughputAndLatency[0].series = this.throughputAndLatency[0].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
+      this.onShowingThroughputAndLatency[1].series = this.throughputAndLatency[1].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
+    }
     this.onShowingThroughputAndLatency = this.onShowingThroughputAndLatency.slice();
   }
 
@@ -184,21 +197,11 @@ export class JobInformationComponent implements OnInit {
    * Start listening to the performance data
    */
   startListening() {
-    setInterval(() => {
+    this.listenIntervalId = setInterval(() => {
       this.update();
-      this.runtimeDuration += 0.1;  // seconds
-    }, 100);
+      this.runtimeDuration = parseFloat((this.runtimeDuration + 0.1).toFixed(1));  // seconds
+    }, 1000);
   }
-
-  /**
-   * Initialize the throughput and latency data
-   */
-  // initializeData() {
-  //   for (let i = 0; i < 10; i++) {
-  //     this.throughputAndLatency[0].series.push({name: `batch${i}`, value: 0});
-  //     this.throughputAndLatency[1].series.push({name: `batch${i}`, value: 0});
-  //   }
-  // }
 
   /**
    * Update the runtime data
@@ -228,7 +231,7 @@ export class JobInformationComponent implements OnInit {
     batch.avgLatency = parseFloat((batch.avgLatency / 10**6).toFixed(1)); // ms
     batch.minLatency = parseFloat((batch.minLatency / 10**6).toFixed(1)); // ms
     batch.maxLatency = parseFloat((batch.maxLatency / 10**6).toFixed(1)); // ms
-    batch.accumulativeLatency = parseFloat((batch.accumulativeLatency / 10**6).toFixed(1)); // ms
+    batch.accumulativeLatency = parseFloat((batch.accumulativeLatency * 10**3).toFixed(3)); // ms
     batch.accumulativeThroughput = parseFloat(batch.accumulativeThroughput.toFixed(1)); // k tuples/s
     return batch;
   }
@@ -452,6 +455,10 @@ export class JobInformationComponent implements OnInit {
    * Callback when user stops the job
    */
   onStop() {
+    if (this.realTimePerformanceBoxChecked) {
+      this.onCheckBoxChanged(false);
+    }
+    clearInterval(this.listenIntervalId);  // stop runtime-querying performance data
     this.jobInformationService.stopJob(this.job.jobId).subscribe(success => {
       if (success) {
         // stop runtime-querying performance data
