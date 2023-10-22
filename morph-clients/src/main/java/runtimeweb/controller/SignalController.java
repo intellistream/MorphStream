@@ -1,11 +1,11 @@
 package runtimeweb.controller;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import communication.dao.JobSubmit;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import runtimeweb.service.SignalService;
 
 @Controller
@@ -36,5 +36,10 @@ public class SignalController {
     @PostMapping("/stop/{jobId}")
     public ResponseEntity<Boolean> onStopSignal(String jobId) {
         return new ResponseEntity<>(signalService.onStopSignal(jobId), HttpStatus.OK);
+    }
+
+    @PostMapping("/submit")
+    public ResponseEntity<Boolean> onSubmitSignal(@RequestBody JobSubmit job) {
+        return new ResponseEntity<>(signalService.onSubmitSignal(job.getJob(), job.getParallelism(), job.isStartNow(), job.getCode()), HttpStatus.OK);
     }
 }

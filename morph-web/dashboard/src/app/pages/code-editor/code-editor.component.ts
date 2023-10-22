@@ -2,6 +2,8 @@ import {AfterViewInit, Component, ViewChild} from '@angular/core';
 
 import 'codemirror/mode/clike/clike';
 import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
+import {CodeEditorService} from "./code-editor.service";
+import {NzMessageService} from "ng-zorro-antd/message";
 
 @Component({
   selector: 'app-code-editor',
@@ -33,12 +35,12 @@ export class CodeEditorComponent implements AfterViewInit{
     startNow: FormControl<boolean>;
   }>;
 
-  constructor(private fb: NonNullableFormBuilder) {
+  constructor(private fb: NonNullableFormBuilder, private codeEditorService: CodeEditorService, private message: NzMessageService) {
     this.submitForm = this.fb.group({
       job: ['', [Validators.required]],
       parallelism: [4, [Validators.required]],
       startNow: [false, [Validators.required]]
-    })
+    });
   }
 
   ngAfterViewInit(): void {
@@ -54,7 +56,9 @@ export class CodeEditorComponent implements AfterViewInit{
 
   confirmSubmit() {
     if (this.submitForm.valid) {
-
+      this.codeEditorService.submitNewJob(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code).subscribe(res => {
+        this.message.success(`Submit job ${this.submitForm.value.job} successfully`);
+      });
     } else {
       Object.values(this.submitForm.controls).forEach(control => {
         if (control.invalid) {

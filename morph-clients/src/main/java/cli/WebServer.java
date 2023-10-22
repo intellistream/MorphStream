@@ -78,7 +78,6 @@ public class WebServer implements Runnable {
 
 
     public static void createJobInfoJSON(String newAppID) {
-
         File directory = new File(String.format("%s", dataPath));
         if (!directory.exists()) {
             if (directory.mkdirs()) {

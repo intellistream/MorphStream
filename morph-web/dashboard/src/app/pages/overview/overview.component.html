@@ -44,8 +44,8 @@
           <tr>
             <th>Name</th>
             <th>Working Threads</th>
-            <th>CPU</th>
-            <th>RAM</th>
+<!--            <th>CPU Utilization</th>-->
+<!--            <th>RAM Utilization</th>-->
             <th>Start Time</th>
             <th>Duration</th>
             <th>Status</th>
@@ -55,8 +55,8 @@
           <tr *ngFor="let application of currentPageJob">
             <td><a [routerLink]="['/job', application.jobId]"><b>{{application.name}}</b></a></td>
             <td>{{application.nthreads}}</td>
-            <td>{{application.cpu}}</td>
-            <td>{{application.ram}}</td>
+<!--            <td>{{application.cpu}}</td>-->
+<!--            <td>{{application.ram}}</td>-->
             <td>{{application.startTime}}</td>
             <td>{{application.duration}}</td>
             <td>{{application.isRunning?"Running":"stopped"}}</td>
