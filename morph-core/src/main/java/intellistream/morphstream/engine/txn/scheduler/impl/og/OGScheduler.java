@@ -279,7 +279,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
+    public void TxnSubmitFinished(Context context, int batchID) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<Operation> operationGraph = new ArrayList<>();

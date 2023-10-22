@@ -105,16 +105,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         if (enable_latency_measurement) {
-            String operationID = String.valueOf(operation.bid);
+            String operationID = operation.stateAccess.getOperationID();
             TPGNode node = new TPGNode(operationID, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
-            List<TPGEdge> edges = new ArrayList<>();
             for (MetaTypes.DependencyType type : dependencyTypes) {
                 for (Operation child : operation.getChildren(type)) {
-                    edges.add(new TPGEdge(operationID, String.valueOf(child.bid), type.toString()));
+                    TPGEdge edge = new TPGEdge(operationID, child.stateAccess.getOperationID(), type.toString());
+                    RuntimeMonitor.get().UPDATE_TPG_EDGE(operation.stateAccess.getOperatorID(), batchID, node, edge);
                 }
             }
-            //TODO: pass in operatorID
-            RuntimeMonitor.get().UPDATE_TPG(operation.stateAccess.getOperatorID(), batchID, node, edges);
         }
 
         // apply function
@@ -202,7 +200,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
+    public void TxnSubmitFinished(Context context, int batchID) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         int txnOpId = 0;
@@ -247,8 +245,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
 //            set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
             tpg.setupOperationTDFD(set_op, request);
-            if (txnOpId == 0)
-                headerOperation = set_op; //TODO: this is the parent for all operations in the txn for LD
+            if (txnOpId == 0) {
+                headerOperation = set_op; //In TPG, this is the LD parent for all operations in the same txn
+            }
+
+            // Update LD
+            String operationID = set_op.stateAccess.getOperationID();
+            String LDParentOperationID = String.valueOf(headerOperation.stateAccess.getOperationID());
+            TPGNode node = new TPGNode(operationID, set_op.accessType.toString(), set_op.table_name, set_op.d_record.record_.GetPrimaryKey());
+            TPGEdge edge = new TPGEdge(LDParentOperationID, operationID, MetaTypes.DependencyType.LD.toString());
+            RuntimeMonitor.get().UPDATE_TPG_EDGE(set_op.stateAccess.getOperatorID(), batchID, node, edge);
+
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
             set_op.setTxnOpId(txnOpId++);
             set_op.addHeader(headerOperation);

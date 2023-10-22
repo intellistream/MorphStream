@@ -18,7 +18,7 @@ public interface IScheduler<Context> {
 
     void TxnSubmitBegin(Context context);
 
-    void TxnSubmitFinished(Context context);
+    void TxnSubmitFinished(Context context, int batchID);
 
     void AddContext(int thisTaskId, Context context);
 

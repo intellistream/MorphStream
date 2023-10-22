@@ -129,9 +129,10 @@ public class RuntimeMonitor extends Thread {
         opPostTime.get(operatorID).get(batchID)[threadID] = System.nanoTime() - opPostStartTime.get(operatorID).get(batchID)[threadID];
     }
 
-    public void UPDATE_TPG(String operatorID, int batchID, TPGNode node, List<TPGEdge> edges) {
+    public void UPDATE_TPG_EDGE(String operatorID, int batchID, TPGNode node, TPGEdge edge) {
         opTPGMap.get(operatorID).putIfAbsent(batchID, new ConcurrentHashMap<>());
-        opTPGMap.get(operatorID).get(batchID).put(node, edges);
+        opTPGMap.get(operatorID).get(batchID).putIfAbsent(node, new ArrayList<>());
+        opTPGMap.get(operatorID).get(batchID).get(node).add(edge);
     }
 
     //TODO: Merge this with runtime submission method

@@ -190,7 +190,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
-    public abstract boolean CommitTransaction(TxnContext txn_context);
+    public abstract boolean CommitTransaction(TxnContext txn_context, int batchID);
 
     @Override
     public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) {

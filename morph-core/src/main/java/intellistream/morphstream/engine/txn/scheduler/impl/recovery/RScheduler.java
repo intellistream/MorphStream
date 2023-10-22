@@ -86,7 +86,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
+    public void TxnSubmitFinished(Context context, int batchID) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         int txnOpId = 0;
         for (Request request : context.requests) {

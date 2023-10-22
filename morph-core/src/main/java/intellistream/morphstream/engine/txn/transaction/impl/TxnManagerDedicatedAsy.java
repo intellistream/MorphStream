@@ -413,13 +413,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context) {
+    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
         if (enableGroup) {
-            schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitFinished(context);
+            schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitFinished(context, batchID);
             //TODO: Replace with the following code for stage
 //            stage.getScheduler().TxnSubmitFinished(context);
         } else {
-            scheduler.TxnSubmitFinished(context);
+            scheduler.TxnSubmitFinished(context, batchID);
         }
         return true;
     }
