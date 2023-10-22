@@ -45,7 +45,6 @@ public class BatchInfoService extends AbstractService {
    public Batch findBatchById(String jobId, String operatorId, String batchId) {
         File directory = new File(PATH+"\\"+jobId+"\\"+operatorId);
         if (directory.exists() && directory.isDirectory()) {
-            System.out.println(batchId + ".json");
             FilenameFilter jsonFilter = (dir, name) -> name.equals(batchId + ".json");
             File[] jsonFiles = directory.listFiles(jsonFilter);
 

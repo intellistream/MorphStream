@@ -143,5 +143,4 @@ public class SLClient extends Client {
         WebServer.createJobInfoJSON("StreamLedger");
         startJob(args);
     }
-
 }

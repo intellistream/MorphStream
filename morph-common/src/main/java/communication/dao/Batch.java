@@ -29,6 +29,7 @@ public class Batch {
     public Batch(String jobId, String operatorID, double throughput,
                  double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
                  OverallTimeBreakdown overallTimeBreakdown, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg, int latestBatchId) {
+        this.batchId = latestBatchId;
         this.jobId = jobId;
         this.operatorID = operatorID;
         this.throughput = throughput;

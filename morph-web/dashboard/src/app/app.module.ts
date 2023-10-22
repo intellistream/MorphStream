@@ -44,6 +44,10 @@ import {NzCollapseModule} from "ng-zorro-antd/collapse";
 import { NzGraphModule } from 'ng-zorro-antd/graph';
 import {NzPopoverModule} from "ng-zorro-antd/popover";
 import {NzMessageModule} from "ng-zorro-antd/message";
+import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor';
+import {NzInputModule} from "ng-zorro-antd/input";
+import {NzInputNumberModule} from "ng-zorro-antd/input-number";
+import {NzSwitchModule} from "ng-zorro-antd/switch";
 
 registerLocaleData(en);
 
@@ -94,7 +98,11 @@ registerLocaleData(en);
     NzCollapseModule,
     NzGraphModule,
     NzPopoverModule,
-    NzMessageModule
+    NzMessageModule,
+    NzCodeEditorModule,
+    NzInputModule,
+    NzInputNumberModule,
+    NzSwitchModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }

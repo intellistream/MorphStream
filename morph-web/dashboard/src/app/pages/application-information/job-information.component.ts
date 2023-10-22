@@ -66,6 +66,9 @@ export class JobInformationComponent implements OnInit {
       target: 'F',
       type: 'LD'
     }];
+  numOfTD = 0;
+  numOfLD = 0;
+  numOfPD = 0;
 
   nodesSelections: any;
   linksSelections: any;
@@ -123,6 +126,9 @@ export class JobInformationComponent implements OnInit {
     });
   }
 
+  /**
+   * Initialize the throughput and latency data
+   */
   initializeData() {
     for (let i = 0; i < 10; i++) {
       this.throughputAndLatency[0].series.push({name: `batch${i}`, value: 0});
@@ -152,7 +158,7 @@ export class JobInformationComponent implements OnInit {
   updatePerformanceGraph(batch: Batch) {
     if (batch.batchId < 10) {
       this.throughputAndLatency[0].series[batch.batchId].value = batch.throughput;
-      this.throughputAndLatency[1].series[batch.batchId].value = batch.avgLatency / 100000;
+      this.throughputAndLatency[1].series[batch.batchId].value = batch.avgLatency / 4000;
     } else {
       this.throughputAndLatency[0].series.push({
         name: this.operatorLatestBatchNum['sl'].toString() + " batch",
@@ -160,7 +166,7 @@ export class JobInformationComponent implements OnInit {
       });
       this.throughputAndLatency[1].series.push({
         name: this.operatorLatestBatchNum['sl'].toString() + " batch",
-        value: batch.avgLatency / 100000
+        value: batch.avgLatency / 4000
       });
     }
     if (this.throughputAndLatency[0].series.length > 10) {
@@ -168,22 +174,6 @@ export class JobInformationComponent implements OnInit {
       this.throughputAndLatency[1].series.shift();
     }
     this.throughputAndLatency = this.throughputAndLatency.slice();
-  }
-
-  updateTpgGraph() {
-    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl'].toString()).subscribe(res => {
-      if (res) {
-        this.tpgNodes = [];
-        this.tpgLinks = [];
-        for (let node of res.tpg) {
-          this.tpgNodes.push({name: node.operationID});
-          for (let edge of node.edges) {
-            this.tpgLinks.push({source: node.operationID, target: edge.dstOperatorID, type: edge.dependencyType});
-          }
-        }
-        // this.drawTpgGraph();
-      }
-    });
   }
 
   /**
@@ -208,9 +198,6 @@ export class JobInformationComponent implements OnInit {
     }
   }
 
-  numOfTD = 0;
-  numOfLD = 0;
-  numOfPD = 0;
   submitTpgForm(): void {
     if (this.tpgForm.valid) {
       this.jobInformationService.getBatchById(this.job.jobId, "sl", this.tpgForm.controls.batch.value).subscribe(res => {
@@ -305,7 +292,7 @@ export class JobInformationComponent implements OnInit {
       .attr('class', 'link')
       .style("stroke", (d: any) => {
         console.log(d)
-        if (d.type == "TD") {
+        if (d.type == "FD") {
           return "#94A0C0"
         } else if (d.type == "LD") {
           return "#B7C099"
@@ -338,10 +325,6 @@ export class JobInformationComponent implements OnInit {
     this.tpgSvgSimulation.alpha(0.3).restart();
     setInterval(() => {
       this.tpgSvgSimulation.stop();
-      this.nodesSelections.each(function (d) {
-        d.originalX = d.x;
-        d.originalY = d.y;
-      });
       }, 2000);
 
     const tooltip = d3.select(this.tpgContainer.nativeElement)
@@ -355,7 +338,7 @@ export class JobInformationComponent implements OnInit {
           .duration(200)
           .style('opacity', 0.9);
 
-      tooltip.html(`Node Name: ${d.name}`)
+      tooltip.html(`Transaction ID: ${d.name}`)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 28) + 'px');
     });
@@ -414,6 +397,9 @@ export class JobInformationComponent implements OnInit {
     this.tpgSvg.select('.tooltip').attr('transform', `scale(${1 / k})`);
   }
 
+  /**
+   * Callback when the tpg modal is expanded
+   */
   onExpandTpgModal() {
     this.isTpgModalVisible = true;
     setTimeout(() => {
@@ -421,8 +407,11 @@ export class JobInformationComponent implements OnInit {
     }, 1000);
   }
 
+  /**
+   * Callback when the tpg modal is closed
+   */
   onClearTpgModal() {
     this.isTpgModalVisible = false;
-    this.drawTpgGraph();
+    // this.drawTpgGraph();
   }
 }
