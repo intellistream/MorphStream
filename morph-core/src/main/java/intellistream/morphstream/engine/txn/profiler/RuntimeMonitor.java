@@ -3,11 +3,8 @@ package intellistream.morphstream.engine.txn.profiler;
 
 import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import communication.dao.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import communication.dao.Batch;
-import communication.dao.OverallTimeBreakdown;
-import communication.dao.TPGEdge;
-import communication.dao.TPGNode;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
@@ -40,6 +37,8 @@ public class RuntimeMonitor extends Thread {
     // The following 2 keep record of summarized execution time for each event, updated after each event's processing finished
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opStreamTimePerBatch = new ConcurrentHashMap<>(); //operatorID -> batchID -> stream processing time per batch
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opTxnTimePerBatch = new ConcurrentHashMap<>(); //operatorID -> batchID -> txn time per batch
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> opAccTimeMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> overall latency until each batch
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> opAccNumEventsMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> overall throughput until each batch
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, ConcurrentHashMap<TPGNode, List<TPGEdge>>>> opTPGMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> TPG
     // General usages
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, AtomicInteger>> opNumThreadCompletedMap = new ConcurrentHashMap<>(); //operatorID -> num of threads that have submitted performance data
@@ -83,6 +82,8 @@ public class RuntimeMonitor extends Thread {
 
             opStreamTimePerBatch.put(operatorID, new ConcurrentHashMap<>());
             opTxnTimePerBatch.put(operatorID, new ConcurrentHashMap<>());
+            opAccTimeMap.put(operatorID, new ConcurrentHashMap<>());
+            opAccNumEventsMap.put(operatorID, new ConcurrentHashMap<>());
         }
 
         runtimeMonitor.start();
@@ -211,6 +212,16 @@ public class RuntimeMonitor extends Thread {
         long batchStartTime = Arrays.stream(batchStartTimeArray).min().orElse(Long.MAX_VALUE);
         long batchEndTime = Arrays.stream(batchEndTimeArray).max().orElse(Long.MIN_VALUE);
         long actualBatchDuration = batchEndTime - batchStartTime;
+        if (latestBatchID > 1) {
+            opAccTimeMap.get(operatorID).put(latestBatchID, opAccTimeMap.get(operatorID).get(latestBatchID - 1) + actualBatchDuration);
+            opAccNumEventsMap.get(operatorID).put(latestBatchID, opAccNumEventsMap.get(operatorID).get(latestBatchID - 1) + totalBatchSize);
+        } else {
+            opAccTimeMap.get(operatorID).put(latestBatchID, actualBatchDuration);
+            opAccNumEventsMap.get(operatorID).put(latestBatchID, totalBatchSize);
+        }
+        double accumulativeLatency = opAccTimeMap.get(operatorID).get(latestBatchID) * 1E-9 / opAccNumEventsMap.get(operatorID).get(latestBatchID);
+        double accumulativeThroughput = 1 / accumulativeLatency;
+
         long batchDurationSum = Arrays.stream(batchDurationArray).sum();
         double throughput = totalBatchSize * 1E9 / batchDurationSum;
         opThroughputMap.get(operatorID).put(latestBatchID, throughput); // keep record for throughput history
@@ -229,15 +240,33 @@ public class RuntimeMonitor extends Thread {
         long avgOverheadTime = avgTotalTime - avgStreamTime - avgTxnTime;
         OverallTimeBreakdown overallTimeBreakdown = new OverallTimeBreakdown(avgTotalTime, avgStreamTime, avgTxnTime, avgOverheadTime);
 
-//        BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
-//                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
-//                overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
+        double explore_time = 0;
+        double useful_time = 0;
+        double abort_time = 0;
+        double construct_time = 0;
+        double tracking_time = 0;
+        for (int threadId = 0; threadId < threadNum; threadId++) {
+            explore_time += Metrics.Scheduler_Record.Explore[threadId].getMean();
+//            useful_time += Metrics.Scheduler_Record.Useful[threadId].getMean();
+            abort_time += Metrics.Scheduler_Record.Abort[threadId].getMean();
+            construct_time += Metrics.Scheduler_Record.Construct[threadId].getMean();
+            tracking_time += Metrics.Scheduler_Record.Tracking[threadId].getMean();
+        }
+        useful_time = Metrics.Scheduler_Record.Useful[0].getMean();
+        explore_time = explore_time / threadNum;
+//        useful_time = useful_time / threadNum;
+        abort_time = abort_time / threadNum;
+        construct_time = construct_time / threadNum;
+        tracking_time = tracking_time / threadNum;
+        SchedulerTimeBreakdown schedulerTimeBreakdown = new SchedulerTimeBreakdown(explore_time, useful_time, abort_time, construct_time, tracking_time);
+
         Batch batch = new Batch("3", String.valueOf(operatorID),
-                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
-                overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
+                throughput, minLatency, maxLatency, avgLatency,
+                totalBatchSize, actualBatchDuration,
+                accumulativeLatency, accumulativeThroughput,
+                overallTimeBreakdown, schedulerTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
 
         try {
-//            File directory = new File(String.format("%s/%s/%s", dataPath, applicationID, operatorID));
             File directory = new File(String.format("%s/%s/%s", dataPath, "3", operatorID));
             if (!directory.exists()) {
                 if (directory.mkdirs()) {

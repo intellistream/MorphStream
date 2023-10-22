@@ -21,6 +21,4 @@ public class SchedulerTimeBreakdown {
         this.constructTime = constructTime;
         this.trackingTime = trackingTime;
     }
-
-    public SchedulerTimeBreakdown () {}
 }
