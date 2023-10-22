@@ -2,6 +2,7 @@ package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.util.AppConfig;
 import intellistream.morphstream.util.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,23 +37,27 @@ public class FileDataGenerator {
     private int totalEvents;
     private HashMap<String, Integer> numItemMaps;//table name (key) to number of items
     private HashMap<String, Integer> intervalMaps = new HashMap<>();//table name (key) to interval
-    private HashMap<String, Integer> stateAssessSkewMap = new HashMap<>();//event -> skew access skewness
+    private HashMap<String, Double> stateAssessSkewMap = new HashMap<>();//event -> skew access skewness
     private HashMap<String, Integer> eventRatioMap = new HashMap<>();//event -> event ratio
     private ArrayList<String> eventList = new ArrayList<>();//event list
     private String[] eventTypes;//event list
     private int eventID = 0;
     private HashMap<String, HashMap<String,FastZipfGenerator>> zipfGeneratorHashMap= new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, HashMap<String, List<FastZipfGenerator>>> partitionZipfGeneratorHashMap = new HashMap<>();//event -> key -> zipf generator
-    private HashMap<String, Integer> eventAbortMap = new HashMap<>();//event -> AbortRatio
+    private HashMap<String, Double> eventAbortMap = new HashMap<>();//event -> AbortRatio
     private HashMap<String, Integer> eventMultiPartitionMap = new HashMap<>();//event -> MultiPartitionRatio
     private String[] phaseType;//Phase Type for dynamic workload
     protected List<String> tranToDecisionConf = new ArrayList<>();
     private int phase;
     private static ArrayList<TransactionalEvent> inputEvents;
-    public String prepareInputData() throws IOException {
+    public String prepareInputData(boolean isExist) throws IOException {
         configure_store();
-        generateStream();
-        dumpGeneratedDataToFile();
+        if (isExist) {
+            generateTPGProperties();
+        } else {
+            generateStream();
+            dumpGeneratedDataToFile();
+        }
         return inputFilePath;
     }
     private void configure_store() {
@@ -72,8 +77,8 @@ public class FileDataGenerator {
         } catch (IOException e) {
             System.out.println("Error in locating input file: " + e.getMessage());
         }
-        totalThreads = configuration.getInt("totalThreads", 4);
-        punctuation = configuration.getInt("punctuation", 1000);
+        totalThreads = configuration.getInt("tthread", 4);
+        punctuation = configuration.getInt("checkpoint", 1000);
         totalEvents = configuration.getInt("totalEvents", totalThreads * punctuation);
         phaseType = configuration.getString("workloadType", "default").split(",");
         phase = 0;
@@ -91,12 +96,12 @@ public class FileDataGenerator {
             }
             eventKeyMap.put(eventType, keyMap);
             eventValueNamesMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
-            stateAssessSkewMap.put(eventType, configuration.getInt(eventType + "_state_access_skewness", 0));
+            stateAssessSkewMap.put(eventType, configuration.getDouble(eventType + "_state_access_skewness", 0));
             eventRatioMap.put(eventType, configuration.getInt(eventType + "_event_ratio", 50));
             for (int i = 0; i < eventRatioMap.get(eventType) / 10; i++) {
                 eventList.add(eventType);
             }
-            eventAbortMap.put(eventType, configuration.getInt(eventType + "_abort_ratio", 0));
+            eventAbortMap.put(eventType, configuration.getDouble(eventType + "_abort_ratio", 0));
             eventMultiPartitionMap.put(eventType, configuration.getInt(eventType + "_ratio_of_multi_partition_transactions", 0));
             HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();//tableNames -> zipf generator
             HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();//tableNames -> Lists of partition zipf generator
@@ -205,44 +210,44 @@ public class FileDataGenerator {
                 case "unchanging":
                     break;
                 case "Up_skew":
-                    for (String event : eventList) {
-                        if (stateAssessSkewMap.get(event) + 20 <= 100) {
-                            stateAssessSkewMap.put(event, stateAssessSkewMap.get(event) + 20);
+                    for (String event : eventTypes) {
+                        if (stateAssessSkewMap.get(event) + 0.2 <= 1) {
+                            stateAssessSkewMap.put(event, stateAssessSkewMap.get(event) + 0.2);
                         }
                     }
                     break;
                 case "Down_skew":
-                    for (String event : eventList) {
-                        if (stateAssessSkewMap.get(event) - 20 >= 0) {
-                            stateAssessSkewMap.put(event, stateAssessSkewMap.get(event) - 20);
+                    for (String event : eventTypes) {
+                        if (stateAssessSkewMap.get(event) - 0.2 >= 0) {
+                            stateAssessSkewMap.put(event, stateAssessSkewMap.get(event) - 0.2);
                         }
                     }
                     break;
                 case "Up_Multi_Partition":
-                    for (String event : eventList) {
+                    for (String event : eventTypes) {
                         if (eventMultiPartitionMap.get(event) + 20 <= 100) {
                             eventMultiPartitionMap.put(event, eventMultiPartitionMap.get(event) + 20);
                         }
                     }
                     break;
                 case "Down_Multi_Partition":
-                    for (String event : eventList) {
+                    for (String event : eventTypes) {
                         if (eventMultiPartitionMap.get(event) - 20 >= 0) {
                             eventMultiPartitionMap.put(event, eventMultiPartitionMap.get(event) - 20);
                         }
                     }
                     break;
                 case "Up_abort":
-                    for (String event : eventList) {
-                        if (eventAbortMap.get(event) + 20 <= 100) {
-                            eventAbortMap.put(event, eventAbortMap.get(event) + 20);
+                    for (String event : eventTypes) {
+                        if (eventAbortMap.get(event) + 0.2 <= 1) {
+                            eventAbortMap.put(event, eventAbortMap.get(event) + 0.2);
                         }
                     }
                     break;
                 case "Down_abort":
-                    for (String event : eventList) {
-                        if (eventAbortMap.get(event) - 20 >= 0) {
-                            eventAbortMap.put(event, eventAbortMap.get(event) - 20);
+                    for (String event : eventTypes) {
+                        if (eventAbortMap.get(event) - 0.2 >= 0) {
+                            eventAbortMap.put(event, eventAbortMap.get(event) - 0.2);
                         }
                     }
                     break;
@@ -256,7 +261,55 @@ public class FileDataGenerator {
         //TD,LD,PD,VDD,Skew,R_of_A,isCD,isCC,
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
+
+        // TD = 1.5 * punctuation
+        double td = 1.5;
+        stringBuilder.append(td);
+        stringBuilder.append(",");
+        // LD = 0.5 * punctuation
+        double ld = 0.5;
+        stringBuilder.append(ld);
+        stringBuilder.append(",");
+        // PD = 0.5 * punctuation
+        double pd = 0.5;
+        stringBuilder.append(pd);
+        stringBuilder.append(",");
+        double skewness = 0;
+        for (Map.Entry entry : stateAssessSkewMap.entrySet()) {
+            skewness += 0.5 * (double) entry.getValue();
+        }
+        stringBuilder.append(skewness);
+        stringBuilder.append(",");
+        double abortRatio = 0;
+        for (Map.Entry entry : eventAbortMap.entrySet()) {
+            abortRatio += 0.5 * (double) entry.getValue();
+        }
+        stringBuilder.append(abortRatio);
+        stringBuilder.append(",");
+        if (AppConfig.isCyclic) {
+            stringBuilder.append("1,");
+        } else {
+            stringBuilder.append("0,");
+        }
+        if (AppConfig.complexity < 40000){
+            stringBuilder.append("0,");
+        } else {
+            stringBuilder.append("1,");
+        }
+
+        stringBuilder.append(eventID + MorphStreamEnv.get().configuration().getInt("checkpoint")*MorphStreamEnv.get().configuration().getInt("tthread"));
         this.tranToDecisionConf.add(stringBuilder.toString());
     }
-    
+
+    public List<String> getTranToDecisionConf() {
+        return tranToDecisionConf;
+    }
+
+    public void generateTPGProperties() {
+        for (int tupleNumber = 0; tupleNumber < totalEvents; tupleNumber++) {
+            if (tupleNumber % (punctuation * totalThreads) == 0) {
+                nextDataGeneratorConfig();
+            }
+        }
+    }
 }
