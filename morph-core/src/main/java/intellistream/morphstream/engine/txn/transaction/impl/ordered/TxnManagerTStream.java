@@ -2,6 +2,7 @@ package intellistream.morphstream.engine.txn.transaction.impl.ordered;
 
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
@@ -61,19 +62,17 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
      */
     @Override
     public void start_evaluate(String operatorID, int batchID, int num_events, int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
+        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-//        this.stage.getControl().preStateAccessBarrier(thread_Id);
         RuntimeMonitor.get().TXN_START_TIME_MEASURE(operatorID, batchID, thread_Id);
         if (TxnManager.enableGroup) {
             TxnManager.schedulerByGroup.get(getGroupId(thread_Id)).start_evaluation(context, mark_ID, num_events, batchID);
-            //TODO: Replace with code below for stage
-//            this.stage.getScheduler().start_evaluation(context, mark_ID, num_events);
         } else {
             TxnManager.scheduler.start_evaluation(context, mark_ID, num_events, batchID);
         }
         RuntimeMonitor.get().TXN_TIME_MEASURE(operatorID, batchID, thread_Id);
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
-//        this.stage.getControl().postStateAccessBarrier(thread_Id);
+        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         //Sync to switch scheduler(more overhead) decide by the mark_ID or runtime information
         if (TxnManager.enableDynamic && TxnManager.collector.timeToSwitch(mark_ID, thread_Id, TxnManager.currentSchedulerType.get(thread_Id))) {
             String schedulerType = TxnManager.collector.getDecision(thread_Id);

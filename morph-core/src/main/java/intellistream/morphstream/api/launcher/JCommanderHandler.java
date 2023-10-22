@@ -88,9 +88,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
     public int isDynamic = 0;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
-    public String schedulerPools = "";
+    public String schedulerPools = "OP_BFS_A,OG_BFS_A,OG_DFS,OG_DFS_A,OG_NS,OG_NS_A,OP_NS,OP_NS_A,OP_BFS,OP_BFS_A,OP_DFS,OP_DFS_A";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
-    public String defaultScheduler = "";
+    public String defaultScheduler = "OP_BFS_A";
     @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
     public String bottomLine = "";
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")

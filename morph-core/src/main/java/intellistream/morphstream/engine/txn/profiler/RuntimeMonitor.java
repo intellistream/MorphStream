@@ -150,19 +150,14 @@ public class RuntimeMonitor extends Thread {
 //        LOG.info("Batch " + batchID + " runtime data received from operator " + operatorID + " thread " + threadID);
         int threadNum = operatorThreadNumMap.get(operatorID);
 
-        ConcurrentHashMap<Integer, DescriptiveStatistics[]> batchLatencyStats = opLatencyMap.get(operatorID);
-        ConcurrentHashMap<Integer, long[]> batchStartTimeStats = opBatchStartTimeMap.get(operatorID);
-        ConcurrentHashMap<Integer, long[]> batchEndTimeStats = opBatchEndTimeMap.get(operatorID);
-        ConcurrentHashMap<Integer, AtomicInteger> numThreadCompletedMap = opNumThreadCompletedMap.get(operatorID);
+        opLatencyMap.get(operatorID).putIfAbsent(batchID, new DescriptiveStatistics[threadNum]);
+        opBatchStartTimeMap.get(operatorID).putIfAbsent(batchID, new long[threadNum]);
+        opBatchEndTimeMap.get(operatorID).putIfAbsent(batchID, new long[threadNum]);
+        opNumThreadCompletedMap.get(operatorID).putIfAbsent(batchID, new AtomicInteger(0));
 
-        batchLatencyStats.putIfAbsent(batchID, new DescriptiveStatistics[threadNum]);
-        batchStartTimeStats.putIfAbsent(batchID, new long[threadNum]);
-        batchEndTimeStats.putIfAbsent(batchID, new long[threadNum]);
-        numThreadCompletedMap.putIfAbsent(batchID, new AtomicInteger(0));
-
-        batchLatencyStats.get(batchID)[threadID] = latencyStats.copy();
-        batchStartTimeStats.get(batchID)[threadID] = batchStartTime;
-        batchEndTimeStats.get(batchID)[threadID] = batchEndTime;
+        opLatencyMap.get(operatorID).get(batchID)[threadID] = latencyStats.copy();
+        opBatchStartTimeMap.get(operatorID).get(batchID)[threadID] = batchStartTime;
+        opBatchEndTimeMap.get(operatorID).get(batchID)[threadID] = batchEndTime;
 
         if (opNumThreadCompletedMap.get(operatorID).get(batchID).incrementAndGet() == threadNum) {
             LOG.info("Batch " + batchID + " runtime data received from all threads of operator " + operatorID);
