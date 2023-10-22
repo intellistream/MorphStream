@@ -21,10 +21,11 @@
         <nz-descriptions id="job-description" nzBordered>
           <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{job?.nthreads}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Status" nzSpan="1">{{job?.isRunning?"Running":"Stopped"}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Number of Batches" nzSpan="2">{{101}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{job?.duration}}</nz-descriptions-item>
+<!--          <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>-->
+<!--          <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>-->
+          <nz-descriptions-item nzTitle="Number of Operators" nzSpan="2">{{job?.operators?.length}}</nz-descriptions-item>
+<!--          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{job?.duration}}</nz-descriptions-item>-->
+          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{runtimeDuration}} seconds</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Start Time" nzSpan="2">{{job?.startTime}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Operation" nzSpan="1">
             <button nz-button nzType="primary" [disabled]="this.jobStarted" style="margin-right: 20px" (click)="onStart()"><span nz-icon nzType="poweroff" nzTheme="outline"></span>Start</button>
@@ -49,8 +50,8 @@
                   <nz-list-item-meta-title>{{operator?.name}}</nz-list-item-meta-title>
                   <nz-list-item-meta-description>Number of instance: {{operator?.numOfInstances}}</nz-list-item-meta-description>
                 </nz-list-item-meta>
-                throughput: {{operator?.throughput}} tuples/s &nbsp;&nbsp;&nbsp;&nbsp;
-                latency: {{operator?.latency}} s
+                throughput: {{operatorAccumulativeThroughput['sl']}} tuples/s &nbsp;&nbsp;&nbsp;&nbsp;
+                latency: {{operatorAccumulativeThroughput['sl']}} s
               </nz-list-item>
             </nz-list>
           </nz-collapse-panel>
@@ -69,7 +70,7 @@
               <ng-container *nzGraphNode="let node">
                 <foreignObject x="0" y="0" width="140px" height="80px">
                   <div class="operator-node" nz-popover
-                       [nzPopoverContent]="'instance: ' + 1"
+                       [nzPopoverContent]="'instance: ' + node.instance"
                        [nzPopoverTitle]="node.label"
                        nzPopoverPlacement="right">
                     <span>{{ node.label }}</span>
@@ -207,7 +208,7 @@
               <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{statisticBatch?.minLatency}}</nz-descriptions-item>
               <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{statisticBatch?.maxLatency}}</nz-descriptions-item>
               <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{statisticBatch?.avgLatency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="3" nzTitle="Total Time Used (s)">{{statisticBatch?.batchDuration}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Total Time Used (ms)">{{statisticBatch?.batchDuration}}</nz-descriptions-item>
               <nz-descriptions-item nzSpan="3" nzTitle="Overall Throughput (tuple/s)">{{statisticBatch?.throughput}}</nz-descriptions-item>
             </nz-descriptions>
           </nz-tab>

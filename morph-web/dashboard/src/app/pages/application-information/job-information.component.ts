@@ -49,10 +49,11 @@ export class JobInformationComponent implements OnInit {
   timePieData: any[] = [{name: 'overhead time time (ms)', value: 0,},
     {name: 'stream time time (ms)', value: 0,},
     {name: 'overhead time (ms)', value: 0,}];
-
   tpgData: any[] = [{name: 'TD', value: 0,}, {name: 'LD', value: 0,}, {name: 'PD', value: 0,}];
 
   operatorLatestBatchNum: { [key: string]: number } = {} // key: operator name, value: latest batch
+  operatorAccumulativeLatency: { [key: string]: number } = {} // key: operator name, value: accumulative latency
+  operatorAccumulativeThroughput: { [key: string]: number } = {} // key: operator name, value: accumulative throughput
 
   // batch-tpg data
   tpgNodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
@@ -94,6 +95,8 @@ export class JobInformationComponent implements OnInit {
     operator: FormControl<string>;
   }>;
 
+  runtimeDuration = 0;
+
   constructor(private route: ActivatedRoute,
               private jobInformationService: JobInformationService,
               private fb: NonNullableFormBuilder,
@@ -115,17 +118,19 @@ export class JobInformationComponent implements OnInit {
         this.job = res;
         this.jobStarted = this.job.isRunning;
         // add spout to operator graph
-        this.operatorGraphData.nodes.push({id: "spout", label: "Spout"});
+        this.operatorGraphData.nodes.push({id: "spout", label: "Spout", instance: 1});
         // add operators to operator graph
         for (let i = 0; i < this.job.operators.length; i++) {
           this.operatorLatestBatchNum["sl"] = 1;  // initialize the latest batch number
-          this.operatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name});
+          this.operatorAccumulativeLatency["sl"] = 0;  // initialize the accumulative latency
+          this.operatorAccumulativeThroughput["sl"] = 0;  // initialize the accumulative throughput
+          this.operatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name, instance: this.job.operators[i].numOfInstances});
           if (i > 0) {
             this.operatorGraphData.edges.push({v: this.job.operators[i - 1].id, w: this.job.operators[i].id});
           }
         }
         // add sink to operator graph
-        this.operatorGraphData.nodes.push({id: "sink", label: "Sink"});
+        this.operatorGraphData.nodes.push({id: "sink", label: "Sink", instance: 1});
         this.operatorGraphData.edges.push({v: this.job.operators[this.job.operators.length - 1].id, w: "sink"});
         this.operatorGraphData.edges.push({v: "spout", w: this.job.operators[0].id});
         this.drawOperatorGraph();
@@ -135,6 +140,7 @@ export class JobInformationComponent implements OnInit {
           // start runtime-querying performance data
           this.startListening();
         }
+        console.log(this.operatorAccumulativeLatency["sl"])
       });
     });
   }
@@ -149,14 +155,19 @@ export class JobInformationComponent implements OnInit {
       });
       this.operatorLatestBatchNum['sl'] = res.length + 1;
       for (let batch of res) {
+        batch = this.transformTime(batch);
         this.batchOptions.push({
           value: batch.batchId.toString(),
           label: batch.batchId.toString()
         });
         this.throughputAndLatency[0].series.push({name: `batch${batch.batchId}`, value: batch.throughput});
-        this.throughputAndLatency[1].series.push({name: `batch${batch.batchId}`, value: batch.avgLatency / 4000});
+        this.throughputAndLatency[1].series.push({name: `batch${batch.batchId}`, value: batch.avgLatency});
+        this.operatorAccumulativeLatency['sl'] = batch.accumulativeLatency;
+        this.operatorAccumulativeThroughput['sl'] = batch.accumulativeThroughput;
+        this.runtimeDuration += batch.batchDuration;
         this.updateOnShowingThroughputAndLatency();
       }
+      this.runtimeDuration = parseFloat((this.runtimeDuration / 10**9).toFixed(1)); // s
     });
   }
 
@@ -175,6 +186,7 @@ export class JobInformationComponent implements OnInit {
   startListening() {
     setInterval(() => {
       this.update();
+      this.runtimeDuration += 0.1;  // seconds
     }, 100);
   }
 
@@ -194,14 +206,31 @@ export class JobInformationComponent implements OnInit {
   update() {
     this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl'].toString()).subscribe(res => {
       if (res) {
+        res = this.transformTime(res);
         this.batchOptions.push({
           value: this.operatorLatestBatchNum['sl'].toString(),
           label: this.operatorLatestBatchNum['sl'].toString()
         });
         this.updatePerformanceGraph(res);
         this.operatorLatestBatchNum['sl']++;  // update the latest batch number
+        this.operatorAccumulativeLatency['sl'] = res.accumulativeLatency;  // update the accumulative latency
+        this.operatorAccumulativeThroughput['sl'] = res.accumulativeThroughput;  // update the accumulative throughput
       }
     });
+  }
+
+  /**
+   * Transform the time unit
+   * @param batch
+   */
+  transformTime(batch: Batch): Batch {
+    batch.throughput = parseFloat(batch.throughput.toFixed(1)); // k tuples/s
+    batch.avgLatency = parseFloat((batch.avgLatency / 10**6).toFixed(1)); // ms
+    batch.minLatency = parseFloat((batch.minLatency / 10**6).toFixed(1)); // ms
+    batch.maxLatency = parseFloat((batch.maxLatency / 10**6).toFixed(1)); // ms
+    batch.accumulativeLatency = parseFloat((batch.accumulativeLatency / 10**6).toFixed(1)); // ms
+    batch.accumulativeThroughput = parseFloat(batch.accumulativeThroughput.toFixed(1)); // k tuples/s
+    return batch;
   }
 
   /**
@@ -214,7 +243,7 @@ export class JobInformationComponent implements OnInit {
     });
     this.throughputAndLatency[1].series.push({
       name: this.operatorLatestBatchNum['sl'].toString() + " batch",
-      value: batch.avgLatency / 4000
+      value: batch.avgLatency
     });
     this.updateOnShowingThroughputAndLatency();
   }
@@ -226,7 +255,9 @@ export class JobInformationComponent implements OnInit {
     if (this.batchForm.valid) {
       this.jobInformationService.getBatchById(this.job.jobId, "sl", this.batchForm.controls.batch.value).subscribe(res => {
         if (res) {
+          res = this.transformTime(res);
           this.statisticBatch = res;
+          this.statisticBatch.batchDuration = parseFloat((this.statisticBatch.batchDuration / 10**6).toFixed(1)); // ms
           this.updatePieChart(res);
           this.message.success(`Information of SLCombo Batch ${this.batchForm.controls.batch.value} is Fetched Successfully`);
         }
@@ -284,16 +315,16 @@ export class JobInformationComponent implements OnInit {
    */
   updatePieChart(batch: Batch) {
     this.timePieData = [{
-      name: 'overhead time time (ms)',
-      value: batch.overallTimeBreakdown.overheadTime,
+      name: 'overhead time time (ns)',
+      value: batch.overallTimeBreakdown.overheadTime / 10**3, // ns
     },
       {
-        name: 'stream time time (ms)',
-        value: batch.overallTimeBreakdown.streamTime,
+        name: 'stream time time (ns)',
+        value: batch.overallTimeBreakdown.streamTime / 10**3, // ns
       },
       {
-        name: 'transaction time (ms)',
-        value: batch.overallTimeBreakdown.txnTime,
+        name: 'transaction time (ns)',
+        value: batch.overallTimeBreakdown.txnTime / 10**3, // ns
       }
     ];
     this.timePieData = this.timePieData.slice();

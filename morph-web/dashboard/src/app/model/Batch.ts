@@ -13,5 +13,7 @@ export interface Batch {
   batchDuration: number;
   latestBatchId: number;
   overallTimeBreakdown: OverallTimeBreakdown;
+  accumulativeLatency: number;
+  accumulativeThroughput: number;
   tpg: TPGNode[];
 }
