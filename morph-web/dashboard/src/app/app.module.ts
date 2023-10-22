@@ -48,6 +48,9 @@ import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor';
 import {NzInputModule} from "ng-zorro-antd/input";
 import {NzInputNumberModule} from "ng-zorro-antd/input-number";
 import {NzSwitchModule} from "ng-zorro-antd/switch";
+import {NzSliderModule} from "ng-zorro-antd/slider";
+import {NzSpaceModule} from "ng-zorro-antd/space";
+import {NzCheckboxModule} from "ng-zorro-antd/checkbox";
 
 registerLocaleData(en);
 
@@ -102,7 +105,10 @@ registerLocaleData(en);
     NzCodeEditorModule,
     NzInputModule,
     NzInputNumberModule,
-    NzSwitchModule
+    NzSwitchModule,
+    NzSliderModule,
+    NzSpaceModule,
+    NzCheckboxModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }

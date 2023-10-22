@@ -29,4 +29,8 @@ export class JobInformationService {
   public getBatchById(jobId: string, operatorId: string, batchId: string): Observable<Batch> {
     return this.http.get<Batch>(`http://localhost:8080/batchInfo/get/${jobId}/${batchId}/${operatorId}`);
   }
+
+  public getAllBatches(jobId: string, operatorId: string): Observable<Batch[]> {
+    return this.http.get<Batch[]>(`http://localhost:8080/batchInfo/get/all/${jobId}/${operatorId}`);
+  }
 }

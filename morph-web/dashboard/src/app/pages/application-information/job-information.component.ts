@@ -32,14 +32,19 @@ export class JobInformationComponent implements OnInit {
   tpgSvgSimulation: any;  // tpg graph drawing force simulation
   isTpgModalVisible = false;
 
-  OperatorGraphData: NzGraphDataDef = {nodes: [], edges: []} // operator graph data {v: '1', w: '2'}, {id: '101', label: 'Spout'}
+  operatorGraphData: NzGraphDataDef = {nodes: [], edges: []} // operator graph data {v: '1', w: '2'}, {id: '101', label: 'Spout'}
   nzOperatorGraphData: any; // operator graph data for nz-graph
 
   // Batch data
   batchOptions: any[] = [];
   throughputAndLatency: any[] = [
     {name: 'Throughput (k tuples/s)', series: []},
-    {name: 'Latency (s)', series: []}];
+    {name: 'Latency (s)', series: []}
+  ];
+  onShowingThroughputAndLatency: any[] = [
+    {name: 'Throughput (k tuples/s)', series: []},
+    {name: 'Latency (s)', series: []}
+  ];
 
   timePieData: any[] = [{name: 'overhead time time (ms)', value: 0,},
     {name: 'stream time time (ms)', value: 0,},
@@ -74,6 +79,10 @@ export class JobInformationComponent implements OnInit {
   linksSelections: any;
 
   jobStarted = false;
+  throughputLatencyGraphSize = 10;
+  throughputLatencyStartBatch = 1;
+  realTimePerformanceBoxChecked = false;
+  startBatchOptionDisabled = false;
 
   batchForm: FormGroup<{
     batch: FormControl<string>;
@@ -105,36 +114,79 @@ export class JobInformationComponent implements OnInit {
       this.jobInformationService.getJob(jobId).subscribe(res => {
         this.job = res;
         this.jobStarted = this.job.isRunning;
-
+        // add spout to operator graph
+        this.operatorGraphData.nodes.push({id: "spout", label: "Spout"});
         // add operators to operator graph
         for (let i = 0; i < this.job.operators.length; i++) {
-          // this.operatorLatestBatchNum[this.job.operators[i].id] = 0;  // initialize the latest batch number
           this.operatorLatestBatchNum["sl"] = 1;  // initialize the latest batch number
-          this.OperatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name});
+          this.operatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name});
           if (i > 0) {
-            this.OperatorGraphData.edges.push({v: this.job.operators[i - 1].id, w: this.job.operators[i].id});
+            this.operatorGraphData.edges.push({v: this.job.operators[i - 1].id, w: this.job.operators[i].id});
           }
         }
-        this.initializeData();
-
+        // add sink to operator graph
+        this.operatorGraphData.nodes.push({id: "sink", label: "Sink"});
+        this.operatorGraphData.edges.push({v: this.job.operators[this.job.operators.length - 1].id, w: "sink"});
+        this.operatorGraphData.edges.push({v: "spout", w: this.job.operators[0].id});
         this.drawOperatorGraph();
-        // this.drawTpgGraph();
-        setInterval(() => {
-          this.update();
-        }, 1000);
+        this.getHistoricalData();
+
+        if (this.jobStarted) {
+          // start runtime-querying performance data
+          this.startListening();
+        }
       });
     });
   }
 
   /**
+   * Get historical data of the job
+   */
+  getHistoricalData() {
+    this.jobInformationService.getAllBatches(this.job.jobId, 'sl').subscribe(res => {
+      res.sort((a, b) => {
+        return a.batchId - b.batchId;
+      });
+      this.operatorLatestBatchNum['sl'] = res.length + 1;
+      for (let batch of res) {
+        this.batchOptions.push({
+          value: batch.batchId.toString(),
+          label: batch.batchId.toString()
+        });
+        this.throughputAndLatency[0].series.push({name: `batch${batch.batchId}`, value: batch.throughput});
+        this.throughputAndLatency[1].series.push({name: `batch${batch.batchId}`, value: batch.avgLatency / 4000});
+        this.updateOnShowingThroughputAndLatency();
+      }
+    });
+  }
+
+  updateOnShowingThroughputAndLatency() {
+    // if ( this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1 > this.throughputAndLatency[0].series.length) {
+    //   this.throughputLatencyStartBatch = this.throughputAndLatency[0].series.length - this.throughputLatencyGraphSize + 1;
+    // }
+    this.onShowingThroughputAndLatency[0].series = this.throughputAndLatency[0].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
+    this.onShowingThroughputAndLatency[1].series = this.throughputAndLatency[1].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
+    this.onShowingThroughputAndLatency = this.onShowingThroughputAndLatency.slice();
+  }
+
+  /**
+   * Start listening to the performance data
+   */
+  startListening() {
+    setInterval(() => {
+      this.update();
+    }, 100);
+  }
+
+  /**
    * Initialize the throughput and latency data
    */
-  initializeData() {
-    for (let i = 0; i < 10; i++) {
-      this.throughputAndLatency[0].series.push({name: `batch${i}`, value: 0});
-      this.throughputAndLatency[1].series.push({name: `batch${i}`, value: 0});
-    }
-  }
+  // initializeData() {
+  //   for (let i = 0; i < 10; i++) {
+  //     this.throughputAndLatency[0].series.push({name: `batch${i}`, value: 0});
+  //     this.throughputAndLatency[1].series.push({name: `batch${i}`, value: 0});
+  //   }
+  // }
 
   /**
    * Update the runtime data
@@ -156,24 +208,15 @@ export class JobInformationComponent implements OnInit {
    * Update the performance graph
    */
   updatePerformanceGraph(batch: Batch) {
-    if (batch.batchId < 10) {
-      this.throughputAndLatency[0].series[batch.batchId].value = batch.throughput;
-      this.throughputAndLatency[1].series[batch.batchId].value = batch.avgLatency / 4000;
-    } else {
-      this.throughputAndLatency[0].series.push({
-        name: this.operatorLatestBatchNum['sl'].toString() + " batch",
-        value: batch.throughput
-      });
-      this.throughputAndLatency[1].series.push({
-        name: this.operatorLatestBatchNum['sl'].toString() + " batch",
-        value: batch.avgLatency / 4000
-      });
-    }
-    if (this.throughputAndLatency[0].series.length > 10) {
-      this.throughputAndLatency[0].series.shift();
-      this.throughputAndLatency[1].series.shift();
-    }
-    this.throughputAndLatency = this.throughputAndLatency.slice();
+    this.throughputAndLatency[0].series.push({
+      name: this.operatorLatestBatchNum['sl'].toString() + " batch",
+      value: batch.throughput
+    });
+    this.throughputAndLatency[1].series.push({
+      name: this.operatorLatestBatchNum['sl'].toString() + " batch",
+      value: batch.avgLatency / 4000
+    });
+    this.updateOnShowingThroughputAndLatency();
   }
 
   /**
@@ -222,7 +265,7 @@ export class JobInformationComponent implements OnInit {
             }
           }
           this.tpgData = [{name: 'TD', value: this.numOfTD,}, {name: 'LD', value: this.numOfLD,}, {name: 'PD', value: this.numOfPD,}];
-          this.message.success(`TPG of SLCombo Batch ${this.tpgForm.controls.batch.value} is Fetched Successfully`);
+          this.message.success(`TPG of SLCombo batch ${this.tpgForm.controls.batch.value} is fetched successfully`);
         }
       });
     } else {
@@ -260,7 +303,7 @@ export class JobInformationComponent implements OnInit {
    * Draw the operator graph
    */
   drawOperatorGraph() {
-    this.nzOperatorGraphData = new NzGraphData(this.OperatorGraphData);
+    this.nzOperatorGraphData = new NzGraphData(this.operatorGraphData);
   }
 
   /**
@@ -365,12 +408,13 @@ export class JobInformationComponent implements OnInit {
    * Callback when user starts the job
    */
   onStart() {
+    this.jobStarted = true;
+    this.startListening();  // start runtime-querying performance data
     this.jobInformationService.startJob(this.job.jobId).subscribe(success => {
       if (success) {
-        // start runtime-querying performance data
+        console.log("start job successfully");
       }
     });
-    this.jobStarted = true;
   }
 
   /**
@@ -401,6 +445,10 @@ export class JobInformationComponent implements OnInit {
    * Callback when the tpg modal is expanded
    */
   onExpandTpgModal() {
+    const tpgLoading = this.message.loading(`Loading TPG: ${this.tpgForm.value.operator} batch ${this.tpgForm.value.batch} in progress..`, { nzDuration: 0 }).messageId;
+    setTimeout(() => {
+      this.message.remove(tpgLoading);
+    }, 1000);
     this.isTpgModalVisible = true;
     setTimeout(() => {
       this.drawTpgGraph();
@@ -412,6 +460,22 @@ export class JobInformationComponent implements OnInit {
    */
   onClearTpgModal() {
     this.isTpgModalVisible = false;
-    // this.drawTpgGraph();
+  }
+
+  /**
+   * Callback when the performance graph x-axis size & start batch is changed
+   * @param event
+   */
+  onPerformanceGraphConfigChange(event: any) {
+    this.updateOnShowingThroughputAndLatency();
+  }
+
+  /**
+   * Callback when the real-time performance box is checked
+   * @param newValue
+   */
+  onCheckBoxChanged(newValue: boolean) {
+    this.realTimePerformanceBoxChecked = newValue;
+    this.startBatchOptionDisabled = newValue;
   }
 }
