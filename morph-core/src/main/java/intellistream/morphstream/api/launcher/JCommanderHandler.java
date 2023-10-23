@@ -205,7 +205,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 100_000;//number of records in each table
+    public int NUM_ITEMS = 100_00;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
@@ -235,7 +235,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 200000;
+    public int totalEvents = 20000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew,Down_skew,Down_skew,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort";
     //OP_BFS -> OP_NS -> OP_NS_A -> OP_NS -> OP_BFS -> OP_NS -> OP_NS_A -> OP_NS

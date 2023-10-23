@@ -1,6 +1,5 @@
 package intellistream.morphstream.engine.txn.transaction.impl.ordered;
 
-import com.esotericsoftware.minlog.Log;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
@@ -79,7 +78,7 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
         MeasureTools.BEGIN_SCHEDULER_SWITCH_TIME_MEASURE(thread_Id);
         if (TxnManager.enableDynamic && TxnManager.collector.timeToSwitch(mark_ID, thread_Id, TxnManager.currentSchedulerType.get(thread_Id))) {
             String schedulerType = TxnManager.collector.getDecision(thread_Id);
-            this.SwitchScheduler(schedulerType, thread_Id, mark_ID);
+            this.SwitchScheduler(schedulerType, thread_Id, mark_ID, batchID, operatorID);
             this.switchContext(schedulerType);
             SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
         }

@@ -39,6 +39,8 @@ public class RuntimeMonitor extends Thread {
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, long[]>> opTxnTimePerBatch = new ConcurrentHashMap<>(); //operatorID -> batchID -> txn time per batch
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> opAccTimeMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> overall latency until each batch
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Long>> opAccNumEventsMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> overall throughput until each batch
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Double>> opAccLatencyMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> overall latency until each batch
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, String>> opSchedulerMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> scheduler type
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, ConcurrentHashMap<TPGNode, List<TPGEdge>>>> opTPGMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> TPG
     // General usages
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, AtomicInteger>> opNumThreadCompletedMap = new ConcurrentHashMap<>(); //operatorID -> num of threads that have submitted performance data
@@ -84,6 +86,9 @@ public class RuntimeMonitor extends Thread {
             opTxnTimePerBatch.put(operatorID, new ConcurrentHashMap<>());
             opAccTimeMap.put(operatorID, new ConcurrentHashMap<>());
             opAccNumEventsMap.put(operatorID, new ConcurrentHashMap<>());
+            opAccLatencyMap.put(operatorID, new ConcurrentHashMap<>());
+            opSchedulerMap.put(operatorID, new ConcurrentHashMap<>());
+            opSchedulerMap.get(operatorID).put(1, MorphStreamEnv.get().configuration().getString("defaultScheduler"));
         }
 
         runtimeMonitor.start();
@@ -133,6 +138,10 @@ public class RuntimeMonitor extends Thread {
         opTPGMap.get(operatorID).putIfAbsent(batchID, new ConcurrentHashMap<>());
         opTPGMap.get(operatorID).get(batchID).putIfAbsent(node, new ArrayList<>());
         opTPGMap.get(operatorID).get(batchID).get(node).add(edge);
+    }
+
+    public void UPDATE_SCHEDULER(String operatorID, int batchID, String scheduler) {
+        opSchedulerMap.get(operatorID).putIfAbsent(batchID, scheduler);
     }
 
     //TODO: Merge this with runtime submission method
@@ -213,15 +222,6 @@ public class RuntimeMonitor extends Thread {
         long batchStartTime = Arrays.stream(batchStartTimeArray).min().orElse(Long.MAX_VALUE);
         long batchEndTime = Arrays.stream(batchEndTimeArray).max().orElse(Long.MIN_VALUE);
         long actualBatchDuration = batchEndTime - batchStartTime;
-        if (latestBatchID > 1) {
-            opAccTimeMap.get(operatorID).put(latestBatchID, opAccTimeMap.get(operatorID).get(latestBatchID - 1) + actualBatchDuration);
-            opAccNumEventsMap.get(operatorID).put(latestBatchID, opAccNumEventsMap.get(operatorID).get(latestBatchID - 1) + totalBatchSize);
-        } else {
-            opAccTimeMap.get(operatorID).put(latestBatchID, actualBatchDuration);
-            opAccNumEventsMap.get(operatorID).put(latestBatchID, totalBatchSize);
-        }
-        double accumulativeLatency = opAccTimeMap.get(operatorID).get(latestBatchID) * 1E-9 / opAccNumEventsMap.get(operatorID).get(latestBatchID);
-        double accumulativeThroughput = 1 / accumulativeLatency;
 
         long batchDurationSum = Arrays.stream(batchDurationArray).sum();
         double throughput = totalBatchSize * 1E9 / (batchDurationSum / 4.0);
@@ -240,6 +240,19 @@ public class RuntimeMonitor extends Thread {
         long avgTotalTime = batchDurationSum / (totalBatchSize * 4);
         long avgOverheadTime = avgTotalTime - avgStreamTime - avgTxnTime;
         OverallTimeBreakdown overallTimeBreakdown = new OverallTimeBreakdown(avgTotalTime, avgStreamTime, avgTxnTime, avgOverheadTime);
+
+        if (latestBatchID > 1) {
+            opAccTimeMap.get(operatorID).put(latestBatchID, opAccTimeMap.get(operatorID).get(latestBatchID - 1) + actualBatchDuration);
+            opAccNumEventsMap.get(operatorID).put(latestBatchID, opAccNumEventsMap.get(operatorID).get(latestBatchID - 1) + totalBatchSize);
+            double accLatency = (opAccLatencyMap.get(operatorID).get(latestBatchID-1) * (latestBatchID-1) + avgLatency) / latestBatchID;
+            opAccLatencyMap.get(operatorID).put(latestBatchID, accLatency);
+        } else {
+            opAccTimeMap.get(operatorID).put(latestBatchID, actualBatchDuration);
+            opAccNumEventsMap.get(operatorID).put(latestBatchID, totalBatchSize);
+            opAccLatencyMap.get(operatorID).put(latestBatchID, avgLatency);
+        }
+        double accumulativeThroughput = opAccNumEventsMap.get(operatorID).get(latestBatchID) * 1E9 / opAccTimeMap.get(operatorID).get(latestBatchID);
+        double accumulativeLatency = opAccLatencyMap.get(operatorID).get(latestBatchID);
 
         double explore_time = 0;
         double useful_time = 0;
@@ -260,12 +273,17 @@ public class RuntimeMonitor extends Thread {
         construct_time = construct_time / threadNum;
         tracking_time = tracking_time / threadNum;
         SchedulerTimeBreakdown schedulerTimeBreakdown = new SchedulerTimeBreakdown(explore_time, useful_time, abort_time, construct_time, tracking_time);
+        if (opSchedulerMap.get(operatorID).get(latestBatchID) == null) {
+            opSchedulerMap.get(operatorID).put(latestBatchID, opSchedulerMap.get(operatorID).get(latestBatchID - 1));
+        }
 
         Batch batch = new Batch("3", String.valueOf(operatorID),
                 throughput, minLatency, maxLatency, avgLatency,
                 totalBatchSize, actualBatchDuration,
                 accumulativeLatency, accumulativeThroughput,
-                overallTimeBreakdown, schedulerTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
+                overallTimeBreakdown, schedulerTimeBreakdown,
+                opSchedulerMap.get(operatorID).get(latestBatchID),
+                opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
 
         try {
             File directory = new File(String.format("%s/%s/%s", dataPath, "3", operatorID));

@@ -28,12 +28,13 @@ public class Batch {
     private double accumulativeThroughput;
     private OverallTimeBreakdown overallTimeBreakdown;
     private SchedulerTimeBreakdown schedulerTimeBreakdown;
+    private String scheduler;
     private List<TPGNode> tpg;
     public Batch(String jobId, String operatorID, double throughput,
                  double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
                  double accumulativeLatency, double accumulativeThroughput,
                  OverallTimeBreakdown overallTimeBreakdown, SchedulerTimeBreakdown schedulerTimeBreakdown,
-                 ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg, int latestBatchId) {
+                 String scheduler, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg, int latestBatchId) {
         this.batchId = latestBatchId;
         this.jobId = jobId;
         this.operatorID = operatorID;
@@ -47,6 +48,7 @@ public class Batch {
         this.accumulativeThroughput = accumulativeThroughput;
         this.overallTimeBreakdown = overallTimeBreakdown;
         this.schedulerTimeBreakdown = schedulerTimeBreakdown;
+        this.scheduler = scheduler;
         this.tpg = new ArrayList<>();
         this.latestBatchId = latestBatchId;
         tpg.forEach((node, edges) -> {

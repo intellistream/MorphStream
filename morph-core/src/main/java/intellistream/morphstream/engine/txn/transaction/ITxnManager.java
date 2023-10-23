@@ -46,7 +46,7 @@ public interface ITxnManager {
 
     SchedulerContext getSchedulerContext();
 
-    void switch_scheduler(int thread_Id, long mark_ID);
+    void switch_scheduler(int thread_Id, long mark_ID, int batchID, String operatorID);
 
     enum SCHEDULER_TYPE {
         OG_BFS,

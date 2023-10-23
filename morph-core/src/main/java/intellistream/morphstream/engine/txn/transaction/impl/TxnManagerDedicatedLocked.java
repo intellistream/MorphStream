@@ -214,7 +214,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
-    public void switch_scheduler(int thread_Id, long mark_ID) {
+    public void switch_scheduler(int thread_Id, long mark_ID, int batchID, String operatorID) {
         throw new UnsupportedOperationException();
     }
 }
