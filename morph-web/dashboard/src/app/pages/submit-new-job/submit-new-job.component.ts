@@ -32,8 +32,6 @@ export class SubmitNewJobComponent {
   //   const formData = new FormData();
   //   formData.append(item.name, item.file as any);
   //
-  //   console.log(formData);
-  //
   //   return this.submitNewJobService.uploadNewJob().subscribe(res => {
   //       console.log("success", res.id);
   //     }

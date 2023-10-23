@@ -109,7 +109,7 @@ public class WebServer implements Runnable {
         log.info("Job start time: " + jobStartTime);
 
         JSONOperator operator1 = new JSONOperator(
-                "1", "SLCombo", 4, -1, -1, "NA", "NA", "NA");
+                "1", "SL", 4, -1, -1, "NA", "NA", "NA");
         List<JSONOperator> operators = new ArrayList<>();
         operators.add(operator1);
 

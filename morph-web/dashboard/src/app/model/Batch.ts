@@ -17,5 +17,6 @@ export interface Batch {
   schedulerTimeBreakdown: SchedulerTimeBreakdown;
   accumulativeLatency: number;
   accumulativeThroughput: number;
+  scheduler: string;
   tpg: TPGNode[];
 }

@@ -38,17 +38,18 @@ export class JobInformationComponent implements OnInit {
   // Batch data
   batchOptions: any[] = [];
   throughputAndLatency: any[] = [
-    {name: 'Throughput (k tuples/s)', series: []},
+    {name: 'Throughput (x1000 tuples/s)', series: []},
     {name: 'Latency (ms)', series: []}
   ];
   onShowingThroughputAndLatency: any[] = [
-    {name: 'Throughput (k tuples/s)', series: []},
+    {name: 'Throughput (x1000 tuples/s)', series: []},
     {name: 'Latency (ms)', series: []}
   ];
 
-  timePieData: any[] = [{name: 'overhead time time (ms)', value: 0,},
-    {name: 'stream time time (ms)', value: 0,},
-    {name: 'overhead time (ms)', value: 0,}];
+  timePieData: any[] = [{name: 'construct time (ns)', value: 0,},
+    {name: 'explore time (ns)', value: 0,},
+    {name: 'useful time (ns)', value: 0,},
+    {name: 'abort time (ns)', value: 0}];
   tpgData: any[] = [{name: 'TD', value: 0,}, {name: 'LD', value: 0,}, {name: 'PD', value: 0,}];
 
   operatorLatestBatchNum: { [key: string]: number } = {} // key: operator name, value: latest batch
@@ -56,7 +57,8 @@ export class JobInformationComponent implements OnInit {
   operatorAccumulativeThroughput: { [key: string]: number } = {} // key: operator name, value: accumulative throughput
 
   // batch-tpg data
-  tpgNodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
+  // tpgNodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
+  tpgNodes: any[] = [];
   tpgLinks = [{source: 'A', target: 'B', type: 'LD'}, {source: 'A', target: 'N', type: 'LD'}, {
     source: 'H',
     target: 'J',
@@ -141,7 +143,6 @@ export class JobInformationComponent implements OnInit {
           // start runtime-querying performance data
           this.startListening();
         }
-        console.log(this.operatorAccumulativeLatency["sl"])
       });
     });
   }
@@ -161,7 +162,7 @@ export class JobInformationComponent implements OnInit {
           value: batch.batchId.toString(),
           label: batch.batchId.toString()
         });
-        this.throughputAndLatency[0].series.push({name: `batch${batch.batchId}`, value: batch.throughput});
+        this.throughputAndLatency[0].series.push({name: `batch${batch.batchId}`, value: parseFloat((batch.throughput / 10 ** 3).toFixed(1))});
         this.throughputAndLatency[1].series.push({name: `batch${batch.batchId}`, value: batch.avgLatency});
         this.operatorAccumulativeLatency['sl'] = batch.accumulativeLatency;
         this.operatorAccumulativeThroughput['sl'] = batch.accumulativeThroughput;
@@ -227,12 +228,12 @@ export class JobInformationComponent implements OnInit {
    * @param batch
    */
   transformTime(batch: Batch): Batch {
-    batch.throughput = parseFloat(batch.throughput.toFixed(1)); // k tuples/s
+    batch.throughput = parseFloat(batch.throughput.toFixed(1)); // tuples/s
     batch.avgLatency = parseFloat((batch.avgLatency / 10**6).toFixed(1)); // ms
     batch.minLatency = parseFloat((batch.minLatency / 10**6).toFixed(1)); // ms
     batch.maxLatency = parseFloat((batch.maxLatency / 10**6).toFixed(1)); // ms
-    batch.accumulativeLatency = parseFloat((batch.accumulativeLatency * 10**3).toFixed(3)); // ms
-    batch.accumulativeThroughput = parseFloat(batch.accumulativeThroughput.toFixed(1)); // k tuples/s
+    batch.accumulativeLatency = parseFloat((batch.accumulativeLatency / 10**6).toFixed(1)); // ms
+    batch.accumulativeThroughput = parseFloat(batch.accumulativeThroughput.toFixed(1)); // tuples/s
     return batch;
   }
 
@@ -242,7 +243,7 @@ export class JobInformationComponent implements OnInit {
   updatePerformanceGraph(batch: Batch) {
     this.throughputAndLatency[0].series.push({
       name: this.operatorLatestBatchNum['sl'].toString() + " batch",
-      value: batch.throughput
+      value: parseFloat((batch.throughput / 10 ** 3).toFixed(1))  // 1000 tuples/s
     });
     this.throughputAndLatency[1].series.push({
       name: this.operatorLatestBatchNum['sl'].toString() + " batch",
@@ -262,7 +263,7 @@ export class JobInformationComponent implements OnInit {
           this.statisticBatch = res;
           this.statisticBatch.batchDuration = parseFloat((this.statisticBatch.batchDuration / 10**6).toFixed(1)); // ms
           this.updatePieChart(res);
-          this.message.success(`Information of SLCombo Batch ${this.batchForm.controls.batch.value} is Fetched Successfully`);
+          this.message.success(`Information of SL Batch ${this.batchForm.controls.batch.value} is Fetched Successfully`);
         }
       });
     } else {
@@ -286,7 +287,7 @@ export class JobInformationComponent implements OnInit {
           this.numOfLD = 0;
           this.numOfPD = 0;
           for (let node of res.tpg) {
-            this.tpgNodes.push({name: node.operationID});
+            this.tpgNodes.push(node);
             for (let edge of node.edges) {
               if (edge.dstOperatorID != edge.srcOperatorID) {
                 this.tpgLinks.push({source: node.operationID, target: edge.dstOperatorID, type: edge.dependencyType});
@@ -301,7 +302,7 @@ export class JobInformationComponent implements OnInit {
             }
           }
           this.tpgData = [{name: 'TD', value: this.numOfTD,}, {name: 'LD', value: this.numOfLD,}, {name: 'PD', value: this.numOfPD,}];
-          this.message.success(`TPG of SLCombo batch ${this.tpgForm.controls.batch.value} is fetched successfully`);
+          this.message.success(`TPG of SL batch ${this.tpgForm.controls.batch.value} is fetched successfully`);
         }
       });
     } else {
@@ -366,7 +367,7 @@ export class JobInformationComponent implements OnInit {
     // @ts-ignore
     this.tpgSvgSimulation = d3.forceSimulation(this.tpgNodes)
       .force('charge', d3.forceManyBody().strength(-15))
-      .force('link', d3.forceLink(this.tpgLinks).id((d: any) => d.name))
+      .force('link', d3.forceLink(this.tpgLinks).id((d: any) => d.operationID))
       .force('center', d3.forceCenter(250, 200));
 
     this.linksSelections = this.tpgSvg.selectAll('.link')
@@ -379,8 +380,13 @@ export class JobInformationComponent implements OnInit {
         } else if (d.type == "LD") {
           return "#7DA3E4"
         } else {
-          return "#A93B5E"
-        }
+          // TODO: fix the issue of PD and LD overlap
+          if (Math.random()>0.3) {
+            return "#A93B5E"
+          } else {
+            return "#7DA3E4"
+
+          }        }
       })
       .style('stroke-dasharray', (d: any) => {
         if (d.type === 'PD') {
@@ -420,7 +426,7 @@ export class JobInformationComponent implements OnInit {
           .duration(200)
           .style('opacity', 0.9);
 
-      tooltip.html(`Transaction ID: ${d.name}`)
+      tooltip.html(`transaction id: ${d.operationID}   transaction type: ${d.txnType}  targetTable: ${d.targetTable} targetKey: ${d.targetKey}`)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 28) + 'px');
     });

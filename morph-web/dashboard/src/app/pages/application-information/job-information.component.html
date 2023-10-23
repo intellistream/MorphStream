@@ -128,12 +128,12 @@
                 <span>x-axis size:</span>
               </nz-col>
               <nz-col nzSpan="7">
-                <nz-slider [nzMin]="10" [nzMax]="400" [(ngModel)]="throughputLatencyGraphSize" (nzOnAfterChange)="onPerformanceGraphConfigChange($event)"></nz-slider>
+                <nz-slider [nzMin]="10" [nzMax]="50" [(ngModel)]="throughputLatencyGraphSize" (nzOnAfterChange)="onPerformanceGraphConfigChange($event)"></nz-slider>
               </nz-col>
               <nz-col nzSpan="4">
                 <nz-input-number
                   [nzMin]="10"
-                  [nzMax]="400"
+                  [nzMax]="50"
                   [ngStyle]="{ marginLeft: '4px' }"
                   [(ngModel)]="throughputLatencyGraphSize"
                   (ngModelChange)="onPerformanceGraphConfigChange($event)"
@@ -209,7 +209,7 @@
               <nz-descriptions-item nzSpan="2" nzTitle="Event Mean Latency (ms)">{{statisticBatch?.avgLatency}}</nz-descriptions-item>
               <nz-descriptions-item nzSpan="1" nzTitle="Duration (ms)">{{statisticBatch?.batchDuration}}</nz-descriptions-item>
               <nz-descriptions-item nzSpan="3" nzTitle="Overall Throughput (tuple/s)">{{statisticBatch?.throughput}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="3" nzTitle="Scheduler"><nz-tag [nzColor]="'#108ee9'">{{statisticBatch? statisticBatch.throughput: 'none'}}</nz-tag></nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Schedule Strategy"><nz-tag [nzColor]="'#108ee9'">{{statisticBatch? statisticBatch.scheduler: 'none'}}</nz-tag></nz-descriptions-item>
             </nz-descriptions>
           </nz-tab>
         </nz-tabset>
