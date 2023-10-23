@@ -57,7 +57,8 @@ export class CodeEditorComponent implements AfterViewInit{
   confirmSubmit() {
     if (this.submitForm.valid) {
       this.codeEditorService.submitNewJob(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code).subscribe(res => {
-        this.message.success(`Submit job ${this.submitForm.value.job} successfully`);
+        this.message.success(`Submit job: ${this.submitForm.value.job} successfully`);
+        this.isSubmittingNewJob = false;
       });
     } else {
       Object.values(this.submitForm.controls).forEach(control => {

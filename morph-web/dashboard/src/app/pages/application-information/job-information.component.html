@@ -12,7 +12,7 @@
           <nz-breadcrumb-item *ngIf="!this.jobStarted">
             <a [routerLink]="['../../applications/finished-applications']">Finished Applications</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item>{{job?.name}} <b>[{{this.jobStarted?'Running':'Stopped'}}]</b></nz-breadcrumb-item>
+          <nz-breadcrumb-item>{{job?.name}}</nz-breadcrumb-item>
         </nz-breadcrumb>
       </nz-col>
     </div>
@@ -20,7 +20,7 @@
       <nz-col nzSpan="24" class="container" id="job-description-view">
         <nz-descriptions id="job-description" nzBordered>
           <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{job?.nthreads}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Status" nzSpan="1">{{this.jobStarted?"Running":"Stopped"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Status" nzSpan="1"><nz-tag [nzColor]="this.jobStarted?'#2db7f5':'#cd201f'">{{this.jobStarted?"running":"stopped"}}</nz-tag></nz-descriptions-item>
 <!--          <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>-->
 <!--          <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>-->
           <nz-descriptions-item nzTitle="Number of Operators" nzSpan="2">{{job?.operators?.length}}</nz-descriptions-item>
@@ -50,8 +50,8 @@
                   <nz-list-item-meta-title>{{operator?.name}}</nz-list-item-meta-title>
                   <nz-list-item-meta-description>Number of instance: {{operator?.numOfInstances}}</nz-list-item-meta-description>
                 </nz-list-item-meta>
-                throughput: {{operatorAccumulativeThroughput['sl']}} tuples/s &nbsp;&nbsp;&nbsp;&nbsp;
-                latency: {{operatorAccumulativeLatency['sl']}} ms
+                <nz-tag [nzColor]="'green'">throughput: {{operatorAccumulativeThroughput['sl']}} tuples/s</nz-tag>
+                <nz-tag [nzColor]="'blue'">latency: {{operatorAccumulativeLatency['sl']}} ms</nz-tag>
               </nz-list-item>
             </nz-list>
           </nz-collapse-panel>
@@ -202,13 +202,14 @@
               </div>
             </ng-template>
             <nz-descriptions nzBordered>
-              <nz-descriptions-item nzSpan="3" nzTitle="Batch ID">{{statisticBatch?.batchId}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{statisticBatch?.batchSize}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{statisticBatch?.minLatency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{statisticBatch?.maxLatency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{statisticBatch?.avgLatency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="3" nzTitle="Total Time Used (ms)">{{statisticBatch?.batchDuration}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Batch ID"><nz-tag [nzColor]="'#87d068'">{{statisticBatch? statisticBatch.batchId: 0}}</nz-tag></nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Total Number of Events">{{statisticBatch?.batchSize}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Event Minimal Latency (ms)">{{statisticBatch?.minLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Maximal Latency (ms)">{{statisticBatch?.maxLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Event Mean Latency (ms)">{{statisticBatch?.avgLatency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Duration (ms)">{{statisticBatch?.batchDuration}}</nz-descriptions-item>
               <nz-descriptions-item nzSpan="3" nzTitle="Overall Throughput (tuple/s)">{{statisticBatch?.throughput}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="3" nzTitle="Scheduler"><nz-tag [nzColor]="'#108ee9'">{{statisticBatch? statisticBatch.throughput: 'none'}}</nz-tag></nz-descriptions-item>
             </nz-descriptions>
           </nz-tab>
         </nz-tabset>

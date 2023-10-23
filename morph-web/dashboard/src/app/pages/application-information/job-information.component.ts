@@ -288,13 +288,15 @@ export class JobInformationComponent implements OnInit {
           for (let node of res.tpg) {
             this.tpgNodes.push({name: node.operationID});
             for (let edge of node.edges) {
-              this.tpgLinks.push({source: node.operationID, target: edge.dstOperatorID, type: edge.dependencyType});
-              if (edge.dependencyType == "TD") {
-                this.numOfTD++;
-              } else if (edge.dependencyType == "LD") {
+              if (edge.dstOperatorID != edge.srcOperatorID) {
+                this.tpgLinks.push({source: node.operationID, target: edge.dstOperatorID, type: edge.dependencyType});
+                if (edge.dependencyType == "TD") {
+                  this.numOfTD++;
+                } else if (edge.dependencyType == "LD") {
                   this.numOfLD++;
-              } else {
+                } else {
                   this.numOfPD++;
+                }
               }
             }
           }
@@ -318,16 +320,20 @@ export class JobInformationComponent implements OnInit {
    */
   updatePieChart(batch: Batch) {
     this.timePieData = [{
-      name: 'overhead time time (ns)',
-      value: batch.overallTimeBreakdown.overheadTime / 10**3, // ns
+      name: 'construct time (ns)',
+      value: batch.schedulerTimeBreakdown.constructTime // ns
     },
       {
-        name: 'stream time time (ns)',
-        value: batch.overallTimeBreakdown.streamTime / 10**3, // ns
+        name: 'explore time (ns)',
+        value: batch.schedulerTimeBreakdown.exploreTime // ns
       },
       {
-        name: 'transaction time (ns)',
-        value: batch.overallTimeBreakdown.txnTime / 10**3, // ns
+        name: 'useful time (ns)',
+        value: batch.schedulerTimeBreakdown.usefulTime // ns
+      },
+      {
+        name: 'abort time (ns)',
+        value: batch.schedulerTimeBreakdown.abortTime // ns
       }
     ];
     this.timePieData = this.timePieData.slice();
@@ -368,13 +374,12 @@ export class JobInformationComponent implements OnInit {
       .enter().append('line')
       .attr('class', 'link')
       .style("stroke", (d: any) => {
-        console.log(d)
         if (d.type == "FD") {
-          return "#94A0C0"
+          return "#A37EA9"
         } else if (d.type == "LD") {
-          return "#B7C099"
+          return "#7DA3E4"
         } else {
-          return "#BE6F8A"
+          return "#A93B5E"
         }
       })
       .style('stroke-dasharray', (d: any) => {
@@ -400,9 +405,9 @@ export class JobInformationComponent implements OnInit {
       .scaleExtent([0.5, 10])
       .on("zoom", this.tpgZoomed.bind(this)));
     this.tpgSvgSimulation.alpha(0.3).restart();
-    setInterval(() => {
+    setTimeout(() => {
       this.tpgSvgSimulation.stop();
-      }, 2000);
+      }, 3000);
 
     const tooltip = d3.select(this.tpgContainer.nativeElement)
         .append('div')

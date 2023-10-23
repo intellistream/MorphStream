@@ -46,7 +46,7 @@
             <th>Working Threads</th>
 <!--            <th>CPU Utilization</th>-->
 <!--            <th>RAM Utilization</th>-->
-            <th>Start Time</th>
+            <th>Create Time</th>
             <th>Duration</th>
             <th>Status</th>
           </tr>
@@ -58,8 +58,8 @@
 <!--            <td>{{application.cpu}}</td>-->
 <!--            <td>{{application.ram}}</td>-->
             <td>{{application.startTime}}</td>
-            <td>{{application.duration}}</td>
-            <td>{{application.isRunning?"Running":"stopped"}}</td>
+            <td>{{application.duration}} s</td>
+            <td><nz-tag [nzColor]="application.isRunning?'#2db7f5':'#cd201f'">{{application.isRunning?"running":"stopped"}}</nz-tag></td>
           </tr>
         </tbody>
       </nz-table>

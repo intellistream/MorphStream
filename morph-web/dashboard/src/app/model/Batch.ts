@@ -1,5 +1,6 @@
 import {TPGNode} from "./TPGNode";
 import {OverallTimeBreakdown} from "./OverallTimeBreakdown";
+import {SchedulerTimeBreakdown} from "./SchedulerTimeBreakdown";
 
 export interface Batch {
   batchId: number;
@@ -13,6 +14,7 @@ export interface Batch {
   batchDuration: number;
   latestBatchId: number;
   overallTimeBreakdown: OverallTimeBreakdown;
+  schedulerTimeBreakdown: SchedulerTimeBreakdown;
   accumulativeLatency: number;
   accumulativeThroughput: number;
   tpg: TPGNode[];
