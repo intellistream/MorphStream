@@ -26,7 +26,7 @@
           <nz-descriptions-item nzTitle="Number of Operators" nzSpan="2">{{job?.operators?.length}}</nz-descriptions-item>
 <!--          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{job?.duration}}</nz-descriptions-item>-->
           <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{runtimeDuration}} seconds</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Start Time" nzSpan="2">{{job?.startTime}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Create Time" nzSpan="2">{{job?.startTime}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Operation" nzSpan="1">
             <button nz-button nzType="primary" [disabled]="this.jobStarted" style="margin-right: 20px" (click)="onStart()"><span nz-icon nzType="poweroff" nzTheme="outline"></span>Start</button>
             <button nz-button nzType="primary" [disabled]="!this.jobStarted" style="margin-right: 20px" (click)="onStop()"><span nz-icon nzType="stop" nzTheme="outline"></span>Stop</button>
@@ -258,6 +258,20 @@
           >
           </nz-modal>
           <ng-template #tpgModalContent>
+            <nz-row id="legend-container" nzJustify="center">
+                  <div nz-col nzSpan="3" class="legend-item-color" style="width: 100%;">
+                    <div style="background-color: #A93B5E; height: 3px; width: 100%;"></div>
+                  </div>
+                  <div nz-col nzSpan="2" class="legend-item-text">TD</div>
+                  <div nz-col nzSpan="3" class="legend-item-color" style="width: 100%;">
+                    <div style="background-color: #7DA3E4; height: 3px; width: 100%;"></div>
+                  </div>
+                  <div nz-col nzSpan="2" class="legend-item-text">LD</div>
+                  <div nz-col nzSpan="3" class="legend-item-color" style="width: 100%;">
+                    <div style="background-color: #A37EA9; height: 3px; width: 100%;"></div>
+                  </div>
+                  <div nz-col nzSpan="2" class="legend-item-text">PD</div>
+            </nz-row>
             <div id="modal-container">
               <div id="tpg-container" #tpgContainer></div>
             </div>

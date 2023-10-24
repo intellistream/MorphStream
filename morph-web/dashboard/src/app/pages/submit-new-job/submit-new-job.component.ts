@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import {NzUploadFile} from "ng-zorro-antd/upload";
-import {Observable} from "rxjs";
 import {SubmitNewJobService} from "./submit-new-job.service";
 
 @Component({

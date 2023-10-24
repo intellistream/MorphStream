@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ViewChild} from '@angular/core';
+import {AfterViewInit, Component} from '@angular/core';
 
 import 'codemirror/mode/clike/clike';
 import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
@@ -13,18 +13,6 @@ import {NzMessageService} from "ng-zorro-antd/message";
 export class CodeEditorComponent implements AfterViewInit{
   job = '';
   parallelism = 4;
-  // @ViewChild('codeEditor') editor: any;
-  // codemirrorOptions = {
-  //   mode: "text/x-java",
-  //   // mode: "markdown",
-  //   indentWithTabs: true,
-  //   smartIndent: true,
-  //   lineNumbers: true,
-  //   lineWrapping: true,
-  //   matchBrackets: true,
-  //   autofocus: true,
-  //   theme: "material",
-  // }
 
   code = `import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor'`;
   isSubmittingNewJob = false;

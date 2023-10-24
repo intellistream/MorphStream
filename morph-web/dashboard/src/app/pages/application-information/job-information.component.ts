@@ -57,23 +57,8 @@ export class JobInformationComponent implements OnInit {
   operatorAccumulativeThroughput: { [key: string]: number } = {} // key: operator name, value: accumulative throughput
 
   // batch-tpg data
-  // tpgNodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
   tpgNodes: any[] = [];
-  tpgLinks = [{source: 'A', target: 'B', type: 'LD'}, {source: 'A', target: 'N', type: 'LD'}, {
-    source: 'H',
-    target: 'J',
-    type: 'PD'
-  }, {source: 'K', target: 'L', type: 'TD'},
-    {source: 'B', target: 'C', type: 'PD'}, {source: 'C', target: 'D', type: 'LD'}, {
-      source: 'C',
-      target: 'K',
-      type: 'TD'
-    }, {source: 'H', target: 'M', type: 'LD'}, {source: 'M', target: 'N', type: 'PD'},
-    {source: 'E', target: 'F', type: 'TD'}, {source: 'G', target: 'I', type: 'TD'}, {
-      source: 'L',
-      target: 'F',
-      type: 'LD'
-    }];
+  tpgLinks: any[] = [];
   numOfTD = 0;
   numOfLD = 0;
   numOfPD = 0;
@@ -200,7 +185,7 @@ export class JobInformationComponent implements OnInit {
   startListening() {
     this.listenIntervalId = setInterval(() => {
       this.update();
-      this.runtimeDuration = parseFloat((this.runtimeDuration + 0.1).toFixed(1));  // seconds
+      this.runtimeDuration = parseFloat((this.runtimeDuration + 1).toFixed(1));  // seconds
     }, 1000);
   }
 
@@ -368,7 +353,7 @@ export class JobInformationComponent implements OnInit {
     this.tpgSvgSimulation = d3.forceSimulation(this.tpgNodes)
       .force('charge', d3.forceManyBody().strength(-15))
       .force('link', d3.forceLink(this.tpgLinks).id((d: any) => d.operationID))
-      .force('center', d3.forceCenter(250, 200));
+      .force('center', d3.forceCenter(250, 250));
 
     this.linksSelections = this.tpgSvg.selectAll('.link')
       .data(this.tpgLinks)
@@ -413,8 +398,9 @@ export class JobInformationComponent implements OnInit {
     this.tpgSvgSimulation.alpha(0.3).restart();
     setTimeout(() => {
       this.tpgSvgSimulation.stop();
-      }, 3000);
+      }, 4000);
 
+    // add tooltip
     const tooltip = d3.select(this.tpgContainer.nativeElement)
         .append('div')
         .attr('class', 'tooltip')
@@ -426,7 +412,7 @@ export class JobInformationComponent implements OnInit {
           .duration(200)
           .style('opacity', 0.9);
 
-      tooltip.html(`transaction id: ${d.operationID}   transaction type: ${d.txnType}  targetTable: ${d.targetTable} targetKey: ${d.targetKey}`)
+      tooltip.html(`transaction id: ${d.operationID}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;transaction type: ${d.txnType}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;targetTable: ${d.targetTable}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;targetKey: ${d.targetKey}`)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 28) + 'px');
     });
