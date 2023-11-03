@@ -16,14 +16,14 @@ public class BatchInfoService extends AbstractService {
      * @return a list of batches
      */
     public List<Batch> findAllBatches(String jobId, String operatorId) {
-        File directory = new File(PATH+"\\"+jobId+"\\"+operatorId);
+        File directory = new File(PATH+"/"+jobId+"/"+operatorId);
         List<Batch> batches = new ArrayList<>();
         if (directory.exists() && directory.isDirectory()) {
             FilenameFilter jsonFilter = (dir, name) -> name.endsWith(".json");
             File[] jsonFiles = directory.listFiles(jsonFilter);
             if (jsonFiles != null) {
                 for (File jsonFile: jsonFiles) {
-                    Batch batch = null;
+                    Batch batch;
                     try {
                         batch = objectMapper.readValue(jsonFile, Batch.class);
                         batches.add(batch);
@@ -43,7 +43,7 @@ public class BatchInfoService extends AbstractService {
      * @return a batch
      */
    public Batch findBatchById(String jobId, String operatorId, String batchId) {
-        File directory = new File(PATH+"\\"+jobId+"\\"+operatorId);
+        File directory = new File(PATH+"/"+jobId+"/"+operatorId);
         if (directory.exists() && directory.isDirectory()) {
             FilenameFilter jsonFilter = (dir, name) -> name.equals(batchId + ".json");
             File[] jsonFiles = directory.listFiles(jsonFilter);
