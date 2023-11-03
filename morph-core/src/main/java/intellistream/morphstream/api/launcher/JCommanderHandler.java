@@ -86,7 +86,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
-    public int isDynamic = 1;
+    public int isDynamic = 0;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
     public String schedulerPools = "OP_BFS_A,OP_BFS,OP_NS_A,OP_NS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
@@ -234,10 +234,11 @@ public class JCommanderHandler {
     public String inputFilePath;
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
+    @Parameter(names = {"--dataDirectory"}, description = "input file name")
+    public String dataDirectory = "data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 60000;
+    public int totalEvents = 10000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-//    public String workloadType = "default,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew,Down_skew,Down_skew,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort";
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
@@ -245,9 +246,7 @@ public class JCommanderHandler {
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging";
-
     //OP_BFS -> OP_NS -> OP_NS_A -> OP_NS -> OP_BFS -> OP_NS -> OP_NS_A -> OP_NS
-    //
     @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
     public String eventTypes = "transfer;deposit";
     @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
@@ -273,7 +272,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
     public String operatorThreadNum = "4";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 250;//checkpoint per thread.
+    public int checkpoint_interval = 2500;//checkpoint per thread.
 
 
 
@@ -304,7 +303,7 @@ public class JCommanderHandler {
      * Client configurations
      */
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
-    public String clientClassName = "cli.SLClient"; //TODO: Refine this
+    public String clientClassName = "cli.SLClient";
 
 
 
@@ -469,6 +468,7 @@ public class JCommanderHandler {
         config.put("inputFileType", inputFileType);
         config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt"));
         config.put("inputFileName", inputFileName);
+        config.put("dataDirectory", dataDirectory);
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);
         config.put("eventTypes", eventTypes);

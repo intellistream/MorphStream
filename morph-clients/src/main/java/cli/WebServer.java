@@ -34,39 +34,7 @@ public class WebServer implements Runnable {
                     .channel(NioServerSocketChannel.class)
                     .childHandler(webSocketHandler);
             Channel channel = bootstrap.bind(5001).sync().channel();
-
-//            log.info("Starting new job...");
-//            createJobInfoJSON("StreamLedger"); // prepare jobInfo json file for new job
-//            SLClient.startJob(args);
-
-//            while (true) {
-//                try {
-//                    if (webSocketHandler.getSignalHandler().getContext() != null) {
-////                        // Do not send data to frontend until the connection is established
-////                        String controlSignal = webSocketHandler.getBatchInfoSender().getContext().channel().read().toString(); //TODO: Double check this
-//                        SignalHandler.SignalType controlSignal = webSocketHandler.getSignalHandler().getSignalType();
-////                        while (!Objects.equals(controlSignal, "start") && !Objects.equals(controlSignal, "stop")) {
-////                            controlSignal = webSocketHandler.getBatchInfoSender().getContext().channel().read().toString();
-////                        }
-//                        if (controlSignal != null) {
-//                            if (controlSignal.equals(SignalHandler.SignalType.START)) {
-//                                log.info("Starting new job...");
-//                                createJobInfoJSON("3"); // prepare jobInfo json file for new job
-//                                SLClient.startJob();
-//                            } else if (controlSignal.equals(SignalHandler.SignalType.STOP)) {
-//                                log.info("Stopping current job...");
-//                                InputSource.get().insertStopSignal(); // notify spout to pass stop signal downstream
-//                            } else {
-//                                throw new RuntimeException("Invalid control signal: " + controlSignal);
-//                            }
-//                        }
-//                    }
-//                } catch (InterruptedException e) {
-//                    Thread.currentThread().interrupt();
-//                    break;
-//                }
-//            }
-            channel.closeFuture().sync(); // TODO: block until server is closed?
+            channel.closeFuture().sync();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

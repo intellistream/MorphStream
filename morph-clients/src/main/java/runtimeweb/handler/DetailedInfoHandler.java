@@ -2,6 +2,7 @@ package runtimeweb.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import communication.dao.Response;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import runtimeweb.common.request.DetailedInfoRequest;
 import runtimeweb.common.response.DetailedInfoResponse;
 import io.netty.channel.ChannelHandler;
@@ -14,7 +15,7 @@ import java.io.IOException;
 
 @ChannelHandler.Sharable
 public class DetailedInfoHandler extends SimpleChannelInboundHandler<DetailedInfoRequest> {
-    private final String PATH = "data\\jobs\\";  // TODO: Extract this to Config
+    private final String PATH = MorphStreamEnv.get().configuration().getString("dataPath", "data/jobs");
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, DetailedInfoRequest request) throws Exception {

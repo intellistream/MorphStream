@@ -22,7 +22,7 @@ public class DetailedInfoResponse extends AbstractResponse {
     private String CPU;
     private String RAM;
     private String startTime;   // TODO: consider change to LocalDataTime
-    private String Duration;    // consider change to LocalDataTime
+    private String Duration;    // TODO: consider change to LocalDataTime
     private Boolean isRunning;
     private Integer nEvents;
     private Float minProcessTime;
