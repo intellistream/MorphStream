@@ -23,10 +23,10 @@ Globals globals;
 UserConfig *userConfig = nullptr;
 
 int vnf::initLibvnf(int maxCores, int bufferSize, string dataStoreIP, vector<int> dataStorePorts, int dataStoreThreshold,
-               bool useRemoteDataStore) {
+               enum DataLocation dsType) {
     userConfig = new UserConfig(maxCores, bufferSize,
                                 dataStoreIP, dataStorePorts,
-                                dataStoreThreshold, useRemoteDataStore);
+                                dataStoreThreshold, dsType);
     perCoreStates = new PerCoreState[userConfig->MAX_CORES];
     return 0;
 }
@@ -602,9 +602,7 @@ void vnf::startEventLoop() {
         arguments[ithCore].set(ithCore, globals.serverIp, globals.serverPort, globals.onAcceptByServerCallback,
                                globals.onAcceptByServerDSCallback,
                                globals.onAcceptByServerReqObjIdExtractor,
-                               globals.onAcceptByServerPBD,
-                               
-                               );
+                               globals.onAcceptByServerPBD);
 
         // todo start client only after all threads have started or it would clear actual sockid mappings
         pthread_create(&servers[ithCore], NULL, serverThread, &arguments[ithCore]);

@@ -1,0 +1,176 @@
+cmake_minimum_required(VERSION 3.5.0)
+
+# Project
+project(libvnf)
+
+# Description
+set(PROJECT_DESCRIPTION "libvnf is a library to easily build custom scalable high performance Virtual Network Functions (VNFs)")
+
+# Release type
+set(CMAKE_BUILD_TYPE Debug)
+
+# Project version
+set(PROJECT_VERSION_MAJOR 0)
+set(PROJECT_VERSION_MINOR 9)
+set(PROJECT_VERSION_PATCH 1)
+set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+
+# Installation paths
+set(LIBRARY_INSTALL_DIR /usr/lib)
+set(LIBRARY_INSTALL_DIR2 /usr/local/lib)
+set(HEADERS_INSTALL_DIR /usr/include/libvnf)
+set(HEADERS_INSTALL_DIR2 /usr/local/include/libvnf)
+#set(MTCP_INCLUDE_DIRS /home/rahul2514888/trishal/mtcp-p)
+option(STACK "Stack to be used for libvnf" OFF)
+option(BACKEND_MORPH False ON)
+
+# Has morphStream integrated.
+if (${BACKEND_MORPH})
+  message("Compiling with morphStream.")
+  add_definitions(-BACKEND_MORPH=1)
+  # Find package for jni.
+  find_package(Java REQUIRED)
+  if (DEFINED ENV{JAVA_HOME})
+    # Get the value of JAVA_HOME
+    set(JAVA_HOME_PATH $ENV{JAVA_HOME})
+    message(STATUS "JAVA_HOME is set to: ${JAVA_HOME_PATH}")
+
+    # Construct the full path to jni.h
+    set(JNI_HEADER_PATH "${JAVA_HOME_PATH}/include/jni.h")
+
+    # Check if jni.h exists
+    if (EXISTS ${JNI_HEADER_PATH})
+        message(STATUS "jni.h found at: ${JNI_HEADER_PATH}")
+    else ()
+        message(FATAL_ERROR "jni.h not found in ${JAVA_HOME_PATH}. Please make sure JAVA_HOME is set correctly.")
+    endif ()
+  else ()
+      message(FATAL_ERROR "JAVA_HOME environment variable is not set. Please set JAVA_HOME.")
+  endif ()
+
+  # Jni Library.
+  include_directories(JNI_INCLUDE_DIRS)
+  include_directories(UseJava)
+
+  # Define the source directory for Java files
+  set(JAVA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+  # Get a list of all .java files in the source directory
+  file(GLOB JAVA_SOURCES "${JAVA_SOURCE_DIR}/*.java")
+
+  # Define the output directory for .class files
+  set(CLASS_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/classes)
+
+  # Create a custom target to compile Java sources
+  add_custom_target(CompileJava
+      COMMAND ${Java_JAVAC_EXECUTABLE} -d ${CLASS_OUTPUT_DIR} ${JAVA_SOURCES}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      COMMENT "Compiling Java sources"
+  )
+
+  # Specify that this target should be built before your main project target
+  add_dependencies(MyJavaCode CompileJava)
+
+  # Optionally, set the classpath if needed
+  # set(CLASSPATH /path/to/dependency1.jar:/path/to/dependency2.jar)
+  # set_property(TARGET CompileJava PROPERTY CLASSPATH ${CLASSPATH})
+endif()
+
+if (${STACK} STREQUAL KERNEL)
+    message(STATUS "Using ${STACK} stack for libvnf")
+    # Flags
+    set(CMAKE_CXX_STANDARD 11)
+    if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
+      set(CMAKE_CXX_FLAGS "-lnuma -lrt -DLIBVNF_STACK=1 -g")
+    else ()
+      set(CMAKE_CXX_FLAGS "-lnuma -lrt -DLIBVNF_STACK=1")
+    endif()
+
+    # Include
+    include_directories(include)
+
+    # Sources and Headers
+    file(GLOB_RECURSE HEADERS "include/*hpp")
+    file(GLOB_RECURSE SOURCES "src/datastore/*cpp" "src/kernel/*cpp")
+
+    # Library
+    add_library(vnf-kernel-dynamic SHARED ${SOURCES} ${HEADERS})
+    add_library(vnf-kernel-static STATIC ${SOURCES} ${HEADERS})
+
+    # Install
+    install(TARGETS vnf-kernel-dynamic vnf-kernel-static DESTINATION ${LIBRARY_INSTALL_DIR})
+    install(TARGETS vnf-kernel-dynamic vnf-kernel-static DESTINATION ${LIBRARY_INSTALL_DIR2})
+    install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR})
+    install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR2})
+elseif (${STACK} STREQUAL KERNEL_BYPASS)
+    message(STATUS "Using ${STACK} stack for libvnf")
+    # Flags
+    set(CMAKE_CXX_STANDARD 11)
+    if (${CMAKE_BUILD_TYPE} STREUAL Debug)
+      set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -g")
+    else ()
+      set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2")
+    endif()
+
+    # Include
+    include_directories(include)
+    include_directories(/home/rahul2514888/trishal/mtcp-p/mtcp/include)
+    include_directories(/home/rahul2514888/trishal/mtcp-p/util/include)
+
+    #option(MTCP_INCLUDE_DIRS "mtcp and mtcp-util include directories" OFF)
+    #set(MTCP_INCLUDE_DIRS /home/rahul2514888/trishal/mtcp-p/mtcp/include  /home/rahul2514888/trishal/mtcp-p/util/include)
+    #if (${MTCP_INCLUDE_DIRS} STREQUAL OFF)
+    #  message(FATAL_ERROR "MTCP_INCLUDE_DIRS not provided. Please provide it. It will probably be 'mtcp/mtcp/include mtcp/util/include' (with full paths)")
+    #else ()
+    #  include_directories(${MTCP_INCLUDE_DIRS})
+    #endif ()
+
+    # Sources and Headers
+    file(GLOB_RECURSE HEADERS "include/*hpp")
+    file(GLOB_RECURSE SOURCES "src/datastore/*cpp" "src/kernel_bypass/*cpp")
+
+    # Library
+    add_library(vnf-kernelbypass-dynamic SHARED ${SOURCES} ${HEADERS})
+    add_library(vnf-kernelbypass-static STATIC ${SOURCES} ${HEADERS})
+
+    # Install
+    install(TARGETS vnf-kernelbypass-dynamic vnf-kernelbypass-static DESTINATION ${LIBRARY_INSTALL_DIR})
+    install(TARGETS vnf-kernelbypass-dynamic vnf-kernelbypass-static DESTINATION ${LIBRARY_INSTALL_DIR2})
+    install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR})
+    install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR2})
+elseif (${STACK} STREQUAL L3VNF)
+    message(STATUS "Using ${STACK} stack for libvnf")
+    # Flags
+    set(CMAKE_CXX_STANDARD 11)
+    if (${CMAKE_BUILD_TYPE} STREUAL Debug)
+      set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=3 -g")
+    else ()
+      set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=3")
+    endif()
+
+    # Include
+    include_directories(include)
+    include_directories()
+    option(NETMAP_INCLUDE_DIR "netmap include directory" OFF)
+    set(NETMAP_INCLUDE_DIR /home/rahul2514888/Downloads/MTP/netmap-master/sys/)
+    if (${NETMAP_INCLUDE_DIR} STREQUAL OFF)
+      message(FATAL_ERROR "NETMAP_INCLUDE_DIR not provided. Please provide it. It will probably be 'netmap/sys' (with full path)")
+    else ()
+      include_directories(${NETMAP_INCLUDE_DIR})
+    endif ()
+
+    # Sources and Headers
+    file(GLOB_RECURSE HEADERS "include/*hpp")
+    file(GLOB_RECURSE SOURCES "src/datastore/*cpp" "src/kernel_l3/*cpp")
+
+    # Library
+    add_library(vnf-l3-dynamic SHARED ${SOURCES} ${HEADERS})
+    add_library(vnf-l3-static STATIC ${SOURCES} ${HEADERS})
+
+    # Install
+    install(TARGETS vnf-l3-dynamic vnf-l3-static DESTINATION ${LIBRARY_INSTALL_DIR})
+    install(TARGETS vnf-l3-dynamic vnf-l3-static DESTINATION ${LIBRARY_INSTALL_DIR2})
+    install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR})
+    install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR2})
+else ()
+    message(FATAL_ERROR "Choose a stack for libvnf. Usage -DSTACK=KERNEL or -DSTACK=KERNEL_BYPASS or -DSTACK=L3VNF")
+endif ()

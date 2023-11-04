@@ -1,4 +1,3 @@
-//#include "json.hpp"
 #include "core.hpp"
 #include "utils.hpp"
 
@@ -181,6 +180,15 @@ void *serverThread(void *args) {
     ev.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
     ev.data.fd = globals.listeningSocketFd;
     epoll_ctl(epFd, EPOLL_CTL_ADD, globals.listeningSocketFd, &ev);
+
+#ifdef BACKEND_MORPH
+    // Add transaction triggered fd.
+    struct epoll_event ev1;
+    ev.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
+    ev.data.fd = sfc.EventFD();
+    epoll_ctl(epFd, EPOLL_CTL_ADD, globals.listeningSocketFd, &ev);
+#endif
+
     globals.listenLock.unlock();
 
     map <int, class timer*>::iterator timerItr = perCoreStates[coreId].fdToObjectMap.begin();
@@ -233,6 +241,19 @@ void *serverThread(void *args) {
         //     while (!globals.hasInitialized){
         //     }
         // }
+
+        /*
+            Insert here: Add block to receive txnEngine messages.
+            // TODO. Implement a waiting (Positively ask cpu to switch context).
+            To trigger functions:
+            1. PostTransaction function. Registered in postTxnCallBacks.
+        */
+        //    int txnNotifyType = -1; 
+        //    char * txnNotifyValue = NULL;   
+        //    int txnNotifyErrorCode = -1;
+        //    int txnNotifyLength = -1;
+        
+        //    int numTxnNotifications = txn_notify_wait(&txnNotifyType, txnNotifyValue, &txnNotifyLength, &txnNotifyErrorCode);
 
         // wait for epoll events
         // spdlog::debug("thread {}, cpu {}\n", argument.coreId, sched_getcpu());
@@ -350,12 +371,20 @@ void *serverThread(void *args) {
             */
             if (currentEvents & EPOLLIN) {
                 /* EPOLLIN: The associated file is available for read(2) operations. */
+#ifdef BACKEND_MORPH
+                if (perCoreStates[coreId].isTransactionSocket(currentSocketId)){
+                    // Ask txnEngine to give the parameters.
+
+                    // Extract the same reqObj and send to callbacks.
+                }
+#endif
                 /* Current socketId points to remote datastore 
                     Each time we communicate with the data store, we are using the specified socket (Special IP and ports).
                     So we can decide this is the message from the database.
                 */
                 if (perCoreStates[coreId].isDatastoreSocket(currentSocketId)) {
                     /* TODO: fix this shit */
+                    // You jerk shit reeks forever.
                     while (true) {
                         DSPacketHandler pkt;
                         int pkt_len, retval;
@@ -1137,6 +1166,12 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
         callback(*this, reqObjId, perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId], valueCopy, userConfig->BUFFER_SIZE, 0);
         return *this;
     }
+    #ifdef MORPH
+    if (location == MORPH){
+        registerDSCallbackMorph(*this, tableName, key, callback);
+        // TODO. Call the morphStream to trigger the query.
+    }
+    #endif
 
     spdlog::warn("retrieveData: Unknown location used {}", location);
 
@@ -1619,4 +1654,126 @@ vnf::ConnId vnf::getObjConnId(uint32_t connId) {
 
 uint32_t vnf::getIntConnId(vnf::ConnId& connId) { 
     return connId.coreId * 10000000 + connId.socketId;
+}
+
+// Entry for Java calling this thread.
+int __VNFThread(int argc, char *argv[]){
+	vnf::startEventLoop();
+}
+
+int __initSFC(int argc, char *argv[]){
+	// User construct Main.
+	int ret = VNFMain(argc, argv);
+
+	if (ret != 0){
+		return ret;
+	}
+
+	std::string ip;
+	int port = 0; // Initialize to a default value, or you can set an error value if no valid port is provided.
+
+	if (argc != 3)
+	{
+		std::cerr << "Usage: " << argv[0] << " <IP address> <port>" << std::endl;
+		return -1; // Return an error code
+	}
+
+	// Parse port (argv[2])
+	try
+	{
+		port = std::stoi(argv[2]);
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "Invalid port number: " << e.what() << std::endl;
+		return 1; // Return an error code
+	}
+
+	// Parse IP address (argv[1])
+	ip = argv[1];
+
+	// TODO. Param Init.
+    vnf::ConnId serverId = vnf::initServer("", ip, port, "tcp");
+
+    int size[] = {globals.sfc.reqObjTotalSize};
+    vnf::initReqPool(size, 1);
+
+	registerCallback(serverId, vnf::ACCEPT, _AppsDisposalAccept);
+	registerCallback(serverId, vnf::READ, _AppsDisposalRead);
+	registerCallback(serverId, vnf::ERROR, _AppsDisposalError);
+
+	// report to txnEngine.
+	return globals.sfc.NFs();
+};
+
+
+void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode, vnf::ACCEPT);
+}
+
+void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode, vnf::READ);
+}
+
+void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode, vnf::ERROR);
+}
+
+void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, vnf::EventType ret){
+	int appIdx = 0;
+    for (DB4NFV::App& app: globals.sfc.SFC_chain){
+        switch (ret)
+        {
+        case vnf::ERROR:
+            ret = (*app.errorHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            break;
+        case vnf::ACCEPT:
+            ret = (*app.acceptHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            break;
+        case vnf::READ:
+            ret = (*app.readHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            break;
+        case vnf::SLEEP:
+            break;
+        } 
+    }
+}
+
+// TODO. Define the structure for message convey.
+int DB4NFV::SFC::NFs(){};
+
+void DB4NFV::SFC::Entry(App& app){
+	if (this->SFC_chain.size() != 0){
+		perror("fatal: the SFC has already registered entry.");
+	}
+	this->SFC_chain.push_back(app);
+}
+void DB4NFV::SFC::Add(App& last, App& app){
+	if (this->SFC_chain.size() == 0){
+		perror("fatal: the SFC has no entry.");
+	} 
+	last.next = &app;
+	this->SFC_chain.push_back(app);
+}
+
+int DB4NFV::SFC::_callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqObj, char * packet, int packetlen, void * value, int length, int errCode){
+	// Seems we need to find out the ConnId from the context queue and continue.
+    auto app = this->SFC_chain.at(AppIdx);
+	return (*app.Txns.at(TxnIdx)->sas.at(SAIdx)->txnHandler_)(
+        connId,
+        app.Txns,
+        reqObjId, app.reqObjClip(reqObj),
+        packet, packetlen,
+        value, length, errCode);
+}
+
+int DB4NFV::StateAccess::Request(vnf::ConnId& connId) {
+	// TODO. Register callbacks for triggering.
+    auto appIdx = perCoreStates[connId.socketId].current_app_idx;
+	__request(appIdx, this->txnIndex, this->saIndex );
+}
+
+int __request(int AppIdx, int TxnIdx, int saIdx){
+    perror("java.Unimplemented.");
+    return -1;
 }

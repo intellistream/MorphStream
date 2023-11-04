@@ -54,6 +54,7 @@ struct ServerPThreadArgument {
 };
 
 struct PerCoreState {
+    int current_app_idx;
     bool isJobDone;
     // callback maps
     unordered_map<int, CallbackFn> socketIdCallbackMap[NUM_CALLBACK_EVENTS];
@@ -62,6 +63,15 @@ struct PerCoreState {
     // ds callback maps
     unordered_map<int, DSCallbackFn> socketIdDSCallbackMap;
     unordered_map<int, DSCallbackFn> socketIdDSErrorCallbackMap;
+
+#ifdef BACKEND_MORPH
+    // just registered postTransacrtion maps.
+    unordered_map<int, DB4NFV::PostTxnHandler> socketIdPostTxnHandlerMap;
+    unordered_map<int, DB4NFV::PostTxnHandler> socketIdPostTxnErrorHandlerMap;
+
+    // Maps held by thread to mark the packet handler.
+    unordered_map<int, >
+#endif
 
     // request object memory management
     int reqObjSizesInPowersOf2[MAX_REQUEST_OBJECT_TYPES];
@@ -81,6 +91,9 @@ struct PerCoreState {
     unordered_map<int, string> socketIdLeftOverPacketFragmentMap;
 
     // datastore socket ids and id-loopers
+#ifdef BACKEND_MORPH
+    int txnSocketId = -1;
+#endif
     int dsSocketId1, dsSocketId2;
     string dsSocketProtocol;
     int dsSockIdSetLooper, dsSockIdGetLooper;
@@ -177,6 +190,12 @@ struct PerCoreState {
         return socketId == dsSocketId1 || socketId == dsSocketId2;
     }
 
+#ifdef BACKEND_MORPH
+    bool isTransactionSocket(int socketId) {
+        return socketId == txnSocketId;
+    }
+#endif
+
     string getLeftOverPacketFragment(int socketId) {
         auto it = socketIdLeftOverPacketFragmentMap.find(socketId);
         if (it == socketIdLeftOverPacketFragmentMap.end()) {
@@ -223,6 +242,10 @@ struct Globals {
     DSCallbackFn onAcceptByServerDSCallback;
     ReqObjExtractorFn onAcceptByServerReqObjIdExtractor;
     PacketBoundaryDisambiguatorFn onAcceptByServerPBD;
+
+    // DB4NFV globals.
+    DB4NFV::SFC sfc;
+	int txnNotifyFd = -1;
 
     // data store management
     // may have to increase this at high load
@@ -326,3 +349,192 @@ int makeSocketNonBlocking(int socketFd) {
 
     return 0;
 }
+
+
+namespace DB4NFV{
+
+enum RWType {
+	READ = 1,
+	WRITE = 2,
+};
+
+enum ConsistencyRequirement {
+    None = 0,
+};
+
+class App{
+friend SFC;
+public:
+	App(std::vector<Transaction*> txns, 
+        AcceptHandler accept, 
+        ReadHandler read, 
+        ErrorHandler error,
+        int reqObjSize):
+		Txns(txns), 
+        acceptHandler(accept), errorHandler(error), readHandler(read),
+        reqObjSize(reqObjSize)
+	{};
+	
+	const AcceptHandler acceptHandler = nullptr;
+	const ReadHandler   readHandler = nullptr;
+	const ErrorHandler  errorHandler = nullptr;
+
+	// The callbacks router.
+	// int _callBack(int TxnIdx, int SAIdx, void* value, int length, int errCode);
+
+    // Point the request obj
+    void *reqObjClip(void * reqObjClip) { return reqObjClip + globals.sfc.objSizes.at(globals.sfc.AppIdxMap[this]);}
+	int reqObjSize = 0; // Register the size of per-thread user defined structure.
+
+    const std::vector<Transaction*> Txns;
+
+    int appIndex;
+	App* next = nullptr;
+	App* MoveNext() { return this->next;}
+};
+
+class Transaction {
+friend SFC;
+public:
+    Transaction(std::vector<StateAccess*> sas):sas(sas){}
+    void TxnStart() { perror("javaProvide.");}
+    void TxnDone()  { perror("javaProvide.");}
+	const std::vector<StateAccess*> sas;	// The State Access event to be used for transaction handlers. Including transaction handlers.
+	const App* app;
+	int txnIndex;
+};
+
+class StateAccess {
+friend SFC;
+public:
+    // What is a state scope?
+    StateAccess(const std::vector<std::string> &fields,
+                const std::vector<std::string> &types,
+                ConsistencyRequirement cr,
+                TxnCallBackHandler txnHandler,
+                PostTxnHandler postHandler,
+                RWType rw)
+        : fields_(fields), types_(types), cr_(cr),
+          txnHandler_(txnHandler), postTxnHandler_(postHandler), rw_(rw) {}
+
+	const enum RWType rw_;	
+
+    const std::vector<std::string> &fields_;
+    const std::vector<std::string> &types_;
+    const ConsistencyRequirement cr_;
+
+	// The binded transaction handler for this State Access.
+	const TxnCallBackHandler txnHandler_ = nullptr;
+	const PostTxnHandler postTxnHandler_ = nullptr;
+
+	// Called by user to perform the binded transaction.
+	int Request(vnf::ConnId& connId);
+	App* app;
+	Transaction* txn;
+	int txnIndex;
+    int saIndex;
+};
+
+/**
+ * @brief Define the whole SFC topology. Collect meta data for the whole SFC and communicate with txnEngine.
+ * 	
+ */
+class SFC{
+public:
+	SFC() {}
+
+	~SFC(){};
+
+	// Setting cores of this SFC apps.
+	int cores = 1;	
+
+	// Construct SFC topology.
+	void Entry(App & entry);
+	void Add(App& last, App& app);
+
+	// Report SFC apps to txnEngine.
+	int NFs();
+
+	void Init(int maxCores){
+        // Fix the backlink.
+        int reqObjStart = 0;
+        int reqObjIndex = 0;
+        for (int i = 0 ; i < SFC_chain.size(); i += 1)
+        {
+            auto app = SFC_chain.at(i);
+            app.appIndex = i;
+            // Sort the reqObj. TODO.
+            this->objSizes.push_back(app.reqObjSize);
+            this->objSizesStarting.push_back(reqObjStart);
+            reqObjStart += app.reqObjSize;
+            this->AppIdxMap[&app] = reqObjIndex;
+            reqObjIndex += 1;
+            
+            for (int j = 0 ; j < app.Txns.size(); j += 1){
+                auto Txn = app.Txns.at(j);
+                Txn->txnIndex = j;
+                Txn->app = &app;
+                for (int k = 0; k < (Txn->sas).size(); k += 1){
+                    auto sa = Txn->sas.at(k);
+                    sa->app = &app;
+                    sa->txn = Txn;
+                    sa->txnIndex = j;
+                    sa->saIndex = k;
+                }
+            }
+        }
+        this->reqObjTotalSize = reqObjStart;
+        // Config and init libVNF.
+        this->cores = maxCores;
+        // Create back links for transactions and state access.
+        vnf::initLibvnf(cores, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
+    }
+
+    // The Callbacks router for the whole SFC.
+    int _callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqobj, char * packet, int packetlen, void * value, int length, int errCode);
+
+    void * AppObj(App *app, void * reqObj) {
+        int idx = AppIdxMap[app];
+        return reqObj + objSizesStarting[idx];
+    }
+
+// private:
+    int reqObjTotalSize = 0;
+	std::vector<App&> SFC_chain = {};
+	std::unordered_map<App*, int> AppIdxMap = {};
+	std::vector<int> objSizes;
+    std::vector<int> objSizesStarting;
+};
+
+typedef vnf::EventType (*TxnCallBackHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, void* value, int valueLen, int errorCode);
+
+typedef vnf::EventType (*PacketHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int errorCode);
+
+typedef PacketHandler* AcceptHandler;
+typedef PacketHandler* ReadHandler;
+typedef PacketHandler* ErrorHandler;
+typedef PacketHandler* PostTxnHandler;
+
+// User get SFC single instance.
+DB4NFV::SFC& GetSFC() { 
+    return globals.sfc; 
+};
+
+}
+
+// call backs router for txnEngine. Could be renamed according to the generated func signature.
+int _callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqobj, char * packet, int packetlen, void * value, int length, int errCode){
+
+// Main loop for traversal of the apps.
+void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
+void _AppsDisposalRead  (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
+void _AppsDisposalError (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
+
+void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, vnf::EventType type);
+
+// The entry of the SFC thread from java.
+int __VNFThread(int argc, char *argv[]);
+int __init_SFC(int argc, char *argv[]);
+
+// The entry for sending txn execution request to txnEngine.
+int __txnRequest(std::string query, int AppIdx, int SAIdx);

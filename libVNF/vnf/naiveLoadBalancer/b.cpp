@@ -142,11 +142,11 @@ void onDatastoreReply(ConnId& aConnId,
 
     // Data from datastore is versatile. Each time the datastore is full, it would be cleaned. So we need to DNE the cache.
     auto content = (int *)setCachedDSKeyDNE(key); 
-    if ((int)content == 0x0) {
+    if (content == (int *)0x0) {
         assert(false);
         // Not in datastore.
         int newc = 1;
-        aConnId.storeData("min_server", min_server->id, UDS, 
+        aConnId.storeData("min_server", min_server->id, MORPH, 
             static_cast<void *> (&newc), 
             sizeof(int),
         nullptr );
@@ -154,7 +154,7 @@ void onDatastoreReply(ConnId& aConnId,
         unsetCachedDSKeyDNE(0);
     } else {
         min_server->count += 1;
-        aConnId.storeData("servers", min_server->id, UDS, 
+        aConnId.storeData("servers", min_server->id, MORPH, 
             static_cast<void *> (min_server), 
             sizeof(int),
         nullptr );
@@ -204,7 +204,7 @@ void onNewRequestFromA(ConnId& aConnId,
     // Logic of fetching data from datastore and decide the backend.
 
     // Fetch data from Remote DataStore and decide the minimum data.
-    aConnId.retrieveData("min_server", 1, UDS, onDatastoreReply);
+    aConnId.retrieveData("min_server", 1, MORPH, onDatastoreReply);
 }
 
 int LoadBalancer(int argc, char *argv[]) {
@@ -216,7 +216,7 @@ int LoadBalancer(int argc, char *argv[]) {
                 config.dataStoreSocketPath, 
                 std::vector<int>{1,2,3,4}, // Datastore IP: Ports
                 config.dataStoreThreshold,                                  // Data store threshold.
-                UDS);
+                MORPH);
 
     /*
         Do some other init related to morphStream here.
@@ -243,7 +243,7 @@ int LoadBalancer(int argc, char *argv[]) {
     return 0;
 }
 
-int main(int argc, char *argv[]){
+int Main(int argc, char *argv[]){
     if (argc < 5) {
         exit(0);
     } 

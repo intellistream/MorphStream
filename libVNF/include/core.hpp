@@ -5,6 +5,8 @@
 #define _LARGEFILE64_SOURCE
 #endif
 
+#include <sys/eventfd.h>
+#include <sys/epoll.h>
 #include <spdlog/spdlog.h>
 #include <assert.h>
 #include <cassert>
@@ -42,9 +44,39 @@
 #include <mutex>
 #include <fstream>
 #include <chrono>
+#ifdef BACKEND_MORPH
+	#include "utils_java_Loader_Loader.h"
+#endif
 
 #include "datastore/dspackethandler.hpp"
 #include "json.hpp"
+
+#ifdef BACKEND_MORPH
+#define VNFMain Main
+int Main(int argc, char *argv[]);
+
+// TO ADD APIS.
+
+JNIEXPORT jint 
+JNICALL Java_utils_java_Loader_Loader_WorkingThread (JNIEnv * env, jobject obj, jobjectArray args){
+    jsize length = env->GetArrayLength(args);
+    char * argv = new char[(int)length];
+    for (int i = 0; i < (int) length; i += 1 ){
+        jobject row = env->GetObjectArrayElement(args, 2);
+        jobject value = env->GetObjectArrayElement((jobjectArray)row, 1);
+        argv[i] = *env->GetStringUTFChars((jstring)value, 0);
+    }
+    return VNFMain((int)length, &argv);
+}
+
+JNIEXPORT jint 
+JNICALL Java_utils_java_Loader_Loader_TxnUDF (JNIEnv * env, jobject obj, jobject sa) {
+    // Call MORPH call backs with the state name.
+}
+#else
+#define VNFMain main
+#endif
+
 
 #define LIBVNF_STACK_KERNEL 1
 #define LIBVNF_STACK_KERNEL_BYPASS 2
@@ -88,11 +120,15 @@
 namespace vnf {
 
 enum EventType {
-    READ = 0, ACCEPT = 1, ERROR = 2
+    READ = 0, ACCEPT = 1, ERROR = 2, SLEEP = 3
 };
 
 enum DataLocation {
-    LOCAL = 1, REMOTE = 2, CHECKCACHE = 3, UDS = 4
+#ifdef MORPH
+    LOCAL = 1, REMOTE = 2, CHECKCACHE = 3, MORPH = 4, UDS = 5
+#else
+    LOCAL = 1, REMOTE = 2, CHECKCACHE = 3, UDS = 5
+#endif
 };
 
 class ConnId {
@@ -633,4 +669,3 @@ private:
 };
 
 #endif
-

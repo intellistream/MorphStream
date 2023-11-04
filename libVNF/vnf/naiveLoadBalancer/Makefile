@@ -1,8 +1,11 @@
+DEBUG=-g
+CPP_OPTIMIZE=0
+
 B_KERNEL_STATIC=b-kernel-static
 B_KERNEL_DYNAMIC=b-kernel-dynamic
 B_KERNELBYPASS_STATIC=b-kernelbypass-static
 B_KERNELBYPASS_DYNAMIC=b-kernelbypass-dynamic
-CXX_FLAGS=-fpermissive -std=c++11 -g -O0 -Wno-write-strings -Wall -Wcomment
+CXX_FLAGS=-fpermissive -std=c++11 ${DEBUG} -O$(CPP_OPTIMIZE) -Wno-write-strings -Wall -Wcomment -fPIC
 A=a
 C=c
 
@@ -21,9 +24,10 @@ MTCP_TARGET = $(MTCP_LIB)/libmtcp.a
 # mtcp util library and header
 UTIL_FLD = $(MTCP_P_FLD)/util
 UTIL_INC = -I$(UTIL_FLD)/include
+JAVA_INCLUDE=-I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 UTIL_OBJ = $(UTIL_FLD)/http_parsing.o $(UTIL_FLD)/tdate_parse.o $(UTIL_FLD)/netlib.o
 
-INCLUDES = $(UTIL_INC) $(MTCP_INC)
+INCLUDES = $(UTIL_INC) $(MTCP_INC) 
 
 LIBS = $(MTCP_LIB) -lmtcp -lpthread -lnuma -lrt -lboost_system
 
@@ -65,10 +69,10 @@ $(B_KERNELBYPASS_DYNAMIC): b.cpp
 
 $(B_KERNEL_STATIC): b.cpp
 	g++ $(CXX_FLAGS) b.cpp -c
-	g++ b.o -O0 -std=c++11 -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -o $(B_KERNEL_STATIC)
+	g++ b.o -O${CPP_OPTIMIZE} -std=c++11 -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -o $(B_KERNEL_STATIC)
 
 $(B_KERNEL_DYNAMIC): b.cpp
-	g++ b.cpp -O3 -std=c++11 -lvnf-kernel-dynamic -lpthread -lboost_system -o $(B_KERNEL_DYNAMIC)
+	g++ b.cpp -O$(CPP_OPTIMIZE) -shared -fPIC $(JAVA_INCLUDE) -std=c++11 -lvnf-kernel-dynamic -lpthread -lboost_system -o $(B_KERNEL_DYNAMIC)
 
 $(A): a.cpp
 	g++ a.cpp -std=c++11 -lpthread -lboost_system -lfmt -o $(A)
