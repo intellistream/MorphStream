@@ -61,15 +61,13 @@ public class JCommanderHandler {
     public int size_tuple = 0;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
     public int queue_size = 10000;
-    @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
-    public String topologyName;
 
 
 
     /**
      * Scheduling configurations
      */
-    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
+    @Parameter(names = {"--scheduler"}, description = "Scheduler for MorphStream.")
     public String scheduler = "OP_BFS_A";
     //    public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
@@ -87,7 +85,7 @@ public class JCommanderHandler {
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
     public int isDynamic = 0;
-    @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
+    @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool")
     public String schedulerPools = "OP_BFS_A,OP_BFS,OP_NS_A,OP_NS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
     public String defaultScheduler = "OP_BFS_A";
@@ -128,32 +126,12 @@ public class JCommanderHandler {
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
-    @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
-    public int NUM_ACCESS = 5;//
-    @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
-    public double ratio_of_read = 0.0; //<=1
-    @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
-    public Integer Ratio_Of_Deposit = 25;
-    @Parameter(names = {"--buying_ratio"}, description = "Ratio of buying for OB.")
-    public Integer Ratio_Of_Buying = 25;
-    @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
-    public Integer State_Access_Skewness = 20;
-    @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
-    public Integer Ratio_of_Multiple_State_Access = 100;
-    @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
-    public Integer Ratio_of_Overlapped_Keys = 10;
-    @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
-    public Integer Ratio_of_Transaction_Aborts = 0;
     @Parameter(names = {"--window_trigger_period"}, description = "Ratio of window events in the transaction.")
     public Integer Period_of_Window_Reads = 1024;
     @Parameter(names = {"--window_size"}, description = "Window Size for the window operations.")
     public Integer windowSize = 1024;
     @Parameter(names = {"--nondeterministic_ratio"}, description = "Ratio_of_Non_Deterministic_State_Access.(10 -> 0.01%)")
     public Integer Ratio_of_Non_Deterministic_State_Access = 0;
-    @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
-    public Integer Transaction_Length = 1;
-    @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
-    public Integer numberOfDLevels = 1024;
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
     public Integer complexity = 0;
     /**
@@ -386,16 +364,8 @@ public class JCommanderHandler {
         /* Workload configurations */
         config.put("application", application);
         config.put("operatorIDs", operatorIDs);
-        config.put("ratio_of_read", ratio_of_read);
-        config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
-        config.put("Ratio_Of_Buying", Ratio_Of_Buying);
-        config.put("State_Access_Skewness", State_Access_Skewness);
-        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
-        config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
-        config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
-        config.put("NUM_ACCESS", NUM_ACCESS);
         config.put("Period_of_Window_Reads", Period_of_Window_Reads);
         config.put("Ratio_of_Non_Deterministic_State_Access", Ratio_of_Non_Deterministic_State_Access);
         config.put("complexity", complexity);
