@@ -146,7 +146,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context) {
+    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
         long[] partition_bid = txn_context.partition_bid;
         if (partition_bid != null) {
             long commit_ts;

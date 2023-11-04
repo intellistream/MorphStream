@@ -63,21 +63,31 @@ public class CliFrontend {
             File file = new File(inputFile);
             if (file.exists()) {
                 LOG.info("Data already exists.. skipping data generation...");
+                env.fileDataGenerator().prepareInputData(true);
             } else {
-                String fileName = env.fileDataGenerator().prepareInputData();
+                String fileName = env.fileDataGenerator().prepareInputData(false);
                 env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, env.configuration().getInt("spoutNum"));
+            if (env.fileDataGenerator().getTranToDecisionConf() != null && env.fileDataGenerator().getTranToDecisionConf().size() != 0){
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:env.fileDataGenerator().getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                env.configuration().put("WorkloadConfig",stringBuilder.toString()); //For each workload, how many TD/LD/PD
+            }
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         } else if (env.configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
             String inputFile = env.configuration().getString("inputFilePath");
             File file = new File(inputFile);
             if (file.exists()) {
                 LOG.info("Data already exists.. skipping data generation...");
             } else {
-                String fileName = env.fileDataGenerator().prepareInputData();
+                String fileName = env.fileDataGenerator().prepareInputData(false);
                 env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, env.configuration().getInt("spoutNum"));
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         }
     }
     public void run() throws InterruptedException {

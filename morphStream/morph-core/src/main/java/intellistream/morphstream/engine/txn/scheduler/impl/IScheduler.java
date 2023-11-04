@@ -6,7 +6,7 @@ import intellistream.morphstream.engine.txn.scheduler.Request;
 public interface IScheduler<Context> {
     void INITIALIZE(Context threadId);
 
-    void PROCESS(Context threadId, long mark_ID);
+    void PROCESS(Context threadId, long mark_ID, int batchID);
 
     void EXPLORE(Context context);
 
@@ -18,11 +18,11 @@ public interface IScheduler<Context> {
 
     void TxnSubmitBegin(Context context);
 
-    void TxnSubmitFinished(Context context);
+    void TxnSubmitFinished(Context context, int batchID);
 
     void AddContext(int thisTaskId, Context context);
 
-    void start_evaluation(Context context, long mark_ID, int num_events);
+    void start_evaluation(Context context, long mark_ID, int num_events, int batchID);
 
     void initTPG(int offset);
 

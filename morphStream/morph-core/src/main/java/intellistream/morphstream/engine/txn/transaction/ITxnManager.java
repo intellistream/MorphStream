@@ -26,7 +26,7 @@ public interface ITxnManager {
 
     //used by speculative T-Stream.
 //    boolean Specu_ReadRecord(TxnContext txn_context, String microTable, String key, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws DatabaseException;
-    void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException;
+    void start_evaluate(String operatorID, int batchID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException;
 
     boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
@@ -42,11 +42,11 @@ public interface ITxnManager {
 
     void BeginTransaction(TxnContext txnContext);
 
-    boolean CommitTransaction(TxnContext txn_context);
+    boolean CommitTransaction(TxnContext txn_context, int batchID);
 
     SchedulerContext getSchedulerContext();
 
-    void switch_scheduler(int thread_Id, long mark_ID);
+    void switch_scheduler(int thread_Id, long mark_ID, int batchID, String operatorID);
 
     enum SCHEDULER_TYPE {
         OG_BFS,

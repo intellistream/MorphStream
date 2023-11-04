@@ -11,10 +11,10 @@ import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.I
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.DependencyLog;
-import intellistream.morphstream.engine.txn.durability.struct.Logging.HistoryLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LVCLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.NativeCommandLog;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.op.OPSchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
@@ -24,20 +24,18 @@ import intellistream.morphstream.engine.txn.scheduler.struct.op.TaskPrecedenceGr
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.storage.datatype.DoubleDataBox;
-import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
+import communication.dao.TPGEdge;
+import communication.dao.TPGNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
+import static intellistream.morphstream.configuration.CONTROL.enable_latency_measurement;
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
-import static java.util.stream.Collectors.toList;
 
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
@@ -45,6 +43,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
     public LoggingManager loggingManager; // Used by fault tolerance
     public int isLogging;// Used by fault tolerance
+    private MetaTypes.DependencyType[] dependencyTypes = new MetaTypes.DependencyType[]{MetaTypes.DependencyType.FD, MetaTypes.DependencyType.TD, MetaTypes.DependencyType.LD};
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
@@ -82,18 +81,15 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         return tpg.threadToContextMap.get(threadId);
     }
 
-    private void readFunction(Operation operation) {
-
-    }
-
     /**
      * Used by tpgScheduler.
      *
      * @param operation
      * @param mark_ID
      * @param clean
+     * @param batchID
      */
-    public void execute(Operation operation, long mark_ID, boolean clean) {
+    public void execute(Operation operation, long mark_ID, boolean clean, int batchID) {
 //        log.trace("++++++execute: " + operation);
         // if the operation is in state aborted or committable or committed, we can bypass the execution
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED) || operation.isFailed.get()) {
@@ -107,6 +103,20 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             commitLog(operation);
             return;
         }
+
+        if (enable_latency_measurement) {
+            String operationID = operation.stateAccess.getOperationID();
+            TPGNode node = new TPGNode(operationID, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
+            for (MetaTypes.DependencyType type : dependencyTypes) {
+                for (Operation child : operation.getChildren(type)) {
+                    TPGEdge edge = new TPGEdge(operationID, child.stateAccess.getOperationID(), type.toString());
+                    RuntimeMonitor.get().UPDATE_TPG_EDGE(operation.stateAccess.getOperatorID(), batchID, node, edge);
+                }
+            }
+        }
+
+        // apply function
+        AppConfig.randomDelay();
 
         /**
          * Start of newly defined txn execution logic
@@ -190,12 +200,13 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
+    public void TxnSubmitFinished(Context context, int batchID) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         int txnOpId = 0;
         Operation headerOperation = null;
         for (Request request : context.requests) {
+            //all requests under the same request share LD
             long bid = request.txn_context.getBID();
             Operation set_op;
             switch (request.accessType) {
@@ -234,8 +245,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
 //            set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
             tpg.setupOperationTDFD(set_op, request);
-            if (txnOpId == 0)
-                headerOperation = set_op;
+            if (txnOpId == 0) {
+                headerOperation = set_op; //In TPG, this is the LD parent for all operations in the same txn
+            }
+
+            // Update LD
+            String operationID = set_op.stateAccess.getOperationID();
+            String LDParentOperationID = String.valueOf(headerOperation.stateAccess.getOperationID());
+            TPGNode node = new TPGNode(operationID, set_op.accessType.toString(), set_op.table_name, set_op.d_record.record_.GetPrimaryKey());
+            TPGEdge edge = new TPGEdge(LDParentOperationID, operationID, MetaTypes.DependencyType.LD.toString());
+            RuntimeMonitor.get().UPDATE_TPG_EDGE(set_op.stateAccess.getOperatorID(), batchID, node, edge);
+
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
             set_op.setTxnOpId(txnOpId++);
             set_op.addHeader(headerOperation);
@@ -246,7 +266,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     protected abstract void NOTIFY(Operation operation, Context context);
 
-    public void start_evaluation(Context context, long mark_ID, int num_events) {
+    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
         int threadId = context.thisThreadId;
 
         INITIALIZE(context);
@@ -256,7 +276,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            PROCESS(context, mark_ID);
+            PROCESS(context, mark_ID, batchID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));

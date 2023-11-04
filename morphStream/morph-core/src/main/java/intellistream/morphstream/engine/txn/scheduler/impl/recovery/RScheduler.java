@@ -86,7 +86,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
+    public void TxnSubmitFinished(Context context, int batchID) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         int txnOpId = 0;
         for (Request request : context.requests) {
@@ -156,7 +156,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, long mark_ID, int batchID) {
         OperationChain oc = context.ready_oc;
         for (Operation op : oc.operations) {
             if (op.pKey.equals(oc.getPrimaryKey())) {
@@ -236,11 +236,11 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     }
 
     @Override
-    public void start_evaluation(Context context, long mark_ID, int num_events) {
+    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
         INITIALIZE(context);
         do {
             EXPLORE(context);
-            PROCESS(context, mark_ID);
+            PROCESS(context, mark_ID, batchID);
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (this.abortHandling.get()) {
@@ -248,7 +248,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             REINITIALIZE(context);
             do {
                 EXPLORE(context);
-                PROCESS(context, mark_ID);
+                PROCESS(context, mark_ID, batchID);
             } while (!FINISHED(context));
         }
         RESET(context);

@@ -23,7 +23,7 @@ import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.util.FaultToleranceConstants;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +47,8 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private int currentBatchID = 0; //batchID starts from 1
-    private final DescriptiveStatistics latencyStat = new DescriptiveStatistics(); //latency statistics of current batch
+    private int currentBatchID = 1; //batchID starts from 1
+    private final SynchronizedDescriptiveStatistics latencyStat = new SynchronizedDescriptiveStatistics(); //latency statistics of current batch
     private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
     public FTManager ftManager;
@@ -79,7 +79,9 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
+        RuntimeMonitor.get().PREPARE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_EXECUTE(in);
+        RuntimeMonitor.get().ACC_PREPARE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_TXN_PROCESS(_bid);
     }
 
@@ -95,6 +97,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
+        RuntimeMonitor.get().PRE_EXE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = (TransactionalEvent) input_event;
@@ -102,6 +105,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                 event.setOperationTimestamp(operatorTimestamp);
             }
             Transaction_Request_Construct(event, txnContext);
+            RuntimeMonitor.get().ACC_PRE_EXE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         }
     }
 
@@ -111,12 +115,14 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
         eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
 
+        int stateAccessIndex = 0; // index of state access in the txn, used to generate StateAccessID (OperationID)
         //Each event triggers multiple state accesses
         for (Map.Entry<String, StateAccessDescription> descEntry: txnDescription.getStateAccessDescEntries()) {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
             StateAccessDescription stateAccessDesc = descEntry.getValue();
-            StateAccess stateAccess = new StateAccess(event.getFlag(), stateAccessDesc);
+            StateAccess stateAccess = new StateAccess(event.getBid() + "_" + stateAccessIndex, this.getOperatorID(), event.getFlag(), stateAccessDesc);
+            stateAccessIndex += 1;
 
             //Each state access involves multiple state objects
             for (StateObjectDescription stateObjDesc: stateAccessDesc.getStateObjDescList()) {
@@ -143,7 +149,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }
 
-        transactionManager.CommitTransaction(txnContext);
+        transactionManager.CommitTransaction(txnContext, currentBatchID);
         eventQueue.add(event);
     }
 
@@ -166,7 +172,9 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                     collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
                 } else {
                     if (enable_latency_measurement) {
-                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
+                        assert udfResultReflect != null;
+                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context,
+                                new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
                     }
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
@@ -179,11 +187,6 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                 throw new RuntimeException(e);
             }
         }
-        if (enable_latency_measurement) {
-            isNewBatch = true;
-            RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
-            currentBatchID += 1;
-        }
     }
 
     @Override
@@ -192,7 +195,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
             {
-                transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
+                transactionManager.start_evaluate(this.getOperatorID(), currentBatchID, numEvents, thread_Id, in.getBID());
                 if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
                     BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                     this.db.asyncSnapshot(in.getMarker().getSnapshotId(), this.thread_Id, this.ftManager);
@@ -213,8 +216,15 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             if (Objects.equals(in.getMarker().getMessage(), "commit_early") || Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
                 this.loggingManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new LoggingResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
             }
-            {
+            { // post-processing
+                RuntimeMonitor.get().POST_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
                 Transaction_Post_Process();
+                RuntimeMonitor.get().POST_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
+            }
+            if (enable_latency_measurement) {
+                isNewBatch = true;
+                RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
+                latencyStat.clear();
             }
             if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
                 this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
@@ -226,10 +236,10 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
                 this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
             }
-            {
-                eventQueue.clear();
-                eventStateAccessesMap.clear();
-            }
+            eventQueue.clear();
+            eventStateAccessesMap.clear();
+            RuntimeMonitor.get().END_TOTAL_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
+            currentBatchID += 1;
             if (isCombo) {
                 sink.execute(in);
             }
@@ -239,13 +249,13 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
 //                getContext().stop_running();
             }
         } else {
-            execute_ts_normal(in);
             if (enable_latency_measurement) {
                 if (isNewBatch) { //only executed by 1st event in a batch
                     isNewBatch = false;
                     batchStartTime = System.nanoTime();
                 }
             }
+            execute_ts_normal(in);
         }
     }
 

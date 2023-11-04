@@ -9,7 +9,6 @@ import java.util.List;
  * This class is used in refined-API, to convert raw inputEvent to txnEvent
  * Differs from the original TxnEvent, this class only requires user to specify (keys, values, flags)
  * Currently, it inherits from TxnEvent to match the old TxnEvent logic (which involves partition information)
- * TODO: Abstract TxnEvent, push down partition-related info to its subclass. Refine the corresponding bolt logic as well.
  */
 
 public class TransactionalEvent extends TxnEvent {

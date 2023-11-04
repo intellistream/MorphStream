@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import {NzUploadFile} from "ng-zorro-antd/upload";
-import {Observable} from "rxjs";
 import {SubmitNewJobService} from "./submit-new-job.service";
 
 @Component({
@@ -31,8 +30,6 @@ export class SubmitNewJobComponent {
   // handleUpload = (item: any) => {
   //   const formData = new FormData();
   //   formData.append(item.name, item.file as any);
-  //
-  //   console.log(formData);
   //
   //   return this.submitNewJobService.uploadNewJob().subscribe(res => {
   //       console.log("success", res.id);

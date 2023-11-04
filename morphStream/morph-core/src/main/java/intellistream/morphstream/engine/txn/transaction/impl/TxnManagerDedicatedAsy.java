@@ -8,6 +8,7 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.context.og.OGNSAContext;
@@ -21,7 +22,6 @@ import intellistream.morphstream.engine.txn.scheduler.context.op.OPSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
-import intellistream.morphstream.engine.txn.stage.Stage;
 import intellistream.morphstream.engine.txn.storage.*;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
@@ -129,25 +129,26 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
      * Switch scheduler every punctuation
      * When the workload changes and the scheduler is no longer applicable
      */
-    public void SwitchScheduler(String schedulerType, int threadId, long markId) {
+    public void SwitchScheduler(String schedulerType, int threadId, long markId, int batchID, String operatorID) {
         currentSchedulerType.put(threadId, schedulerType);
         if (threadId == 0) {
             scheduler = schedulerPool.get(schedulerType);
             log.info("Current Scheduler is " + schedulerType + " markId: " + markId);
+            RuntimeMonitor.get().UPDATE_SCHEDULER(operatorID, batchID, schedulerType);
         }
     }
     @Override
-    public void switch_scheduler(int thread_Id, long mark_ID) {
+    public void switch_scheduler(int thread_Id, long mark_ID, int batchID, String operatorID) {
         if (scheduler instanceof RScheduler) {
             SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
             String schedulerType = collector.getDecision(thread_Id);
-            this.SwitchScheduler(schedulerType, thread_Id, mark_ID);
+            this.SwitchScheduler(schedulerType, thread_Id, mark_ID, batchID, operatorID);
             this.switchContext(schedulerType);
             SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
         }
     }
 
-    public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(String operatorID, int batchID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
 
@@ -414,13 +415,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context) {
+    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
         if (enableGroup) {
-            schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitFinished(context);
+            schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitFinished(context, batchID);
             //TODO: Replace with the following code for stage
 //            stage.getScheduler().TxnSubmitFinished(context);
         } else {
-            scheduler.TxnSubmitFinished(context);
+            scheduler.TxnSubmitFinished(context, batchID);
         }
         return true;
     }
