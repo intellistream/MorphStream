@@ -181,14 +181,16 @@ void *serverThread(void *args) {
     ev.data.fd = globals.listeningSocketFd;
     epoll_ctl(epFd, EPOLL_CTL_ADD, globals.listeningSocketFd, &ev);
 
-#ifdef BACKEND_MORPH
-    // Add transaction triggered fd.
+    // Apply txnSocket.
     struct epoll_event ev1;
-    ev.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
-    ev.data.fd = sfc.EventFD();
-    epoll_ctl(epFd, EPOLL_CTL_ADD, globals.listeningSocketFd, &ev);
-#endif
-
+    // TODO. set mode.
+    ev1.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
+    ev1.data.fd = perCoreStates[coreId].txnSocket;
+    perCoreStates[coreId].txnSocket = eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK);
+    if ( perCoreStates[coreId].txnSocket == -1) {
+        perror("fatal: failed to create event fd.");
+    }
+    epoll_ctl(epFd, EPOLL_CTL_ADD, perCoreStates[coreId].txnSocket, &ev1);
     globals.listenLock.unlock();
 
     map <int, class timer*>::iterator timerItr = perCoreStates[coreId].fdToObjectMap.begin();
@@ -228,38 +230,6 @@ void *serverThread(void *args) {
             _useRemoteDataStore = LOCAL;
         }
 
-        // // Create a special ConnId to visit the datastore.
-        // if (coreId == 0){
-        //     ConnId C(0, -1);
-        //     if (argument.InitFn(C) < 0){
-        //         perror("initialization failed.");
-        //     }
-        //     // No need to use lock since there is only one write.
-        //     globals.hasInitialized = true;
-        // } else {
-        //     // Block when not inited. It must guarantee that the other datastore operations send after initialization.
-        //     while (!globals.hasInitialized){
-        //     }
-        // }
-
-        /*
-            Insert here: Add block to receive txnEngine messages.
-            // TODO. Implement a waiting (Positively ask cpu to switch context).
-            To trigger functions:
-            1. PostTransaction function. Registered in postTxnCallBacks.
-        */
-        //    int txnNotifyType = -1; 
-        //    char * txnNotifyValue = NULL;   
-        //    int txnNotifyErrorCode = -1;
-        //    int txnNotifyLength = -1;
-        
-        //    int numTxnNotifications = txn_notify_wait(&txnNotifyType, txnNotifyValue, &txnNotifyLength, &txnNotifyErrorCode);
-
-        // wait for epoll events
-        // spdlog::debug("thread {}, cpu {}\n", argument.coreId, sched_getcpu());
-        /*
-            This part mainly handles the epoll events.
-        */
         int numEventsCaptured = epoll_wait(epFd, epollEvents, MAX_EVENTS, -1);      // Epoll provided by libc. -1: infinite time out.
         if (numEventsCaptured < 0) {
             if (errno != EINTR) {
@@ -270,6 +240,7 @@ void *serverThread(void *args) {
         // Epoll would return many events at one time. Here we dispose them one by one.
         // spdlog::debug("Caught {} events\n", numEventsCaptured);
         for (int i = 0; i < numEventsCaptured; i++) {
+            uint64_t u64 = epollEvents[i].data.u64;
             int currentSocketId = epollEvents[i].data.fd;
             uint32_t currentEvents = epollEvents[i].events;
 
@@ -359,7 +330,7 @@ void *serverThread(void *args) {
                     CallbackFn callback = perCoreStates[coreId].socketIdCallbackMap[ACCEPT][socketId];
                     ConnId connId = ConnId(coreId, socketId);
                     if(callback){
-                        callback(connId, 0, nullptr, nullptr, 0, 0, 0);
+                        callback(connId, 0, nullptr, nullptr, perCoreStates[coreId].packetNumber++, 0, 0, 0);
                     }
                 }
 
@@ -371,20 +342,62 @@ void *serverThread(void *args) {
             */
             if (currentEvents & EPOLLIN) {
                 /* EPOLLIN: The associated file is available for read(2) operations. */
-#ifdef BACKEND_MORPH
-                if (perCoreStates[coreId].isTransactionSocket(currentSocketId)){
-                    // Ask txnEngine to give the parameters.
+                if (perCoreStates[coreId].txnSocket == currentSocketId) {
+                    // read from socket.
+                    uint64_t txnId = 0; 
+                    if (read(currentSocketId, &txnId, sizeof(uint64_t)) < 0) {
+                        perror("serverThread.transactions.read");
+                    }
+                    // TODO. Make sure only the right thread receives this.
+                    if (COREID(txnId) == coreId) {
+                        // TODO. Debug. Set the cache.
+                        // No need to modify to use the cache. Since it's totally inside.
+                        // void *dsMalloc;
+                        // globals.dataStoreLock.lock();
+                        // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+                        //     freeDSPool();
+                        // }
+                        // // cache the state
+                        // dsMalloc = globals.dsMemPoolManager.malloc();
+                        // globals.dsSize++;
+                        // memcpy(dsMalloc, buffer.c_str(), buffer.length());
+                        // // The local datastore is used as cache for reading.
+                        // globals.localDatastore[bufKey] = dsMalloc;
+                        // globals.localDatastoreLens[bufKey] = buffer.length();
+                        // globals.cachedRemoteDatastore[bufKey] = dsMalloc;
+                        // cache_void_list[dsMalloc] = bufKey;
+                        // globals.dataStoreLock.unlock();
 
-                    // Extract the same reqObj and send to callbacks.
+                        auto o = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnId)];
+                        ConnId connId = ConnId(coreId, o->old_socket);
+
+                        // request object id extractor from packet
+                        // TODO. How does it constructed? 
+                        ReqObjExtractorFn extractor = perCoreStates[coreId].socketIdReqObjIdExtractorMap[o->old_socket];
+                        int reqObjId = extractor == nullptr ? 0 : extractor(const_cast<char *>(buffer.c_str()), 0); // fix me : replace 0 packetlen with actual packet len
+                        cout.flush();
+
+                        // callback. This part handles the DataBase return function.
+                        DSCallbackFn callback = perCoreStates[coreId].socketIdDSCallbackMap[o->old_socket];
+                        callback(connId, reqObjId,
+                                 perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
+                                 (void *) buffer.c_str(),
+                                 // The buffer size needs to be resigned before..
+                                 userConfig->BUFFER_SIZE, 0);
+
+                    // TODO. Can receive error here.
+                    _AppsDisposalContinue(ConnId, reqObjId,
+                                 perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
+                                 userConfig->BUFFER_SIZE, 0);
+                    // TODO. How to recover packates here.
+                    }
+                    continue;    
                 }
-#endif
                 /* Current socketId points to remote datastore 
                     Each time we communicate with the data store, we are using the specified socket (Special IP and ports).
                     So we can decide this is the message from the database.
                 */
                 if (perCoreStates[coreId].isDatastoreSocket(currentSocketId)) {
-                    /* TODO: fix this shit */
-                    // You jerk shit reeks forever.
                     while (true) {
                         DSPacketHandler pkt;
                         int pkt_len, retval;
@@ -445,12 +458,13 @@ void *serverThread(void *args) {
                         callback(connId, reqObjId,
                                  perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
                                  (void *) buffer.c_str(),
+                                 perCoreStates[coreId].packetNumber++,
                                  // The buffer size needs to be resigned before..
                                  userConfig->BUFFER_SIZE, 0);
                     }
 
                     continue;
-                }
+                } 
 
                 /* Current socketId points to non-remote datastore network function */
                 int socketId = currentSocketId;
@@ -498,7 +512,7 @@ void *serverThread(void *args) {
                             CallbackFn callback = perCoreStates[coreId].socketIdCallbackMap[ACCEPT][socketId];
                             ConnId connId = ConnId(coreId, socketId);
                             if(callback){
-                                callback(connId, 0, nullptr, nullptr, 0, 0, 0);
+                                callback(connId, 0, nullptr, nullptr, perCoreStates[coreId].packetNumber++, 0, 0, 0);
                             }
                         }
                     }
@@ -544,7 +558,7 @@ void *serverThread(void *args) {
                     /* user-defined on read callback function */
                     CallbackFn callback = perCoreStates[coreId].socketIdCallbackMap[READ][socketId];
                     void *reqObj = perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId];
-                    callback(connId, reqObjId, reqObj, (char *) packet, packetLength, 0, streamNum);
+                    callback(connId, reqObjId, reqObj, (char *) packet, packetLength,  perCoreStates[coreId].packetNumber++, 0, streamNum);
                     packetStart += packetLength;
 
                     /* free heap previously allocated for packet if evicatable */
@@ -557,7 +571,7 @@ void *serverThread(void *args) {
                 perCoreStates[coreId].setLeftOverPacketFragment(socketId, prependedBuffer.substr((uint) packetStart, prependedBuffer.size() - packetStart));
 
                 continue;
-            }
+                }
 
             /* EPOLLOUT: The associated file is available for write(2) operations. */
             if (currentEvents & EPOLLOUT) {
@@ -682,7 +696,7 @@ ConnId vnf::initServer(string iface, string serverIp, int serverPort, string pro
     return FIRST_TIME_CONN_ID;
 }
 
-ConnId& vnf::ConnId::registerCallback(enum EventType eventType, void callback(ConnId&, int, void *, char *, int, int, int)) {
+ConnId& vnf::ConnId::registerCallback(enum EventType eventType, void callback(ConnId&, int, void *, char *, int, int, int, int)) {
     if (*this == FIRST_TIME_CONN_ID) {
         globals.onAcceptByServerCallback[eventType] = callback;
     } else {
@@ -908,7 +922,6 @@ ConnId& vnf::ConnId::sendData(char *data, int dataLen, int streamNum) {
     int coreId = this->coreId;
     int socketId = this->socketId;
 
-    // TODO: learn why this check is made
     if (socketId == -1) {
         spdlog::error("SocketId issue");
         exit(-1);
@@ -976,8 +989,9 @@ ConnId& vnf::ConnId::sendData(char *data, int dataLen, int streamNum) {
     return *this;
 }
 
-void registerDSCallback(ConnId& connId, enum EventType eventType, void callback(ConnId&, int, void *, void *, int, int)) {
+void registerDSCallback(ConnId& connId, enum EventType eventType, void callback(ConnId&, int, void *, void *, int,  int, int)) {
     if (connId == FIRST_TIME_CONN_ID) {
+        // TODO. Why special case the first CONN?
         globals.onAcceptByServerDSCallback = callback;
     } else {
         int coreId = connId.coreId;
@@ -991,14 +1005,13 @@ void registerDSCallback(ConnId& connId, enum EventType eventType, void callback(
 }
 
 // Error call back is of the same format as callback. We don't need to return anything if we don't need callback.
-ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId&, int, void *, void *, int, int)) {
+ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId&, int, void *, void *, int, int, int)) {
     if (errorCallback != nullptr) {
         // todo call this somewhere
         registerDSCallback(*this, ERROR, errorCallback);
     }
 
     if (location == REMOTE || location == UDS) {
-        /* TODO: fix this shit */
         int coreId = this->coreId;
         int socketId = this->socketId;
         char *s2;
@@ -1075,13 +1088,10 @@ ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation loca
     return *this;
 }
 
-ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation location, void callback(ConnId&, int, void *, void *, int, int), int reqObjId) {
+ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation location, void callback(ConnId&, int, void *, void *, int, int, int), int reqObjId) {
     int coreId = this->coreId;
     int socketId = this->socketId;
 
-    /* TODO: fix this shit */
-    // if checkcache option retrieve from cache if entry exists else fetch from remote store
-    // store the callback to be called after value retrieved
     if (location == CHECKCACHE) {
         // todo check this
         registerDSCallback(*this, READ, callback);
@@ -1166,13 +1176,6 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
         callback(*this, reqObjId, perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId], valueCopy, userConfig->BUFFER_SIZE, 0);
         return *this;
     }
-    #ifdef MORPH
-    if (location == MORPH){
-        registerDSCallbackMorph(*this, tableName, key, callback);
-        // TODO. Call the morphStream to trigger the query.
-    }
-    #endif
-
     spdlog::warn("retrieveData: Unknown location used {}", location);
 
     return *this;
@@ -1647,7 +1650,6 @@ void vnf::http::extractHTTPRequest(bool &status, extractRequestArg &arg){
     return;
 }
 
-
 vnf::ConnId vnf::getObjConnId(uint32_t connId) { 
     return vnf::ConnId(connId / 10000000, connId % 10000000); 
 }
@@ -1659,6 +1661,54 @@ uint32_t vnf::getIntConnId(vnf::ConnId& connId) {
 // Entry for Java calling this thread.
 int __VNFThread(int argc, char *argv[]){
 	vnf::startEventLoop();
+}
+
+void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode){
+    auto o = static_cast<Context *> (requestObject);
+    while (o->next_app != -1){
+        auto app = globals.sfc.SFC_chain[o->next_app];
+        // Only user manually point the next app to send.
+        o->next_app = -1;
+        switch (o->ret)
+        {
+        case vnf::ERROR:
+            (*app.errorHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            break;
+        case vnf::ACCEPT:
+            (*app.acceptHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            break;
+        case vnf::READ:
+            (*app.readHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            break;
+        } 
+        // FIXME. Copy to preserver for now.
+        if ( o->waiting_for_transaction_back == true ){
+            // Copy the packet.
+            o->packet_record = new char[packetLen];
+            memcpy(o->packet_record, packet, packetLen);
+            o->packet_len = packetLen;
+            // Break out if called request.
+            return;
+        }
+    }
+}
+
+void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+    auto o = static_cast<Context *> (requestObject);
+    o->ret = vnf::ACCEPT;
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode);
+}
+
+void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+    auto o = static_cast<Context *> (requestObject);
+    o->ret = vnf::ACCEPT;
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode);
+}
+
+void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+    auto o = static_cast<Context *> (requestObject);
+    o->ret = vnf::ACCEPT;
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode);
 }
 
 int __initSFC(int argc, char *argv[]){
@@ -1698,46 +1748,14 @@ int __initSFC(int argc, char *argv[]){
     int size[] = {globals.sfc.reqObjTotalSize};
     vnf::initReqPool(size, 1);
 
-	registerCallback(serverId, vnf::ACCEPT, _AppsDisposalAccept);
-	registerCallback(serverId, vnf::READ, _AppsDisposalRead);
-	registerCallback(serverId, vnf::ERROR, _AppsDisposalError);
+	serverId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
+	serverId.registerCallback(vnf::READ, _AppsDisposalRead);
+	serverId.registerCallback(vnf::ERROR, _AppsDisposalError);
 
 	// report to txnEngine.
 	return globals.sfc.NFs();
 };
 
-
-void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode, vnf::ACCEPT);
-}
-
-void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode, vnf::READ);
-}
-
-void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode, vnf::ERROR);
-}
-
-void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, vnf::EventType ret){
-	int appIdx = 0;
-    for (DB4NFV::App& app: globals.sfc.SFC_chain){
-        switch (ret)
-        {
-        case vnf::ERROR:
-            ret = (*app.errorHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
-            break;
-        case vnf::ACCEPT:
-            ret = (*app.acceptHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
-            break;
-        case vnf::READ:
-            ret = (*app.readHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
-            break;
-        case vnf::SLEEP:
-            break;
-        } 
-    }
-}
 
 // TODO. Define the structure for message convey.
 int DB4NFV::SFC::NFs(){};
@@ -1756,24 +1774,45 @@ void DB4NFV::SFC::Add(App& last, App& app){
 	this->SFC_chain.push_back(app);
 }
 
-int DB4NFV::SFC::_callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqObj, char * packet, int packetlen, void * value, int length, int errCode){
-	// Seems we need to find out the ConnId from the context queue and continue.
-    auto app = this->SFC_chain.at(AppIdx);
-	return (*app.Txns.at(TxnIdx)->sas.at(SAIdx)->txnHandler_)(
-        connId,
-        app.Txns,
-        reqObjId, app.reqObjClip(reqObj),
-        packet, packetlen,
-        value, length, errCode);
+// int DB4NFV::SFC::_callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqObj, char * packet, int packetlen, void * value, int length, int errCode){
+// 	// Seems we need to find out the ConnId from the context queue and continue.
+//     auto app = this->SFC_chain.at(AppIdx);
+// 	return (*app.Txns.at(TxnIdx)->sas.at(SAIdx)->txnHandler_)(
+//         connId,
+//         app.Txns,
+//         reqObjId, app.reqObjClip(reqObj),
+//         packet, packetlen,
+//         value, length, errCode);
+// }
+
+int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj) {
+    // Create a new event blocking fd.
+    if (uint64_t(reqObj) == 0){
+        perror("fatal: reqObj is null.");
+    }
+    auto o = static_cast<Context *>(CONTEXT(reqObj));
+    o->next = this->postTxnHandler_;
+    o->old_socket = connId.socketId;
+
+    // Register call back parameters in the context.
+    perCoreStates[connId.coreId].packetNumberContextMap[packetId] = o;
+	__request(TXNID(connId.coreId, packetId));
 }
 
-int DB4NFV::StateAccess::Request(vnf::ConnId& connId) {
-	// TODO. Register callbacks for triggering.
-    auto appIdx = perCoreStates[connId.socketId].current_app_idx;
-	__request(appIdx, this->txnIndex, this->saIndex );
-}
-
-int __request(int AppIdx, int TxnIdx, int saIdx){
-    perror("java.Unimplemented.");
+// __request actually send indexes marked functions to java.
+int __request(uint64_t txnId){
+    // TODO. Send request to morphStream.
     return -1;
+}
+
+// Routing to the context of transaction breakpoint.
+int _callBack(uint64_t txnId, void * value, int length){
+    // Write the value to the corresponding context.
+    perCoreStates[COREID(txnId)].packetNumberContextMap[PACKETID(txnId)]->value = value;
+    perCoreStates[COREID(txnId)].packetNumberContextMap[PACKETID(txnId)]->value_len = length;
+
+    // Trigger the hook and return.
+    if (write(perCoreStates[COREID(txnId)].epollFd, &txnId, sizeof(uint64_t)) < 0){
+        perror("_callback.write");
+    }
 }

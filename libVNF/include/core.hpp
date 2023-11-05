@@ -120,7 +120,7 @@ JNICALL Java_utils_java_Loader_Loader_TxnUDF (JNIEnv * env, jobject obj, jobject
 namespace vnf {
 
 enum EventType {
-    READ = 0, ACCEPT = 1, ERROR = 2, SLEEP = 3
+    READ = 0, ACCEPT = 1, ERROR = 2, WAIT = 3
 };
 
 enum DataLocation {
@@ -135,10 +135,28 @@ class ConnId {
 public:
   const int coreId;
   const int socketId;
+  // Get the current timeStamp.
+  uint64_t id;
 
-  ConnId(int coreId, int socketId) : coreId(coreId), socketId(socketId) {}
+  ConnId(int coreId, int socketId) : coreId(coreId), socketId(socketId) {
+	  auto currentTime = std::chrono::high_resolution_clock::now();
+	  auto nanosecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::nanoseconds>(currentTime).time_since_epoch().count();
+	  uint64_t timestamp = static_cast<uint64_t>(nanosecondsSinceEpoch);
+	  id = timestamp & 0x00000000FFFFFFFFULL | (static_cast<uint64_t>(coreId) << 32);
+  }
 
-  ConnId(int value) : coreId(value), socketId(value) {}
+  ConnId(int value) : coreId(value), socketId(value) {
+	  auto currentTime = std::chrono::high_resolution_clock::now();
+	  auto nanosecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::nanoseconds>(currentTime).time_since_epoch().count();
+	  uint64_t timestamp = static_cast<uint64_t>(nanosecondsSinceEpoch);
+	  id = timestamp & 0x00000000FFFFFFFFULL | (static_cast<uint64_t>(coreId) << 32); }
+
+  // Recover ConnId
+  ConnId(int coreId, int socketId, int id) : coreId(coreId), socketId(socketId), id(id) {}
+
+  int coreIdFromId(){
+	return id >> 32;
+  }
 
   bool isValid() {
     return coreId > -1 || socketId > -1;
@@ -262,9 +280,10 @@ namespace http {
   
 };
 
-typedef void (*CallbackFn)(ConnId&, int, void *, char *, int, int, int);
+// ConnId, reqObjId, reqObj, packet, packetId, packetLen, streamNum, errorCode.
+typedef void (*CallbackFn)(ConnId&, int, void *, char *, int, int, int, int);
 
-typedef void (*DSCallbackFn)(ConnId&, int, void *, void *, int, int);
+typedef void (*DSCallbackFn)(ConnId&, int, void *, void *, int, int, int);
 
 // typedef int (*DSInitFn) (ConnId&);
 

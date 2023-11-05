@@ -1,6 +1,0 @@
-[requires]
-nlohmann_json/3.10.0
-cxxopts/2.2.1
-
-[generators]
-cmake
