@@ -1,6 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Operator} from "../../model/operator";
-import {Application} from "../../model/Application";
+import {Operator} from "../../model/Operator";
+import {Job} from "../../model/Job";
 
 @Component({
   selector: 'app-application-board',
@@ -8,7 +8,7 @@ import {Application} from "../../model/Application";
   styleUrls: ['./application-board.component.less']
 })
 export class ApplicationBoardComponent implements OnInit {
-  @Input() application: Application;
+  @Input() application: Job;
   selectedOperator: Operator;
 
   onSelectedOperatorChange(operator: Operator) {

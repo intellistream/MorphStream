@@ -90,11 +90,11 @@ public class ApplicationSpoutCombo extends AbstractSpoutCombo {
                     }
                 }
 
-                if (inputQueue.isEmpty()) { //TODO: Refactor this part, remove the_end, use stopEvent indicator
-                    SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
-                    SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
-                    getContext().stop_running();
-                }
+//                if (inputQueue.isEmpty()) { //TODO: Refactor this part, remove the_end, use stopEvent indicator
+//                    SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
+//                    SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
+//                    getContext().stop_running();
+//                }
             }
         } catch (DatabaseException | BrokenBarrierException e) {
             e.printStackTrace();

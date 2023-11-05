@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, ElementRef, Input, OnInit} from '@angular/core';
-import {Application} from "../../model/Application";
+import {Job} from "../../model/Job";
 
 @Component({
   selector: 'app-finished-statistics-board',
@@ -8,7 +8,7 @@ import {Application} from "../../model/Application";
 })
 export class FinishedStatisticsBoardComponent implements OnInit {
   @Input()
-  job!: Application;
+  job!: Job;
 
   constructor(private el: ElementRef) {}
 

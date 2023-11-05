@@ -59,7 +59,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, long mark_ID, int batchID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -81,7 +81,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
 //        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            execute(operation, mark_ID, false);
+            execute(operation, mark_ID, false, batchID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 

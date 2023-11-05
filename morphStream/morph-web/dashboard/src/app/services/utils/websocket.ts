@@ -72,6 +72,11 @@ export class Websocket {
     return responseSubject.asObservable();
   }
 
+  sendPerformanceRequest<T>(requestMsg) {
+    this.sendMessage(JSON.stringify(requestMsg)); // send message
+    return;
+  }
+
   // sendUpload<T>(uploadMsg) {
   //   let correlationId = uuidv4();
   //   uploadMsg.correlationId = correlationId;
@@ -94,9 +99,9 @@ export class Websocket {
     this.createWebSocket();
   }
 
-  jobId: number;
+  jobId: string;
 
-  listenOnJobData(jobId: number) {
+  listenOnPerformanceData(jobId: string) {
     this.jobId = jobId;
     return this.consistentSubject.asObservable();
   }
@@ -149,7 +154,9 @@ export class Websocket {
   private subjectMap: Map<string, Subject<any>> = new Map();
 
   onMessage(msg) {
+    console.log("New message received: ", msg);
     const message = JSON.parse(msg.data); // parse the received message
+    console.log(message);
     // check the type of the message => response |
     if (message.type === "response") {
       const correlationId: string = message.correlationId;
@@ -161,7 +168,7 @@ export class Websocket {
         subject?.complete(); // subject is finished, cancel subscribe
         this.subjectMap.delete(correlationId);
       }
-    } else if (message.type === "Performance") {
+    } else if (message.type === "performance") {
       // pass message to messageSubject
       if (message.jobId == this.jobId) {
         this.consistentSubject.next(message);

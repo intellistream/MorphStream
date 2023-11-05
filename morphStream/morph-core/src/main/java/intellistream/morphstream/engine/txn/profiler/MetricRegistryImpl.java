@@ -35,7 +35,6 @@ public class MetricRegistryImpl {
         public void run() {
             try {
                 reporter.report();
-                System.out.println("HAHA");
             } catch (Throwable t) {
                 t.printStackTrace();
             }

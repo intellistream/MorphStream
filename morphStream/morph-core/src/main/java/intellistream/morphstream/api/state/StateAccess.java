@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class StateAccess {
+    private final String operationID; //bid + stateAccessIndex
+    private final String operatorID; //name of app that a txn belongs to
     private final String txnName; //name of txn that a stateAccess belongs to
     private final String stateAccessName;
     private String writeRecordName;
@@ -16,13 +18,23 @@ public class StateAccess {
     public Object udfResult;
     private boolean isAborted;
 
-    public StateAccess(String txnName, StateAccessDescription description) {
+    public StateAccess(String operationID, String operatorID, String txnName, StateAccessDescription description) {
+        this.operationID = operationID;
+        this.operatorID = operatorID;
         this.txnName = txnName;
         stateAccessName = description.getName();
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();
         valueMap = new HashMap<>();
         isAborted = false;
+    }
+
+    public String getOperationID() {
+        return operationID;
+    }
+
+    public String getOperatorID() {
+        return operatorID;
     }
 
     public String getTxnName() {

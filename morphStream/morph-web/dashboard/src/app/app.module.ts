@@ -16,8 +16,6 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { OverviewComponent } from "./pages/overview/overview.component";
 import { HeaderComponent } from "./common/layout/header/header.component";
 import { FooterComponent } from "./common/layout/footer/footer.component";
-import { ProcessingApplicationsComponent } from "./pages/applications/processing-applications/processing-applications.component";
-import { FinishedApplicationsComponent } from "./pages/applications/finished-applications/finished-applications.component";
 import { ApplicationCardComponent } from "./snippets/application-card/application-card.component";
 import { NzGridModule } from "ng-zorro-antd/grid";
 import { ScrollWrapperComponent } from "./snippets/scroll-wrapper/scroll-wrapper.component";
@@ -25,9 +23,6 @@ import { NzButtonModule } from "ng-zorro-antd/button";
 import { JobInformationComponent } from "./pages/application-information/job-information.component";
 import { NzBreadCrumbModule } from "ng-zorro-antd/breadcrumb";
 import { NzProgressModule } from "ng-zorro-antd/progress";
-import { ApplicationBoardComponent } from "./snippets/application-board/application-board.component";
-import { InfoScrollWrapperComponent } from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
-import { OperatorInformationComponent } from "./snippets/operator-information/operator-information.component";
 import { NzCardModule } from "ng-zorro-antd/card";
 import { NzModalModule } from "ng-zorro-antd/modal";
 import { FinishedStatisticsBoardComponent } from "./snippets/finished-statistics-board/finished-statistics-board.component";
@@ -48,6 +43,15 @@ import {CodemirrorModule} from "@ctrl/ngx-codemirror";
 import {NzCollapseModule} from "ng-zorro-antd/collapse";
 import { NzGraphModule } from 'ng-zorro-antd/graph';
 import {NzPopoverModule} from "ng-zorro-antd/popover";
+import {NzMessageModule} from "ng-zorro-antd/message";
+import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor';
+import {NzInputModule} from "ng-zorro-antd/input";
+import {NzInputNumberModule} from "ng-zorro-antd/input-number";
+import {NzSwitchModule} from "ng-zorro-antd/switch";
+import {NzSliderModule} from "ng-zorro-antd/slider";
+import {NzSpaceModule} from "ng-zorro-antd/space";
+import {NzCheckboxModule} from "ng-zorro-antd/checkbox";
+import {NzTagModule} from "ng-zorro-antd/tag";
 
 registerLocaleData(en);
 
@@ -57,53 +61,57 @@ registerLocaleData(en);
     OverviewComponent,
     HeaderComponent,
     FooterComponent,
-    ProcessingApplicationsComponent,
-    FinishedApplicationsComponent,
     ApplicationCardComponent,
     ScrollWrapperComponent,
     JobInformationComponent,
-    ApplicationBoardComponent,
-    InfoScrollWrapperComponent,
-    OperatorInformationComponent,
     FinishedStatisticsBoardComponent,
     SubmitNewJobComponent,
     CodeEditorComponent
   ],
-  imports: [
-    BrowserModule,
-    FormsModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    AppRoutingModule,
-    IconsProviderModule,
-    NzLayoutModule,
-    NzMenuModule,
-    NgOptimizedImage,
-    NzGridModule,
-    NzButtonModule,
-    NzBreadCrumbModule,
-    NzProgressModule,
-    NzCardModule,
-    NzModalModule,
-    NzTabsModule,
-    NzDescriptionsModule,
-    NzDividerModule,
-    NzTableModule,
-    NzUploadModule,
-    NzFormModule,
-    ReactiveFormsModule,
-    NzSelectModule,
-    NzListModule,
-    CdkVirtualForOf,
-    CdkVirtualScrollViewport,
-    CdkFixedSizeVirtualScroll,
-    NgxChartsModule,
-    NzCascaderModule,
-    CodemirrorModule,
-    NzCollapseModule,
-    NzGraphModule,
-    NzPopoverModule
-  ],
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule,
+        BrowserAnimationsModule,
+        AppRoutingModule,
+        IconsProviderModule,
+        NzLayoutModule,
+        NzMenuModule,
+        NgOptimizedImage,
+        NzGridModule,
+        NzButtonModule,
+        NzBreadCrumbModule,
+        NzProgressModule,
+        NzCardModule,
+        NzModalModule,
+        NzTabsModule,
+        NzDescriptionsModule,
+        NzDividerModule,
+        NzTableModule,
+        NzUploadModule,
+        NzFormModule,
+        ReactiveFormsModule,
+        NzSelectModule,
+        NzListModule,
+        CdkVirtualForOf,
+        CdkVirtualScrollViewport,
+        CdkFixedSizeVirtualScroll,
+        NgxChartsModule,
+        NzCascaderModule,
+        CodemirrorModule,
+        NzCollapseModule,
+        NzGraphModule,
+        NzPopoverModule,
+        NzMessageModule,
+        NzCodeEditorModule,
+        NzInputModule,
+        NzInputNumberModule,
+        NzSwitchModule,
+        NzSliderModule,
+        NzSpaceModule,
+        NzCheckboxModule,
+        NzTagModule
+    ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
   ],

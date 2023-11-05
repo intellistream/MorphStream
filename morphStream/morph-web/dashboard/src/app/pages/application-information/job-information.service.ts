@@ -1,28 +1,36 @@
 import { Injectable } from '@angular/core';
-import {Websocket} from "../../services/utils/websocket";
 import {Observable} from "rxjs";
-import {Application} from "../../model/Application";
-import {DetailedInfoRequest} from "../../dto/DetailedInfoRequest";
+import {Job} from "../../model/Job";
+import {HttpClient} from "@angular/common/http";
+import {Batch} from "../../model/Batch";
 
 @Injectable({
   providedIn: 'root'
 })
 export class JobInformationService {
-  constructor(private websocket: Websocket) {
-    this.websocket.connect("ws://localhost:5001/websocket");
+  constructor(private http: HttpClient) {}
+
+  /**
+   * Get job information by job id
+   * @param jobId
+   */
+  public getJob(jobId: string): Observable<Job> {
+    return this.http.get<Job>(`http://localhost:8080/jobInfo/get/${jobId}`);
   }
 
-  public getHistoricalJob(appId: string): Observable<Application> {
-    let msg: DetailedInfoRequest = {
-      "type": "DetailInfoRequest",
-      "appId": appId,
-      "correlationId": ""
-    }
-
-    return this.websocket.sendRequest<Application>(msg);
+  public startJob(jobId: string): Observable<boolean> {
+    return this.http.post<boolean>(`http://localhost:8080/api/signal/start/${jobId}`, null);
   }
 
-  public listenOnPerformanceData(jobId: number): Observable<any> {
-    return this.websocket.listenOnJobData(jobId);
+  public stopJob(jobId: string): Observable<boolean> {
+    return this.http.post<boolean>(`http://localhost:8080/api/signal/stop/${jobId}`, null);
+  }
+
+  public getBatchById(jobId: string, operatorId: string, batchId: string): Observable<Batch> {
+    return this.http.get<Batch>(`http://localhost:8080/batchInfo/get/${jobId}/${batchId}/${operatorId}`);
+  }
+
+  public getAllBatches(jobId: string, operatorId: string): Observable<Batch[]> {
+    return this.http.get<Batch[]>(`http://localhost:8080/batchInfo/get/all/${jobId}/${operatorId}`);
   }
 }

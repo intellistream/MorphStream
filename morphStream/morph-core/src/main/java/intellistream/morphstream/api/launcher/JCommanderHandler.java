@@ -88,11 +88,11 @@ public class JCommanderHandler {
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
     public int isDynamic = 0;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
-    public String schedulerPools = "";
+    public String schedulerPools = "OP_BFS_A,OP_BFS,OP_NS_A,OP_NS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
-    public String defaultScheduler = "";
+    public String defaultScheduler = "OP_BFS_A";
     @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
-    public String bottomLine = "";
+    public String bottomLine = "2,1,1,2,0.5,0.5"; //threshold for each TD=2/LD=1/PD=1/SUM(TD+LD)=2/VDD=0.5/R_of_A=0.5 ... based on this to switch between schedulers
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
     public String WorkloadConfig = "";
     /**
@@ -205,13 +205,13 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 100_000;//number of records in each table
+    public int NUM_ITEMS = 100_00;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "accounts,bookEntries";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "10000,10000";
+    public String numberItemsForTables = "4500,4500"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string,string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
@@ -234,10 +234,19 @@ public class JCommanderHandler {
     public String inputFilePath;
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
+    @Parameter(names = {"--dataDirectory"}, description = "input file name")
+    public String dataDirectory = "data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 20000;
+    public int totalEvents = 10000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-    public String workloadType = "default";
+    public String workloadType = "default," +
+            "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
+            "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
+            "Down_skew,Down_skew,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort," +
+            "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
+            "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
+            "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging";
+    //OP_BFS -> OP_NS -> OP_NS_A -> OP_NS -> OP_BFS -> OP_NS -> OP_NS_A -> OP_NS
     @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
     public String eventTypes = "transfer;deposit";
     @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
@@ -247,11 +256,11 @@ public class JCommanderHandler {
     @Parameter(names = {"--valueNameForEvents"}, description = "value names for each type of event, split by ;")
     public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
-    public String eventRatio = "0.5,0.5";
+    public String eventRatio = "50,50";
     @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
     public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
     @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
-    public String stateAccessSkewnessForEvents = "0.5,0.5";
+    public String stateAccessSkewnessForEvents = "0,0";
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
     public String abortRatioForEvents = "0,0";
 
@@ -294,7 +303,7 @@ public class JCommanderHandler {
      * Client configurations
      */
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
-    public String clientClassName = "cli.SLClient"; //TODO: Refine this
+    public String clientClassName = "cli.SLClient";
 
 
 
@@ -359,6 +368,7 @@ public class JCommanderHandler {
         } else {
             config.put("isDynamic", false);
             config.put("scheduler", scheduler);
+            config.put("defaultScheduler", defaultScheduler);
         }
         // Group scheduler
         if (isGroup == 1) {
@@ -458,6 +468,7 @@ public class JCommanderHandler {
         config.put("inputFileType", inputFileType);
         config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt"));
         config.put("inputFileName", inputFileName);
+        config.put("dataDirectory", dataDirectory);
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);
         config.put("eventTypes", eventTypes);

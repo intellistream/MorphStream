@@ -11,7 +11,6 @@ import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.I
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.DependencyLog;
-import intellistream.morphstream.engine.txn.durability.struct.Logging.HistoryLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LVCLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.NativeCommandLog;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
@@ -25,9 +24,6 @@ import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.storage.datatype.DoubleDataBox;
-import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.MyList;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
@@ -36,12 +32,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType.*;
-import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
 
 public abstract class OGScheduler<Context extends OGSchedulerContext>
@@ -89,7 +82,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
 
-    public void start_evaluation(Context context, long mark_ID, int num_events) {
+    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
         int threadId = context.thisThreadId;
         INITIALIZE(context);
 
@@ -98,7 +91,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            PROCESS(context, mark_ID);
+            PROCESS(context, mark_ID, batchID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
@@ -178,7 +171,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, long mark_ID, int batchID) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
         OperationChain next = next(context);
@@ -286,7 +279,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
+    public void TxnSubmitFinished(Context context, int batchID) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<Operation> operationGraph = new ArrayList<>();

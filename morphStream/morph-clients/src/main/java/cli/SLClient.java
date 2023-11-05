@@ -81,8 +81,19 @@ public class SLClient extends Client {
             StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
             StateAccess destTransfer = stateAccessMap.get("destTransfer");
             Double[] stateAccessResults = new Double[2];
-            stateAccessResults[0] = srcTransfer.getStateObject("srcAccountState").getDoubleValue("balance");
-            stateAccessResults[1] = destTransfer.getStateObject("destAccountState").getDoubleValue("balance");
+
+            try {
+                stateAccessResults[0] = srcTransfer.getStateObject("srcAccountState").getDoubleValue("balance");
+            } catch (NullPointerException e) {
+                stateAccessResults[0] = 0.0;
+            }
+
+            try {
+                stateAccessResults[1] = destTransfer.getStateObject("destAccountState").getDoubleValue("balance");
+            } catch (NullPointerException e) {
+                stateAccessResults[1] = 0.0;
+            }
+
             result.setResults(stateAccessResults);
         } else if (Objects.equals(txnName, "deposit")) {
             StateAccess deposit = stateAccessMap.get("deposit");
@@ -93,11 +104,11 @@ public class SLClient extends Client {
         return result;
     }
 
-    public static void main(String[] args) throws Exception {
-        CliFrontend SLClient = CliFrontend.getOrCreate().appName("SLClient");
+    public static void startJob(String[] args) throws Exception {
+        CliFrontend slClientJob = CliFrontend.getOrCreate().appName("SLClient");
 //        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
-        SLClient.LoadConfiguration(null, args); //TODO: add loadConfig from file
-        SLClient.prepare();
+        slClientJob.LoadConfiguration(null, args); //TODO: add loadConfig from file
+        slClientJob.prepare();
 
         //Initialize transactions for Combo to execute
         HashMap<String, TxnDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
@@ -127,16 +138,20 @@ public class SLClient extends Client {
         txnDescriptions.put("deposit", depositDescriptor);
 
         //Define topology
-        SLClient.setSpoutCombo("sl", txnDescriptions, 4);
+        slClientJob.setSpoutCombo("sl", txnDescriptions, 4);
         //TODO: let client determine number of DB loader threads, and update in config, then pass to DBInitializer
         //TODO: loadDBThreadNum = total threads of all stateful operators (bolts)
 
         //Initiate runner
         try {
-            SLClient.run();
+            slClientJob.run();
         } catch (InterruptedException ex) {
             if (enable_log) log.error("Error in running topology locally", ex);
         }
     }
 
+    public static void main(String[] args) throws Exception {
+        WebServer.createJobInfoJSON("StreamLedger");
+        startJob(args);
+    }
 }

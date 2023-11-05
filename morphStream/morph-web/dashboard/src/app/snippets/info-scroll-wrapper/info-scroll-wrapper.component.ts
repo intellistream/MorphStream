@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
-import {Operator} from "../../model/operator";
+import {Operator} from "../../model/Operator";
 
 @Component({
   selector: 'app-info-scroll-wrapper',
