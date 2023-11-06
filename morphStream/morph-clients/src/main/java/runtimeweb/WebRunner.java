@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 public class WebRunner implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
-    private static final String PATH = MorphStreamEnv.get().configuration().getString("dataPath", "data/jobs");
+    private static final String PATH = MorphStreamEnv.get().configuration().getString("dataPath", "morphStream/data/jobs");
 
     public static void main(String[] args) {
         SpringApplication.run(WebRunner.class, args);

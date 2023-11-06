@@ -25,7 +25,7 @@ public class WebServer implements Runnable {
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private static final WebSocketHandler webSocketHandler = new WebSocketHandler();
 //    private static final String jobInfoDirectory = "morph-clients/src/main/java/cli/jobInfo";
-    private static final String dataPath = "data/jobs";
+    private static final String dataPath = "morphStream/data/jobs";
 
     public static void main(String[] args) {
         try {

@@ -19,7 +19,7 @@ import java.util.List;
 
 @ChannelHandler.Sharable
 public class BasicInfoHandler extends SimpleChannelInboundHandler<BasicInfoRequest> {
-    private final String PATH = MorphStreamEnv.get().configuration().getString("dataPath", "data/jobs");
+    private final String PATH = MorphStreamEnv.get().configuration().getString("dataPath", "morphStream/data/jobs");
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, BasicInfoRequest request) throws Exception {

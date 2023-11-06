@@ -235,7 +235,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
-    public String dataDirectory = "data/jobs";
+    public String dataDirectory = "morphStream/data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 10000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")

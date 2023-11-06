@@ -54,7 +54,7 @@ public class RuntimeMonitor extends Thread {
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Batch>> batchedData = new ConcurrentHashMap<>();
-    private final String dataPath = "data/jobs";
+    private final String dataPath = MorphStreamEnv.get().configuration().getString("dataPath", "morphStream/data/jobs");
 
     public static RuntimeMonitor get() {
         return runtimeMonitor;
