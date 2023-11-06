@@ -1,0 +1,78 @@
+<head>
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval';">
+</head>
+<div id="main-container">
+  <nz-content id="content">
+    <nz-breadcrumb>
+      <nz-breadcrumb-item>Home</nz-breadcrumb-item>
+      <nz-breadcrumb-item>
+        <a [routerLink]="['code-editor']">Code Editor</a>
+      </nz-breadcrumb-item>
+    </nz-breadcrumb>
+    <div id="code-container">
+      <!--      <ngx-codemirror id="codemirror"-->
+      <!--        [(ngModel)]="code"-->
+      <!--        [options]="codemirrorOptions">-->
+      <!--      </ngx-codemirror>-->
+      <nz-code-editor class="editor" [ngModel]="code" [nzEditorOption]="{ language: 'java' }"></nz-code-editor>
+    </div>
+    <nz-row nzJustify="start">
+      <nz-col nzSpan="24">
+        <div style="text-align: right">
+          <button nz-button nzSize="default" nzType="default" style="margin-right: 20px">Save</button>
+          <button nz-button nzSize="default" nzType="primary" style="margin-right: 20px" (click)="submitNewJob()">Submit
+            New Job
+          </button>
+        </div>
+      </nz-col>
+    </nz-row>
+  </nz-content>
+</div>
+<nz-modal
+  [(nzVisible)]="isSubmittingNewJob"
+  nzTitle="Configuration"
+  [nzContent]="configurationContent"
+  (nzOnCancel)="onCancelSubmit()"
+  nzWidth="500px"
+  [nzStyle]="{'top': '20%'}">
+  <div *nzModalFooter>
+    <button nz-button nzType="default" (click)="onCancelSubmit()">Cancel</button>
+    <button nz-button nzType="primary" (click)="confirmSubmit()">Submit</button>
+  </div>
+</nz-modal>
+<ng-template #configurationContent>
+  <div id="modal-container">
+    <form nz-form style="width: 100%" [formGroup]="submitForm">
+      <nz-row>
+        <nz-col nzSpan="24">
+          <nz-form-item>
+            <nz-form-label nzSpan="6" nzRequired>new job</nz-form-label>
+            <nz-form-control nzSpan="18">
+              <input nz-input [(ngModel)]="job" placeholder="Job" formControlName="job" style="width: 100%">
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzSpan="6" nzRequired>parallelism</nz-form-label>
+            <nz-form-control nzSpan="18">
+              <nz-input-number [(ngModel)]="parallelism" nzPlaceHolder="Parallelism" [nzMin]="1" [nzMax]="100"
+                               [nzStep]="1" style="width: 100%" formControlName="parallelism"></nz-input-number>
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzSpan="6" nzRequired>start now</nz-form-label>
+            <nz-form-control nzSpan="18">
+              <nz-switch
+                [ngModel]="false"
+                [nzCheckedChildren]="checkedTemplate"
+                [nzUnCheckedChildren]="unCheckedTemplate"
+                formControlName="startNow"
+              ></nz-switch>
+              <ng-template #checkedTemplate><span nz-icon nzType="check"></span></ng-template>
+              <ng-template #unCheckedTemplate><span nz-icon nzType="close"></span></ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </nz-col>
+      </nz-row>
+    </form>
+  </div>
+</ng-template>

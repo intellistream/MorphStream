@@ -55,20 +55,20 @@ VM state:not at safepoint (not fully initialized)
 
 VM Mutex/Monitor currently owned by a thread: None
 
-GC Heap History (0 events):
-No events
+GC Heap History (0 inputEvents):
+No inputEvents
 
-Deoptimization events (0 events):
-No events
+Deoptimization inputEvents (0 inputEvents):
+No inputEvents
 
-Classes redefined (0 events):
-No events
+Classes redefined (0 inputEvents):
+No inputEvents
 
-Internal exceptions (0 events):
-No events
+Internal exceptions (0 inputEvents):
+No inputEvents
 
-Events (0 events):
-No events
+Events (0 inputEvents):
+No inputEvents
 
 
 Dynamic libraries:

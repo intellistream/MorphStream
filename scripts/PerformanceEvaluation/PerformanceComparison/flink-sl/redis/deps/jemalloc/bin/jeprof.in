@@ -102,7 +102,7 @@ my @URL_FETCHER = ("curl", "-s", "--fail");
 my $HEAP_PAGE = "/pprof/heap";
 my $PROFILE_PAGE = "/pprof/profile";   # must support cgi-param "?seconds=#"
 my $PMUPROFILE_PAGE = "/pprof/pmuprofile(?:\\?.*)?"; # must support cgi-param
-                                                # ?seconds=#&event=x&period=n
+                                                # ?seconds=#&inputEvent=x&period=n
 my $GROWTH_PAGE = "/pprof/growth";
 my $CONTENTION_PAGE = "/pprof/contention";
 my $WALL_PAGE = "/pprof/wall(?:\\?.*)?";  # accepts options like namefilter
@@ -1280,7 +1280,7 @@ sub PrintCallgrind {
     $filename = "&STDOUT";
   }
   open(CG, ">$filename");
-  printf CG ("events: Hits\n\n");
+  printf CG ("inputEvents: Hits\n\n");
   foreach my $call ( map { $_->[0] }
                      sort { $a->[1] cmp $b ->[1] ||
                             $a->[2] <=> $b->[2] }
@@ -1528,7 +1528,7 @@ h1 {
 <script type="text/javascript">
 function jeprof_toggle_asm(e) {
   var target;
-  if (!e) e = window.event;
+  if (!e) e = window.inputEvent;
   if (e.target) target = e.target;
   else if (e.srcElement) target = e.srcElement;
 
@@ -2392,7 +2392,7 @@ function setupHandlers(root){
 }
 
 /**
- * Instance an SVGPoint object with given event coordinates.
+ * Instance an SVGPoint object with given inputEvent coordinates.
  */
 function getEventPoint(evt) {
 	var p = root.createSVGPoint();
@@ -2430,7 +2430,7 @@ function setAttributes(element, attributes){
 }
 
 /**
- * Handle mouse move event.
+ * Handle mouse move inputEvent.
  */
 function handleMouseWheel(evt) {
 	if(evt.preventDefault)
@@ -2464,7 +2464,7 @@ function handleMouseWheel(evt) {
 }
 
 /**
- * Handle mouse move event.
+ * Handle mouse move inputEvent.
  */
 function handleMouseMove(evt) {
 	if(evt.preventDefault)
@@ -2492,7 +2492,7 @@ function handleMouseMove(evt) {
 }
 
 /**
- * Handle click event.
+ * Handle click inputEvent.
  */
 function handleMouseDown(evt) {
 	if(evt.preventDefault)
@@ -2524,7 +2524,7 @@ function handleMouseDown(evt) {
 }
 
 /**
- * Handle mouse button release event.
+ * Handle mouse button release inputEvent.
  */
 function handleMouseUp(evt) {
 	if(evt.preventDefault)

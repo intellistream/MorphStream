@@ -3,7 +3,7 @@ set testmodule [file normalize tests/modules/keyspace_events.so]
 tags "modules" {
     start_server [list overrides [list loadmodule "$testmodule"]] {
 
-        test {Test loaded key space event} {
+        test {Test loaded key space inputEvent} {
             r set x 1
             r hset y f v
             r lpush z 1 2 3
@@ -68,13 +68,13 @@ tags "modules" {
             r get x
         } {3}
 
-        test {Test module key space event} {
+        test {Test module key space inputEvent} {
             r keyspace.notify x
             assert_equal {1 x} [r keyspace.is_module_key_notified x]
         }
 
-        test "Keyspace notifications: module events test" {
-            r config set notify-keyspace-events Kd
+        test "Keyspace notifications: module inputEvents test" {
+            r config set notify-keyspace-inputEvents Kd
             r del x
             set rd1 [redis_deferring_client]
             assert_equal {1} [psubscribe $rd1 *]

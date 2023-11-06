@@ -96,41 +96,41 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
 
-def ReadFile(threads, events):
+def ReadFile(threads, inputEvents):
     w, h = 12, 1
     y = [[] for _ in range(h)]
 
-    gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(threads, events)
+    gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    bfs_path = FILE_FOLER + '/BFS/threads = {}/totalEvents = {}'.format(threads, events)
+    bfs_path = FILE_FOLER + '/BFS/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    dfs_path = FILE_FOLER + '/DFS/threads = {}/totalEvents = {}'.format(threads, events)
+    dfs_path = FILE_FOLER + '/DFS/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(dfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_gs_path = FILE_FOLER + '/OPGS/threads = {}/totalEvents = {}'.format(threads, events)
+    op_gs_path = FILE_FOLER + '/OPGS/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(op_gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_bfs_path = FILE_FOLER + '/OPBFS/threads = {}/totalEvents = {}'.format(threads, events)
+    op_bfs_path = FILE_FOLER + '/OPBFS/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(op_bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_dfs_path = FILE_FOLER + '/OPDFS/threads = {}/totalEvents = {}'.format(threads, events)
+    op_dfs_path = FILE_FOLER + '/OPDFS/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(op_dfs_path).readlines()
     throughput = lines[0].split(": ")[1]
@@ -141,41 +141,41 @@ def ReadFile(threads, events):
     return y
 
 
-def ReadFileWithAbort(threads, events):
+def ReadFileWithAbort(threads, inputEvents):
     w, h = 12, 1
     y = [[] for _ in range(h)]
 
-    gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(threads, events)
+    gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    bfs_path = FILE_FOLER + '/BFSA/threads = {}/totalEvents = {}'.format(threads, events)
+    bfs_path = FILE_FOLER + '/BFSA/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    dfs_path = FILE_FOLER + '/DFSA/threads = {}/totalEvents = {}'.format(threads, events)
+    dfs_path = FILE_FOLER + '/DFSA/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(dfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_gs_path = FILE_FOLER + '/OPGSA/threads = {}/totalEvents = {}'.format(threads, events)
+    op_gs_path = FILE_FOLER + '/OPGSA/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(op_gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = {}/totalEvents = {}'.format(threads, events)
+    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(op_bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = {}/totalEvents = {}'.format(threads, events)
+    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = {}/totalEvents = {}'.format(threads, inputEvents)
 
     lines = open(op_dfs_path).readlines()
     throughput = lines[0].split(": ")[1]

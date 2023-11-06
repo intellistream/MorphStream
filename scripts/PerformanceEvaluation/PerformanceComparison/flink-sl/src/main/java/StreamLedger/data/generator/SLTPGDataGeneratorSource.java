@@ -24,11 +24,8 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 public class SLTPGDataGeneratorSource extends RichParallelSourceFunction<Either<DepositEvent, TransactionEvent>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SLTPGDataGeneratorSource.class);
-    private volatile boolean running = true;
-
     private static final String ACCOUNT_ID_PREFIX = "ACCT-";
     private static final String BOOK_ENTRY_ID_PREFIX = "BOOK-";
-
     private final int Ratio_Of_Deposit;  // ratio of state access type i.e. deposit or transfer
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
     // transaction length, 4 or 8 or longer
@@ -40,15 +37,13 @@ public class SLTPGDataGeneratorSource extends RichParallelSourceFunction<Either<
     // independent transactions.
     private final FastZipfGenerator accountZipf;
     private final FastZipfGenerator assetZipf;
-
-
     private final Random random = new Random(0); // the transaction type decider
-    public transient FastZipfGenerator p_generator; // partition generator
     private final HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
     private final HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
     private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
-
     private final long nTuples;
+    public transient FastZipfGenerator p_generator; // partition generator
+    private volatile boolean running = true;
 
     public SLTPGDataGeneratorSource() {
 
@@ -71,7 +66,7 @@ public class SLTPGDataGeneratorSource extends RichParallelSourceFunction<Either<
         assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
         p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
 
-        nTuples = 24*12880;
+        nTuples = 24 * 12880;
     }
 
 

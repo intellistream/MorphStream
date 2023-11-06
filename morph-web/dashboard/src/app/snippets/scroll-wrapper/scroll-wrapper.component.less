@@ -1,0 +1,42 @@
+.scroll-container {
+  white-space: nowrap;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.scroll-container::-webkit-scrollbar{
+  display: none;
+}
+
+.scroll-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  background-color: rgba(128, 128, 128, 0.5);
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 60px;
+}
+
+.scroll-button:hover {
+  background-color: rgba(128, 128, 128, 0.8);
+}
+
+.scroll-wrapper {
+  position: relative;
+}
+
+.left-button {
+  left: 0;
+  margin-right: 10px;
+}
+
+.right-button {
+  right: 0;
+  margin-left: 10px;
+}

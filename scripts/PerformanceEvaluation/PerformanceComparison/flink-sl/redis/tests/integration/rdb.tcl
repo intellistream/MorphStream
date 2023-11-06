@@ -163,7 +163,7 @@ start_server {} {
 test {client freed during loading} {
     start_server [list overrides [list key-load-delay 10 rdbcompression no]] {
         # create a big rdb that will take long to load. it is important
-        # for keys to be big since the server processes events only once in 2mb.
+        # for keys to be big since the server processes inputEvents only once in 2mb.
         # 100mb of rdb, 100k keys will load in more than 1 second
         r debug populate 100000 key 1000
 

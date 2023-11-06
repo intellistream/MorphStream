@@ -136,42 +136,42 @@ start_server {
         assert {[r xack s g $id1] eq 1}
     }
 
-    test {PEL NACK reassignment after XGROUP SETID event} {
-        r del events
-        r xadd events * f1 v1
-        r xadd events * f1 v1
-        r xadd events * f1 v1
-        r xadd events * f1 v1
-        r xgroup create events g1 $
-        r xadd events * f1 v1
-        set c [llength [lindex [r xreadgroup group g1 c1 streams events >] 0 1]]
+    test {PEL NACK reassignment after XGROUP SETID inputEvent} {
+        r del inputEvents
+        r xadd inputEvents * f1 v1
+        r xadd inputEvents * f1 v1
+        r xadd inputEvents * f1 v1
+        r xadd inputEvents * f1 v1
+        r xgroup create inputEvents g1 $
+        r xadd inputEvents * f1 v1
+        set c [llength [lindex [r xreadgroup group g1 c1 streams inputEvents >] 0 1]]
         assert {$c == 1}
-        r xgroup setid events g1 -
-        set c [llength [lindex [r xreadgroup group g1 c2 streams events >] 0 1]]
+        r xgroup setid inputEvents g1 -
+        set c [llength [lindex [r xreadgroup group g1 c2 streams inputEvents >] 0 1]]
         assert {$c == 5}
     }
 
     test {XREADGROUP will not report data on empty history. Bug #5577} {
-        r del events
-        r xadd events * a 1
-        r xadd events * b 2
-        r xadd events * c 3
-        r xgroup create events mygroup 0
+        r del inputEvents
+        r xadd inputEvents * a 1
+        r xadd inputEvents * b 2
+        r xadd inputEvents * c 3
+        r xgroup create inputEvents mygroup 0
 
         # Current local PEL should be empty
-        set res [r xpending events mygroup - + 10]
+        set res [r xpending inputEvents mygroup - + 10]
         assert {[llength $res] == 0}
 
         # So XREADGROUP should read an empty history as well
-        set res [r xreadgroup group mygroup myconsumer count 3 streams events 0]
+        set res [r xreadgroup group mygroup myconsumer count 3 streams inputEvents 0]
         assert {[llength [lindex $res 0 1]] == 0}
 
         # We should fetch all the elements in the stream asking for >
-        set res [r xreadgroup group mygroup myconsumer count 3 streams events >]
+        set res [r xreadgroup group mygroup myconsumer count 3 streams inputEvents >]
         assert {[llength [lindex $res 0 1]] == 3}
 
         # Now the history is populated with three not acked entries
-        set res [r xreadgroup group mygroup myconsumer count 3 streams events 0]
+        set res [r xreadgroup group mygroup myconsumer count 3 streams inputEvents 0]
         assert {[llength [lindex $res 0 1]] == 3}
     }
 

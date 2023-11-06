@@ -1,0 +1,75 @@
+{
+    "appId": "1",
+    "name": "Online Social Event Detection",
+    "nthreads": "4",
+    "cpu": "Intel(R) Xeon(R) Silver 4310 CPU @2.10GHz",
+    "ram": "16GB",
+    "startTime": "2023-Mar-10 09:15:27",
+    "duration": "00:08:17",
+    "isRunning": false,
+    "nevents": 2500,
+    "minProcessTime": 220.1,
+    "maxProcessTime": 325.3,
+    "meanProcessTime": 253.2,
+    "latency": 1803,
+    "throughput": 3276,
+    "ncore": 8,
+    "periodicalThroughput" : [2.1, 2.5, 1.9, 1.3, 2.1, 2.1, 2.3, 3.2, 3.0, 2.7],
+    "periodicalLatency" : [1.9, 1.8, 1.9, 2.2, 2.3, 2.0, 2.1, 1.8, 1.9, 1.7],
+    "operators": [
+        {
+            "id": "1",
+            "name": "Spout",
+            "numOfInstances": 1,
+            "throughput": -1,
+            "latency": -1,
+            "explorationStrategy": "NA",
+            "schedulingGranularity": "NA",
+            "abortHandling": "NA"
+          },
+          {
+            "id": "2",
+            "name": "Tweet Registrant",
+            "numOfInstances": 8,
+            "throughput": 10,
+            "latency": 200.1,
+            "explorationStrategy": "Non-Structured Exploration",
+            "schedulingGranularity": "Fine-Grained Unit",
+            "abortHandling": "Lazy Abort"
+          },
+          {
+            "id": "3",
+            "name": "Word Updater",
+            "numOfInstances": 8,
+            "throughput": 12.2,
+            "latency": 314.1,
+            "explorationStrategy": "Non-Structured Exploration",
+            "schedulingGranularity": "Fine-Grained Unit",
+            "abortHandling": "Lazy Abort"
+          },
+          {
+            "id": "4",
+            "name": "Sink",
+            "numOfInstances": 1,
+            "throughput": 14.1,
+            "latency": 112.1,
+            "explorationStrategy": "Non-Structured Exploration",
+            "schedulingGranularity": "Fine-Grained Unit",
+            "abortHandling": "Lazy Abort"
+          }
+    ],
+    "totalTimeBreakdown": {
+      "totalTime": 1234,
+      "serializeTime": 0.00,
+      "persistTime": 0.00,
+      "streamProcessTime": 0.00,
+      "overheadTime": 321
+    },
+    "schedulerTimeBreakdown": {
+      "exploreTime": 321,
+      "usefulTime": 432,
+      "abortTime": 0.00,
+      "constructTime": 123,
+      "trackingTime": 111
+    }
+}

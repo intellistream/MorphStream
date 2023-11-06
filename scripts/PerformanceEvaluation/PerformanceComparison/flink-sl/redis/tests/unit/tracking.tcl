@@ -136,7 +136,7 @@ start_server {tags {"tracking network"}} {
         r CLIENT TRACKING off
         r CLIENT TRACKING on BCAST REDIRECT $redir_id NOLOOP
         # Use multi-exec to expose a race where the key gets an two invalidations
-        # in the same event loop, once by the client so filtered by NOLOOP, and
+        # in the same inputEvent loop, once by the client so filtered by NOLOOP, and
         # the second one by the lazy expire
         r MULTI
         r SET mykey{t} myval px 1

@@ -340,7 +340,7 @@ start_server {tags {"acl"}} {
         assert {[dict get $entry object] eq {get}}
     }
 
-    test {ACL LOG is able to test similar events} {
+    test {ACL LOG is able to test similar inputEvents} {
         r AUTH antirez foo
         catch {r GET foo}
         catch {r GET foo}

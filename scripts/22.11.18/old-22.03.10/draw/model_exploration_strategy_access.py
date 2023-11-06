@@ -103,43 +103,43 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
 
     if isCyclic == "true":
         for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+            inputEvents = tthread * batchInterval
+            op_gs_path = getPathGS("OPGS", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[0].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+            inputEvents = tthread * batchInterval
+            op_gs_path = getPathGS("OPBFS", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[1].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+            inputEvents = tthread * batchInterval
+            op_gs_path = getPathGS("OPDFS", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[2].append(float(throughput))
     else:
         for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("GS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+            inputEvents = tthread * batchInterval
+            op_gs_path = getPathGS("GS", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[0].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("BFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+            inputEvents = tthread * batchInterval
+            op_gs_path = getPathGS("BFS", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[1].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("DFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+            inputEvents = tthread * batchInterval
+            op_gs_path = getPathGS("DFS", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[2].append(float(throughput))
@@ -149,14 +149,14 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     return y
 
 
-def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+def getPathSL(algo, inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        .format(algo, tthread, inputEvents, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+def getPathGS(algo, inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        .format(algo, tthread, inputEvents, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
 if __name__ == '__main__':

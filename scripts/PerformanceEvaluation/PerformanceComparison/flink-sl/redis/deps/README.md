@@ -1,9 +1,13 @@
 This directory contains all Redis dependencies, except for the libc that
 should be provided by the operating system.
 
-* **Jemalloc** is our memory allocator, used as replacement for libc malloc on Linux by default. It has good performances and excellent fragmentation behavior. This component is upgraded from time to time.
-* **hiredis** is the official C client library for Redis. It is used by redis-cli, redis-benchmark and Redis Sentinel. It is part of the Redis official ecosystem but is developed externally from the Redis repository, so we just upgrade it as needed.
-* **linenoise** is a readline replacement. It is developed by the same authors of Redis but is managed as a separated project and updated as needed.
+* **Jemalloc** is our memory allocator, used as replacement for libc malloc on Linux by default. It has good
+  performances and excellent fragmentation behavior. This component is upgraded from time to time.
+* **hiredis** is the official C client library for Redis. It is used by redis-cli, redis-benchmark and Redis Sentinel.
+  It is part of the Redis official ecosystem but is developed externally from the Redis repository, so we just upgrade
+  it as needed.
+* **linenoise** is a readline replacement. It is developed by the same authors of Redis but is managed as a separated
+  project and updated as needed.
 * **lua** is Lua 5.1 with minor changes for security and additional libraries.
 
 How to upgrade the above dependencies
@@ -27,7 +31,9 @@ just following these steps:
    Jemalloc configuration script is broken and will not work nested in another
    git repository.
 
-However note that we change Jemalloc settings via the `configure` script of Jemalloc using the `--with-lg-quantum` option, setting it to the value of 3 instead of 4. This provides us with more size classes that better suit the Redis data structures, in order to gain memory efficiency.
+However note that we change Jemalloc settings via the `configure` script of Jemalloc using the `--with-lg-quantum`
+option, setting it to the value of 3 instead of 4. This provides us with more size classes that better suit the Redis
+data structures, in order to gain memory efficiency.
 
 If you want to upgrade Jemalloc while also providing support for
 active defragmentation, in addition to the above steps you need to perform
@@ -44,12 +50,15 @@ the following additional steps:
 Hiredis
 ---
 
-Hiredis uses the SDS string library, that must be the same version used inside Redis itself. Hiredis is also very critical for Sentinel. Historically Redis often used forked versions of hiredis in a way or the other. In order to upgrade it is advised to take a lot of care:
+Hiredis uses the SDS string library, that must be the same version used inside Redis itself. Hiredis is also very
+critical for Sentinel. Historically Redis often used forked versions of hiredis in a way or the other. In order to
+upgrade it is advised to take a lot of care:
 
 1. Check with diff if hiredis API changed and what impact it could have in Redis.
 2. Make sure that the SDS library inside Hiredis and inside Redis are compatible.
 3. After the upgrade, run the Redis Sentinel test.
-4. Check manually that redis-cli and redis-benchmark behave as expected, since we have no tests for CLI utilities currently.
+4. Check manually that redis-cli and redis-benchmark behave as expected, since we have no tests for CLI utilities
+   currently.
 
 Linenoise
 ---
@@ -76,7 +85,9 @@ Currently we have at least the following differences between official Lua 5.1
 and our version:
 
 1. Makefile is modified to allow a different compiler than GCC.
-2. We have the implementation source code, and directly link to the following external libraries: `lua_cjson.o`, `lua_struct.o`, `lua_cmsgpack.o` and `lua_bit.o`.
-3. There is a security fix in `ldo.c`, line 498: The check for `LUA_SIGNATURE[0]` is removed in order to avoid direct bytecode execution.
+2. We have the implementation source code, and directly link to the following external
+   libraries: `lua_cjson.o`, `lua_struct.o`, `lua_cmsgpack.o` and `lua_bit.o`.
+3. There is a security fix in `ldo.c`, line 498: The check for `LUA_SIGNATURE[0]` is removed in order to avoid direct
+   bytecode execution.
 
 

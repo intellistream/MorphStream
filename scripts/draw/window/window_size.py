@@ -123,8 +123,8 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
 
 
     for window_size in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathGS("OP_NS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, transaction_length, isCyclic, complexity)
+        inputEvents = tthread * batchInterval
+        op_gs_path = getPathGS("OP_NS", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, transaction_length, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
@@ -134,9 +134,9 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     return y
 
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_ratio, window_size, transaction_length, isCyclic, complexity):
+def getPathGS(algo, inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_ratio, window_size, transaction_length, isCyclic, complexity):
     return FILE_FOLER + '/WindowedGrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS, 100, key_skewness, window_ratio, window_size, transaction_length, isCyclic, complexity)
+        .format(algo, tthread, inputEvents, NUM_ITEMS, 100, key_skewness, window_ratio, window_size, transaction_length, isCyclic, complexity)
 
 
 if __name__ == '__main__':

@@ -130,7 +130,7 @@ Bug fixes that are only applicable to previous releases of Redis 6.2:
 
 Other bug fixes:
 * Fix crash in UNLINK on a stream key with deleted consumer groups (#8932)
-* SINTERSTORE: Add missing keyspace del event when none of the sources exist (#8949)
+* SINTERSTORE: Add missing keyspace del inputEvent when none of the sources exist (#8949)
 * Sentinel: Fix CONFIG SET of empty string sentinel-user/sentinel-pass configs (#8958)
 * Enforce client output buffer soft limit when no traffic (#8833)
 
@@ -180,7 +180,7 @@ suffering from performance regression. see below.
 
 Bug fixes for regressions in previous releases of Redis 6.2:
 * Fix BGSAVE, AOFRW, and replication slowdown due to child reporting CoW (#8645)
-* Fix short busy loop when timer event is about to fire (#8764)
+* Fix short busy loop when timer inputEvent is about to fire (#8764)
 * Fix default user, overwritten and reset users losing pubsub channel permissions (#8723)
 * Fix config rewrite with an empty `save` config resulsing in default `save` values (#8719)
 * Fix not starting on alpine/libmusl without IPv6 (#8655)
@@ -372,7 +372,7 @@ Info fields and introspection changes:
 
 Modules:
 * Add modules API for streams (#8288)
-* Add event for fork child birth and termination (#8289)
+* Add inputEvent for fork child birth and termination (#8289)
 * Add RM_BlockedClientMeasureTime* etc, to track background processing in commandstats (#7491)
 * Fix bug in v6.2, wrong value passed to the new unlink callback (#8381)
 * Fix bug in v6.2, modules blocked on keys unblock on commands like LPUSH (#8356)
@@ -619,7 +619,7 @@ Module API changes:
 * Add data type callbacks for lazy free effort, and unlink (#7912)
 * Add data type callback for COPY command (#8112)
 * Add callbacks for defrag support. (#8149)
-* Add module event for repl-diskless-load swapdb (#8153)
+* Add module inputEvent for repl-diskless-load swapdb (#8153)
 
 Module related fixes:
 * Moved RMAPI_FUNC_SUPPORTED so that it's usable (#8037)

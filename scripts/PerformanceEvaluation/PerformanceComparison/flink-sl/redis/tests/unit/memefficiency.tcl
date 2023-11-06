@@ -86,8 +86,8 @@ start_server {tags {"defrag"} overrides {appendonly yes auto-aof-rewrite-percent
                 after 120 ;# serverCron only updates the info once in 100ms
                 set frag [s allocator_frag_ratio]
                 set max_latency 0
-                foreach event [r latency latest] {
-                    lassign $event eventname time latency max
+                foreach inputEvent [r latency latest] {
+                    lassign $inputEvent eventname time latency max
                     if {$eventname == "active-defrag-cycle"} {
                         set max_latency $max
                     }
@@ -128,8 +128,8 @@ start_server {tags {"defrag"} overrides {appendonly yes auto-aof-rewrite-percent
                 after 120 ;# serverCron only updates the info once in 100ms
                 set frag [s allocator_frag_ratio]
                 set max_latency 0
-                foreach event [r latency latest] {
-                    lassign $event eventname time latency max
+                foreach inputEvent [r latency latest] {
+                    lassign $inputEvent eventname time latency max
                     if {$eventname == "loading-cron"} {
                         set max_latency $max
                     }
@@ -258,8 +258,8 @@ start_server {tags {"defrag"} overrides {appendonly yes auto-aof-rewrite-percent
                 after 120 ;# serverCron only updates the info once in 100ms
                 set frag [s allocator_frag_ratio]
                 set max_latency 0
-                foreach event [r latency latest] {
-                    lassign $event eventname time latency max
+                foreach inputEvent [r latency latest] {
+                    lassign $inputEvent eventname time latency max
                     if {$eventname == "active-defrag-cycle"} {
                         set max_latency $max
                     }
@@ -357,8 +357,8 @@ start_server {tags {"defrag"} overrides {appendonly yes auto-aof-rewrite-percent
                 set hits [s active_defrag_hits]
                 set frag [s allocator_frag_ratio]
                 set max_latency 0
-                foreach event [r latency latest] {
-                    lassign $event eventname time latency max
+                foreach inputEvent [r latency latest] {
+                    lassign $inputEvent eventname time latency max
                     if {$eventname == "active-defrag-cycle"} {
                         set max_latency $max
                     }

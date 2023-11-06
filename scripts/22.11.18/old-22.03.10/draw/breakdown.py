@@ -157,9 +157,9 @@ def ReadFile(tthread, batchInterval):
 
     y_sum = [0 for x in range(w)]
 
-    events = tthread * batchInterval
+    inputEvents = tthread * batchInterval
 
-    gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, events)
+    gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(gs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -169,7 +169,7 @@ def ReadFile(tthread, batchInterval):
             y[i][0] += float(breakdown_value[i + 1])
             y_sum[0] += float(breakdown_value[i + 1])
 
-    bfs_path = FILE_FOLER + '/BFS/threads = {}/totalEvents = {}'.format(tthread, events)
+    bfs_path = FILE_FOLER + '/BFS/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(bfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -179,7 +179,7 @@ def ReadFile(tthread, batchInterval):
             y[i][1] += float(breakdown_value[i + 1])
             y_sum[1] += float(breakdown_value[i + 1])
 
-    dfs_path = FILE_FOLER + '/DFS/threads = {}/totalEvents = {}'.format(tthread, events)
+    dfs_path = FILE_FOLER + '/DFS/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(dfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -189,7 +189,7 @@ def ReadFile(tthread, batchInterval):
             y[i][2] += float(breakdown_value[i + 1])
             y_sum[2] += float(breakdown_value[i + 1])
 
-    op_gs_path = FILE_FOLER + '/OPGS/threads = {}/totalEvents = {}'.format(tthread, events)
+    op_gs_path = FILE_FOLER + '/OPGS/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(op_gs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -199,7 +199,7 @@ def ReadFile(tthread, batchInterval):
             y[i][3] += float(breakdown_value[i + 1])
             y_sum[3] += float(breakdown_value[i + 1])
 
-    op_bfs_path = FILE_FOLER + '/OPBFS/threads = {}/totalEvents = {}'.format(tthread, events)
+    op_bfs_path = FILE_FOLER + '/OPBFS/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(op_bfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -209,7 +209,7 @@ def ReadFile(tthread, batchInterval):
             y[i][4] += float(breakdown_value[i + 1])
             y_sum[4] += float(breakdown_value[i + 1])
 
-    op_dfs_path = FILE_FOLER + '/OPDFS/threads = {}/totalEvents = {}'.format(tthread, events)
+    op_dfs_path = FILE_FOLER + '/OPDFS/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(op_dfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -236,9 +236,9 @@ def ReadFileWithAbort(tthread, batchInterval):
 
     y_sum = [0 for x in range(w)]
 
-    events = tthread * batchInterval
+    inputEvents = tthread * batchInterval
 
-    gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(gs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -248,7 +248,7 @@ def ReadFileWithAbort(tthread, batchInterval):
             y[i][0] += float(breakdown_value[i + 1])
             y_sum[0] += float(breakdown_value[i + 1])
 
-    bfs_path = FILE_FOLER + '/BFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    bfs_path = FILE_FOLER + '/BFSA/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(bfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -258,7 +258,7 @@ def ReadFileWithAbort(tthread, batchInterval):
             y[i][1] += float(breakdown_value[i + 1])
             y_sum[1] += float(breakdown_value[i + 1])
 
-    dfs_path = FILE_FOLER + '/DFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    dfs_path = FILE_FOLER + '/DFSA/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(dfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -268,7 +268,7 @@ def ReadFileWithAbort(tthread, batchInterval):
             y[i][2] += float(breakdown_value[i + 1])
             y_sum[2] += float(breakdown_value[i + 1])
 
-    op_gs_path = FILE_FOLER + '/OPGSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    op_gs_path = FILE_FOLER + '/OPGSA/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(op_gs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -278,7 +278,7 @@ def ReadFileWithAbort(tthread, batchInterval):
             y[i][3] += float(breakdown_value[i + 1])
             y_sum[3] += float(breakdown_value[i + 1])
 
-    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(op_bfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:
@@ -288,7 +288,7 @@ def ReadFileWithAbort(tthread, batchInterval):
             y[i][4] += float(breakdown_value[i + 1])
             y_sum[4] += float(breakdown_value[i + 1])
 
-    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = {}/totalEvents = {}'.format(tthread, inputEvents)
     lines = open(op_dfs_path).readlines()
     idx = locateIdx(lines)
     for line in lines[idx:]:

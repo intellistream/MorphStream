@@ -193,10 +193,10 @@ start_server {tags {"pubsub network"}} {
         concat $reply1 $reply2
     } {punsubscribe {} 0 unsubscribe {} 0}
 
-    ### Keyspace events notification tests
+    ### Keyspace inputEvents notification tests
 
     test "Keyspace notifications: we receive keyspace notifications" {
-        r config set notify-keyspace-events KA
+        r config set notify-keyspace-inputEvents KA
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
         r set foo bar
@@ -205,7 +205,7 @@ start_server {tags {"pubsub network"}} {
     }
 
     test "Keyspace notifications: we receive keyevent notifications" {
-        r config set notify-keyspace-events EA
+        r config set notify-keyspace-inputEvents EA
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
         r set foo bar
@@ -213,8 +213,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: we can receive both kind of events" {
-        r config set notify-keyspace-events KEA
+    test "Keyspace notifications: we can receive both kind of inputEvents" {
+        r config set notify-keyspace-inputEvents KEA
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
         r set foo bar
@@ -223,8 +223,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: we are able to mask events" {
-        r config set notify-keyspace-events KEl
+    test "Keyspace notifications: we are able to mask inputEvents" {
+        r config set notify-keyspace-inputEvents KEl
         r del mylist
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
@@ -236,8 +236,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: general events test" {
-        r config set notify-keyspace-events KEg
+    test "Keyspace notifications: general inputEvents test" {
+        r config set notify-keyspace-inputEvents KEg
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
         r set foo bar
@@ -250,8 +250,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: list events test" {
-        r config set notify-keyspace-events KEl
+    test "Keyspace notifications: list inputEvents test" {
+        r config set notify-keyspace-inputEvents KEl
         r del mylist
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
@@ -267,8 +267,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: set events test" {
-        r config set notify-keyspace-events Ks
+    test "Keyspace notifications: set inputEvents test" {
+        r config set notify-keyspace-inputEvents Ks
         r del myset
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
@@ -282,8 +282,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: zset events test" {
-        r config set notify-keyspace-events Kz
+    test "Keyspace notifications: zset inputEvents test" {
+        r config set notify-keyspace-inputEvents Kz
         r del myzset
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
@@ -297,8 +297,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: hash events test" {
-        r config set notify-keyspace-events Kh
+    test "Keyspace notifications: hash inputEvents test" {
+        r config set notify-keyspace-inputEvents Kh
         r del myhash
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
@@ -309,8 +309,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: expired events (triggered expire)" {
-        r config set notify-keyspace-events Ex
+    test "Keyspace notifications: expired inputEvents (triggered expire)" {
+        r config set notify-keyspace-inputEvents Ex
         r del foo
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
@@ -324,8 +324,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: expired events (background expire)" {
-        r config set notify-keyspace-events Ex
+    test "Keyspace notifications: expired inputEvents (background expire)" {
+        r config set notify-keyspace-inputEvents Ex
         r del foo
         set rd1 [redis_deferring_client]
         assert_equal {1} [psubscribe $rd1 *]
@@ -334,8 +334,8 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: evicted events" {
-        r config set notify-keyspace-events Ee
+    test "Keyspace notifications: evicted inputEvents" {
+        r config set notify-keyspace-inputEvents Ee
         r config set maxmemory-policy allkeys-lru
         r flushdb
         set rd1 [redis_deferring_client]
@@ -347,14 +347,14 @@ start_server {tags {"pubsub network"}} {
         $rd1 close
     }
 
-    test "Keyspace notifications: test CONFIG GET/SET of event flags" {
-        r config set notify-keyspace-events gKE
-        assert_equal {gKE} [lindex [r config get notify-keyspace-events] 1]
-        r config set notify-keyspace-events {$lshzxeKE}
-        assert_equal {$lshzxeKE} [lindex [r config get notify-keyspace-events] 1]
-        r config set notify-keyspace-events KA
-        assert_equal {AK} [lindex [r config get notify-keyspace-events] 1]
-        r config set notify-keyspace-events EA
-        assert_equal {AE} [lindex [r config get notify-keyspace-events] 1]
+    test "Keyspace notifications: test CONFIG GET/SET of inputEvent flags" {
+        r config set notify-keyspace-inputEvents gKE
+        assert_equal {gKE} [lindex [r config get notify-keyspace-inputEvents] 1]
+        r config set notify-keyspace-inputEvents {$lshzxeKE}
+        assert_equal {$lshzxeKE} [lindex [r config get notify-keyspace-inputEvents] 1]
+        r config set notify-keyspace-inputEvents KA
+        assert_equal {AK} [lindex [r config get notify-keyspace-inputEvents] 1]
+        r config set notify-keyspace-inputEvents EA
+        assert_equal {AE} [lindex [r config get notify-keyspace-inputEvents] 1]
     }
 }

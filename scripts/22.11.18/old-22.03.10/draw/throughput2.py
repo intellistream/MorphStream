@@ -88,50 +88,50 @@ def ReadFile(x_axis, batchInterval, deposit_ratio, key_skewness, overlap_ratio, 
     y = [[] for _ in range(w)]
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        gs_path = getPath("GS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        gs_path = getPath("GS", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        bfs_path = getPath("BFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        bfs_path = getPath("BFS", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(bfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        dfs_path = getPath("DFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        dfs_path = getPath("DFS", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[2].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPath("OPGS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        op_gs_path = getPath("OPGS", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[3].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        op_bfs_path = getPath("OPBFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        op_bfs_path = getPath("OPBFS", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_bfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[4].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPath("OPDFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        op_dfs_path = getPath("OPDFS", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[5].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPath("PAT", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        op_dfs_path = getPath("PAT", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[6].append(float(throughput))
@@ -146,43 +146,43 @@ def ReadFileWithAbort(x_axis, batchInterval, deposit_ratio, key_skewness, overla
     y = [[] for _ in range(w)]
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        gs_path = getPath("GSA", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        gs_path = getPath("GSA", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        bfs_path = getPath("BFSA", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        bfs_path = getPath("BFSA", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(bfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        dfs_path = getPath("DFSA", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        dfs_path = getPath("DFSA", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[2].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPath("OPGSA", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        op_gs_path = getPath("OPGSA", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[3].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        op_bfs_path = getPath("OPBFSA", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        op_bfs_path = getPath("OPBFSA", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_bfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[4].append(float(throughput))
 
     for tthread in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPath("OPDFSA", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        inputEvents = tthread * batchInterval
+        op_dfs_path = getPath("OPDFSA", inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[5].append(float(throughput))
@@ -190,9 +190,9 @@ def ReadFileWithAbort(x_axis, batchInterval, deposit_ratio, key_skewness, overla
     return y
 
 
-def getPath(algo, events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio):
+def getPath(algo, inputEvents, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio):
     return FILE_FOLER + '/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}'\
-        .format(algo, tthread, events, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        .format(algo, tthread, inputEvents, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
 
 
 if __name__ == '__main__':
