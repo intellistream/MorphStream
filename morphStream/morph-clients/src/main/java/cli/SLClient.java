@@ -105,7 +105,7 @@ public class SLClient extends Client {
     }
 
     public static void startJob(String[] args) throws Exception {
-        CliFrontend slClientJob = CliFrontend.getOrCreate().appName("SLClient");
+        CliFrontend slClientJob = CliFrontend.getOrCreate().setAppName("SLClient");
 //        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
         slClientJob.LoadConfiguration(null, args); //TODO: add loadConfig from file
         slClientJob.prepare();
@@ -117,12 +117,12 @@ public class SLClient extends Client {
         TxnDescription transferDescriptor = new TxnDescription();
         //Define transfer's 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
-        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
+        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
         srcTransfer.addValueName("transferAmount");
         //Define transfer's 2nd state accesses
         StateAccessDescription destTransfer = new StateAccessDescription("destTransfer", AccessType.WRITE);
-        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
-        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", "accountValue", 1);
+        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", 0);
+        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", 1);
         destTransfer.addValueName("transferAmount");
         //Add state accesses to transaction
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
@@ -132,7 +132,7 @@ public class SLClient extends Client {
         //Define deposit transaction
         TxnDescription depositDescriptor = new TxnDescription();
         StateAccessDescription deposit = new StateAccessDescription("deposit", AccessType.WRITE);
-        deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
+        deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
         deposit.addValueName("depositAmount");
         depositDescriptor.addStateAccess("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);

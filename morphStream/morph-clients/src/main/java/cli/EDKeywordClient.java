@@ -15,7 +15,7 @@ public class EDKeywordClient {
     private static final Logger LOG = LoggerFactory.getLogger(EDKeywordClient.class);
 
     public static void main(String[] args) throws Exception {
-        CliFrontend EDKeywordClient = CliFrontend.getOrCreate().appName("EDKeywordClient");
+        CliFrontend EDKeywordClient = CliFrontend.getOrCreate().setAppName("EDKeywordClient");
         EDKeywordClient.LoadConfiguration("/home/resources/EDKeywordClient.properties", args);
         EDKeywordClient.prepare();
 
