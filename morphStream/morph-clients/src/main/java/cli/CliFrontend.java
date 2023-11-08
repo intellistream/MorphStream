@@ -167,6 +167,12 @@ public class CliFrontend {
 
     public void registerNewApp(String appName) {
         CliFrontend.getOrCreate().setAppName(appName);
+        try {
+            LoadConfiguration(null, null); //TODO: add loadConfig from file
+            prepare();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void registerStateObject(String jsonOfStateObject) {
@@ -258,17 +264,24 @@ public class CliFrontend {
         String[] txnIDs = jsonNode.get("txnIDs").asText().split(",");
         int stage = jsonNode.get("stage").asInt();
         int parallelism = jsonNode.get("parallelism").asInt();
-        String txnUDFName = jsonNode.get("txnUDFName").asText(); //TODO: Reflect this UDF during runtime
+        MorphStreamEnv.get().configuration().put("useNativeUDF", true);
         HashMap<String, TxnDescription> txnDescriptionHashMap = new HashMap<>();
 
         for (String txnID : txnIDs) {
             txnDescriptionHashMap.put(txnID, txnMap.get(txnID));
         }
         try {
-            //TODO: Make sure bolt can be properly initialized in this way
             AbstractBolt bolt = setBolt(operatorID, txnDescriptionHashMap, parallelism, stage);
             operatorMap.put(operatorID, bolt);
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void startApp() {
+        try {
+            run();
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -286,7 +299,7 @@ public class CliFrontend {
             generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
         }
 
-        //TODO: Initialize multiple txn request handlers and identify them using sourceID below
+        //TODO: Initialize multiple txn request handler threads and identify them using sourceID below
         Tuple tuple = new Tuple(bid, 0, null, generalMsg); //tuple.context is useless everywhere
         try {
             bolt.execute(tuple);

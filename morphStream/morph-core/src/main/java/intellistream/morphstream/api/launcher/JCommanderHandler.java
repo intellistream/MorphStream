@@ -87,6 +87,8 @@ public class JCommanderHandler {
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
     public int isDynamic = 0;
+    @Parameter(names = {"--useNativeUDF"}, description = "Use native UDF declared in c/c++")
+    public boolean useNativeUDF = false;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
     public String schedulerPools = "OP_BFS_A,OP_BFS,OP_NS_A,OP_NS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
@@ -354,6 +356,7 @@ public class JCommanderHandler {
         config.put("theta", theta);
         config.put("size_tuple", size_tuple);
         config.put("queue_size", queue_size);
+        config.put("useNativeUDF", useNativeUDF);
 
         /* Dynamic switch scheduler */
         if (isDynamic == 1) {
