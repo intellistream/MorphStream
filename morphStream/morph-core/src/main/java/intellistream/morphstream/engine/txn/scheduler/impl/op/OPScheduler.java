@@ -45,8 +45,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public LoggingManager loggingManager; // Used by fault tolerance
     public int isLogging;// Used by fault tolerance
     private MetaTypes.DependencyType[] dependencyTypes = new MetaTypes.DependencyType[]{MetaTypes.DependencyType.FD, MetaTypes.DependencyType.TD, MetaTypes.DependencyType.LD};
-    private native boolean txnUDF(String operatorID, StateAccess stateAccess);
-    private boolean useNativeUDF = MorphStreamEnv.get().configuration().getBoolean("useNativeUDF", false);
+    private native boolean nativeTxnUDF(String operatorID, StateAccess stateAccess);
+    private boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
@@ -133,10 +133,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         //UDF updates operation.udfResult, which is the value to be written to writeRecord
         boolean udfSuccess = false;
 
-        if (useNativeUDF) {
+        if (useNativeLib) {
             log.info("Loading native txnUDF");
-            System.loadLibrary("NativeUDFLibrary"); //Common c++ library that contains all native txnUDFs
-            udfSuccess = txnUDF(operation.stateAccess.getOperatorID(), operation.stateAccess); //Each operator (VNF) is associated with its txnUDF, use operator ID to determine which native txnUDF to execute
+            System.loadLibrary("NativeLibrary"); //Common c++ library that contains all native txnUDFs
+            udfSuccess = nativeTxnUDF(operation.stateAccess.getOperatorID(), operation.stateAccess); //Each operator (VNF) is associated with its txnUDF, use operator ID to determine which native txnUDF to execute
         } else {
             try {
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));

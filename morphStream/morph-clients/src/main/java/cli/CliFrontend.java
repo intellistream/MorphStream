@@ -264,7 +264,7 @@ public class CliFrontend {
         String[] txnIDs = jsonNode.get("txnIDs").asText().split(",");
         int stage = jsonNode.get("stage").asInt();
         int parallelism = jsonNode.get("parallelism").asInt();
-        MorphStreamEnv.get().configuration().put("useNativeUDF", true);
+        MorphStreamEnv.get().configuration().put("useNativeLib", true);
         HashMap<String, TxnDescription> txnDescriptionHashMap = new HashMap<>();
 
         for (String txnID : txnIDs) {

@@ -41,6 +41,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final SynchronizedDescriptiveStatistics latencyStat = new SynchronizedDescriptiveStatistics(); //latency statistics of current batch
     private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
+    private boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
+    private native void nativeTxnPost(int bid); //Native c++ method for txn completion signal passing
 
     public MorphStreamBolt(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
         super(id, LOG, fid);
@@ -135,40 +137,47 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Post_Process() {
-        for (TransactionalEvent event : eventQueue) {
-            Result udfResultReflect = null;
-            try {
-                //Invoke client defined post-processing UDF using Reflection
-                Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-                if (Client.class.isAssignableFrom(clientClass)) {
-                    Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                    HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                    udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
-                }
-                if (enable_latency_measurement) {
-                    latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
-                }
-                if (!isCombo) {
-                    assert udfResultReflect != null;
-                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
-                } else {
-                    if (enable_latency_measurement) {
-                        assert udfResultReflect != null;
-                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context,
-                                new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
+
+        if (useNativeLib) {
+            System.loadLibrary("NativeLibrary"); //Common c++ library that contains all native methods
+            for (TransactionalEvent event : eventQueue) {
+                nativeTxnPost((int) event.getBid()); //Notify libVNF for txn completion
+            }
+        } else {
+            for (TransactionalEvent event : eventQueue) {
+                Result udfResultReflect = null;
+                try {
+                    //Invoke client defined post-processing UDF using Reflection
+                    Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+                    if (Client.class.isAssignableFrom(clientClass)) {
+                        Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+                        HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
+                        udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
                     }
+                    if (enable_latency_measurement) {
+                        latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
+                    }
+                    if (!isCombo) {
+                        assert udfResultReflect != null;
+                        collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
+                    } else {
+                        if (enable_latency_measurement) {
+                            assert udfResultReflect != null;
+                            sink.execute(new Tuple(event.getBid(), this.thread_Id, context,
+                                    new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
+                        }
+                    }
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                    throw new RuntimeException("Client class instantiation failed");
+                } catch (NoSuchMethodException | InvocationTargetException e) {
+                    throw new RuntimeException("Client post UDF invocation failed");
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Output emission interrupted");
+                } catch (BrokenBarrierException | IOException | DatabaseException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Client class instantiation failed");
-            } catch (NoSuchMethodException | InvocationTargetException e) {
-                throw new RuntimeException("Client post UDF invocation failed");
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Output emission interrupted");
-            } catch (BrokenBarrierException | IOException | DatabaseException e) {
-                throw new RuntimeException(e);
             }
         }
-
     }
 
     @Override
