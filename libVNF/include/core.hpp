@@ -44,39 +44,11 @@
 #include <mutex>
 #include <fstream>
 #include <chrono>
-#ifdef BACKEND_MORPH
-	#include "utils_java_Loader_Loader.h"
-#endif
+
+#include "cli_libVNFFrontend_Interface.h"
 
 #include "datastore/dspackethandler.hpp"
 #include "json.hpp"
-
-#ifdef BACKEND_MORPH
-#define VNFMain Main
-int Main(int argc, char *argv[]);
-
-// TO ADD APIS.
-
-JNIEXPORT jint 
-JNICALL Java_utils_java_Loader_Loader_WorkingThread (JNIEnv * env, jobject obj, jobjectArray args){
-    jsize length = env->GetArrayLength(args);
-    char * argv = new char[(int)length];
-    for (int i = 0; i < (int) length; i += 1 ){
-        jobject row = env->GetObjectArrayElement(args, 2);
-        jobject value = env->GetObjectArrayElement((jobjectArray)row, 1);
-        argv[i] = *env->GetStringUTFChars((jstring)value, 0);
-    }
-    return VNFMain((int)length, &argv);
-}
-
-JNIEXPORT jint 
-JNICALL Java_utils_java_Loader_Loader_TxnUDF (JNIEnv * env, jobject obj, jobject sa) {
-    // Call MORPH call backs with the state name.
-}
-#else
-#define VNFMain main
-#endif
-
 
 #define LIBVNF_STACK_KERNEL 1
 #define LIBVNF_STACK_KERNEL_BYPASS 2
@@ -116,6 +88,15 @@ JNICALL Java_utils_java_Loader_Loader_TxnUDF (JNIEnv * env, jobject obj, jobject
 #define SOCK_BOUNDARY 65536
 #define TIMER_DEFAULT_DURATION (6)
 #define TIMER_DEFAULT_RETRIES  (4)
+
+#define CONTEXT(REQOBJ) (static_cast<uint8_t *>(REQOBJ)-sizeof(Context))
+#define COREID(TXNID) (static_cast<int>((TXNID) >> sizeof(int)))
+#define PACKETID(TXNID) (static_cast<int>(TXNID))
+#define TXNID(COREID, PACKETID) ((COREID) << sizeof(int) | (PACKETID))
+
+
+// User define VNF init.
+int VNFMain(int argc, char ** argv);
 
 namespace vnf {
 
@@ -185,7 +166,7 @@ public:
   getPktBuf();
 
   ConnId&
-  registerCallback(enum EventType event, void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum));
+  registerCallback(enum EventType event, CallbackFn callback);
 
   ConnId&
   registerReqObjIdExtractor(int roidExtractor(char *packet, int packetLen));
@@ -201,11 +182,11 @@ public:
 
   ConnId&
   storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen,
-          void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode));
+          void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum));
 
   ConnId&
   retrieveData(string tableName, int key, enum DataLocation location,
-          void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode), int reqObjId = 0);
+          void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum), int reqObjId = 0);
 
   ConnId&
   delData(string tableName, int key, enum DataLocation location);
@@ -281,11 +262,16 @@ namespace http {
 };
 
 // ConnId, reqObjId, reqObj, packet, packetId, packetLen, streamNum, errorCode.
-typedef void (*CallbackFn)(ConnId&, int, void *, char *, int, int, int, int);
+typedef void (*CallbackFn)
+	(ConnId&, int, void *, char *, int, int, int, int);
 
-typedef void (*DSCallbackFn)(ConnId&, int, void *, void *, int, int, int);
+// ConnId, reqObjId, reqObj, packet, packetId, packetLen, streamNum, errorCode.
+typedef void (*ErrorCallbackFn)
+	(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum);
 
-// typedef int (*DSInitFn) (ConnId&);
+// ConnId, reqObjId, reqObj, value, valueLen, streamNum, errorCode.
+typedef void (*DSCallbackFn)
+	(ConnId&, int, void *, void *, int, int, int);
 
 typedef void (*fn_ctrl)(string task, string vnf_name, string vnf_ip, string event);
 
@@ -414,7 +400,7 @@ initServer(string _interface, string serverIp, int serverPort, string protocol);
  * */
 ConnId&
 registerCallback(ConnId& connId, enum EventType event,
-                 void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum));
+                 void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum));
 
 /**
  * @brief Register a function to extract request object id from a packet on a connection
@@ -473,7 +459,7 @@ sendData(ConnId& connId, char *packetToSend, int packetSize, int streamNum = 0);
  * */
 ConnId&
 storeData(ConnId& connId, string tableName, int key, enum DataLocation location, void *value, int valueLen,
-        void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode));
+        void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum));
 
 /**
  * @brief Fetch data from datastore
@@ -485,7 +471,7 @@ storeData(ConnId& connId, string tableName, int key, enum DataLocation location,
  * */
 ConnId&
 retrieveData(ConnId& connId, string tableName, int key, enum DataLocation location,
-        void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode), int reqObjId = 0);
+        void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum), int reqObjId = 0);
 
 /**
  * @brief Delete key-value pair from datastore
@@ -515,7 +501,6 @@ handle_arp_packet(char *buffer);
 ConnId getObjConnId(uint32_t connId);
 
 uint32_t getIntConnId(ConnId& connId);
-
 }
 
 struct BackendServer
@@ -686,5 +671,194 @@ private:
 		}
 	}
 };
+
+struct Context{
+    // Breakpoint status.
+    int AppIdx;
+    int TxnIdx;
+    int SAIdx;
+
+    // Data fetching to be saved.
+    char * packet_record;
+    int packet_len;
+
+    // Packet to be saved.
+    void * value;
+    int value_len;
+
+    // ReqObjId;
+    int reqObjId;
+
+    // Running status.
+    bool waiting_for_transaction_back = false;
+
+    // The socketId for the last request.
+    int old_socket = -1;
+    vnf::EventType ret;
+};
+
+namespace DB4NFV{
+
+class App;
+class SFC;
+class Transaction;
+class StateAccess;
+
+typedef void (*TxnCallBackHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, void* value, int valueLen, int errorCode);
+typedef void (*PacketHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int errorCode);
+
+typedef PacketHandler AcceptHandler;
+typedef PacketHandler ReadHandler;
+typedef PacketHandler ErrorHandler;
+typedef PacketHandler PostTxnHandler;
+
+enum RWType {
+	READ = 1,
+	WRITE = 2,
+};
+
+enum ConsistencyRequirement {
+    None = 0,
+};
+
+class App{
+friend SFC;
+public:
+	App(std::vector<Transaction*> txns, 
+        AcceptHandler accept, 
+        ReadHandler read, 
+        ErrorHandler error,
+        int reqObjSize):
+		Txns(txns), 
+        acceptHandler(accept), errorHandler(error), readHandler(read),
+        reqObjSize(reqObjSize)
+	{};
+	
+	const AcceptHandler acceptHandler = nullptr;
+	const ReadHandler   readHandler = nullptr;
+	const ErrorHandler  errorHandler = nullptr;
+
+	// The callbacks router.
+	// int _callBack(int TxnIdx, int SAIdx, void* value, int length, int errCode);
+
+    // Point the request obj
+    void *reqObjClip(void * reqObjClip);
+	int reqObjSize = 0; // Register the size of per-thread user defined structure.
+
+    const std::vector<Transaction*> Txns;
+
+    int appIndex;
+	App* next = nullptr;
+	App* MoveNext() { return this->next;}
+};
+
+
+class Transaction {
+friend SFC;
+public:
+    Transaction(std::vector<StateAccess*> sas):sas(sas){}
+    void TxnStart() { perror("javaProvide.");}
+    void TxnDone()  { perror("javaProvide.");}
+	const std::vector<StateAccess*> sas;	// The State Access event to be used for transaction handlers. Including transaction handlers.
+	const App* app;
+	int txnIndex;
+};
+
+class StateAccess {
+friend SFC;
+public:
+    // What is a state scope?
+    StateAccess(const std::vector<std::string> &fields,
+                const std::vector<std::string> &types,
+                ConsistencyRequirement cr,
+                TxnCallBackHandler txnHandler,
+                TxnCallBackHandler errTxnHandler,
+                PostTxnHandler postHandler,
+                RWType rw)
+        : fields_(fields), types_(types), cr_(cr),
+          txnHandler_(txnHandler), rw_(rw), errorTxnHandler_(errTxnHandler),
+          postTxnHandler_(postHandler) {}
+
+	const enum RWType rw_;	
+
+    const std::vector<std::string> &fields_;
+    const std::vector<std::string> &types_;
+    const ConsistencyRequirement cr_;
+
+	// The binded transaction handler for this State Access.
+	const TxnCallBackHandler txnHandler_ = nullptr;
+	const TxnCallBackHandler errorTxnHandler_ = nullptr;
+	const PostTxnHandler postTxnHandler_ = nullptr;
+
+	// Called by user to start request, send the transaction request to schedule.
+	int Request(vnf::ConnId& connId, char * packet, int packetLen, int packetId, void * reqObj, int reqObjId);
+
+	App* app;
+	Transaction* txn;
+    int appIndex;
+	int txnIndex;
+    int saIndex;
+};
+
+/**
+ * @brief Define the whole SFC topology. Collect meta data for the whole SFC and communicate with txnEngine.
+ * 	
+ */
+class SFC{
+public:
+	SFC() {}
+
+	~SFC(){};
+
+	// Setting cores of this SFC apps.
+	int cores = 1;	
+
+	// Construct SFC topology.
+	void Entry(App & entry);
+	void Add(App& last, App& app);
+
+	// Report SFC apps to txnEngine.
+	int NFs();
+
+	void Init(int maxCores);
+
+    // The Callbacks router for the whole SFC.
+    int _callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqobj, char * packet, int packetlen, void * value, int length, int errCode);
+
+    void * AppObj(App *app, void * reqObj) {
+        int idx = AppIdxMap[app];
+        return reqObj + objSizesStarting[idx];
+    }
+
+// private:
+    int reqObjTotalSize = 0;
+	std::vector<App&> SFC_chain = {};
+	std::unordered_map<App*, int> AppIdxMap = {};
+	std::vector<int> objSizes;
+    std::vector<int> objSizesStarting;
+};
+// User get SFC single instance.
+DB4NFV::SFC& GetSFC();
+
+}
+
+// Define the next app target.
+int registerNextApp(void * reqObj, int AppIdx, vnf::EventType type) {
+    auto o = static_cast<Context *>(CONTEXT(reqObj));
+    o->AppIdx = AppIdx;
+    o->ret = type;
+    return;
+}
+
+// Main loop for traversal of the apps.
+void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
+void _AppsDisposalRead  (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
+void _AppsDisposalError (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
+
+void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode);
+
+// The entry of the SFC thread from java.
+int __VNFThread(int argc, char *argv[]);
+std::string __init_SFC(int argc, char *argv[]);
 
 #endif

@@ -1,4 +1,4 @@
-#include "core.hpp"
+// #include "core.hpp"
 #include "utils.hpp"
 
 using namespace vnf;
@@ -341,15 +341,19 @@ void *serverThread(void *args) {
                 There are new messages come in from the socket. So we decide the type and call the related callbacks.
             */
             if (currentEvents & EPOLLIN) {
-                /* EPOLLIN: The associated file is available for read(2) operations. */
+                // Some handler done. Now we are going to trigger the continue handling.
                 if (perCoreStates[coreId].txnSocket == currentSocketId) {
                     // read from socket.
-                    uint64_t txnId = 0; 
-                    if (read(currentSocketId, &txnId, sizeof(uint64_t)) < 0) {
+                    uint64_t saReqId = 0; 
+                    if (read(currentSocketId, &saReqId, sizeof(uint64_t)) < 0) {
                         perror("serverThread.transactions.read");
                     }
                     // TODO. Make sure only the right thread receives this.
-                    if (COREID(txnId) == coreId) {
+                    if (COREID(saReqId) == coreId) {
+
+                        auto o = perCoreStates[coreId].packetNumberContextMap[PACKETID(saReqId)];
+                        ConnId connId = ConnId(coreId, o->old_socket);
+
                         // TODO. Debug. Set the cache.
                         // No need to modify to use the cache. Since it's totally inside.
                         // void *dsMalloc;
@@ -368,27 +372,15 @@ void *serverThread(void *args) {
                         // cache_void_list[dsMalloc] = bufKey;
                         // globals.dataStoreLock.unlock();
 
-                        auto o = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnId)];
-                        ConnId connId = ConnId(coreId, o->old_socket);
+                        // TODO. Can receive error here.
 
-                        // request object id extractor from packet
-                        // TODO. How does it constructed? 
-                        ReqObjExtractorFn extractor = perCoreStates[coreId].socketIdReqObjIdExtractorMap[o->old_socket];
-                        int reqObjId = extractor == nullptr ? 0 : extractor(const_cast<char *>(buffer.c_str()), 0); // fix me : replace 0 packetlen with actual packet len
-                        cout.flush();
-
-                        // callback. This part handles the DataBase return function.
-                        DSCallbackFn callback = perCoreStates[coreId].socketIdDSCallbackMap[o->old_socket];
-                        callback(connId, reqObjId,
-                                 perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
-                                 (void *) buffer.c_str(),
-                                 // The buffer size needs to be resigned before..
-                                 userConfig->BUFFER_SIZE, 0);
-
-                    // TODO. Can receive error here.
-                    _AppsDisposalContinue(ConnId, reqObjId,
-                                 perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
-                                 userConfig->BUFFER_SIZE, 0);
+                        _disposalBody(connId, o->reqObjId,
+                                    perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
+                                    o->packet_record, o->packet_len, 0);
+                        // Delete ctx from the hashmap. No need to delete ctx since it belongs to reqObj.
+                        perCoreStates[coreId].packetNumberContextMap.erase(
+                            perCoreStates[coreId].packetNumberContextMap.find(PACKETID(saReqId))
+                        );
                     // TODO. How to recover packates here.
                     }
                     continue;    
@@ -696,7 +688,7 @@ ConnId vnf::initServer(string iface, string serverIp, int serverPort, string pro
     return FIRST_TIME_CONN_ID;
 }
 
-ConnId& vnf::ConnId::registerCallback(enum EventType eventType, void callback(ConnId&, int, void *, char *, int, int, int, int)) {
+ConnId& vnf::ConnId::registerCallback(enum EventType eventType, CallbackFn callback) {
     if (*this == FIRST_TIME_CONN_ID) {
         globals.onAcceptByServerCallback[eventType] = callback;
     } else {
@@ -1106,7 +1098,7 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
             // callback
             callback(*this, reqObjId,
                      perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
-                     packet, userConfig->BUFFER_SIZE, 0);
+                     packet, userConfig->BUFFER_SIZE, 0, 0);
         } else {
             string sndCmd = "get";
             DSPacketHandler packetHandler;
@@ -1173,7 +1165,7 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
 
         globals.dataStoreLock.unlock();
 
-        callback(*this, reqObjId, perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId], valueCopy, userConfig->BUFFER_SIZE, 0);
+        callback(*this, reqObjId, perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId], valueCopy, userConfig->BUFFER_SIZE, 0, 0);
         return *this;
     }
     spdlog::warn("retrieveData: Unknown location used {}", location);
@@ -1273,7 +1265,7 @@ char * vnf::getPktBuf(ConnId& connId) {
   return connId.getPktBuf();
 }
 
-ConnId& vnf::registerCallback(ConnId& connId, enum EventType event, void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum)) {
+ConnId& vnf::registerCallback(ConnId& connId, enum EventType event, void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum)) {
   return connId.registerCallback(event, callback);
 }
 
@@ -1293,11 +1285,11 @@ ConnId& vnf::sendData(ConnId& connId, char *packetToSend, int packetSize, int st
   return connId.sendData(packetToSend, packetSize, streamNum);
 }
 
-ConnId& vnf::storeData(ConnId& connId, string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode)) {
+ConnId& vnf::storeData(ConnId& connId, string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int StreamNum)) {
   return connId.storeData(tableName, key, location, value, valueLen, errorCallback);
 }
 
-ConnId& vnf::retrieveData(ConnId& connId, string tableName, int key, enum DataLocation location, void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode), int reqObjId) {
+ConnId& vnf::retrieveData(ConnId& connId, string tableName, int key, enum DataLocation location, void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum), int reqObjId) {
   return connId.retrieveData(tableName, key, location, callback, reqObjId);
 }
 
@@ -1665,10 +1657,10 @@ int __VNFThread(int argc, char *argv[]){
 
 void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode){
     auto o = static_cast<Context *> (requestObject);
-    while (o->next_app != -1){
-        auto app = globals.sfc.SFC_chain[o->next_app];
+    while (o->AppIdx != -1){
+        auto app = globals.sfc.SFC_chain[o->AppIdx];
         // Only user manually point the next app to send.
-        o->next_app = -1;
+        o->AppIdx = -1;
         switch (o->ret)
         {
         case vnf::ERROR:
@@ -1681,8 +1673,9 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
             (*app.readHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
             break;
         } 
-        // FIXME. Copy to preserver for now.
+        // If transactions handler being called, the mark would be set.
         if ( o->waiting_for_transaction_back == true ){
+        // FIXME. Copy to preserver for now.
             // Copy the packet.
             o->packet_record = new char[packetLen];
             memcpy(o->packet_record, packet, packetLen);
@@ -1785,24 +1778,22 @@ void DB4NFV::SFC::Add(App& last, App& app){
 //         value, length, errCode);
 // }
 
-int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj) {
+int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId) {
     // Create a new event blocking fd.
     if (uint64_t(reqObj) == 0){
         perror("fatal: reqObj is null.");
     }
     auto o = static_cast<Context *>(CONTEXT(reqObj));
-    o->next = this->postTxnHandler_;
+
+    o->AppIdx = this->appIndex;
+    o->TxnIdx = this->txnIndex;
+    o->SAIdx = this->saIndex;
     o->old_socket = connId.socketId;
+    o->reqObjId = reqObjId;
 
     // Register call back parameters in the context.
     perCoreStates[connId.coreId].packetNumberContextMap[packetId] = o;
 	__request(TXNID(connId.coreId, packetId));
-}
-
-// __request actually send indexes marked functions to java.
-int __request(uint64_t txnId){
-    // TODO. Send request to morphStream.
-    return -1;
 }
 
 // Routing to the context of transaction breakpoint.
@@ -1816,3 +1807,159 @@ int _callBack(uint64_t txnId, void * value, int length){
         perror("_callback.write");
     }
 }
+
+// The entry for sending txn execution request to txnEngine.
+// TODO. Extend the other information.
+void __request(uint64_t txnId){
+    return globals.__java_env->CallVoidMethod(
+        globals.__client_obj, globals.__request,
+        txnId
+        // Other parameters to be added.
+    );
+}
+
+// TODO. TO BE DEBUGGED.
+JNIEXPORT jstring 
+JNICALL Java_cli_libVNFFrontend_Interface__1_1init_1SFC
+  (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
+
+		// Convert the jobjectArray to a char* array
+		jsize arrayLength = env->GetArrayLength(argv);
+		char **argvC = new char *[arrayLength];
+
+		for (jsize i = 0; i < arrayLength; i++)
+		{
+			jstring string = (jstring)env->GetObjectArrayElement(argv, i);
+			const char *str = env->GetStringUTFChars(string, 0);
+			argvC[i] = strdup(str);
+			env->ReleaseStringUTFChars(string, str);
+		}
+
+        // Find the method and save in globals.
+        // Find the class that contains the sendTxnRequest method
+        jclass cls = env->FindClass("cli/CliFrontend");
+        if (cls == NULL)
+        {
+            perror("utils.jni.init_SFC:class not found.");
+		    return env->NewStringUTF("");
+        }
+
+        // Get a reference to the sendTxnRequest method
+        jmethodID methodId = env->GetMethodID(cls, "sendTxnRequest", "()V");
+
+        if (methodId == NULL)
+        {
+            perror("utils.jni.init_SFC:method not found.");
+		    return env->NewStringUTF("");
+        }
+
+        // Call the sendTxnRequest method
+        globals.__request = methodId;
+        globals.__client_obj = obj;
+        globals.__java_env = env;
+
+        // Call the __init_SFC function
+		std::string result = __init_SFC(argc, argvC);
+
+		// Clean up the allocated memory
+		for (jsize i = 0; i < arrayLength; i++)
+		{
+			free(argvC[i]);
+		}
+		delete[] argvC;
+
+		// Return the result as a Java string
+		return env->NewStringUTF(result.c_str());
+}
+
+// Actual vnfs loop.
+JNIEXPORT void 
+JNICALL Java_cli_libVNFFrontend_Interface__1_1VNFThread
+  (JNIEnv * env, jobject obj, jint c, jobjectArray v){
+	startEventLoop();
+  }
+
+
+// The callback handling entrance.
+JNIEXPORT jint 
+JNICALL Java_cli_libVNFFrontend_Interface__1callBack
+  (JNIEnv * env, jobject obj, jlong saReqId_jni, jbyteArray value, jint length){
+    // Save the value in ctx.
+    uint64_t saReqId = static_cast<uint64_t>(saReqId_jni); 
+    jbyte *inputBuffer = env->GetByteArrayElements(value, NULL);
+
+	int coreId = COREID(saReqId);
+	auto ctx = perCoreStates[COREID(saReqId)].packetNumberContextMap[PACKETID(saReqId)];
+    // TODO. Check if deallocated.
+    ctx->value = new uint8_t[length];
+    ctx->value_len = length;
+    memcpy(ctx->value, inputBuffer, length);
+
+    ConnId conn = ConnId(COREID(saReqId), ctx->old_socket);
+
+    // How to recover the Index.
+	globals.sfc._callBack(conn, ctx->AppIdx, ctx->TxnIdx, ctx->SAIdx, 
+        ctx->reqObjId, 
+        perCoreStates[coreId].socketIdReqObjIdToReqObjMap[ctx->old_socket][ctx->reqObjId],
+        ctx->packet_record, 
+        ctx->packet_len, ctx->value, ctx->value_len, 0);
+
+    delete ctx->value;
+    ctx->value_len = -1;
+    return 0;
+  }
+
+// Report done.
+JNIEXPORT jint 
+JNICALL Java_cli_libVNFFrontend_Interface__1_1handle_1done
+  (JNIEnv * env, jobject obj, jlong saReqId_jni){
+    uint64_t saReqId = static_cast<uint64_t>(saReqId_jni); 
+    // Write to the fd to suggest done.
+    if (write(perCoreStates[COREID(saReqId)].txnSocket, &saReqId, sizeof(uint64_t)) < 0){
+        perror("jni.handle_done.write");
+        return -1;
+    }
+    return 0;
+  }
+
+void DB4NFV::SFC::Init(int maxCores){
+    // Fix the backlink.
+    int reqObjStart = 0;
+    int reqObjIndex = 0;
+    for (int i = 0 ; i < SFC_chain.size(); i += 1)
+    {
+        auto app = SFC_chain.at(i);
+        app.appIndex = i;
+        // Sort the reqObj. TODO.
+        this->objSizes.push_back(app.reqObjSize);
+        this->objSizesStarting.push_back(reqObjStart);
+        reqObjStart += app.reqObjSize;
+        this->AppIdxMap[&app] = reqObjIndex;
+        reqObjIndex += 1;
+        
+        for (int j = 0 ; j < app.Txns.size(); j += 1){
+            auto Txn = app.Txns.at(j);
+            Txn->txnIndex = j;
+            Txn->app = &app;
+            for (int k = 0; k < (Txn->sas).size(); k += 1){
+                auto sa = Txn->sas.at(k);
+                sa->app = &app;
+                sa->txn = Txn;
+                sa->appIndex = i;
+                sa->txnIndex = j;
+                sa->saIndex = k;
+            }
+        }
+    }
+    this->reqObjTotalSize = reqObjStart;
+    // Config and init libVNF.
+    this->cores = maxCores;
+    // Create back links for transactions and state access.
+    vnf::initLibvnf(cores, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
+}
+
+void *DB4NFV::App::reqObjClip(void * reqObjClip) { return reqObjClip + sizeof(Context) + globals.sfc.objSizes.at(globals.sfc.AppIdxMap[this]);}
+
+DB4NFV::SFC& GetSFC(){ 
+    return globals.sfc; 
+};

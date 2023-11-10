@@ -12,7 +12,7 @@
         <module>morph-clients</module>
         <module>morph-web</module>
         <module>morph-common</module>
-        <module>morph-common</module>
+        <!-- <module>morph-common</module> -->
     </modules>
 
     <build>

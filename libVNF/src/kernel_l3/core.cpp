@@ -179,7 +179,7 @@ struct ether_addr *ether_aton_src(const char *a)
     return ((struct ether_addr *)&q);
 }
 
-ConnId& vnf::ConnId::registerCallback(enum EventType t2, void callbackFnPtr(ConnId&, int, void *, char *, int, int, int))
+ConnId& vnf::ConnId::registerCallback(enum EventType t2, CallbackFn callbackFnPtr(ConnId&, int, void *, char *, int, int, int))
 {
     int vnf_connid = this->socketId;
     if (vnf_connid != -1)
