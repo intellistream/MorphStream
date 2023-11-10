@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 //TODO: For now, assume each event carries one transaction (txn_length==1)
-public class TxnDescription implements Serializable {
+public class FunctionDescription implements Serializable {
     private String name;
     private final HashMap<String, StateAccessDescription> stateAccessDescriptionMap; //Distinguish diff stateAccesses in OPScheduler by their names
 
-    public TxnDescription() {
+    public FunctionDescription() {
         stateAccessDescriptionMap = new HashMap<>();
     }
 

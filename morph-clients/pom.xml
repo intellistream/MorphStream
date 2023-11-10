@@ -64,6 +64,11 @@
             <version>2.7.17</version>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>org.zeromq</groupId>
+            <artifactId>jeromq</artifactId>
+            <version>0.5.2</version>
+        </dependency>
     </dependencies>
 
     <build>

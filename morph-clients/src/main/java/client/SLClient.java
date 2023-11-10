@@ -1,4 +1,4 @@
-package cli;
+package client;
 
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.output.Result;
@@ -6,9 +6,12 @@ import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
-import intellistream.morphstream.engine.txn.transaction.TxnDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zeromq.ZMsg;
+import worker.MorphStreamWorker;
+import worker.WebServer;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -105,16 +108,17 @@ public class SLClient extends Client {
     }
 
     public static void startJob(String[] args) throws Exception {
-        CliFrontend slClientJob = CliFrontend.getOrCreate().appName("SLClient");
+        WebServer.createJobInfoJSON("StreamLedger");
+        MorphStreamWorker morphStreamWorker = new MorphStreamWorker("SLClient", 4);
 //        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
-        slClientJob.LoadConfiguration(null, args); //TODO: add loadConfig from file
-        slClientJob.prepare();
+        morphStreamWorker.LoadConfiguration(null, args); //TODO: add loadConfig from file
+        morphStreamWorker.prepare();
 
         //Initialize transactions for Combo to execute
-        HashMap<String, TxnDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
+        HashMap<String, FunctionDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
 
-        //Define transfer transaction
-        TxnDescription transferDescriptor = new TxnDescription();
+        //Define transfer function
+        FunctionDescription transferDescriptor = new FunctionDescription();
         //Define transfer's 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
@@ -130,28 +134,31 @@ public class SLClient extends Client {
         txnDescriptions.put("transfer", transferDescriptor);
 
         //Define deposit transaction
-        TxnDescription depositDescriptor = new TxnDescription();
+        FunctionDescription depositDescriptor = new FunctionDescription();
         StateAccessDescription deposit = new StateAccessDescription("deposit", AccessType.WRITE);
         deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
         deposit.addValueName("depositAmount");
         depositDescriptor.addStateAccess("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);
 
-        //Define topology
-        slClientJob.setSpoutCombo("sl", txnDescriptions, 4);
-        //TODO: let client determine number of DB loader threads, and update in config, then pass to DBInitializer
-        //TODO: loadDBThreadNum = total threads of all stateful operators (bolts)
-
-        //Initiate runner
-        try {
-            slClientJob.run();
-        } catch (InterruptedException ex) {
-            if (enable_log) log.error("Error in running topology locally", ex);
-        }
+        morphStreamWorker.registerFunction(txnDescriptions);
+        morphStreamWorker.start();
+        Runnable threadRunnable = () -> {
+            SLClient slClient = new SLClient();
+            slClient.connectWorker("localhost",5570);
+            int i = 0;
+            while (!Thread.currentThread().isInterrupted()) {
+                slClient.asyncInvokeFunction("localhost", "Function_Id: " + i);
+                i ++;
+                slClient.asyncReceiveFunctionOutput("localhost");
+            }
+        };
+        Thread t = new Thread(threadRunnable);
+        t.start();
     }
 
     public static void main(String[] args) throws Exception {
-        WebServer.createJobInfoJSON("StreamLedger");
+//        WebServer.createJobInfoJSON("StreamLedger");
         startJob(args);
     }
 }

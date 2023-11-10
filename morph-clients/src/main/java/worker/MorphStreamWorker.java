@@ -1,44 +1,50 @@
-package cli;
+package worker;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
-import intellistream.morphstream.api.operator.bolt.SStoreBolt;
-import intellistream.morphstream.api.operator.spout.ApplicationSpout;
-import intellistream.morphstream.api.operator.spout.ApplicationSpoutCombo;
+import intellistream.morphstream.api.operator.spout.FunctionExecutor;
 import intellistream.morphstream.engine.stream.components.Topology;
-import intellistream.morphstream.engine.stream.components.grouping.Grouping;
-import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
-import intellistream.morphstream.engine.txn.transaction.TxnDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zeromq.SocketType;
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
-import static intellistream.morphstream.configuration.Constants.CCOption_MorphStream;
-import static intellistream.morphstream.configuration.Constants.CCOption_SStore;
 
 /**
  * TODO: Implementation of a simple command line frontend for executing programs.
  * TODO: This class should be the receiving end of system, it waits for new app from clients, and perform system initialization.
  */
-public class CliFrontend {
-    private static final Logger LOG = LoggerFactory.getLogger(CliFrontend.class);
+public class MorphStreamWorker extends Thread {
+    private static final Logger LOG = LoggerFactory.getLogger(MorphStreamWorker.class);
     private String appName = "";
     private final MorphStreamEnv env = MorphStreamEnv.get();
-    public static CliFrontend getOrCreate() {
-        return new CliFrontend();
-    }
-    public CliFrontend appName(String appName) {
+    private final FunctionExecutor spout;
+    private final int numTasks;
+    private final ZMQ.Socket frontend;// Frontend socket talks to clients over TCP
+    private final ZMQ.Socket backend;// Backend socket talks to workers over inproc
+
+    public MorphStreamWorker(String appName, int numTasks) throws Exception {
         this.appName = appName;
-        return this;
+        this.numTasks = numTasks;
+        this.frontend = env.zContext().createSocket(SocketType.ROUTER);
+        frontend.bind("tcp://*:5570");
+        backend = env.zContext().createSocket(SocketType.DEALER);
+        backend.bind("inproc://backend");
+        this.spout = new FunctionExecutor("functionExecutor");
+    }
+    public void registerFunction(HashMap<String, FunctionDescription> functions) {
+        this.spout.registerFunction(functions);
     }
     public boolean LoadConfiguration(String configPath, String[] args) throws IOException {
         if (configPath != null) {
@@ -90,44 +96,23 @@ public class CliFrontend {
             env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         }
     }
-    public void run() throws InterruptedException {
+    @Override
+    public void run() {
+        env.setSpout(appName, spout, numTasks);
         MeasureTools.Initialize();
-        runTopologyLocally();
+        try {
+            runTopologyLocally();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         //TODO: run for distributed mode
     }
-    public void setSpoutCombo(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks) throws Exception {
-        ApplicationSpoutCombo spout = new ApplicationSpoutCombo(id, txnDescriptionHashMap);
-        env.setSpout(id, spout, numTasks);
-    }
-    public void setSpout(String id, int numTasks) throws Exception {
-        ApplicationSpout spout = new ApplicationSpout(id);
-        env.setSpout(id, spout, numTasks);
-    }
-    public void setBolt(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks, int fid, Grouping ... groups) {
-        AbstractBolt bolt = null;
-        switch (env.configuration().getInt("CCOption", 0)) {
-            case CCOption_MorphStream: {//T-Stream
-                bolt = new MorphStreamBolt(id, txnDescriptionHashMap, fid);
-                break;
-            }
-            case CCOption_SStore:{
-                bolt = new SStoreBolt(id, txnDescriptionHashMap, fid);
-                break;
-            }
-            default:
-                if (enable_log) LOG.error("Please select correct CC option!");
-        }
-        env.setBolt(id, bolt, numTasks, groups);
-    }
-    public void setSink(String id, AbstractBolt sink, int numTasks, int fid, Grouping ... groups) {
-        env.setBolt(id, sink, numTasks, groups);
-    }
-
 
     private void runTopologyLocally() throws InterruptedException {
         Topology topology = env.createTopology();
         env.submitTopology(topology);
-        listenToStop();
+        ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
+//        listenToStop();
     }
 
     public void listenToStop() throws InterruptedException {

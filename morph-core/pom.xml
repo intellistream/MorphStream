@@ -231,6 +231,11 @@
             <artifactId>morph-common</artifactId>
             <version>0.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.zeromq</groupId>
+            <artifactId>jeromq</artifactId>
+            <version>0.5.2</version>
+        </dependency>
     </dependencies>
 
 </project>

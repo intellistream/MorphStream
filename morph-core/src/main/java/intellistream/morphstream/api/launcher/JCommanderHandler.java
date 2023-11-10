@@ -113,15 +113,8 @@ public class JCommanderHandler {
     /**
      * Workload tuning configurations
      */
-    @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
-//    public String application = "SHJ";
-//    public String application = "GrepSum";
-//    public String application = "WindowedGrepSum";
-//    public String application = "OnlineBiding";
-//    public String application = "TollProcessing";
     @Parameter(names = {"--operatorIDs"}, description = "Unique identifiers for operators")
-    public String operatorIDs = "sl";
+    public String operatorIDs = "functionExecutor";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
@@ -281,7 +274,7 @@ public class JCommanderHandler {
      * Client configurations
      */
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
-    public String clientClassName = "cli.SLClient";
+    public String clientClassName = "client.SLClient";
 
 
 
@@ -362,7 +355,6 @@ public class JCommanderHandler {
         }
 
         /* Workload configurations */
-        config.put("application", application);
         config.put("operatorIDs", operatorIDs);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);

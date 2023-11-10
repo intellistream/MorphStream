@@ -45,7 +45,6 @@ public class RuntimeMonitor extends Thread {
     // General usages
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, AtomicInteger>> opNumThreadCompletedMap = new ConcurrentHashMap<>(); //operatorID -> num of threads that have submitted performance data
     private static final String[] operatorIDs = MorphStreamEnv.get().configuration().getString("operatorIDs").split(",");
-    private static final String applicationID = MorphStreamEnv.get().configuration().getString("application");
     private static final HashMap<String, long[]> opEmptyLongArrays = new HashMap<>(); //operatorID -> empty long array, used for quick creation of breakdown time arrays for each new batch
     private static final HashMap<String, Integer> operatorThreadNumMap = new HashMap<>(); //operatorID -> its thread number
     private static final HashMap<String, Integer> operatorBatchNumMap = new HashMap<>(); //operatorID -> current batch whose runtime is going to be written to file

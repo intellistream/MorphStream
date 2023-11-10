@@ -1,4 +1,4 @@
-package cli;
+package worker;
 
 import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;

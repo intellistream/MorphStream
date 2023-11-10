@@ -1,6 +1,6 @@
 package runtimeweb;
 
-import cli.WebServer;
+import worker.WebServer;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

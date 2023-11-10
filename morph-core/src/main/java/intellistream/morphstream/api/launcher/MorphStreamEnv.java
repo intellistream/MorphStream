@@ -18,6 +18,7 @@ import intellistream.morphstream.engine.txn.db.CavaliaDatabase;
 import intellistream.morphstream.engine.txn.db.Database;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
+import org.zeromq.ZContext;
 
 public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
@@ -33,6 +34,7 @@ public class MorphStreamEnv {
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
+    private final ZContext zContext = new ZContext();
     public static MorphStreamEnv get() {
         return ourInstance;
     }
@@ -52,6 +54,7 @@ public class MorphStreamEnv {
     public BlockManagerId blockManagerId() {return blockManagerId;}
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
+    public ZContext zContext() {return zContext;}
     public InputSource inputSource() {return inputSource;}
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
@@ -65,20 +68,6 @@ public class MorphStreamEnv {
     public void setSpout(String id, AbstractSpout spout, int numTasks) {
         try {
             topologyBuilder.setSpout(id, spout, numTasks);
-        } catch (InvalidIDException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public void setBolt(String id, AbstractBolt b, int numTasks, Grouping... groups) {
-        try {
-            topologyBuilder.setBolt(id, b, numTasks, groups);
-        } catch (InvalidIDException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public void setSink(String id, AbstractBolt b, int numTasks, Grouping... groups) {
-        try {
-            topologyBuilder.setSink(id, b, numTasks, groups);
         } catch (InvalidIDException e) {
             throw new RuntimeException(e);
         }

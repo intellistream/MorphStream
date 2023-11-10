@@ -11,7 +11,7 @@ import intellistream.morphstream.engine.stream.components.operators.api.sink.Abs
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.transaction.TxnDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
@@ -31,7 +31,7 @@ import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_I
 
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
-    private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
+    private final HashMap<String, FunctionDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
     private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
@@ -42,14 +42,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
 
-    public MorphStreamBolt(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
+    public MorphStreamBolt(String id, HashMap<String, FunctionDescription> txnDescriptionMap, int fid) {
         super(id, LOG, fid);
         this.txnDescriptionMap = txnDescriptionMap;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
-    public MorphStreamBolt(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid, AbstractSink sink) {
+    public MorphStreamBolt(String id, HashMap<String, FunctionDescription> txnDescriptionMap, int fid, AbstractSink sink) {
         super(id, LOG, fid);
         this.sink = sink;
         this.isCombo = true;
@@ -91,14 +91,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {
-        TxnDescription txnDescription = txnDescriptionMap.get(event.getFlag());
+        FunctionDescription functionDescription = txnDescriptionMap.get(event.getFlag());
         //Initialize state access map for each event
         eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
 
         int stateAccessIndex = 0; // index of state access in the txn, used to generate StateAccessID (OperationID)
         //Each event triggers multiple state accesses
-        for (Map.Entry<String, StateAccessDescription> descEntry: txnDescription.getStateAccessDescEntries()) {
+        for (Map.Entry<String, StateAccessDescription> descEntry: functionDescription.getStateAccessDescEntries()) {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
             StateAccessDescription stateAccessDesc = descEntry.getValue();

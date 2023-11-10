@@ -1,4 +1,4 @@
-package cli;
+package worker;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -7,14 +7,14 @@ import junit.framework.TestSuite;
 /**
  * Unit test for simple cli.App.
  */
-public class CliFrontendTest
+public class MorphStreamWorkerTest
         extends TestCase {
     /**
      * Create the test case
      *
      * @param testName name of the test case
      */
-    public CliFrontendTest(String testName) {
+    public MorphStreamWorkerTest(String testName) {
         super(testName);
     }
 
@@ -22,7 +22,7 @@ public class CliFrontendTest
      * @return the suite of tests being tested
      */
     public static Test suite() {
-        return new TestSuite(CliFrontendTest.class);
+        return new TestSuite(MorphStreamWorkerTest.class);
     }
 
     /**
