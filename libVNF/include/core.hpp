@@ -112,6 +112,21 @@ enum DataLocation {
 #endif
 };
 
+class ConnId;
+
+// ConnId, reqObjId, reqObj, packet, packetId, packetLen, streamNum, errorCode.
+typedef void (*CallbackFn)
+	(ConnId&, int, void *, char *, int, int, int, int);
+
+// ConnId, reqObjId, reqObj, packet, packetId, packetLen, streamNum, errorCode.
+typedef void (*ErrorCallbackFn)
+	(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum);
+
+// ConnId, reqObjId, reqObj, value, valueLen, streamNum, errorCode.
+typedef void (*DSCallbackFn)
+	(ConnId& connId, int reqObjId, void * requestObject, void *value, int valuelen, int errorCode, int streamNum);
+
+
 class ConnId {
 public:
   const int coreId;
@@ -182,11 +197,11 @@ public:
 
   ConnId&
   storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen,
-          void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum));
+          ErrorCallbackFn errorCallback);
 
   ConnId&
   retrieveData(string tableName, int key, enum DataLocation location,
-          void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum), int reqObjId = 0);
+          DSCallbackFn callback, int reqObjId = 0);
 
   ConnId&
   delData(string tableName, int key, enum DataLocation location);
@@ -260,18 +275,6 @@ namespace http {
   string encodeQuery(string name, string value);
   
 };
-
-// ConnId, reqObjId, reqObj, packet, packetId, packetLen, streamNum, errorCode.
-typedef void (*CallbackFn)
-	(ConnId&, int, void *, char *, int, int, int, int);
-
-// ConnId, reqObjId, reqObj, packet, packetId, packetLen, streamNum, errorCode.
-typedef void (*ErrorCallbackFn)
-	(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum);
-
-// ConnId, reqObjId, reqObj, value, valueLen, streamNum, errorCode.
-typedef void (*DSCallbackFn)
-	(ConnId&, int, void *, void *, int, int, int);
 
 typedef void (*fn_ctrl)(string task, string vnf_name, string vnf_ip, string event);
 
@@ -400,7 +403,7 @@ initServer(string _interface, string serverIp, int serverPort, string protocol);
  * */
 ConnId&
 registerCallback(ConnId& connId, enum EventType event,
-                 void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum));
+                 CallbackFn callback);
 
 /**
  * @brief Register a function to extract request object id from a packet on a connection
@@ -459,7 +462,7 @@ sendData(ConnId& connId, char *packetToSend, int packetSize, int streamNum = 0);
  * */
 ConnId&
 storeData(ConnId& connId, string tableName, int key, enum DataLocation location, void *value, int valueLen,
-        void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum));
+        ErrorCallbackFn errorCallback);
 
 /**
  * @brief Fetch data from datastore
@@ -471,7 +474,7 @@ storeData(ConnId& connId, string tableName, int key, enum DataLocation location,
  * */
 ConnId&
 retrieveData(ConnId& connId, string tableName, int key, enum DataLocation location,
-        void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum), int reqObjId = 0);
+        DSCallbackFn callbck, int reqObjId = 0);
 
 /**
  * @brief Delete key-value pair from datastore
@@ -704,8 +707,8 @@ class SFC;
 class Transaction;
 class StateAccess;
 
-typedef void (*TxnCallBackHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, void* value, int valueLen, int errorCode);
-typedef void (*PacketHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int errorCode);
+typedef void (*TxnCallBackHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, void* value, int valueLen, int errorCode);
+typedef void (*PacketHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, int errorCode);
 
 typedef PacketHandler AcceptHandler;
 typedef PacketHandler ReadHandler;
@@ -832,7 +835,7 @@ public:
 
 // private:
     int reqObjTotalSize = 0;
-	std::vector<App&> SFC_chain = {};
+	std::vector<App* > SFC_chain = {};
 	std::unordered_map<App*, int> AppIdxMap = {};
 	std::vector<int> objSizes;
     std::vector<int> objSizesStarting;
@@ -844,10 +847,10 @@ DB4NFV::SFC& GetSFC();
 
 // Define the next app target.
 int registerNextApp(void * reqObj, int AppIdx, vnf::EventType type) {
-    auto o = static_cast<Context *>(CONTEXT(reqObj));
+    auto o = reinterpret_cast<Context *>(CONTEXT(reqObj));
     o->AppIdx = AppIdx;
     o->ret = type;
-    return;
+    return 0;
 }
 
 // Main loop for traversal of the apps.

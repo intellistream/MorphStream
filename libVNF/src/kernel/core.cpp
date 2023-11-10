@@ -688,7 +688,7 @@ ConnId vnf::initServer(string iface, string serverIp, int serverPort, string pro
     return FIRST_TIME_CONN_ID;
 }
 
-ConnId& vnf::ConnId::registerCallback(enum EventType eventType, CallbackFn callback) {
+ConnId& vnf::ConnId::registerCallback(enum EventType eventType, vnf::CallbackFn callback) {
     if (*this == FIRST_TIME_CONN_ID) {
         globals.onAcceptByServerCallback[eventType] = callback;
     } else {
@@ -981,7 +981,7 @@ ConnId& vnf::ConnId::sendData(char *data, int dataLen, int streamNum) {
     return *this;
 }
 
-void registerDSCallback(ConnId& connId, enum EventType eventType, void callback(ConnId&, int, void *, void *, int,  int, int)) {
+void registerDSCallback(ConnId& connId, enum EventType eventType, DSCallbackFn callback) {
     if (connId == FIRST_TIME_CONN_ID) {
         // TODO. Why special case the first CONN?
         globals.onAcceptByServerDSCallback = callback;
@@ -997,10 +997,10 @@ void registerDSCallback(ConnId& connId, enum EventType eventType, void callback(
 }
 
 // Error call back is of the same format as callback. We don't need to return anything if we don't need callback.
-ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId&, int, void *, void *, int, int, int)) {
-    if (errorCallback != nullptr) {
+ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen, DSCallbackFn callback) {
+    if (callback != nullptr) {
         // todo call this somewhere
-        registerDSCallback(*this, ERROR, errorCallback);
+        registerDSCallback(*this, ERROR, callback);
     }
 
     if (location == REMOTE || location == UDS) {
@@ -1080,7 +1080,7 @@ ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation loca
     return *this;
 }
 
-ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation location, void callback(ConnId&, int, void *, void *, int, int, int), int reqObjId) {
+ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation location, vnf::DSCallbackFn callback, int reqObjId) {
     int coreId = this->coreId;
     int socketId = this->socketId;
 
@@ -1265,7 +1265,7 @@ char * vnf::getPktBuf(ConnId& connId) {
   return connId.getPktBuf();
 }
 
-ConnId& vnf::registerCallback(ConnId& connId, enum EventType event, void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum)) {
+ConnId& vnf::registerCallback(ConnId& connId, enum EventType event, vnf::CallbackFn callback) {
   return connId.registerCallback(event, callback);
 }
 
@@ -1285,11 +1285,11 @@ ConnId& vnf::sendData(ConnId& connId, char *packetToSend, int packetSize, int st
   return connId.sendData(packetToSend, packetSize, streamNum);
 }
 
-ConnId& vnf::storeData(ConnId& connId, string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int StreamNum)) {
+ConnId& vnf::storeData(ConnId& connId, string tableName, int key, enum DataLocation location, void *value, int valueLen, vnf::DSCallbackFn errorCallback) {
   return connId.storeData(tableName, key, location, value, valueLen, errorCallback);
 }
 
-ConnId& vnf::retrieveData(ConnId& connId, string tableName, int key, enum DataLocation location, void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode, int streamNum), int reqObjId) {
+ConnId& vnf::retrieveData(ConnId& connId, string tableName, int key, enum DataLocation location, vnf::DSCallbackFn callback, int reqObjId) {
   return connId.retrieveData(tableName, key, location, callback, reqObjId);
 }
 
@@ -1655,7 +1655,7 @@ int __VNFThread(int argc, char *argv[]){
 	vnf::startEventLoop();
 }
 
-void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode){
+void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode){
     auto o = static_cast<Context *> (requestObject);
     while (o->AppIdx != -1){
         auto app = globals.sfc.SFC_chain[o->AppIdx];
@@ -1664,13 +1664,13 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
         switch (o->ret)
         {
         case vnf::ERROR:
-            (*app.errorHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            (*app->errorHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
             break;
         case vnf::ACCEPT:
-            (*app.acceptHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            (*app->acceptHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
             break;
         case vnf::READ:
-            (*app.readHandler)(connId, app.Txns, reqObjId, app.reqObjClip(requestObject), packet, packetLen, 0);
+            (*app->readHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
             break;
         } 
         // If transactions handler being called, the mark would be set.
@@ -1686,22 +1686,22 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
     }
 }
 
-void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto o = static_cast<Context *> (requestObject);
     o->ret = vnf::ACCEPT;
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode);
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
 }
 
-void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto o = static_cast<Context *> (requestObject);
     o->ret = vnf::ACCEPT;
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode);
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
 }
 
-void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum) {
+void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto o = static_cast<Context *> (requestObject);
     o->ret = vnf::ACCEPT;
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, errorCode);
+	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
 }
 
 int __initSFC(int argc, char *argv[]){
@@ -1757,14 +1757,14 @@ void DB4NFV::SFC::Entry(App& app){
 	if (this->SFC_chain.size() != 0){
 		perror("fatal: the SFC has already registered entry.");
 	}
-	this->SFC_chain.push_back(app);
+	this->SFC_chain.push_back(&app);
 }
 void DB4NFV::SFC::Add(App& last, App& app){
 	if (this->SFC_chain.size() == 0){
 		perror("fatal: the SFC has no entry.");
 	} 
 	last.next = &app;
-	this->SFC_chain.push_back(app);
+	this->SFC_chain.push_back(&app);
 }
 
 // int DB4NFV::SFC::_callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqObj, char * packet, int packetlen, void * value, int length, int errCode){
@@ -1778,12 +1778,23 @@ void DB4NFV::SFC::Add(App& last, App& app){
 //         value, length, errCode);
 // }
 
+// The entry for sending txn execution request to txnEngine.
+// TODO. Extend the other information.
+void __request(uint64_t txnId){
+    return globals.__java_env->CallVoidMethod(
+        globals.__client_obj, globals.__request,
+        txnId
+        // Other parameters to be added.
+    );
+}
+
+
 int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId) {
     // Create a new event blocking fd.
     if (uint64_t(reqObj) == 0){
         perror("fatal: reqObj is null.");
     }
-    auto o = static_cast<Context *>(CONTEXT(reqObj));
+    auto o = reinterpret_cast<Context *>(CONTEXT(reqObj));
 
     o->AppIdx = this->appIndex;
     o->TxnIdx = this->txnIndex;
@@ -1806,16 +1817,6 @@ int _callBack(uint64_t txnId, void * value, int length){
     if (write(perCoreStates[COREID(txnId)].epollFd, &txnId, sizeof(uint64_t)) < 0){
         perror("_callback.write");
     }
-}
-
-// The entry for sending txn execution request to txnEngine.
-// TODO. Extend the other information.
-void __request(uint64_t txnId){
-    return globals.__java_env->CallVoidMethod(
-        globals.__client_obj, globals.__request,
-        txnId
-        // Other parameters to be added.
-    );
 }
 
 // TODO. TO BE DEBUGGED.
@@ -1891,7 +1892,8 @@ JNICALL Java_cli_libVNFFrontend_Interface__1callBack
 	int coreId = COREID(saReqId);
 	auto ctx = perCoreStates[COREID(saReqId)].packetNumberContextMap[PACKETID(saReqId)];
     // TODO. Check if deallocated.
-    ctx->value = new uint8_t[length];
+    auto tmp = new uint8_t[length];
+    ctx->value = tmp;
     ctx->value_len = length;
     memcpy(ctx->value, inputBuffer, length);
 
@@ -1904,7 +1906,7 @@ JNICALL Java_cli_libVNFFrontend_Interface__1callBack
         ctx->packet_record, 
         ctx->packet_len, ctx->value, ctx->value_len, 0);
 
-    delete ctx->value;
+    delete tmp;
     ctx->value_len = -1;
     return 0;
   }
@@ -1929,21 +1931,21 @@ void DB4NFV::SFC::Init(int maxCores){
     for (int i = 0 ; i < SFC_chain.size(); i += 1)
     {
         auto app = SFC_chain.at(i);
-        app.appIndex = i;
+        app->appIndex = i;
         // Sort the reqObj. TODO.
-        this->objSizes.push_back(app.reqObjSize);
+        this->objSizes.push_back(app->reqObjSize);
         this->objSizesStarting.push_back(reqObjStart);
-        reqObjStart += app.reqObjSize;
-        this->AppIdxMap[&app] = reqObjIndex;
+        reqObjStart += app->reqObjSize;
+        this->AppIdxMap[app] = reqObjIndex;
         reqObjIndex += 1;
         
-        for (int j = 0 ; j < app.Txns.size(); j += 1){
-            auto Txn = app.Txns.at(j);
+        for (int j = 0 ; j < app->Txns.size(); j += 1){
+            auto Txn = app->Txns.at(j);
             Txn->txnIndex = j;
-            Txn->app = &app;
+            Txn->app = app;
             for (int k = 0; k < (Txn->sas).size(); k += 1){
                 auto sa = Txn->sas.at(k);
-                sa->app = &app;
+                sa->app = app;
                 sa->txn = Txn;
                 sa->appIndex = i;
                 sa->txnIndex = j;
