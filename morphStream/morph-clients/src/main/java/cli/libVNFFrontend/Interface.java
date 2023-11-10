@@ -11,11 +11,11 @@ public class Interface {
     public native int _callBack(long saReqId, byte[] value, int length);
 
     // Native method declaration for __handle_done
-    public native int __handle_done(long txnId);
+    public native int __handle_done(long saReqId);
 
     // Load the native library when the class is initialized
     static {
-        System.loadLibrary("libVNF_native");
+        System.load("/home/kailian/MorphStream/libVNF/build/libvnf-kernel-dynamic.so");
     }
 
     public static void main(String[] args) {
@@ -24,7 +24,7 @@ public class Interface {
 
         String def = lf.__init_SFC(0, null);
         System.out.println(def);
-        // Dispose definition of apps.
+        // TODO: Dispose definition of apps.
 
         System.out.println("VNFs spawned.");
         lf.__VNFThread(0, null);

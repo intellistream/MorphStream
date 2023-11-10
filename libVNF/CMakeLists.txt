@@ -3,7 +3,7 @@ project(libVNF)
 
 set(PROJECT_DESCRIPTION "libvnf is a library to easily build custom scalable high performance Virtual Network Functions (VNFs)")
 # Release type
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Project version
 set(PROJECT_VERSION_MAJOR 0)

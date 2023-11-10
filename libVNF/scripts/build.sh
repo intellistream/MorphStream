@@ -31,7 +31,6 @@ if [[ $1 == "libVNF" ]]; then
 		-DBACKEND_MORPH=True \
 		-DCMAKE_BUILD_TYPE=Debug
 	make -j4
-	sudo make install && echo "Done: libVNF built and installed." || echo "Build: libVNF build failed."
-	cd vnf/naiveLoadBalancer && make clean && make b-kernel-static && make a && make c && echo "Done: LoadBalancer built."
+	sudo make install && echo "Done: libVNF built and installed." 
 	exit 0
 fi
