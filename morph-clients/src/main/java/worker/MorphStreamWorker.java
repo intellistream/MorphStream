@@ -18,6 +18,7 @@ import org.zeromq.ZMQ;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 
@@ -27,15 +28,13 @@ import static intellistream.morphstream.configuration.CONTROL.*;
  */
 public class MorphStreamWorker extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamWorker.class);
-    private String appName = "";
     private final MorphStreamEnv env = MorphStreamEnv.get();
     private final FunctionExecutor spout;
     private final int numTasks;
     private final ZMQ.Socket frontend;// Frontend socket talks to clients over TCP
     private final ZMQ.Socket backend;// Backend socket talks to workers over inproc
 
-    public MorphStreamWorker(String appName, int numTasks) throws Exception {
-        this.appName = appName;
+    public MorphStreamWorker(int numTasks) throws Exception {
         this.numTasks = numTasks;
         this.frontend = env.zContext().createSocket(SocketType.ROUTER);
         frontend.bind("tcp://*:5570");
@@ -83,7 +82,7 @@ public class MorphStreamWorker extends Thread {
                 stringBuilder.deleteCharAt(stringBuilder.length()-1);
                 env.configuration().put("WorkloadConfig",stringBuilder.toString()); //For each workload, how many TD/LD/PD
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("clientNum"));
         } else if (env.configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
             String inputFile = env.configuration().getString("inputFilePath");
             File file = new File(inputFile);
@@ -93,12 +92,13 @@ public class MorphStreamWorker extends Thread {
                 String fileName = env.fileDataGenerator().prepareInputData(false);
                 env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("clientNum"));
         }
+        env.CountDownLatchInitialize(MorphStreamEnv.get().configuration().getInt("clientNum") + 1); //+1 for MorphStreamWorker
     }
     @Override
     public void run() {
-        env.setSpout(appName, spout, numTasks);
+        env.setSpout("functionExecutor", spout, numTasks);
         MeasureTools.Initialize();
         try {
             runTopologyLocally();
@@ -111,18 +111,7 @@ public class MorphStreamWorker extends Thread {
     private void runTopologyLocally() throws InterruptedException {
         Topology topology = env.createTopology();
         env.submitTopology(topology);
+        env.latch().countDown();
         ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
-//        listenToStop();
-    }
-
-    public void listenToStop() throws InterruptedException {
-        executorThread sinkThread = env.OM().getEM().getSinkThread();
-        sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
-        env.OM().join();
-        env.OM().getEM().exist();
-    }
-
-    public MorphStreamEnv env() {
-        return env;
     }
 }

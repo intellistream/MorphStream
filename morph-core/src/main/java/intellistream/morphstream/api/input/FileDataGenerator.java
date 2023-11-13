@@ -28,7 +28,7 @@ public class FileDataGenerator {
     private String inputFilePath;
     private String rootPath;
     //System configuration
-    private int totalThreads = 4;
+    private int totalPartition = 4;
     private int punctuation;
     //Event configure
     private HashMap<String, HashMap<String, Integer>> eventKeyMap = new HashMap<>();//event -> tableName -> keyNumber
@@ -42,6 +42,7 @@ public class FileDataGenerator {
     private ArrayList<String> eventList = new ArrayList<>();//event list
     private String[] eventTypes;//event list
     private int eventID = 0;
+    private int deltaEventID = 1;
     private HashMap<String, HashMap<String,FastZipfGenerator>> zipfGeneratorHashMap= new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, HashMap<String, List<FastZipfGenerator>>> partitionZipfGeneratorHashMap = new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, Double> eventAbortMap = new HashMap<>();//event -> AbortRatio
@@ -63,6 +64,8 @@ public class FileDataGenerator {
     private void configure_store() {
         configuration = MorphStreamEnv.get().configuration();
         numItemMaps = MorphStreamEnv.get().databaseInitializer().getNumItemMaps();
+        eventID = configuration.getInt("nodeId", 0);
+        deltaEventID = configuration.getInt("nodeNum", 1);
         rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark");
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();
@@ -77,15 +80,15 @@ public class FileDataGenerator {
         } catch (IOException e) {
             System.out.println("Error in locating input file: " + e.getMessage());
         }
-        totalThreads = configuration.getInt("tthread", 4);
+        totalPartition = configuration.getInt("tthread", 4) * configuration.getInt("nodeNum", 1);
         punctuation = configuration.getInt("checkpoint", 1000);
-        totalEvents = configuration.getInt("totalEvents", totalThreads * punctuation);
+        totalEvents = configuration.getInt("totalEvents", totalPartition * punctuation);
         phaseType = configuration.getString("workloadType", "default").split(",");
         phase = 0;
         eventTypes = configuration.getString("eventTypes", "event1,event2").split(";");
         inputEvents = new ArrayList<TransactionalEvent>(totalEvents);
         for (Map.Entry<String, Integer> s : numItemMaps.entrySet()) {
-            intervalMaps.put(s.getKey(), s.getValue() / totalThreads);
+            intervalMaps.put(s.getKey(), s.getValue() / totalPartition);
         }
         for (String eventType : eventTypes) {
             String[] tableNames = configuration.getString(eventType + "_tables", "table1,table2").split(",");
@@ -108,8 +111,8 @@ public class FileDataGenerator {
             for (String tableName: eventKeyMap.get(eventType).keySet()) {
                 zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, 0,123456789));
                 List<FastZipfGenerator> zipfGenerators = new ArrayList<>();
-                for (int i = 0; i < totalThreads; i++) {
-                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName)/totalThreads, (double) stateAssessSkewMap.get(eventType) / 100, i * intervalMaps.get(tableName),123456789));
+                for (int i = 0; i < totalPartition; i++) {
+                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName)/ totalPartition, (double) stateAssessSkewMap.get(eventType) / 100, i * intervalMaps.get(tableName),123456789));
                 }
                 partitionZipfHashMap.put(tableName, zipfGenerators);
             }
@@ -120,7 +123,7 @@ public class FileDataGenerator {
 
     private void generateStream() {
         for (int tupleNumber = 0; tupleNumber < totalEvents; tupleNumber++) {
-            if (tupleNumber % (punctuation * totalThreads) == 0) {
+            if (tupleNumber % (punctuation * totalPartition) == 0) {
                 nextDataGeneratorConfig();
             }
             generateTuple(nextEvent());
@@ -154,7 +157,7 @@ public class FileDataGenerator {
             inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
         }
         inputEvents.add(inputEvent);
-        eventID ++;
+        eventID = eventID + deltaEventID;
     }
 
     private HashMap<String, List<String>> generateKey(String eventType) {//tableName -> List of keys
@@ -167,8 +170,8 @@ public class FileDataGenerator {
             int partition = key_to_partition(entry.getKey(), key);
             if (random.nextInt(1000) < eventMultiPartitionMap.get(eventType)) {
                 for (int i = 1; i < entry.getValue(); i++) {
-                    int partition1 = random.nextInt(totalThreads);
-                    while (partition == partition1) partition1 = random.nextInt(totalThreads);
+                    int partition1 = random.nextInt(totalPartition);
+                    while (partition == partition1) partition1 = random.nextInt(totalPartition);
                     keys.add(String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition1).next()));
                 }
             } else {
@@ -307,7 +310,7 @@ public class FileDataGenerator {
 
     public void generateTPGProperties() {
         for (int tupleNumber = 0; tupleNumber < totalEvents; tupleNumber++) {
-            if (tupleNumber % (punctuation * totalThreads) == 0) {
+            if (tupleNumber % (punctuation * totalPartition) == 0) {
                 nextDataGeneratorConfig();
             }
         }

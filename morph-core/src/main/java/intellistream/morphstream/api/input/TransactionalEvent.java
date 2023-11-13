@@ -63,6 +63,8 @@ public class TransactionalEvent extends TxnEvent {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(bid);
+        stringBuilder.append(";");
         for (String tableName : keyMap.keySet()) {
             stringBuilder.append(tableName).append(":");
             for (String key : keyMap.get(tableName)) {

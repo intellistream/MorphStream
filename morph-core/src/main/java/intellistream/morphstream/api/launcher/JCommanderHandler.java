@@ -32,11 +32,6 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = Constants.CCOption_MorphStream;
-//    public int CCOption = CCOption_SStore;
-//    public int CCOption = CCOption_LOCK;
-    @Parameter(names = {"--generator"}, description = "Generator for TStream.")
-    public String generator = "TPGGenerator";
-//    public String generator = "OCGenerator";
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
@@ -47,14 +42,8 @@ public class JCommanderHandler {
     public int batch = 1;
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
-    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
-    public String idGenType = "uniform";
     @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
     public int isCyclic = 0;
-    @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
-    public double ratio_of_multi_partition = 0; //<=1
-    @Parameter(names = {"--number_partitions"}, description = "number_partitions")
-    public int number_partitions = 3;
     @Parameter(names = {"--theta"}, description = "theta")
     public double theta = 0.6; //0.6==medium contention
     @Parameter(names = {"--size_tuple"}, description = "size_tuple (number of elements in state)")
@@ -182,7 +171,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "accounts,bookEntries";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "4500,4500"; // 10000,10000
+    public String numberItemsForTables = "8000,8000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string,string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
@@ -205,7 +194,7 @@ public class JCommanderHandler {
     public String inputFilePath;
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
-    @Parameter(names = {"--dataDirectory"}, description = "input file name")
+    @Parameter(names = {"--dataDirectory"})
     public String dataDirectory = "data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 10000;
@@ -235,13 +224,15 @@ public class JCommanderHandler {
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
     public String abortRatioForEvents = "0,0";
 
-    //System configure
-    @Parameter(names = {"--tthread"}, description = "total execution threads")
+    //Cluster configure
+    @Parameter(names = {"--nodeId"}, description = "nodeId")
+    public int nodeId = 0;//
+    @Parameter(names = {"--nodeNum"}, description = "total nodes")
+    public int nodeNum = 1;// default total node in the cluster
+    @Parameter(names = {"--tthread"}, description = "total execution threads each node")
     public int tthread = 4;// default total execution threads
-    @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
-    public int spoutNum = 4;// number of spout threads
-    @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
-    public String operatorThreadNum = "4";// number of threads for each operator
+    @Parameter(names = {"--clientNum"}, description = "total client threads each node")
+    public int clientNum = 4;// default total client threads
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 2500;//checkpoint per thread.
 
@@ -296,7 +287,6 @@ public class JCommanderHandler {
 
         /* System configurations */
         config.put("CCOption", CCOption);
-        config.put("generator", generator);
         config.put("linked", linked);
         config.put("shared", shared);
         if (CCOption == 4)//S-Store enabled.
@@ -307,21 +297,16 @@ public class JCommanderHandler {
             config.put("batch", batch);
         }
         config.put("tthread", tthread);
-        config.put("spoutNum", spoutNum);
-        String[] operatorThreadNumArray = operatorThreadNum.split(";");
-        for (int i = 0; i < operatorThreadNumArray.length; i ++) {
-            config.put("threadNumOf_" + i, Integer.valueOf(operatorThreadNumArray[i]));
-        }
+        config.put("clientNum", clientNum);
+        config.put("nodeNum", nodeNum);
+        config.put("nodeId", nodeId);
         config.put("checkpoint", checkpoint_interval);
         config.put("fanoutDist", fanoutDist);
-        config.put("idGenType", idGenType);
         if (isCyclic == 1) {
             config.put("isCyclic", true);
         } else {
             config.put("isCyclic", false);
         }
-        config.put("ratio_of_multi_partition", ratio_of_multi_partition);
-        config.put("number_partitions", number_partitions);
         config.put("theta", theta);
         config.put("size_tuple", size_tuple);
         config.put("queue_size", queue_size);
@@ -428,7 +413,7 @@ public class JCommanderHandler {
         /* Input configurations */
         config.put("rootPath", rootPath);
         config.put("inputFileType", inputFileType);
-        config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt"));
+        config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs") + OsUtils.OS_wrapper(clientClassName) + OsUtils.OS_wrapper("event_" + nodeId + ".txt"));
         config.put("inputFileName", inputFileName);
         config.put("dataDirectory", dataDirectory);
         config.put("totalEvents", totalEvents);

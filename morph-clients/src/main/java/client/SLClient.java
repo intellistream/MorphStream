@@ -1,6 +1,7 @@
 package client;
 
 import intellistream.morphstream.api.Client;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
@@ -13,7 +14,9 @@ import org.zeromq.ZMsg;
 import worker.MorphStreamWorker;
 import worker.WebServer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
@@ -109,8 +112,7 @@ public class SLClient extends Client {
 
     public static void startJob(String[] args) throws Exception {
         WebServer.createJobInfoJSON("StreamLedger");
-        MorphStreamWorker morphStreamWorker = new MorphStreamWorker("SLClient", 4);
-//        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
+        MorphStreamWorker morphStreamWorker = new MorphStreamWorker( 4);
         morphStreamWorker.LoadConfiguration(null, args); //TODO: add loadConfig from file
         morphStreamWorker.prepare();
 
@@ -143,18 +145,16 @@ public class SLClient extends Client {
 
         morphStreamWorker.registerFunction(txnDescriptions);
         morphStreamWorker.start();
-        Runnable threadRunnable = () -> {
-            SLClient slClient = new SLClient();
-            slClient.connectWorker("localhost",5570);
-            int i = 0;
-            while (!Thread.currentThread().isInterrupted()) {
-                slClient.asyncInvokeFunction("localhost", "Function_Id: " + i);
-                i ++;
-                slClient.asyncReceiveFunctionOutput("localhost");
-            }
-        };
-        Thread t = new Thread(threadRunnable);
-        t.start();
+
+        List<Thread> threads = new ArrayList<>();
+        int clientNum = MorphStreamEnv.get().configuration().getInt("clientNum");
+        for (int threadNum = 0; threadNum < clientNum; threadNum++) {
+            Client t = new SLClient();
+            t.initialize(threadNum, MorphStreamEnv.get().latch());
+            threads.add(t);
+            t.start();
+        }
+
     }
 
     public static void main(String[] args) throws Exception {

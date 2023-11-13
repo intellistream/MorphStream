@@ -33,39 +33,6 @@ public class ApplicationSpout extends AbstractSpout {
 
     @Override
     public void nextTuple() throws InterruptedException {
-        if (!inputQueue.isEmpty()) {
-            TransactionalEvent event = inputQueue.take(); //this should be txnEvent already
-            long bid = event.getBid();
 
-            if (bid != -1) { //txn events
-                if (CONTROL.enable_latency_measurement)
-                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-                else {
-                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
-                }
-
-                tuple = new Tuple(bid, this.taskId, context, generalMsg);
-                collector.emit(bid, tuple); // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-                counter++;
-
-                if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
-                    if (model_switch(counter)) {
-                        marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "punctuation"));
-                        collector.emit(bid, marker);
-                    }
-                }
-            } else { //control signals
-                if (Objects.equals(event.getFlag(), "pause")) {
-                    marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "pause"));
-                    collector.emit(bid, marker);
-                }
-            }
-
-            if (inputQueue.isEmpty()) { //TODO: Refactor this part, remove the_end, use stopEvent indicator
-                SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
-                SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
-                getContext().stop_running();
-            }
-        }
     }
 }

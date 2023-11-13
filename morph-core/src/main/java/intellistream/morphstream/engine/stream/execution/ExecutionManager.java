@@ -104,39 +104,12 @@ public class ExecutionManager {
         //TODO: support multi-stages later.
         if (CONTROL.enable_shared_state) {
             HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
-//            createStages(conf); //create Stage for each stateful operator in StageMap
-//            //TODO: integrate dynamic scheduling into Stages.
-//            int totalThread = conf.getInt("tthread");
-//            int numberOfStates = conf.getInt("NUM_ITEMS");
-//            String schedulerType = conf.getString("scheduler");
-//            TxnManager.loggingManager = db.getLoggingManager();
-//            if (conf.getBoolean("isDynamic")) {
-//                String schedulers = conf.getString("schedulersPool");
-//                //TODO: Modify this line
-//                TxnManager.initSchedulerPoolForDynamicWorkload(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates);
-//                //Configure the bottom line for triggering scheduler switching in Collector(include the isRuntime and when to switch)
-//                TxnManager.setBottomLine(conf.getString("bottomLine"));
-//                if (!conf.getBoolean("isRuntime")) {
-//                    TxnManager.setWorkloadConfig(conf.getString("WorkloadConfig"));
-//                }
-//            } else if (conf.getBoolean("isGroup")) {
-//                //TODO: Modify this line
-//                TxnManager.initSchedulersByGroupForMultipleWorkload(conf.getString("SchedulersForGroup"), totalThread, numberOfStates);
-//            } else {
-//                //TODO: Modify this line
-//                TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates);
-//            }
-//            if (conf.getBoolean("isRecovery")) {
-//                TxnManager.initRecoveryScheduler(conf.getInt("FTOption"), totalThread, numberOfStates);
-//            }
             for (ExecutionNode e : g.getExecutionNodeArrayList()) {
                 stage_map.putIfAbsent(e.op.getStage(), new LinkedList<>());
                 stage_map.get(e.op.getStage()).add(e.getExecutorID());
             }
             int stage = 0;//currently only stage 0 is required..
             List<Integer> integers = stage_map.get(stage);
-//            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
-//            tp_engine = TxnProcessingEngine.getInstance();
             if (integers != null) {
                 int totalThread = conf.getInt("tthread");
                 int numberOfStates = conf.getInt("NUM_ITEMS");

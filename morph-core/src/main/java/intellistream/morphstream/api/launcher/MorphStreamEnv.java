@@ -20,6 +20,8 @@ import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import org.zeromq.ZContext;
 
+import java.util.concurrent.CountDownLatch;
+
 public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
@@ -35,6 +37,7 @@ public class MorphStreamEnv {
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
     private final ZContext zContext = new ZContext();
+    private CountDownLatch latch;//The number of clients + MorphStreamWorker
     public static MorphStreamEnv get() {
         return ourInstance;
     }
@@ -56,6 +59,7 @@ public class MorphStreamEnv {
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
     public ZContext zContext() {return zContext;}
     public InputSource inputSource() {return inputSource;}
+    public CountDownLatch latch() {return latch;}
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();
@@ -64,6 +68,9 @@ public class MorphStreamEnv {
                 databaseInitializer.setSpinlock_(i, new SpinLock());
             PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
         }
+    }
+    public void CountDownLatchInitialize(int num) {
+        this.latch = new CountDownLatch(num);
     }
     public void setSpout(String id, AbstractSpout spout, int numTasks) {
         try {

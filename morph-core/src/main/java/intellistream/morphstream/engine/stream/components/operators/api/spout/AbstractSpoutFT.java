@@ -92,7 +92,6 @@ public abstract class AbstractSpoutFT extends AbstractSpout implements FaultTole
     }
     @Override
     public boolean input_store(long currentOffset) throws IOException, ExecutionException, InterruptedException {
-        this.inputDurabilityHelper.storeInput(this.inputQueue.toArray(), currentOffset, punctuation_interval, inputStoreCurrentPath);
         return true;
     }
     @Override

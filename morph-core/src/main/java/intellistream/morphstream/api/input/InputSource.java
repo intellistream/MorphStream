@@ -26,7 +26,6 @@ public class InputSource {
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
     private final ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
-    private int bid;
     private boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     public enum InputSourceType {
         FILE_STRING,
@@ -42,7 +41,6 @@ public class InputSource {
 
     public InputSource() {
         this.inputQueues = new ConcurrentHashMap<>();
-        this.bid = 0;
     }
 
     public void insertStopSignal() { //TODO: Modify workload, so that stop signal can be inserted before spout finish reading all events
@@ -57,12 +55,12 @@ public class InputSource {
     /**
      * For InputSource from file, once file path is specified, automatically convert all lines into TransactionalEvents
      */
-    public void initialize(String staticFilePath, InputSourceType inputSourceType, int spoutNum) throws IOException {
+    public void initialize(String staticFilePath, InputSourceType inputSourceType, int clientNum) throws IOException {
         this.staticFilePath = staticFilePath;
         this.inputSourceType = inputSourceType;
         BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));
         String input;
-        for (int i = 0; i < spoutNum; i++) {
+        for (int i = 0; i < clientNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
             this.inputQueues.put(i, inputQueue);
         }
@@ -72,18 +70,19 @@ public class InputSource {
                 inputQueues.get(index).add(inputFromStringToTxnEvent(input));
             else if (this.inputSourceType == InputSourceType.FILE_JSON)
                 inputQueues.get(index).add(inputFromJsonToTxnEvent(input));
-            index = (index + 1) % spoutNum;
+            index = (index + 1) % clientNum;
         }
     }
 
-    public BlockingQueue<TransactionalEvent> getInputQueue(int spoutId) {
-        return this.inputQueues.get(spoutId);
+    public BlockingQueue<TransactionalEvent> getInputQueue(int clientId) {
+        return this.inputQueues.get(clientId);
     }
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(input, JsonObject.class);
 
+        int bid = gson.fromJson(jsonObject.get("subJson0"), Integer.class);
         HashMap<String, List<String>> keyMap = gson.fromJson(jsonObject.get("subJson0"), HashMap.class);
         HashMap<String, Object> valueMap = gson.fromJson(jsonObject.get("subJson1"), HashMap.class);
         HashMap<String, String> valueTypeMap = gson.fromJson(jsonObject.get("subJson2"), HashMap.class);
@@ -92,9 +91,9 @@ public class InputSource {
 
         TransactionalEvent txnEvent;
         if (isAbort.equals("true")) {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+            txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, true);
         } else {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+            txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, false);
         }
         if (createTimestampForEvent) {
             txnEvent.setOriginTimestamp(System.nanoTime());
@@ -102,62 +101,50 @@ public class InputSource {
             txnEvent.setOriginTimestamp(0L);
         }
 
-        bid++;
         return txnEvent;
     }
 
     public TransactionalEvent inputFromStringToTxnEvent(String input) {
         String [] inputArray = input.split(";");
-        if (inputArray.length == 5) {
-            HashMap<String, List<String>> keyMap = new HashMap<>();
-            HashMap<String, Object> valueMap = new HashMap<>();
-            HashMap<String, String> valueTypeMap = new HashMap<>();
-            String [] keyMapPairs = inputArray[0].split(",");
+        HashMap<String, List<String>> keyMap = new HashMap<>();
+        HashMap<String, Object> valueMap = new HashMap<>();
+        HashMap<String, String> valueTypeMap = new HashMap<>();
 
-            for (String pair : keyMapPairs) {
-                List<String> keys = new ArrayList<>();
-                String[] keyMapPair = pair.split(":");
-                for (int j = 1; j < keyMapPair.length; j++) {
-                    keys.add(keyMapPair[j]);
-                }
-                keyMap.put(keyMapPair[0], keys);
+        int bid = Integer.parseInt(inputArray[0]);
+        String [] keyMapPairs = inputArray[1].split(",");
+        for (String pair : keyMapPairs) {
+            List<String> keys = new ArrayList<>();
+            String[] keyMapPair = pair.split(":");
+            for (int j = 1; j < keyMapPair.length; j++) {
+                keys.add(keyMapPair[j]);
             }
-            String [] valueMapPairs = inputArray[1].split(",");
-            for (String mapPair : valueMapPairs) {
-                String[] valueMapPair = mapPair.split(":");
-                valueMap.put(valueMapPair[0], valueMapPair[1]);
-            }
-            String [] valueTypeMapPairs = inputArray[2].split(",");
-            for (String typeMapPair : valueTypeMapPairs) {
-                String[] valueTypeMapPair = typeMapPair.split(":");
-                valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
-            }
-            String flag = inputArray[3];
-            String isAbort = inputArray[4];
-
-            TransactionalEvent txnEvent;
-            if (isAbort.equals("true")) {
-                txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
-            } else {
-                txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
-            }
-            if (createTimestampForEvent) {
-                txnEvent.setOriginTimestamp(System.nanoTime());
-            } else {
-                txnEvent.setOriginTimestamp(0L);
-            }
-            bid++; //bid only used for normal events, not control signals
-            return txnEvent;
-        } else if (inputArray.length == 1) { //for control signals
-            String message = inputArray[0];
-            if (Objects.equals(message, "pause")) {
-                return new TransactionalEvent(-1, null, null, null, message, false);
-            } else {
-                throw new UnsupportedOperationException("Unsupported control signal: " + message);
-            }
-        } else {
-            throw new UnsupportedOperationException("Unsupported input format: " + input);
+            keyMap.put(keyMapPair[0], keys);
         }
+        String [] valueMapPairs = inputArray[2].split(",");
+        for (String mapPair : valueMapPairs) {
+            String[] valueMapPair = mapPair.split(":");
+            valueMap.put(valueMapPair[0], valueMapPair[1]);
+        }
+        String [] valueTypeMapPairs = inputArray[3].split(",");
+        for (String typeMapPair : valueTypeMapPairs) {
+            String[] valueTypeMapPair = typeMapPair.split(":");
+            valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
+        }
+        String flag = inputArray[4];
+        String isAbort = inputArray[5];
+
+        TransactionalEvent txnEvent;
+        if (isAbort.equals("true")) {
+            txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, true);
+        } else {
+            txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, false);
+        }
+        if (createTimestampForEvent) {
+            txnEvent.setOriginTimestamp(System.nanoTime());
+        } else {
+            txnEvent.setOriginTimestamp(0L);
+        }
+        return txnEvent;
     }
 
     public String getStaticFilePath() {

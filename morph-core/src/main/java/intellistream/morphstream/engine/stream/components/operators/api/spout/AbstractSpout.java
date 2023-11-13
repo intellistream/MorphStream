@@ -19,7 +19,6 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
     public int punctuation_interval;
     protected int totalEventsPerBatch = 0;
     protected int tthread;
-    protected BlockingQueue<TransactionalEvent> inputQueue;
     protected int start_measure = 0;
     protected int counter = 0;
 
@@ -44,7 +43,6 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
         punctuation_interval = config.getInt("checkpoint");
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
-        inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(thread_Id);
         ccOption = config.getInt("CCOption", 0);
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
     }
@@ -52,8 +50,5 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
     @Override
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         throw new UnsupportedOperationException();
-    }
-    public BlockingQueue<TransactionalEvent> getInputQueue() {
-        return inputQueue;
     }
 }
