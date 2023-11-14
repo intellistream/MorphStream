@@ -14,6 +14,7 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
+import libVNFFrontend.NativeInterface;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +42,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final SynchronizedDescriptiveStatistics latencyStat = new SynchronizedDescriptiveStatistics(); //latency statistics of current batch
     private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
-    private boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
-    private native void nativeTxnPost(int bid); //Native c++ method for txn completion signal passing
+    private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
 
     public MorphStreamBolt(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
         super(id, LOG, fid);
@@ -139,9 +139,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     protected void Transaction_Post_Process() {
 
         if (useNativeLib) {
-            System.loadLibrary("NativeLibrary"); //Common c++ library that contains all native methods
             for (TransactionalEvent event : eventQueue) {
-                nativeTxnPost((int) event.getBid()); //Notify libVNF for txn completion
+                NativeInterface.__handle_done(event.getBid()); //Notify libVNF for txn completion
             }
         } else {
             for (TransactionalEvent event : eventQueue) {

@@ -1,6 +1,6 @@
-package cli.libVNFFrontend;
+package libVNFFrontend;
 
-public class Interface {
+public class NativeInterface {
     // Native method declaration for __init_SFC
     public native String __init_SFC(int argc, String[] argv);
 
@@ -11,7 +11,7 @@ public class Interface {
     public native int _callBack(long saReqId, byte[] value, int length);
 
     // Native method declaration for __handle_done
-    public native int __handle_done(long saReqId);
+    public static native int __handle_done(long saReqId); //TODO: This should be txnID (or packet ID)
 
     // Load the native library when the class is initialized
     static {
@@ -20,7 +20,7 @@ public class Interface {
 
     public static void main(String[] args) {
         // The test simulating the conditions.
-		Interface lf = new Interface();
+		NativeInterface lf = new NativeInterface();
 
         String def = lf.__init_SFC(0, null);
         System.out.println(def);
