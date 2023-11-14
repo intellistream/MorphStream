@@ -29,6 +29,7 @@ import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
 import communication.dao.TPGEdge;
 import communication.dao.TPGNode;
+import libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,9 +135,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         boolean udfSuccess = false;
 
         if (useNativeLib) {
-            log.info("Loading native txnUDF");
-            System.loadLibrary("NativeLibrary"); //Common c++ library that contains all native txnUDFs
-            udfSuccess = nativeTxnUDF(operation.stateAccess.getOperatorID(), operation.stateAccess); //Each operator (VNF) is associated with its txnUDF, use operator ID to determine which native txnUDF to execute
+            log.info("Executing native txnUDF");
+//            udfSuccess = nativeTxnUDF(operation.stateAccess.getOperatorID(), operation.stateAccess); //Each operator (VNF) is associated with its txnUDF, use operator ID to determine which native txnUDF to execute
+            //TODO: Add support for byte stream optimization
+            byte[] emptyArray = new byte[0];
+            int udfResult = NativeInterface._execute_txn_udf(operation.stateAccess.getOperatorID(), emptyArray, 0);
+            udfSuccess = udfResult == 1;
         } else {
             try {
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));

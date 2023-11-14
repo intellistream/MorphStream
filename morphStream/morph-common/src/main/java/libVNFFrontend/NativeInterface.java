@@ -8,10 +8,10 @@ public class NativeInterface {
     public native void __VNFThread(int argc, String[] argv);
 
     // Native method declaration for _callBack
-    public native int _callBack(long saReqId, byte[] value, int length);
+    public static native int _execute_txn_udf(String txnID, byte[] value, int length);
 
     // Native method declaration for __handle_done
-    public static native int __handle_done(long saReqId); //TODO: This should be txnID (or packet ID)
+    public static native int __txn_finished(long txnID); //TODO: This should be txnID (or packet ID)
 
     // Load the native library when the class is initialized
     static {
