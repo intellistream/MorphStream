@@ -221,7 +221,7 @@ public class CliFrontend {
 
         StateAccessDescription stateAccessDescription = new StateAccessDescription(stateAccessID, accessType);
         for (String stateObjectID : stateObjectIDs) {
-            stateAccessDescription.addStateObjectDescription(stateObjectID, stateObjectMap.get(stateObjectID));
+            stateAccessDescription.addStateObjectDescription(stateObjectMap.get(stateObjectID));
         }
         for (String valueName : valueNames) {
             stateAccessDescription.addValueName(valueName);
