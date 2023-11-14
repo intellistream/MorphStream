@@ -25,7 +25,25 @@ public class Result {
         transactionalEvent.setBid(bid);
     }
 
+    public void setLast(boolean last) {
+        isLast = last;
+    }
+
     public TransactionalEvent getTransactionalEvent() {
         return transactionalEvent;
+    }
+
+    @Override
+    public String toString() {
+        if (isLast) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (Object result : results) {
+                stringBuilder.append(result).append(",");
+            }
+            stringBuilder.deleteCharAt(stringBuilder.length() -1);
+            return stringBuilder.toString();
+        } else {
+            return transactionalEvent.toString();
+        }
     }
 }

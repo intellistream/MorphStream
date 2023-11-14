@@ -47,11 +47,10 @@ public abstract class Client extends Thread {
     }
     public void asyncInvokeFunction(String workerName, String function) {
         getSocket(workerName).send(function.getBytes());
-        log.info(clientIdentity + " Send : " + function);
     }
     public void asyncReceiveFunctionOutput(String workerName) {
         for (int centitick = 0; centitick < 100; centitick++) {
-            poller.poll(10);
+            poller.poll(0);
             if (poller.pollin(0)) {
                 ZMsg msg = ZMsg.recvMsg(getSocket(workerName));
                 log.info("Receive: " + msg.popString());
@@ -70,12 +69,10 @@ public abstract class Client extends Thread {
         }
         connectWorker("localhost",5570);
         while (!Thread.currentThread().isInterrupted()) {
-            try {
-                asyncInvokeFunction("localhost", inputQueue.take().toString());
-                asyncReceiveFunctionOutput("localhost");
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            if (!inputQueue.isEmpty()) {
+                asyncInvokeFunction("localhost", inputQueue.poll().toString());
             }
+            asyncReceiveFunctionOutput("localhost");
         }
     }
 }

@@ -18,18 +18,15 @@ public class Tuple {
     //context is not going to be serialized.
     private final TopologyContext context;
     //	private boolean tickerMark = false;
-    private final long bid;
     private long[] partition_bid;
 
-    public Tuple(long bid, int sourceId, TopologyContext context, Message message) {
-        this.bid = bid;
+    public Tuple(int sourceId, TopologyContext context, Message message) {
         this.sourceId = sourceId;
         this.context = context;
         this.message = message;
     }
 
-    public Tuple(long bid, long[] p_bid, int sourceId, TopologyContext context, Message message) {
-        this.bid = bid;
+    public Tuple(long[] p_bid, int sourceId, TopologyContext context, Message message) {
         this.sourceId = sourceId;
         this.context = context;
         this.message = message;
@@ -142,20 +139,10 @@ public class Tuple {
         return (TimestampType) getValue(i);
     }
 
-    //	public boolean isTickerMark() {
-//		return tickerMark;
-//	}
-//
-//	public void setTickerMark(boolean tickerMark) {
-//		this.tickerMark = tickerMark;
-//	}
     public boolean isMarker() {
         return this.message.isMarker();
     }
 
-    public long getBID() {
-        return bid;
-    }
 
     public long[] getPartitionBID() {
         return partition_bid;

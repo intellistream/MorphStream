@@ -165,7 +165,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 100_00;//number of records in each table
+    public int NUM_ITEMS = 8000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")

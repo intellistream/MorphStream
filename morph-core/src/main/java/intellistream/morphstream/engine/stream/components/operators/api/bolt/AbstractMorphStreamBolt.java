@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.stream.components.operators.api.bolt;
 
+import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -9,6 +10,7 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
+import org.zeromq.ZMsg;
 
 import java.util.Map;
 
@@ -16,8 +18,8 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 
 public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt {
-    protected Object input_event;
-    protected long operatorTimestamp; //timestamp of event entering operator
+    protected ZMsg msg;
+    protected TransactionalEvent input_event;
     protected long _bid;
     public AbstractMorphStreamBolt(String id, Logger log, int fid) {
         super(id, log, fid);

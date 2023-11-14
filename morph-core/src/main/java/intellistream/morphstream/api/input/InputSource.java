@@ -78,7 +78,7 @@ public class InputSource {
         return this.inputQueues.get(clientId);
     }
 
-    private TransactionalEvent inputFromJsonToTxnEvent(String input) {
+    public static TransactionalEvent inputFromJsonToTxnEvent(String input) {
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(input, JsonObject.class);
 
@@ -95,16 +95,10 @@ public class InputSource {
         } else {
             txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, false);
         }
-        if (createTimestampForEvent) {
-            txnEvent.setOriginTimestamp(System.nanoTime());
-        } else {
-            txnEvent.setOriginTimestamp(0L);
-        }
-
         return txnEvent;
     }
 
-    public TransactionalEvent inputFromStringToTxnEvent(String input) {
+    public static TransactionalEvent inputFromStringToTxnEvent(String input) {
         String [] inputArray = input.split(";");
         HashMap<String, List<String>> keyMap = new HashMap<>();
         HashMap<String, Object> valueMap = new HashMap<>();
@@ -138,11 +132,6 @@ public class InputSource {
             txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, true);
         } else {
             txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, false);
-        }
-        if (createTimestampForEvent) {
-            txnEvent.setOriginTimestamp(System.nanoTime());
-        } else {
-            txnEvent.setOriginTimestamp(0L);
         }
         return txnEvent;
     }

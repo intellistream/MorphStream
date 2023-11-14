@@ -73,7 +73,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
     }
 
     public Tuple getTuple(int i) {
-        return new Tuple(bid, sourceId, context, msg[i]);
+        return new Tuple(sourceId, context, msg[i]);
     }
 
     public TopologyContext getContext() {

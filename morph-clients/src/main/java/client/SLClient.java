@@ -80,6 +80,7 @@ public class SLClient extends Client {
             if (stateAccess.isAborted()) {
                 String[] abortResult = {"aborted"};
                 result.setResults(abortResult);
+                result.setLast(true);
                 return result;
             }
         }
@@ -107,6 +108,7 @@ public class SLClient extends Client {
             stateAccessResults[0] = deposit.getStateObject("srcAccountState").getDoubleValue("balance");
             result.setResults(stateAccessResults);
         }
+        result.setLast(true);
         return result;
     }
 

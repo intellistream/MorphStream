@@ -384,22 +384,22 @@ public abstract class PartitionController implements IPartitionController, Seria
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long bid, Object... output) {
 //		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
-        return _offer(new Tuple(bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
+        return _offer(new Tuple(srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long msg_id, long[] bid, Object... output) {
 //		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
-        return _offer(new Tuple(msg_id, bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
+        return _offer(new Tuple(bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long bid, char[] output) {
 //		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
-        return _offer(new Tuple(bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
+        return _offer(new Tuple(srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long bid, StreamValues output) {
 //		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
-        return _offer(new Tuple(bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
+        return _offer(new Tuple(srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
     protected boolean offer(int srcId, int targetId, String streamId, long bid, StreamValues output) {
@@ -571,7 +571,7 @@ public abstract class PartitionController implements IPartitionController, Seria
 //			return bounded_offer(queue, tuple);
 //		}
 //		return false;
-        Tuple marker_tuple = (new Tuple(bid, srcId, context[srcId - firt_executor_Id], marker));
+        Tuple marker_tuple = (new Tuple(srcId, context[srcId - firt_executor_Id], marker));
         return _offer_marker(marker_tuple, targetId);
     }
 
@@ -582,7 +582,7 @@ public abstract class PartitionController implements IPartitionController, Seria
 //			return bounded_offer(queue, tuple);
 //		}
 //		return false;
-        return (new Tuple((int) bid, srcId, context[srcId - firt_executor_Id], marker));
+        return (new Tuple(srcId, context[srcId - firt_executor_Id], marker));
     }
 
     protected boolean offer_create_marker(Tuple marker_tuple, int targetId) {

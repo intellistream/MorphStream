@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.operator.spout;
 
+import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
@@ -60,57 +61,30 @@ public class FunctionExecutor extends AbstractSpoutCombo {
         bolt.loadDB(conf, context, collector);
         worker = MorphStreamEnv.get().zContext().createSocket(SocketType.DEALER);
         worker.connect("inproc://backend");
+        sink.setSender(worker);
     }
     @Override
     public void nextTuple() throws InterruptedException {
-        ZMsg msg = ZMsg.recvMsg(worker);
-        ZFrame address = msg.pop();
-        ZFrame content = msg.pop();
-        assert (content != null);
-        msg.destroy();
-        address.send(worker, ZFrame.REUSE + ZFrame.MORE);
-        content.send(worker, ZFrame.REUSE);
-        address.destroy();
-        content.destroy();
-//        try {
-//            if (!inputQueue.isEmpty()) {
-//                TransactionalEvent event = inputQueue.take(); //this should be txnEvent already
-//                long bid = event.getBid();
-//
-//                if (bid != -1) { //txn events
-//                    if (CONTROL.enable_latency_measurement)
-//                        generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-//                    else {
-//                        generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
-//                    }
-//
-//                    tuple = new Tuple(bid, this.taskId, context, generalMsg);
-//                    bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-//                    counter++;
-//
-//                    if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
-//                        if (model_switch(counter)) {
-//                            marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "punctuation"));
-//                            bolt.execute(marker);
-//                        }
-//                    }
-//                } else { //control signals
-//                    if (Objects.equals(event.getFlag(), "pause")) {
-//                        marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "pause"));
-//                        bolt.execute(marker);
-//                    }
-//                }
-//
-////                if (inputQueue.isEmpty()) { //TODO: Refactor this part, remove the_end, use stopEvent indicator
-////                    SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
-////                    SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
-////                    getContext().stop_running();
-////                }
-//            }
-//        } catch (DatabaseException | BrokenBarrierException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
+        try {
+            ZMsg msg = ZMsg.recvMsg(worker);
+            if (msg != null) {
+                generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, msg, System.nanoTime());
+                tuple = new Tuple(this.taskId, context, generalMsg);
+                bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
+                counter ++;
+                if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+                    if (model_switch(counter)) {
+                        marker = new Tuple(this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, counter, myiteration, "punctuation"));
+                        bolt.execute(marker);
+                    }
+                }
+            }
+            } catch (BrokenBarrierException ex) {
+            throw new RuntimeException(ex);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        } catch (DatabaseException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }
