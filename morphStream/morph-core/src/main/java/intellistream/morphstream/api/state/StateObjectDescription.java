@@ -30,6 +30,10 @@ public class StateObjectDescription implements Serializable {
         return keyIndex;
     }
 
+    public int getFieldIndex() {
+        return fieldIndex;
+    }
+
     public String getTableName() {
         return tableName;
     }

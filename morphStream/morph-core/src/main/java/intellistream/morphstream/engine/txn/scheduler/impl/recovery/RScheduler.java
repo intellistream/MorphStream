@@ -276,126 +276,126 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     }
 
     public void execute(Operation operation, long mark_ID, boolean clean) {
-        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
-            Transfer_Fun(operation, mark_ID, clean);
-            if (operation.stateAccess.getStateObject(defaultString) != null) {
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-        } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            if (Objects.equals(appName, "StreamLedger")) {//SL
-                Transfer_Fun(operation, mark_ID, clean);
-            }
-        } else if (operation.accessType.equals(READ_WRITE)) {
-            if (Objects.equals(appName, "StreamLedger")) {
-                Depo_Fun(operation, mark_ID, clean);
-            }
-        } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
-            GrepSum_Fun(operation, mark_ID, clean);
-            if (operation.stateAccess.getStateObject(defaultString) != null) {
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-        } else if (operation.accessType.equals(READ_WRITE_READ)) {
-            TollProcess_Fun(operation, mark_ID, clean);
-        }
+//        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
+//            Transfer_Fun(operation, mark_ID, clean);
+//            if (operation.stateAccess.getStateObject(defaultString) != null) {
+//                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+//            }
+//        } else if (operation.accessType.equals(READ_WRITE_COND)) {
+//            if (Objects.equals(appName, "StreamLedger")) {//SL
+//                Transfer_Fun(operation, mark_ID, clean);
+//            }
+//        } else if (operation.accessType.equals(READ_WRITE)) {
+//            if (Objects.equals(appName, "StreamLedger")) {
+//                Depo_Fun(operation, mark_ID, clean);
+//            }
+//        } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
+//            GrepSum_Fun(operation, mark_ID, clean);
+//            if (operation.stateAccess.getStateObject(defaultString) != null) {
+//                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+//            }
+//        } else if (operation.accessType.equals(READ_WRITE_READ)) {
+//            TollProcess_Fun(operation, mark_ID, clean);
+//        }
     }
 
-    protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        Operation op = (Operation) operation;
-        final long sourceAccountBalance;
-        if (op.historyView == null) {
-            SchemaRecord preValues = operation.condition_records.get(defaultString).content_.readPreValues(operation.bid);
-            sourceAccountBalance = preValues.getValues().get(1).getLong();
-        } else {
-            sourceAccountBalance = Long.parseLong(String.valueOf(op.historyView));
-        }
-        // apply function
-        AppConfig.randomDelay();
-
-        if (sourceAccountBalance > 100) {//Old conditions: event.getMinAccountBalance()(default=0), event.getAccountTransfer()(default=100)
-            // read
-            SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-
-            if (operation.stateAccess.getValue("function") == "INC") {
-                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
-            } else if (operation.stateAccess.getValue("function") == "DEC") {
-                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
-            } else
-                throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-        } else {
-            op.isFailed.set(true);
-        }
-    }
-
-    protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
-        SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-        List<DataBox> values = srcRecord.getValues();
-        //apply function to modify..
-        AppConfig.randomDelay();
-        SchemaRecord tempo_record;
-        tempo_record = new SchemaRecord(values);//tempo record
-        tempo_record.getValues().get(1).incLong((Long) operation.stateAccess.getValue("delta_long"));//compute.
-        operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-    }
-
-    protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.size();
-        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.size()];
-        long sum = 0;
-        AppConfig.randomDelay();
-        if (operation.historyView != null) {
-            sum = Long.parseLong(String.valueOf(operation.historyView));
-        } else {
-            int i = 0;
-            for (TableRecord tableRecord : operation.condition_records.values()) {
-                preValues[i] = tableRecord.content_.readPreValues(operation.bid);
-                sum += preValues[i].getValues().get(1).getLong();
-                i++;
-            }
-        }
-        sum /= keysLength;
-        SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-        if ((Long) operation.stateAccess.getValue("delta_long") != -1) {
-            if (operation.stateAccess.getValue("function") == "SUM") {
-                tempo_record.getValues().get(1).setLong(sum);//compute.
-            } else
-                throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-        } else {
-            operation.isFailed.set(true);
-        }
-
-    }
-
-    protected void TollProcess_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        AppConfig.randomDelay();
-        List<DataBox> srcRecord = operation.d_record.record_.getValues();
-        if (operation.stateAccess.getValue("function") == "AVG") {
-            if ((double) operation.stateAccess.getValue("delta_double") < MAX_SPEED) {
-                double latestAvgSpeeds = srcRecord.get(1).getDouble();
-                double lav;
-                if (latestAvgSpeeds == 0) {//not initialized
-                    lav = (double) operation.stateAccess.getValue("delta_double");
-                } else
-                    lav = (latestAvgSpeeds + (double) operation.stateAccess.getValue("delta_double")) / 2;
-
-                srcRecord.get(1).setDouble(lav);//write to state.
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
-            } else {
-                operation.isFailed.set(true);
-            }
-        } else {
-            if ((int) operation.stateAccess.getValue("delta_int") < MAX_INT) {
-                HashSet cnt_segment = srcRecord.get(1).getHashSet();
-                cnt_segment.add(operation.stateAccess.getValue("delta_int"));//update hashset; updated state also. TODO: be careful of this.
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
-            } else {
-                operation.isFailed.set(true);
-            }
-        }
-    }
+//    protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+//        Operation op = (Operation) operation;
+//        final long sourceAccountBalance;
+//        if (op.historyView == null) {
+//            SchemaRecord preValues = operation.condition_records.get(defaultString).content_.readPreValues(operation.bid);
+//            sourceAccountBalance = preValues.getValues().get(1).getLong();
+//        } else {
+//            sourceAccountBalance = Long.parseLong(String.valueOf(op.historyView));
+//        }
+//        // apply function
+//        AppConfig.randomDelay();
+//
+//        if (sourceAccountBalance > 100) {//Old conditions: event.getMinAccountBalance()(default=0), event.getAccountTransfer()(default=100)
+//            // read
+//            SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+//            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+//
+//            if (operation.stateAccess.getValue("function") == "INC") {
+//                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
+//            } else if (operation.stateAccess.getValue("function") == "DEC") {
+//                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
+//            } else
+//                throw new UnsupportedOperationException();
+//            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+//        } else {
+//            op.isFailed.set(true);
+//        }
+//    }
+//
+//    protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
+//        SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+//        List<DataBox> values = srcRecord.getValues();
+//        //apply function to modify..
+//        AppConfig.randomDelay();
+//        SchemaRecord tempo_record;
+//        tempo_record = new SchemaRecord(values);//tempo record
+//        tempo_record.getValues().get(1).incLong((Long) operation.stateAccess.getValue("delta_long"));//compute.
+//        operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+//    }
+//
+//    protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
+//        int keysLength = operation.condition_records.size();
+//        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.size()];
+//        long sum = 0;
+//        AppConfig.randomDelay();
+//        if (operation.historyView != null) {
+//            sum = Long.parseLong(String.valueOf(operation.historyView));
+//        } else {
+//            int i = 0;
+//            for (TableRecord tableRecord : operation.condition_records.values()) {
+//                preValues[i] = tableRecord.content_.readPreValues(operation.bid);
+//                sum += preValues[i].getValues().get(1).getLong();
+//                i++;
+//            }
+//        }
+//        sum /= keysLength;
+//        SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+//        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+//        if ((Long) operation.stateAccess.getValue("delta_long") != -1) {
+//            if (operation.stateAccess.getValue("function") == "SUM") {
+//                tempo_record.getValues().get(1).setLong(sum);//compute.
+//            } else
+//                throw new UnsupportedOperationException();
+//            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+//        } else {
+//            operation.isFailed.set(true);
+//        }
+//
+//    }
+//
+//    protected void TollProcess_Fun(Operation operation, long previous_mark_ID, boolean clean) {
+//        AppConfig.randomDelay();
+//        List<DataBox> srcRecord = operation.d_record.record_.getValues();
+//        if (operation.stateAccess.getValue("function") == "AVG") {
+//            if ((double) operation.stateAccess.getValue("delta_double") < MAX_SPEED) {
+//                double latestAvgSpeeds = srcRecord.get(1).getDouble();
+//                double lav;
+//                if (latestAvgSpeeds == 0) {//not initialized
+//                    lav = (double) operation.stateAccess.getValue("delta_double");
+//                } else
+//                    lav = (latestAvgSpeeds + (double) operation.stateAccess.getValue("delta_double")) / 2;
+//
+//                srcRecord.get(1).setDouble(lav);//write to state.
+//                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+//            } else {
+//                operation.isFailed.set(true);
+//            }
+//        } else {
+//            if ((int) operation.stateAccess.getValue("delta_int") < MAX_INT) {
+//                HashSet cnt_segment = srcRecord.get(1).getHashSet();
+//                cnt_segment.add(operation.stateAccess.getValue("delta_int"));//update hashset; updated state also. TODO: be careful of this.
+//                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
+//            } else {
+//                operation.isFailed.set(true);
+//            }
+//        }
+//    }
 
     private void inspectSLDependency(long groupId, OperationChain curOC, Operation op, String table_name,
                                      String key, String[] condition_sourceTable, String[] condition_source) {

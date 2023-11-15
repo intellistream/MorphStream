@@ -126,8 +126,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
          * Start of newly defined txn execution logic
          */
         //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
-        for (Map.Entry<String, TableRecord> entry : operation.condition_records.entrySet()) {
-            SchemaRecord readRecord = entry.getValue().content_.readPreValues(operation.bid);
+        for (TableRecord tableRecord : operation.condition_records) {
+            SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
             operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
         }
 

@@ -1,6 +1,5 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.op;
 
-import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.op.OPSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.op.OPSchedulerContext;
@@ -14,10 +13,7 @@ import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,7 +55,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
+            List<TableRecord> read_records, String[] stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
 
@@ -89,7 +85,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            HashMap<String, TableRecord> read_records, WindowDescriptor windowContext, StateAccess stateAccess) {
+            List<TableRecord> read_records, WindowDescriptor windowContext, String[] stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, windowContext, pKey);
         this.context = context;
 
@@ -119,7 +115,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
                                                           String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                           CommonMetaTypes.AccessType accessType, TableRecord record,
-                                                          HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
+                                                          List<TableRecord> read_records, String[] stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
         this.isNonDeterministicOperation = isNonDeterministicOperation;

@@ -1,54 +1,46 @@
 package cli;
 
+import intellistream.morphstream.api.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static cli.CliFrontend.getDoubleField;
-import static cli.CliFrontend.setDoubleField;
-import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static cli.CliFrontend.*;
 
-public class FastSLClient {
+public class FastSLClient extends Client {
     private static final Logger log = LoggerFactory.getLogger(FastSLClient.class);
 
     /**
-     * txnData contains:
+     * saData contains:
      * 0: saID
-     * 1: stateObj1's field (each stateObj specifies 1 field of 1 TableRecord, assume txnData already contains retrieved field)
+     * 1: saType
+     * 2: txnAbortFlag
+     * 3: saResult
+     * 4 onwards: stateObj1's field (each stateObj specifies 1 field of 1 TableRecord, assume txnData already contains retrieved field)
      * ...
      */
-
-    /**
-     * OP reads and gets condition_records from operation
-     * OP stores client-desired fields into txnData following txnTemplate
-     * UDF retrieves fields from txnData
-     * UDF computes writeValue based on fields
-     * ...
-     */
-    public boolean execute_txn_udf(String saID, String[] txnData) {
+    public String[] execute_txn_udf(String saID, String[] saData) {
         if (saID == "srcTransfer") {
-            double srcBalance = getDoubleField("srcAccountBalance", txnData);
+            double srcBalance = getDoubleField("srcAccountBalance", saData);
             if (srcBalance > 100) {
-                setDoubleField("srcAccountBalance", srcBalance - 100, txnData);
-                return true;
+                setDoubleField("srcAccountBalance", srcBalance - 100, saData);
             } else {
-                return false;
+                abortTxn(saData);
             }
         } else if (saID == "destTransfer") {
-            double srcBalance = getDoubleField("srcAccountBalance", txnData);
-            double destBalance = getDoubleField("destAccountBalance", txnData);
+            double srcBalance = getDoubleField("srcAccountBalance", saData);
+            double destBalance = getDoubleField("destAccountBalance", saData);
             if (srcBalance > 100) {
-                setDoubleField("destAccountBalance", destBalance + 100, txnData);
-                return true;
+                setDoubleField("destAccountBalance", destBalance + 100, saData);
             } else {
-                return false;
+                abortTxn(saData);
             }
         } else if (saID == "deposit") {
-            double srcBalance = getDoubleField("srcAccountBalance", txnData);
-            setDoubleField("srcAccountBalance", srcBalance + 100, txnData);
-            return true;
+            double srcBalance = getDoubleField("srcAccountBalance", saData);
+            setDoubleField("srcAccountBalance", srcBalance + 100, saData);
         } else {
-            return false;
+            abortTxn(saData);
         }
+        return saData;
     }
 
     public static void main(String[] args) throws Exception {

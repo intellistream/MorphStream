@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.operator.bolt;
 
+import commonStorage.TxnTemplates;
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
@@ -11,7 +12,6 @@ import intellistream.morphstream.engine.stream.components.operators.api.sink.Abs
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import libVNFFrontend.NativeInterface;
@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -32,9 +31,10 @@ import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_I
 
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
-    private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
+    private final HashMap<String, String[]> txnTemplates; //Transaction flag -> state access IDs. E.g. "transfer" -> {"srcTransfer", "destTransfer"}
+    private final HashMap<String, String[]> saTemplates; //State access ID -> state objects.
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
-    private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
+    private final HashMap<Long, HashMap<String, String[]>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
@@ -44,18 +44,20 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
 
-    public MorphStreamBolt(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
+    public MorphStreamBolt(String id, int fid) {
         super(id, LOG, fid);
-        this.txnDescriptionMap = txnDescriptionMap;
+        txnTemplates = TxnTemplates.sharedTxnTemplates;
+        saTemplates = TxnTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
-    public MorphStreamBolt(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid, AbstractSink sink) {
+    public MorphStreamBolt(String id, int fid, AbstractSink sink) {
         super(id, LOG, fid);
         this.sink = sink;
         this.isCombo = true;
-        this.txnDescriptionMap = txnDescriptionMap;
+        txnTemplates = TxnTemplates.sharedTxnTemplates;
+        saTemplates = TxnTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
@@ -93,42 +95,21 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {
-        TxnDescription txnDescription = txnDescriptionMap.get(event.getFlag());
-        //Initialize state access map for each event
-        eventStateAccessesMap.put(event.getBid(), new HashMap<>());
+        String[] saIDs = txnTemplates.get(event.getFlag());
+//        eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
 
-        int stateAccessIndex = 0; // index of state access in the txn, used to generate StateAccessID (OperationID)
-        //Each event triggers multiple state accesses
-        for (Map.Entry<String, StateAccessDescription> descEntry: txnDescription.getStateAccessDescEntries()) {
-            //Initialize state access based on state access description
-            String stateAccessName = descEntry.getKey();
-            StateAccessDescription stateAccessDesc = descEntry.getValue();
-            StateAccess stateAccess = new StateAccess(event.getBid() + "_" + stateAccessIndex, this.getOperatorID(), event.getFlag(), stateAccessDesc);
-            stateAccessIndex += 1;
+        for (String saID : saIDs) {
+            String[] stateAccess = saTemplates.get(saID).clone();
 
-            //Each state access involves multiple state objects
-            for (StateObjectDescription stateObjDesc: stateAccessDesc.getStateObjDescList()) {
-                StateObject stateObject = new StateObject(
-                        stateObjDesc.getName(),
-                        stateObjDesc.getType(),
-                        stateObjDesc.getTableName(),
-                        event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex()),
-                        tableFieldIndexMap.get(stateObjDesc.getTableName())
-                );
-                stateAccess.addStateObject(stateObjDesc.getName(), stateObject);
-                //Label writeRecord for easy reference
-                if (stateObjDesc.getType() == MetaTypes.AccessType.WRITE) {
-                    stateAccess.setWriteRecordName(stateObjDesc.getName());
-                }
+            for (int i = 2; i < stateAccess.length; i += 4) {
+                String tableName = stateAccess[i];
+                String keyIndex = stateAccess[i + 1];
+                String key = event.getKey(tableName, Integer.parseInt(keyIndex));
+                stateAccess[i + 1] = key;
             }
-
-            //Each state access involves multiple conditions (values that are not commonly shared among events)
-            for (String valueName: stateAccessDesc.getValueNames()) {
-                stateAccess.addValue(valueName, event.getValue(valueName));
-            }
-
-            eventStateAccessesMap.get(event.getBid()).put(stateAccessName, stateAccess);
+            // txn-UDF and post-UDF needs a shared data structure to pass txn results to post-UDF. TODO: Improve this
+//            eventStateAccessesMap.get(event.getBid()).put(saID, stateAccess);
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }
 
@@ -150,8 +131,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                     if (Client.class.isAssignableFrom(clientClass)) {
                         Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                        HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                        udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
+                        HashMap<String, String[]> stateAccesses = eventStateAccessesMap.get(event.getBid());
+                        udfResultReflect = new Result();
+                        //TODO: Pass txn result to post UDF
+//                        udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
                     }
                     if (enable_latency_measurement) {
                         latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());

@@ -1,12 +1,11 @@
 package intellistream.morphstream.engine.txn.scheduler;
 
-import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 
-import java.util.HashMap;
+import java.util.List;
 
 public class Request {
     public final TxnContext txn_context;
@@ -14,20 +13,20 @@ public class Request {
     public final String table_name;
     public final String write_key;
     public final TableRecord d_record;
-    public final StateAccess stateAccess;
+    public final String[] stateAccess;
     public final String[] condition_tables;
     public final String[] condition_keys;
-    public final HashMap<String, TableRecord> condition_records;
+    public final List<TableRecord> condition_records;
     public BaseTable[] tables;
 
-    public Request(StateAccess stateAccess) {
+    public Request(String[] stateAccess) {
         this(null, null, null, stateAccess);
     }
 
     //READY ONLY
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
-                   String table_name, StateAccess stateAccess) {
+                   String table_name, String[] stateAccess) {
         this(txn_context, null, accessType, table_name, null, null, null, null, null, stateAccess);
     }
 
@@ -39,8 +38,8 @@ public class Request {
                    TableRecord d_record,
                    String[] condition_tables,
                    String[] condition_keys,
-                   HashMap<String, TableRecord> condition_records,
-                   StateAccess stateAccess) {
+                   List<TableRecord> condition_records,
+                   String[] stateAccess) {
         this(txn_context, null, accessType, table_name, write_key, d_record, condition_tables, condition_keys, condition_records, stateAccess);
     }
 
@@ -50,7 +49,7 @@ public class Request {
                    String table_name,
                    String write_key,
                    TableRecord d_record,
-                   StateAccess stateAccess) {
+                   String[] stateAccess) {
         this(txn_context, null, accessType, table_name, write_key, d_record, null, null, null, stateAccess);
     }
 
@@ -62,8 +61,8 @@ public class Request {
                    TableRecord d_record,
                    String[] condition_tables,
                    String[] condition_keys,
-                   HashMap<String, TableRecord> condition_records,
-                   StateAccess stateAccess) {
+                   List<TableRecord> condition_records,
+                   String[] stateAccess) {
         this.txn_context = txn_context;
         this.accessType = accessType;
         this.table_name = table_name;

@@ -305,7 +305,8 @@ public class JCommanderHandler {
      * Client configurations
      */
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
-    public String clientClassName = "cli.SLClient";
+//    public String clientClassName = "cli.SLClient";
+    public String clientClassName = "cli.FastSLClient";
 
 
 

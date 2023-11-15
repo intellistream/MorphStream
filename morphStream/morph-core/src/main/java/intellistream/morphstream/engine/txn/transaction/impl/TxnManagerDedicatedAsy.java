@@ -161,19 +161,19 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
-        MetaTypes.AccessType accessType = stateAccess.getAccessType();
-        if (accessType == MetaTypes.AccessType.READ) {
+    public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+        String accessType = stateAccess[0];
+        if (accessType == "READ") {
             return Asy_ReadRecord(stateAccess, txnContext);
-        } else if (accessType == MetaTypes.AccessType.WRITE) {
+        } else if (accessType == "WRITE") {
             return Asy_WriteRecord(stateAccess, txnContext);
-        } else if (accessType == MetaTypes.AccessType.WINDOW_READ) {
+        } else if (accessType == "WINDOW_READ") {
             return Asy_WindowReadRecord(stateAccess, txnContext);
-        } else if (accessType == MetaTypes.AccessType.WINDOW_WRITE) {
+        } else if (accessType == "WINDOW_WRITE") {
             return Asy_WindowWriteRecord(stateAccess, txnContext);
-        } else if (accessType == MetaTypes.AccessType.NON_DETER_READ) {
+        } else if (accessType == "NON_DETER_READ") {
             return Asy_NonDeterReadRecord(stateAccess, txnContext);
-        } else if (accessType == MetaTypes.AccessType.NON_DETER_WRITE) {
+        } else if (accessType == "NON_DETER_WRITE") {
             return Asy_NonDeterWriteRecord(stateAccess, txnContext);
         } else {
             throw new UnsupportedOperationException("Unsupported access type: " + accessType);
@@ -181,226 +181,222 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     //If read only, set src key and table to read key, and add this single read access into readRecords.
-    public boolean Asy_ReadRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
-        if (stateObjects.size() != 1) {
-            throw new UnsupportedOperationException("Read only supports single read access.");
-        }
-        StateObject stateObj = stateObjects.get(0);
-        String srcTable = stateObj.getTable();
-        String srcKey = stateObj.getKey();
-        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
-
-        String[] condition_sourceTables = {srcTable};
-        String[] condition_sourceKeys = {srcKey};
-        HashMap<String, TableRecord> condition_records = new HashMap<>();
-        condition_records.put(stateObj.getName(), readRecord);
-
-        if (readRecord != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-                //TODO: Replace with the following code to get scheduler by stage
-//                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + srcKey);
-            return false;
-        }
+    public boolean Asy_ReadRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+//        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ;
+//        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+//        if (stateObjects.size() != 1) {
+//            throw new UnsupportedOperationException("Read only supports single read access.");
+//        }
+//        StateObject stateObj = stateObjects.get(0);
+//        String srcTable = stateObj.getTable();
+//        String srcKey = stateObj.getKey();
+//        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
+//
+//        String[] condition_sourceTables = {srcTable};
+//        String[] condition_sourceKeys = {srcKey};
+//        HashMap<String, TableRecord> condition_records = new HashMap<>();
+//        condition_records.put(stateObj.getName(), readRecord);
+//
+//        if (readRecord != null) {
+//            if (enableGroup) {
+//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//                //TODO: Replace with the following code to get scheduler by stage
+////                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            } else {
+//                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            }
+//        } else {
+//            if (enable_log) log.info("No record is found:" + srcKey);
+//            return false;
+//        }
+        return false;
     }
 
-    public boolean Asy_WriteRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_WriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
-        HashMap<String, TableRecord> condition_records = new HashMap<>();
 
-        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
-        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
+        int recordNum = (stateAccess.length - 2) / 4;
+        int writeIndex = Integer.parseInt(stateAccess[1]);
+        List<TableRecord> condition_records = new ArrayList<>();
+        String[] condition_tables = new String[recordNum];
+        String[] condition_keys = new String[recordNum];
 
-        for (int i = 0; i < stateObjects.size(); i++) {
-            StateObject stateObj = stateObjects.get(i);
-            String stateObjTable = stateObj.getTable();
-            String stateObjKey = stateObj.getKey();
-
-            condition_tables[i] = stateObjTable;
-            condition_keys[i] = stateObjKey;
-            TableRecord condition_record = storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey);
+        for (int i = 2; i < stateAccess.length; i += 4) {
+            String table = stateAccess[i];
+            String key = stateAccess[i + 1];
+            String field = stateAccess[i + 2]; //TODO: pass field index
+            TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
             if (condition_record != null) {
-                condition_records.put(stateObj.getName(), condition_record);
+                condition_records.add(condition_record);
             } else {
-                if (enable_log) log.info("No record is found:" + stateObjKey);
+                if (enable_log) log.info("No record is found:" + key);
                 return false;
             }
         }
 
-        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
-        String writeTable = writeStateObj.getTable();
-        String writeKey = writeStateObj.getKey();
+        String writeTable = stateAccess[writeIndex];
+        String writeKey = stateAccess[writeIndex + 1];
+        String writeField = stateAccess[writeIndex + 2]; //TODO: Useful?
         TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
 
-        if (writeRecord != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
-                //TODO: Replace with the following code to get scheduler by stage
-//                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
-            }
+        if (enableGroup) {
+            return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                    writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
         } else {
-            if (enable_log) log.info("No record is found:" + writeKey);
-            return false;
+            return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                    writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
         }
     }
 
-    public boolean Asy_WindowReadRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_READ;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
-        if (stateObjects.size() != 1) {
-            throw new UnsupportedOperationException("Read only supports single read access.");
-        }
-        StateObject stateObj = stateObjects.get(0);
-        String srcTable = stateObj.getTable();
-        String srcKey = stateObj.getKey();
-        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
-
-        String[] condition_sourceTables = {srcTable};
-        String[] condition_sourceKeys = {srcKey};
-        HashMap<String, TableRecord> condition_records = new HashMap<>();
-        condition_records.put(stateObj.getName(), readRecord);
-
-        if (readRecord != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-                //TODO: Replace with the following code to get scheduler by stage
-//                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + srcKey);
-            return false;
-        }
+    public boolean Asy_WindowReadRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+//        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_READ;
+//        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+//        if (stateObjects.size() != 1) {
+//            throw new UnsupportedOperationException("Read only supports single read access.");
+//        }
+//        StateObject stateObj = stateObjects.get(0);
+//        String srcTable = stateObj.getTable();
+//        String srcKey = stateObj.getKey();
+//        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
+//
+//        String[] condition_sourceTables = {srcTable};
+//        String[] condition_sourceKeys = {srcKey};
+//        HashMap<String, TableRecord> condition_records = new HashMap<>();
+//        condition_records.put(stateObj.getName(), readRecord);
+//
+//        if (readRecord != null) {
+//            if (enableGroup) {
+//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//                //TODO: Replace with the following code to get scheduler by stage
+////                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            } else {
+//                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            }
+//        } else {
+//            if (enable_log) log.info("No record is found:" + srcKey);
+//            return false;
+//        }
+        return false;
     }
 
-    public boolean Asy_WindowWriteRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_WRITE;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
-        HashMap<String, TableRecord> condition_records = new HashMap<>();
-
-        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
-        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
-
-        for (int i = 0; i < stateObjects.size(); i++) {
-            StateObject stateObj = stateObjects.get(i);
-            String stateObjTable = stateObj.getTable();
-            String stateObjKey = stateObj.getKey();
-
-            condition_tables[i] = stateObjTable;
-            condition_keys[i] = stateObjKey;
-            condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
-        }
-
-        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
-        String writeTable = writeStateObj.getTable();
-        String writeKey = writeStateObj.getKey();
-        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
-
-        if (writeRecord != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
-                //TODO: Replace with the following code to get scheduler by stage
-//                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + writeKey);
-            return false;
-        }
+    public boolean Asy_WindowWriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+//        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_WRITE;
+//        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+//        HashMap<String, TableRecord> condition_records = new HashMap<>();
+//
+//        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
+//        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
+//
+//        for (int i = 0; i < stateObjects.size(); i++) {
+//            StateObject stateObj = stateObjects.get(i);
+//            String stateObjTable = stateObj.getTable();
+//            String stateObjKey = stateObj.getKey();
+//
+//            condition_tables[i] = stateObjTable;
+//            condition_keys[i] = stateObjKey;
+//            condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
+//        }
+//
+//        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+//        String writeTable = writeStateObj.getTable();
+//        String writeKey = writeStateObj.getKey();
+//        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
+//
+//        if (writeRecord != null) {
+//            if (enableGroup) {
+//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+//                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+//                //TODO: Replace with the following code to get scheduler by stage
+////                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            } else {
+//                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+//                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+//            }
+//        } else {
+//            if (enable_log) log.info("No record is found:" + writeKey);
+//            return false;
+//        }
+        return false;
     }
 
-    public boolean Asy_NonDeterReadRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_READ;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
-        if (stateObjects.size() != 1) {
-            throw new UnsupportedOperationException("Read only supports single read access.");
-        }
-        StateObject stateObj = stateObjects.get(0);
-        String srcTable = stateObj.getTable();
-        String srcKey = stateObj.getKey();
-        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
-
-        BaseTable[] baseTables = {storageManager_.getTable(srcTable)};
-        String[] condition_sourceTables = {srcTable};
-        String[] condition_sourceKeys = {srcKey};
-        HashMap<String, TableRecord> condition_records = new HashMap<>();
-        condition_records.put(stateObj.getName(), readRecord);
-
-        if (readRecord != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-                //TODO: Replace with the following code to get scheduler by stage
-//                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + srcKey);
-            return false;
-        }
+    public boolean Asy_NonDeterReadRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+//        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_READ;
+//        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+//        if (stateObjects.size() != 1) {
+//            throw new UnsupportedOperationException("Read only supports single read access.");
+//        }
+//        StateObject stateObj = stateObjects.get(0);
+//        String srcTable = stateObj.getTable();
+//        String srcKey = stateObj.getKey();
+//        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
+//
+//        BaseTable[] baseTables = {storageManager_.getTable(srcTable)};
+//        String[] condition_sourceTables = {srcTable};
+//        String[] condition_sourceKeys = {srcKey};
+//        HashMap<String, TableRecord> condition_records = new HashMap<>();
+//        condition_records.put(stateObj.getName(), readRecord);
+//
+//        if (readRecord != null) {
+//            if (enableGroup) {
+//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
+//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//                //TODO: Replace with the following code to get scheduler by stage
+////                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            } else {
+//                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
+//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            }
+//        } else {
+//            if (enable_log) log.info("No record is found:" + srcKey);
+//            return false;
+//        }
+        return false;
     }
 
-    public boolean Asy_NonDeterWriteRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_WRITE;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
-        HashMap<String, TableRecord> condition_records = new HashMap<>();
-        BaseTable[] baseTables = new BaseTable[stateObjects.size()];
-
-        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
-        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
-
-        for (int i = 0; i < stateObjects.size(); i++) {
-            StateObject stateObj = stateObjects.get(i);
-            String stateObjTable = stateObj.getTable();
-            String stateObjKey = stateObj.getKey();
-
-            condition_tables[i] = stateObjTable;
-            condition_keys[i] = stateObjKey;
-            condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
-            baseTables[i] = storageManager_.getTable(stateObjTable);
-        }
-
-        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
-        String writeTable = writeStateObj.getTable();
-        String writeKey = writeStateObj.getKey();
-        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
-
-        if (writeRecord != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
-                //TODO: Replace with the following code to get scheduler by stage
-//                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + writeKey);
-            return false;
-        }
+    public boolean Asy_NonDeterWriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+//        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_WRITE;
+//        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+//        HashMap<String, TableRecord> condition_records = new HashMap<>();
+//        BaseTable[] baseTables = new BaseTable[stateObjects.size()];
+//
+//        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
+//        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
+//
+//        for (int i = 0; i < stateObjects.size(); i++) {
+//            StateObject stateObj = stateObjects.get(i);
+//            String stateObjTable = stateObj.getTable();
+//            String stateObjKey = stateObj.getKey();
+//
+//            condition_tables[i] = stateObjTable;
+//            condition_keys[i] = stateObjKey;
+//            condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
+//            baseTables[i] = storageManager_.getTable(stateObjTable);
+//        }
+//
+//        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+//        String writeTable = writeStateObj.getTable();
+//        String writeKey = writeStateObj.getKey();
+//        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
+//
+//        if (writeRecord != null) {
+//            if (enableGroup) {
+//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
+//                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+//                //TODO: Replace with the following code to get scheduler by stage
+////                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+//            } else {
+//                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
+//                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+//            }
+//        } else {
+//            if (enable_log) log.info("No record is found:" + writeKey);
+//            return false;
+//        }
+        return false;
     }
 
 

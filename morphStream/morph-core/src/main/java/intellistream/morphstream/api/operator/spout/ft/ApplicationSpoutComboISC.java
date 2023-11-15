@@ -3,43 +3,21 @@ package intellistream.morphstream.api.operator.spout.ft;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.api.operator.bolt.ft.MorphStreamBoltFT;
-import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.stream.components.operators.api.FaultTolerance;
-import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutCombo;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutComboFT;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
-import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
-import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
-import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
-import intellistream.morphstream.engine.txn.durability.inputStore.InputDurabilityHelper;
-import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
-import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import intellistream.morphstream.engine.txn.profiler.MeasureTools;
-import intellistream.morphstream.engine.txn.profiler.Metrics;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
-import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
-import intellistream.morphstream.util.FaultToleranceConstants;
-import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ExecutionException;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
 import static intellistream.morphstream.configuration.Constants.*;
-import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
-import static intellistream.morphstream.util.FaultToleranceConstants.*;
-import static intellistream.morphstream.util.FaultToleranceConstants.FTOption_ISC;
 
 public class ApplicationSpoutComboISC extends AbstractSpoutComboFT {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpoutComboISC.class);
@@ -61,7 +39,7 @@ public class ApplicationSpoutComboISC extends AbstractSpoutComboFT {
                 break;
             }
             case CCOption_SStore:
-                bolt = new SStoreBolt(id, TxnDescriptionHashMap, 0, this.sink);
+                bolt = new SStoreBolt(id, 0, this.sink);
             default:
                 if (enable_log) LOG.error("Please select correct CC option!");
         }

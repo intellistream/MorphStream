@@ -131,6 +131,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                         stateObjDesc.getType(),
                         stateObjDesc.getTableName(),
                         event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex()),
+                        stateObjDesc.getFieldIndex(),
                         tableFieldIndexMap.get(stateObjDesc.getTableName())
                 );
                 stateAccess.addStateObject(stateObjDesc.getName(), stateObject);

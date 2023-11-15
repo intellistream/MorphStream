@@ -32,7 +32,7 @@ public class EDKeywordClient {
 
 
         EDKeywordClient.setSpout("executor", 1);
-        EDKeywordClient.setBolt("executor", txnDescriptions, 1, 1, new ShuffleGrouping("spout"));
+        EDKeywordClient.setBolt("executor", 1, 1, new ShuffleGrouping("spout"));
 
         EDKeywordClient.start();
     }

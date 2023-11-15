@@ -12,14 +12,16 @@ public class StateObject {
     private final MetaTypes.AccessType type;
     private final String table;
     private final String key;
+    private final int fieldIndex;
     private SchemaRecord schemaRecord; //one version of TableRecord
     private HashMap<String, Integer> fieldNameToIndex; //table field name -> index, field index starts from 1
 
-    public StateObject(String name, MetaTypes.AccessType type, String table, String key, HashMap<String, Integer> fieldNameToIndex) {
+    public StateObject(String name, MetaTypes.AccessType type, String table, String key, int fieldTableIndex, HashMap<String, Integer> fieldNameToIndex) {
         this.name = name;
         this.type = type;
         this.table = table;
         this.key = key;
+        this.fieldIndex = fieldTableIndex;
         this.fieldNameToIndex = fieldNameToIndex;
     }
 
@@ -41,6 +43,10 @@ public class StateObject {
 
     public String getTable() {
         return table;
+    }
+
+    public int getFieldIndex() {
+        return fieldIndex;
     }
 
     public int getIntValue(String fieldName) {

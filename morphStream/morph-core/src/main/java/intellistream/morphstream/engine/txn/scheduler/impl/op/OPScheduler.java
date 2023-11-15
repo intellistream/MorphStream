@@ -109,7 +109,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         if (enable_latency_measurement) {
-            String operationID = operation.stateAccess.getOperationID();
+            String operationID = operation.stateAccess.getOperationID(); //TODO: Pass-in with SA or refer to shared data structure
             TPGNode node = new TPGNode(operationID, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
             for (MetaTypes.DependencyType type : dependencyTypes) {
                 for (Operation child : operation.getChildren(type)) {
@@ -122,31 +122,28 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         // apply function
         AppConfig.randomDelay();
 
-        /**
-         * Start of newly defined txn execution logic
-         */
-        //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
-        for (Map.Entry<String, TableRecord> entry : operation.condition_records.entrySet()) {
-            SchemaRecord readRecord = entry.getValue().content_.readPreValues(operation.bid);
-            operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
-        }
+        String[] saData = new String[3 + operation.condition_records.size()]; //saID, txnAbortFlag, saResult, N*<stateObj field value>
+        saData[0] = operation.stateAccess.getOperationID(); //determine which UDF to execute
+        saData[1] = "true"; //txnSuccessFlag
+        saData[2] = ""; //saResult
 
-        //UDF updates operation.udfResult, which is the value to be written to writeRecord
-        boolean udfSuccess = false;
+        int index = 3;
+        for (TableRecord tableRecord : operation.condition_records) {
+            SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
+            int fieldTableIndex = operation.stateAccess.getStateObject(entry.getKey()).getFieldIndex();
+            saData[index] = readRecord.getValues().get(fieldTableIndex).getString();
+            index++;
+        }
 
         if (useNativeLib) {
             log.info("Executing native txnUDF");
-//            udfSuccess = nativeTxnUDF(operation.stateAccess.getOperatorID(), operation.stateAccess); //Each operator (VNF) is associated with its txnUDF, use operator ID to determine which native txnUDF to execute
             //TODO: Add support for byte stream optimization
-            byte[] emptyArray = new byte[0];
-            int udfResult = NativeInterface._execute_txn_udf(operation.stateAccess.getOperatorID(), emptyArray, 0);
-            udfSuccess = udfResult == 1;
         } else {
             try {
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                 if (Client.class.isAssignableFrom(clientClass)) {
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                    udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+                    saData = clientObj.execute_txn_udf(operation.stateAccess.getStateAccessName(), saData);
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                      InvocationTargetException | NoSuchMethodException e) {
@@ -154,7 +151,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         }
 
-        if (udfSuccess) {
+        if (saData[1] != "aborted") {
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {

@@ -14,7 +14,6 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tupl
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
-import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,11 +42,11 @@ public class ApplicationSpoutCombo extends AbstractSpoutCombo {
         sink = new ApplicationSink("sink", 0);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
-                bolt = new MorphStreamBolt(operatorID, TxnDescriptionHashMap, 0, this.sink);
+                bolt = new MorphStreamBolt(operatorID, 0, this.sink);
                 break;
             }
             case CCOption_SStore:
-                bolt = new SStoreBolt(operatorID, TxnDescriptionHashMap, 0, this.sink);
+                bolt = new SStoreBolt(operatorID, 0, this.sink);
                 break;
             default:
                 if (enable_log) LOG.error("Please select correct CC option!");

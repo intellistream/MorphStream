@@ -24,6 +24,8 @@ public interface ITxnManager {
     PartitionedOrderLock.LOCK getOrderLock(int p_id);//partitioned. Global ordering can not be partitioned.
     boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException;
 
+    boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException;
+
     //used by speculative T-Stream.
 //    boolean Specu_ReadRecord(TxnContext txn_context, String microTable, String key, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws DatabaseException;
     void start_evaluate(String operatorID, int batchID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException;
