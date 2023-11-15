@@ -15,9 +15,10 @@ public class EDKeywordClient {
     private static final Logger LOG = LoggerFactory.getLogger(EDKeywordClient.class);
 
     public static void main(String[] args) throws Exception {
-        CliFrontend EDKeywordClient = CliFrontend.getOrCreate().setAppName("EDKeywordClient");
-        EDKeywordClient.LoadConfiguration("/home/resources/EDKeywordClient.properties", args);
-        EDKeywordClient.prepare();
+//        CliFrontend EDKeywordClient = CliFrontend.getOrCreate().setAppName("EDKeywordClient");
+        CliFrontend EDKeywordClient = new CliFrontend("EDKeywordClient");
+//        EDKeywordClient.LoadConfiguration("/home/resources/EDKeywordClient.properties", args);
+//        EDKeywordClient.prepare();
 
         //TODO:Function fun = new function implements Function(){}
         //TODO:TxnDescription transfer = new TxnDescriptor(new source_table, source_key, condition_table, condition_key, condition, function, type)
@@ -33,7 +34,7 @@ public class EDKeywordClient {
         EDKeywordClient.setSpout("executor", 1);
         EDKeywordClient.setBolt("executor", txnDescriptions, 1, 1, new ShuffleGrouping("spout"));
 
-        EDKeywordClient.run();
+        EDKeywordClient.start();
     }
 
 }

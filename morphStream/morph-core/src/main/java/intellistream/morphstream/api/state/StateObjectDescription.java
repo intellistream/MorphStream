@@ -13,22 +13,18 @@ public class StateObjectDescription implements Serializable {
     private final AccessType type;
     private final int keyIndex;
     private final String tableName;
-    private final String keyName;
+    private final int fieldIndex;
 
-    public StateObjectDescription(String name, AccessType type, String tableName, String keyName, int keyIndex) {
+    public StateObjectDescription(String name, AccessType type, String tableName, int keyIndex, int fieldIndex) {
         this.name = name;
         this.tableName = tableName;
-        this.keyName = keyName;
         this.type = type;
         this.keyIndex = keyIndex;
+        this.fieldIndex = fieldIndex;
     }
 
     public String getName() {
         return name;
-    }
-
-    public String getKeyName() {
-        return keyName;
     }
     public int getKeyIndex() {
         return keyIndex;

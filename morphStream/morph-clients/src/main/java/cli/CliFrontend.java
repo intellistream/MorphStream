@@ -2,9 +2,6 @@ package cli;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
@@ -51,18 +48,148 @@ public class CliFrontend {
     private final HashMap<String, StateAccessDescription> stateAccessMap = new HashMap<>();
     private final HashMap<String, TxnDescription> txnMap = new HashMap<>();
     private final HashMap<String, AbstractBolt> operatorMap = new HashMap<>();
+    /**
+     * For each StateAccess, saDataNameToIndex maps name to index in saData array
+     * "saID": 0
+     * "bid": 1
+     * "<stateObjName>": <index> *N
+     * "<perEventValueName>": <index> *N
+     */
+    public static HashMap<String, HashMap<String, Integer>> saDataNameToIndex = new HashMap<>();
     private int counter = 0;
-    private int punctuation_interval = MorphStreamEnv.get().configuration().getInt("checkpoint", 2500);
-    private int ccOption = MorphStreamEnv.get().configuration().getInt("CCOption", 0);
+    private final int punctuation_interval = MorphStreamEnv.get().configuration().getInt("checkpoint", 2500);
+    private final int ccOption = MorphStreamEnv.get().configuration().getInt("CCOption", 0);
 
-
-    public static CliFrontend getOrCreate() {
-        return new CliFrontend();
-    }
-    public CliFrontend setAppName(String appName) {
+    public CliFrontend(String appName) {
         this.appName = appName;
-        return this;
     }
+
+    public void loadConfig() {
+        try {
+            LoadConfiguration(null, null);
+            prepare();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void loadConfig(String configPath, String[] args) throws IOException {
+        try {
+            LoadConfiguration(configPath, args);
+            prepare();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static double getDoubleField(String stateObjID, String[] txnData) {
+        String saID = txnData[0]; //saId determines which saNameToIndex map to refer to
+        int readFieldIndex = saDataNameToIndex.get(saID).get(stateObjID);
+        return Double.parseDouble(txnData[readFieldIndex]);
+    }
+
+    public static void setDoubleField(String stateObjID, double value, String[] txnData) {
+        String saID = txnData[0];
+        int writeFieldIndex = saDataNameToIndex.get(saID).get(stateObjID);
+        txnData[writeFieldIndex] = Double.toString(value);
+    }
+
+    public void registerStateObject(String stateObjID, String stateID, int keyIndexInEvent, int fieldTableIndex, String type) {
+        MetaTypes.AccessType accessType;
+        if (type.equals("READ")) {
+            accessType = MetaTypes.AccessType.READ;
+        } else if (type.equals("WRITE")) {
+            accessType = MetaTypes.AccessType.WRITE;
+        } else {
+            throw new RuntimeException("Invalid access type");
+        }
+        StateObjectDescription stateObjectDescription = new StateObjectDescription(stateObjID, accessType, stateID, keyIndexInEvent, fieldTableIndex); //index specifies the index of key in the input event
+        stateObjectMap.put(stateObjID, stateObjectDescription);
+    }
+
+    public void registerStateAccess(String stateAccessID, String[] stateObjectIDs, String[] valueNames, String type) {
+        MetaTypes.AccessType accessType;
+        if (type.equals("READ")) {
+            accessType = MetaTypes.AccessType.READ;
+        } else {
+            accessType = MetaTypes.AccessType.WRITE;
+        }
+
+        saDataNameToIndex.put(stateAccessID, new HashMap<>());
+        saDataNameToIndex.get(stateAccessID).put("saID", 0);
+        saDataNameToIndex.get(stateAccessID).put("bid", 1);
+        int index = 2;
+
+        StateAccessDescription stateAccessDescription = new StateAccessDescription(stateAccessID, accessType);
+        for (String stateObjectID : stateObjectIDs) {
+            stateAccessDescription.addStateObjectDescription(stateObjectMap.get(stateObjectID));
+            saDataNameToIndex.get(stateAccessID).put(stateObjectID, index);
+            index++;
+        }
+        for (String valueName : valueNames) {
+            stateAccessDescription.addValueName(valueName);
+            //TODO: Add value index into saDataNameToIndex later
+        }
+        stateAccessMap.put(stateAccessID, stateAccessDescription);
+    }
+
+    public void registerTxn(String txnID, String[] stateAccessIDs) {
+        TxnDescription txnDescription = new TxnDescription();
+        for (String stateAccessID : stateAccessIDs) {
+            txnDescription.addStateAccess(stateAccessID, stateAccessMap.get(stateAccessID));
+        }
+        txnMap.put(txnID, txnDescription);
+    }
+
+    /**
+     * Register a new operator to the system. This combines both operator (VNF) creation and topology node registration
+    * */
+    public void registerOperator(String operatorID, String[] txnIDs, int stage, int parallelism) {
+        MorphStreamEnv.get().configuration().put("useNativeLib", true);
+        HashMap<String, TxnDescription> txnDescriptionHashMap = new HashMap<>();
+
+        for (String txnID : txnIDs) {
+            txnDescriptionHashMap.put(txnID, txnMap.get(txnID));
+        }
+        try {
+            AbstractBolt bolt = setBolt(operatorID, txnDescriptionHashMap, parallelism, stage);
+            operatorMap.put(operatorID, bolt);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void sendTxnRequest(int bid, String operatorID, String txnFlag,
+                               HashMap<String, List<String>> keyMap,
+                               HashMap<String, Object> valueMap,
+                               HashMap<String, String> valueTypeMap) {
+        TransactionalEvent event = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, txnFlag, false);
+        AbstractBolt bolt = operatorMap.get(operatorID);
+        GeneralMsg generalMsg;
+        if (CONTROL.enable_latency_measurement)
+            generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
+        else {
+            generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+        }
+
+        //TODO: Initialize multiple txn request handler threads and identify them using sourceID below
+        Tuple tuple = new Tuple(bid, 0, null, generalMsg); //tuple.context is useless everywhere
+        try {
+            bolt.execute(tuple);
+            counter++;
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {
+                if (counter % punctuation_interval == 0) {
+                    Tuple marker = new Tuple(bid, 0, null, new Marker(DEFAULT_STREAM_ID, -1, bid, 0, "punctuation")); //myIteration is always 0
+                    bolt.execute(marker);
+                }
+            }
+        } catch (InterruptedException | DatabaseException | BrokenBarrierException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
     public boolean LoadConfiguration(String configPath, String[] args) throws IOException {
         if (configPath != null) {
             env.jCommanderHandler().loadProperties(configPath);
@@ -113,7 +240,7 @@ public class CliFrontend {
             env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         }
     }
-    public void run() throws InterruptedException {
+    public void start() throws InterruptedException {
         MeasureTools.Initialize();
         runTopologyLocally();
         //TODO: run for distributed mode
@@ -164,156 +291,5 @@ public class CliFrontend {
     public MorphStreamEnv env() {
         return env;
     }
-
-    public void registerNewApp(String appName) {
-        CliFrontend.getOrCreate().setAppName(appName);
-        try {
-            LoadConfiguration(null, null); //TODO: add loadConfig from file
-            prepare();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void registerStateObject(String jsonOfStateObject) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = null;
-        try {
-            jsonNode = objectMapper.readTree(jsonOfStateObject);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        String stateObjectID = jsonNode.get("stateObjectID").asText();
-        String stateID = jsonNode.get("stateID").asText();
-        String keyName = jsonNode.get("keyName").asText();
-        String type = jsonNode.get("type").asText(); //type == READ/WRITE
-        MetaTypes.AccessType accessType = null;
-        if (type.equals("READ")) {
-            accessType = MetaTypes.AccessType.READ;
-        } else {
-            accessType = MetaTypes.AccessType.WRITE;
-        }
-
-        StateObjectDescription stateObjectDescription = new StateObjectDescription(stateObjectID, accessType, stateID, keyName, 0); //index specifies the index of key in the input event
-        stateObjectMap.put(stateObjectID, stateObjectDescription);
-    }
-
-    public void registerStateAccess(String jsonOfStateAccess) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = null;
-        try {
-            jsonNode = objectMapper.readTree(jsonOfStateAccess);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        String stateAccessID = jsonNode.get("stateAccessID").asText();
-        String[] stateObjectIDs = jsonNode.get("stateObjectIDs").asText().split(",");
-        String[] valueNames = jsonNode.get("valueNames").asText().split(","); //names of values in input event that will be used during txnUDF
-        String type = jsonNode.get("type").asText(); //type == READ/WRITE
-        MetaTypes.AccessType accessType = null;
-        if (type.equals("READ")) {
-            accessType = MetaTypes.AccessType.READ;
-        } else {
-            accessType = MetaTypes.AccessType.WRITE;
-        }
-
-        StateAccessDescription stateAccessDescription = new StateAccessDescription(stateAccessID, accessType);
-        for (String stateObjectID : stateObjectIDs) {
-            stateAccessDescription.addStateObjectDescription(stateObjectMap.get(stateObjectID));
-        }
-        for (String valueName : valueNames) {
-            stateAccessDescription.addValueName(valueName);
-        }
-        stateAccessMap.put(stateAccessID, stateAccessDescription);
-    }
-
-    public void registerTxn(String jsonOfTxn) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = null;
-        try {
-            jsonNode = objectMapper.readTree(jsonOfTxn);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        String txnID = jsonNode.get("txnID").asText();
-        String[] stateAccessIDs = jsonNode.get("stateAccessIDs").asText().split(",");
-        TxnDescription txnDescription = new TxnDescription();
-        for (String stateAccessID : stateAccessIDs) {
-            txnDescription.addStateAccess(stateAccessID, stateAccessMap.get(stateAccessID));
-        }
-        txnMap.put(txnID, txnDescription);
-    }
-
-    /**
-     * Register a new operator to the system. This combines both operator (VNF) creation and topology node registration
-     * @param jsonOfOperator
-    * */
-    public void registerOperator(String jsonOfOperator) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = null;
-        try {
-            jsonNode = objectMapper.readTree(jsonOfOperator);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        String operatorID = jsonNode.get("operatorID").asText();
-        String[] txnIDs = jsonNode.get("txnIDs").asText().split(",");
-        int stage = jsonNode.get("stage").asInt();
-        int parallelism = jsonNode.get("parallelism").asInt();
-        MorphStreamEnv.get().configuration().put("useNativeLib", true);
-        HashMap<String, TxnDescription> txnDescriptionHashMap = new HashMap<>();
-
-        for (String txnID : txnIDs) {
-            txnDescriptionHashMap.put(txnID, txnMap.get(txnID));
-        }
-        try {
-            AbstractBolt bolt = setBolt(operatorID, txnDescriptionHashMap, parallelism, stage);
-            operatorMap.put(operatorID, bolt);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void startApp() {
-        try {
-            run();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void sendTxnRequest(int bid, String operatorID, String txnFlag,
-                               HashMap<String, List<String>> keyMap,
-                               HashMap<String, Object> valueMap,
-                               HashMap<String, String> valueTypeMap) {
-        TransactionalEvent event = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, txnFlag, false);
-        AbstractBolt bolt = operatorMap.get(operatorID);
-        GeneralMsg generalMsg;
-        if (CONTROL.enable_latency_measurement)
-            generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-        else {
-            generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
-        }
-
-        //TODO: Initialize multiple txn request handler threads and identify them using sourceID below
-        Tuple tuple = new Tuple(bid, 0, null, generalMsg); //tuple.context is useless everywhere
-        try {
-            bolt.execute(tuple);
-            counter++;
-            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {
-                if (counter % punctuation_interval == 0) {
-                    Tuple marker = new Tuple(bid, 0, null, new Marker(DEFAULT_STREAM_ID, -1, bid, 0, "punctuation")); //myIteration is always 0
-                    bolt.execute(marker);
-                }
-            }
-        } catch (InterruptedException | DatabaseException | BrokenBarrierException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
 }

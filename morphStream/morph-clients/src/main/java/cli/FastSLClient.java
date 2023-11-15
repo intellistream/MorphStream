@@ -1,16 +1,14 @@
 package cli;
 
-import java.util.HashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static cli.CliFrontend.getDoubleField;
+import static cli.CliFrontend.setDoubleField;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 public class FastSLClient {
-
-    //TODO: Initialize nameToIndex
-    /**
-     * nameToIndex should store all name to index mappings, including readField, writeField, per-event data, etc.
-     */
-    public static HashMap<String, Integer> nameToIndex = new HashMap<>(); // identifier -> index in txn byte array
-    public static HashMap<String, String> stateObjTable = new HashMap<>(); // stateObjID -> stateObjTable
-    public static HashMap<String, String> stateObjField = new HashMap<>(); // stateObjID -> stateObjField
+    private static final Logger log = LoggerFactory.getLogger(FastSLClient.class);
 
     /**
      * txnData contains:
@@ -26,22 +24,9 @@ public class FastSLClient {
      * UDF computes writeValue based on fields
      * ...
      */
-    public static double getDoubleField(String stateObjID, String[] txnData) {
-        int readFieldIndex = nameToIndex.get(stateObjID); // starting index of state object in txn byte array
-        return Double.parseDouble(txnData[readFieldIndex]);
-    }
-
-    public static void setDoubleField(String stateObjID, double value, String[] txnData) {
-        int writeFieldIndex = nameToIndex.get(stateObjID); // starting index of state object in txn byte array
-        txnData[writeFieldIndex] = Double.toString(value);
-    }
-
-
     public boolean execute_txn_udf(String saID, String[] txnData) {
-
         if (saID == "srcTransfer") {
             double srcBalance = getDoubleField("srcAccountBalance", txnData);
-            double destBalance = getDoubleField("destAccountBalance", txnData);
             if (srcBalance > 100) {
                 setDoubleField("srcAccountBalance", srcBalance - 100, txnData);
                 return true;
@@ -64,5 +49,29 @@ public class FastSLClient {
         } else {
             return false;
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        CliFrontend fastSLClient = new CliFrontend("FastSLClient");
+        fastSLClient.loadConfig();
+
+        fastSLClient.registerStateObject("srcAccountState", "accounts", 0, 1, "WRITE");
+        fastSLClient.registerStateObject("destAccountState", "accounts", 0, 1, "WRITE");
+        String[] srcTransferStateObjs = {"srcAccountState"};
+        String[] destTransferStateObjs = {"srcAccountState", "destAccountState"};
+
+        fastSLClient.registerStateAccess("srcTransfer", srcTransferStateObjs, null, "WRITE");
+        fastSLClient.registerStateAccess("destTransfer", destTransferStateObjs, null, "WRITE");
+        fastSLClient.registerStateAccess("deposit", srcTransferStateObjs, null, "WRITE");
+        String[] transferStateAccessIDs = {"srcTransfer", "destTransfer"};
+        String[] depositStateAccessIDs = {"deposit"};
+
+        fastSLClient.registerTxn("transfer", transferStateAccessIDs);
+        fastSLClient.registerTxn("deposit", depositStateAccessIDs);
+        String[] txnIDs = {"transfer", "deposit"};
+
+        fastSLClient.registerOperator("fastSLClient", txnIDs, 0, 4);
+
+        fastSLClient.start();
     }
 }

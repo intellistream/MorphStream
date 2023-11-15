@@ -22,8 +22,8 @@ public class StateAccessDescription implements Serializable {
         return name;
     }
 
-    public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, String keyName, int keyIndex) {
-        stateObjDescList.add(new StateObjectDescription(stateObjName, type, tableName, keyName, keyIndex));
+    public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, int keyIndex, int fieldIndex) {
+        stateObjDescList.add(new StateObjectDescription(stateObjName, type, tableName, keyIndex, fieldIndex));
     }
 
     public void addStateObjectDescription(StateObjectDescription description) {

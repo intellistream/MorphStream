@@ -105,7 +105,7 @@ public class SLClient extends Client {
     }
 
     public static void startJob(String[] args) throws Exception {
-        CliFrontend slClientJob = CliFrontend.getOrCreate().setAppName("SLClient");
+        CliFrontend slClientJob = new CliFrontend("SLClient");
 //        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
         slClientJob.LoadConfiguration(null, args); //TODO: add loadConfig from file
         slClientJob.prepare();
@@ -117,12 +117,12 @@ public class SLClient extends Client {
         TxnDescription transferDescriptor = new TxnDescription();
         //Define transfer's 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
-        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
+        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", 0, 1);
         srcTransfer.addValueName("transferAmount");
         //Define transfer's 2nd state accesses
         StateAccessDescription destTransfer = new StateAccessDescription("destTransfer", AccessType.WRITE);
-        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", 0);
-        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", 1);
+        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", 0, 1);
+        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", 1, 1);
         destTransfer.addValueName("transferAmount");
         //Add state accesses to transaction
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
@@ -132,7 +132,7 @@ public class SLClient extends Client {
         //Define deposit transaction
         TxnDescription depositDescriptor = new TxnDescription();
         StateAccessDescription deposit = new StateAccessDescription("deposit", AccessType.WRITE);
-        deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
+        deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", 0, 1);
         deposit.addValueName("depositAmount");
         depositDescriptor.addStateAccess("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);
@@ -144,7 +144,7 @@ public class SLClient extends Client {
 
         //Initiate runner
         try {
-            slClientJob.run();
+            slClientJob.start();
         } catch (InterruptedException ex) {
             if (enable_log) log.error("Error in running topology locally", ex);
         }
