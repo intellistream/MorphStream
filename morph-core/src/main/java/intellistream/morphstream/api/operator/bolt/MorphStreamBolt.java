@@ -154,9 +154,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     assert udfResultReflect != null;
                     sink.execute(new Tuple(this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, msgs._1(), udfResultReflect)));
                 }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                System.out.println(e);
                 throw new RuntimeException("Client class instantiation failed");
-            } catch (NoSuchMethodException | InvocationTargetException e) {
+            } catch (NoSuchMethodException e) {
                 throw new RuntimeException("Client post UDF invocation failed");
             } catch (InterruptedException e) {
                 throw new RuntimeException("Output emission interrupted");

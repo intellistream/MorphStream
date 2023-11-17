@@ -19,6 +19,7 @@ public class ApplicationSink extends AbstractSink {
     public ApplicationSink(String id, int fid) {
         super(id, LOG, fid);
     }
+    public int i = 0;
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {

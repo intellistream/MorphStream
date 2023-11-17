@@ -29,19 +29,21 @@ import static intellistream.morphstream.configuration.CONTROL.*;
 public class MorphStreamWorker extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamWorker.class);
     private final MorphStreamEnv env = MorphStreamEnv.get();
+    private final ZMQ.Socket frontend;// Frontend socket talks to clients over TCP
+    private final ZMQ.Socket backend;// Backend socket talks to workers over inproc\
     private final FunctionExecutor spout;
     private final int numTasks;
 
     public MorphStreamWorker() throws Exception {
         this.numTasks = env.configuration().getInt("tthread", 1);
         this.spout = new FunctionExecutor("functionExecutor");
+        frontend = env.zContext().createSocket(SocketType.ROUTER);//  Frontend socket talks to clients over TCP
+        frontend.bind("tcp://*:5555");
+        backend = env.zContext().createSocket(SocketType.DEALER); //  Backend socket talks to workers over inproc
+        backend.bind("inproc://backend");
     }
     public void registerFunction(HashMap<String, FunctionDescription> functions) {
         this.spout.registerFunction(functions);
-    }
-
-    public void prepare() throws IOException {
-        //To connect Driver and Database
     }
     @Override
     public void run() {
@@ -52,11 +54,11 @@ public class MorphStreamWorker extends Thread {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        //TODO: run for distributed mode
     }
 
     private void runTopologyLocally() throws InterruptedException {
         Topology topology = env.createTopology();
         env.submitTopology(topology);
+        ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
     }
 }

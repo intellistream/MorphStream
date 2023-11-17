@@ -224,7 +224,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
     public String abortRatioForEvents = "0,0";
 
-    //Cluster configure
+    //Cluster configuration
     @Parameter(names = {"--isDriver"}, description = "isDriver")
     public int isDriver = 1;//
     @Parameter(names = {"--nodeId"}, description = "nodeId")
@@ -240,7 +240,13 @@ public class JCommanderHandler {
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 2500;//checkpoint per thread.
 
-
+    //RDMA configuration
+    @Parameter(names = {"--morphstream.driver.host"}, description = "morphstream driver host for rdma")
+    public String driverHost = "";
+    @Parameter(names = {"--morphstream.rdma.driverPort"}, description = "morphstream driver port for rdma")
+    public String driverPort = "";
+    @Parameter(names = {"--morphstream.rdma.workerPort"}, description = "morphstream worker port for rdma")
+    public String workerPort = "";
 
     /**
      * Benchmarking and evaluation parameters
@@ -310,6 +316,10 @@ public class JCommanderHandler {
         } else {
             config.put("isDriver", false);
         }
+        config.put("morphstream.driver.host", driverHost);
+        config.put("morphstream.rdma.driverPort", driverPort);
+        config.put("morphstream.rdma.workerPort", driverPort);
+
         config.put("checkpoint", checkpoint_interval);
         config.put("fanoutDist", fanoutDist);
         if (isCyclic == 1) {

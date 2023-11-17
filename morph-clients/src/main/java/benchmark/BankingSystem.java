@@ -16,11 +16,11 @@ public class BankingSystem {
                 BankingSystemClient.startClient(new String[]{});
             } else {
                 MorphStreamWorker morphStreamWorker = new MorphStreamWorker();
-                morphStreamWorker.prepare();
                 BankingSystemClient client = new BankingSystemClient();
+                client.defineFunction();
                 morphStreamWorker.registerFunction(client.txnDescriptions);
-                morphStreamWorker.prepare();
                 morphStreamWorker.start();
+                morphStreamWorker.join(10000);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -122,7 +122,7 @@ public class RdmaShuffleConf {
 
     public final int driverPort = getRdmaConfIntInRange("driverPort", 0, 1025, 65535);
 
-    public final int executorPort = getRdmaConfIntInRange("executorPort", 0, 1025, 65535);
+    public final int workerPort = getRdmaConfIntInRange("workerPort", 0, 1025, 65535);
 
     public final int portMaxRetries = conf.getInt("spark.port.maxRetries", 16);
 

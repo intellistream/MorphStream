@@ -35,7 +35,7 @@ public class FileDataGenerator {
     private HashMap<String, List<String>> eventValueNamesMap = new HashMap<>();//event -> value name list
     //InputStream configuration
     private int totalEvents;
-    private HashMap<String, Integer> numItemMaps;//table name (key) to number of items
+    private HashMap<String, Integer> numItemMaps = new HashMap<>();//table name (key) to number of items
     private HashMap<String, Integer> intervalMaps = new HashMap<>();//table name (key) to interval
     private HashMap<String, Double> stateAssessSkewMap = new HashMap<>();//event -> skew access skewness
     private HashMap<String, Integer> eventRatioMap = new HashMap<>();//event -> event ratio
@@ -62,7 +62,10 @@ public class FileDataGenerator {
     }
     private void configure_store() {
         configuration = MorphStreamEnv.get().configuration();
-        numItemMaps = MorphStreamEnv.get().databaseInitializer().getNumItemMaps();
+        String[] tableNames = configuration.getString("tableNames","table1,table2").split(",");
+        for (String tableName : tableNames) {
+            numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
+        }
         rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark");
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();
@@ -88,7 +91,6 @@ public class FileDataGenerator {
             intervalMaps.put(s.getKey(), s.getValue() / totalPartition);
         }
         for (String eventType : eventTypes) {
-            String[] tableNames = configuration.getString(eventType + "_tables", "table1,table2").split(",");
             HashMap<String, Integer> keyMap = new HashMap<>();
             String[] keyNumbers = configuration.getString(eventType + "_key_number", "2,2").split(",");
             for (int i = 0; i < tableNames.length; i++) {

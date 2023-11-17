@@ -44,6 +44,7 @@ public class MorphStreamEnv {
     private RdmaShuffleManager RM;
     private BlockManagerId blockManagerId;
     private Topology topology;
+    private final ZContext zContext = new ZContext();
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
     private CountDownLatch latch;//The number of clients + MorphStreamDriver
@@ -68,6 +69,7 @@ public class MorphStreamEnv {
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
     public InputSource inputSource() {return inputSource;}
     public CountDownLatch latch() {return latch;}
+    public ZContext zContext() {return zContext;}
     public boolean isDriver() {return isDriver;}
     public boolean LoadConfiguration(String configPath, String[] args) throws IOException {
         if (configPath != null) {
@@ -85,8 +87,9 @@ public class MorphStreamEnv {
         this.isDriver = this.configuration().getBoolean("isDriver", false);
         if (isDriver) {
             CountDownLatchInitialize(this.configuration().getInt("clientNum", 1) + 1);// Client Number + MorphStreamDriver
-            DatabaseInitialize();
             InputSourceInitialize();
+        } else {
+            DatabaseInitialize();
         }
         return true;
     }
@@ -100,7 +103,6 @@ public class MorphStreamEnv {
         }
     }
     public void InputSourceInitialize() throws IOException {
-        DatabaseInitialize();
         if (configuration().getInt("inputSourceType", 0) == 0) { //read input as string
             String inputFile = configuration().getString("inputFilePath");
             File file = new File(inputFile);

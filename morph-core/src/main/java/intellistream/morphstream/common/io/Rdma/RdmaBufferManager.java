@@ -78,8 +78,7 @@ public class RdmaBufferManager {
 
     private final int minimumAllocationSize;
     private final AtomicBoolean startedCleanStacks = new AtomicBoolean(false);
-    private final ConcurrentHashMap<Integer, AllocatorStack> allocStackMap =
-            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, AllocatorStack> allocStackMap = new ConcurrentHashMap<>();
     private IbvPd pd;
     private final boolean useOdp;
     private long maxCacheSize;

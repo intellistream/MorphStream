@@ -35,7 +35,6 @@ public class RdmaShuffleManager {
     private RdmaShuffleManagerId localRdmaShuffleManagerId;
     public RdmaShuffleBlockResolver shuffleBlockResolver = new RdmaShuffleBlockResolver();
     // Used by diver only
-    private final Map<BlockManagerId, Map<Integer, Map<Integer, RdmaMapTaskOutput>>> mapTaskOutputsByBlockManagerId = new ConcurrentHashMap<>(); // blockManagerId -> shuffleId -> mapId -> mapTaskOutput
     private final Map<RdmaShuffleManagerId, RdmaChannel> rdmaShuffleManagersMap = new ConcurrentHashMap<>();// shuffleManagerId -> rdmaChannel
     public final Map<BlockManagerId, RdmaShuffleManagerId> blockManagerIdToRdmaShuffleManagerId = new ConcurrentHashMap<>(); // blockManagerId -> rdmaShuffleManagerId
     private final Map<Integer, RdmaBuffer> shuffleIdToBufferAddress = new ConcurrentHashMap<>(); // shuffleId -> shuffleBuffer

@@ -25,8 +25,8 @@ public class RdmaNode {
     private final ConcurrentHashMap<InetSocketAddress, RdmaChannel> activeRdmaChannelMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<InetSocketAddress, RdmaChannel> passiveRdmaChannelMap = new ConcurrentHashMap<>();
     private RdmaBufferManager rdmaBufferManager = null;
-    private RdmaCmId listenerRdmaCmId;
-    private RdmaEventChannel cmChannel;
+    private RdmaCmId listenerRdmaCmId;// Context information for RDMA connections
+    private RdmaEventChannel cmChannel;// RDMA Event Channel for cmEvents (Connection Manager Events)
     private final AtomicBoolean runThread = new AtomicBoolean(false);
     private Thread listeningThread;
     private IbvPd ibvPd;
@@ -35,21 +35,22 @@ public class RdmaNode {
     private final ArrayList<Integer> cpuArrayList = new ArrayList<>();
     private int cpuIndex = 0;
     private final RdmaCompletionListener receiveListener;
-    public RdmaNode(String hostName, boolean isExecutor, final RdmaShuffleConf conf, final RdmaCompletionListener receiveListener) throws Exception {
+    public RdmaNode(String hostName, boolean isWorker, final RdmaShuffleConf conf, final RdmaCompletionListener receiveListener) throws Exception {
         this.conf = conf;
         this.receiveListener = receiveListener;
         try {
             driverInetAddress = InetAddress.getByName(hostName);
-            cmChannel = RdmaEventChannel.createEventChannel();
+            cmChannel = RdmaEventChannel.createEventChannel();//create a communication channel for receiving CM events
             if (this.cmChannel == null) {
                 throw new IOException("Unable to allocate RDMA Event Channel");
             }
+            //create a RdmaCmId for the server
             this.listenerRdmaCmId = cmChannel.createId(RdmaCm.RDMA_PS_TCP);
             if (this.listenerRdmaCmId == null) {
                 throw new IOException("Unable to allocate RDMA CM ID");
             }
 
-            int bindPort = isExecutor ? conf.executorPort : conf.driverPort;
+            int bindPort = isWorker ? conf.workerPort : conf.driverPort;
             for (int i = 0; i < conf.portMaxRetries; i++) {
                 try {
                     listenerRdmaCmId.bindAddr(new InetSocketAddress(InetAddress.getByName(hostName), bindPort));
@@ -58,6 +59,7 @@ public class RdmaNode {
                     bindPort = bindPort != 0 ? bindPort + 1 : 0;
                 }
             }
+
             if (listenerRdmaCmId.getVerbs() == null) {
                 throw new IOException("Failed to bind. Make sure your NIC supports RDMA");
             }
@@ -74,16 +76,16 @@ public class RdmaNode {
             if (ibvPd == null) {
                 throw new IOException("Failed to create PD");
             }
-            this.rdmaBufferManager = new RdmaBufferManager(ibvPd, isExecutor, conf);
+            this.rdmaBufferManager = new RdmaBufferManager(ibvPd, isWorker, conf);
         } catch (IOException e) {
             LOG.error("Exception in RdmaNode constructor: " + e);
             stop();
             throw e;
         } catch (UnsatisfiedLinkError ule) {
-            LOG.error("libdisni not found! It must be installed within the java.library.path on each" +
-                    " Executor and Driver instance");
+            LOG.error("libdisni not found! It must be installed within the java.library.path on each" + " Executor and Driver instance");
             throw ule;
         }
+
         listeningThread = new Thread(() -> {
             Log.info("Starting RdmaNode Listening Server, listening on: " + localInetSocketAddress);
 
@@ -117,7 +119,7 @@ public class RdmaNode {
                         }
 
                         RdmaChannel.RdmaChannelType rdmaChannelType;
-                        if (!isExecutor) {
+                        if (!isWorker) {
                             rdmaChannelType = RdmaChannel.RdmaChannelType.RPC;
                         } else {
                             rdmaChannelType = RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER;
@@ -130,7 +132,7 @@ public class RdmaNode {
                             continue;
                         }
 
-                        if (!isExecutor) {
+                        if (!isWorker) {
                             RdmaChannel previous = activeRdmaChannelMap.put(inetSocketAddress, rdmaChannel);
                             if (previous != null) {
                                 previous.stop();
@@ -161,15 +163,13 @@ public class RdmaNode {
                     throw new RuntimeException("Exception in RdmaNode listening thread " + e);
                 }
             }
-            LOG.info("Exiting RdmaNode Listening Server");
-        }, "RdmaNode connection listening thread");
+            LOG.info("Exiting RdmaNode Listening Server");}, "RdmaNode connection listening thread");
     }
     private void initCpuArrayList() throws IOException {
         LOG.info("cpuList from configuration file: {}", conf.cpuList);
         java.util.function.Consumer<Integer> addCpuToList = (cpu) -> {
             // Add CPUs to the list while shuffling the order of the list,
-            // so that multiple RdmaNodes on this machine will have a better change
-            // to getRdmaBlockLocation different CPUs assigned to them
+            // so that multiple RdmaNodes on this machine will have a better change to getRdmaBlockLocation different CPUs assigned to them
             cpuArrayList.add(cpuArrayList.isEmpty() ? 0 : new Random().nextInt(cpuArrayList.size()));
         };
 

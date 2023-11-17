@@ -19,7 +19,6 @@ import java.util.Objects;
 
 
 public class BankingSystemClient extends Client {
-    private static final Logger log = LoggerFactory.getLogger(BankingSystemClient.class);
 
     /**
      * Client-defined customized txn-UDF, which will be executed in Schedulers

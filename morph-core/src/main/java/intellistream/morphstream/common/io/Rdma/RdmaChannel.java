@@ -26,7 +26,6 @@ public class RdmaChannel {
 
     enum RdmaChannelType { RPC, RDMA_READ_REQUESTOR, RDMA_READ_RESPONDER }
     private final RdmaChannelType rdmaChannelType;
-
     private final RdmaCompletionListener receiveListener;
     private final RdmaBufferManager rdmaBufferManager;
     private IbvCompChannel compChannel = null;
