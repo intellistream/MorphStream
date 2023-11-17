@@ -59,8 +59,6 @@ public class FunctionExecutor extends AbstractSpoutCombo {
         }
         bolt.prepare(conf, context, collector);
         bolt.loadDB(conf, context, collector);
-        worker = MorphStreamEnv.get().zContext().createSocket(SocketType.DEALER);
-        worker.connect("inproc://backend");
         sink.setSender(worker);
     }
     @Override

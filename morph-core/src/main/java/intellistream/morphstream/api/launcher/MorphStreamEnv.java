@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.launcher;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
 import intellistream.morphstream.api.input.FileDataGenerator;
 import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.state.DatabaseInitializer;
@@ -18,12 +20,20 @@ import intellistream.morphstream.engine.txn.db.CavaliaDatabase;
 import intellistream.morphstream.engine.txn.db.Database;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.ZContext;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+
 public class MorphStreamEnv {
+    private static final Logger LOG = LoggerFactory.getLogger(MorphStreamEnv.class);
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
+    private boolean isDriver;
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
     private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
@@ -36,8 +46,7 @@ public class MorphStreamEnv {
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
-    private final ZContext zContext = new ZContext();
-    private CountDownLatch latch;//The number of clients + MorphStreamWorker
+    private CountDownLatch latch;//The number of clients + MorphStreamDriver
     public static MorphStreamEnv get() {
         return ourInstance;
     }
@@ -57,9 +66,30 @@ public class MorphStreamEnv {
     public BlockManagerId blockManagerId() {return blockManagerId;}
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
-    public ZContext zContext() {return zContext;}
     public InputSource inputSource() {return inputSource;}
     public CountDownLatch latch() {return latch;}
+    public boolean isDriver() {return isDriver;}
+    public boolean LoadConfiguration(String configPath, String[] args) throws IOException {
+        if (configPath != null) {
+            this.jCommanderHandler().loadProperties(configPath);
+        }
+        JCommander cmd = new JCommander(this.jCommanderHandler());
+        try {
+            cmd.parse(args);
+        } catch (ParameterException ex) {
+            if (enable_log) LOG.error("Argument error: " + ex.getMessage());
+            cmd.usage();
+            return false;
+        }
+        this.jCommanderHandler().initializeCfg(this.configuration());
+        this.isDriver = this.configuration().getBoolean("isDriver", false);
+        if (isDriver) {
+            CountDownLatchInitialize(this.configuration().getInt("clientNum", 1) + 1);// Client Number + MorphStreamDriver
+            DatabaseInitialize();
+            InputSourceInitialize();
+        }
+        return true;
+    }
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();
@@ -67,6 +97,40 @@ public class MorphStreamEnv {
             for (int i = 0; i < configuration.getInt("tthread", 4); i++)
                 databaseInitializer.setSpinlock_(i, new SpinLock());
             PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
+        }
+    }
+    public void InputSourceInitialize() throws IOException {
+        DatabaseInitialize();
+        if (configuration().getInt("inputSourceType", 0) == 0) { //read input as string
+            String inputFile = configuration().getString("inputFilePath");
+            File file = new File(inputFile);
+            if (file.exists()) {
+                LOG.info("Data already exists.. skipping data generation...");
+                fileDataGenerator().prepareInputData(true);
+            } else {
+                String fileName = fileDataGenerator().prepareInputData(false);
+                configuration().put("inputFilePath", fileName);
+            }
+            if (fileDataGenerator().getTranToDecisionConf() != null && fileDataGenerator().getTranToDecisionConf().size() != 0){
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:fileDataGenerator().getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                configuration().put("WorkloadConfig",stringBuilder.toString()); //For each workload, how many TD/LD/PD
+            }
+            inputSource().initialize(configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("clientNum"));
+        } else if (configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
+            String inputFile = configuration().getString("inputFilePath");
+            File file = new File(inputFile);
+            if (file.exists()) {
+                LOG.info("Data already exists.. skipping data generation...");
+            } else {
+                String fileName = fileDataGenerator().prepareInputData(false);
+                configuration().put("inputFilePath", fileName);
+            }
+            inputSource().initialize(configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("clientNum"));
         }
     }
     public void CountDownLatchInitialize(int num) {

@@ -42,7 +42,6 @@ public class FileDataGenerator {
     private ArrayList<String> eventList = new ArrayList<>();//event list
     private String[] eventTypes;//event list
     private int eventID = 0;
-    private int deltaEventID = 1;
     private HashMap<String, HashMap<String,FastZipfGenerator>> zipfGeneratorHashMap= new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, HashMap<String, List<FastZipfGenerator>>> partitionZipfGeneratorHashMap = new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, Double> eventAbortMap = new HashMap<>();//event -> AbortRatio
@@ -64,8 +63,6 @@ public class FileDataGenerator {
     private void configure_store() {
         configuration = MorphStreamEnv.get().configuration();
         numItemMaps = MorphStreamEnv.get().databaseInitializer().getNumItemMaps();
-        eventID = configuration.getInt("nodeId", 0);
-        deltaEventID = configuration.getInt("nodeNum", 1);
         rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark");
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();
@@ -157,7 +154,7 @@ public class FileDataGenerator {
             inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
         }
         inputEvents.add(inputEvent);
-        eventID = eventID + deltaEventID;
+        eventID ++;
     }
 
     private HashMap<String, List<String>> generateKey(String eventType) {//tableName -> List of keys

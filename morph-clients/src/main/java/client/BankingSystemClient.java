@@ -10,8 +10,6 @@ import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zeromq.ZMsg;
-import worker.MorphStreamWorker;
 import worker.WebServer;
 
 import java.util.ArrayList;
@@ -19,11 +17,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
-
-public class SLClient extends Client {
-    private static final Logger log = LoggerFactory.getLogger(SLClient.class);
+public class BankingSystemClient extends Client {
+    private static final Logger log = LoggerFactory.getLogger(BankingSystemClient.class);
 
     /**
      * Client-defined customized txn-UDF, which will be executed in Schedulers
@@ -112,15 +108,8 @@ public class SLClient extends Client {
         return result;
     }
 
-    public static void startJob(String[] args) throws Exception {
-        WebServer.createJobInfoJSON("StreamLedger");
-        MorphStreamWorker morphStreamWorker = new MorphStreamWorker( 4);
-        morphStreamWorker.LoadConfiguration(null, args); //TODO: add loadConfig from file
-        morphStreamWorker.prepare();
-
-        //Initialize transactions for Combo to execute
-        HashMap<String, FunctionDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
-
+    @Override
+    public void defineFunction() {
         //Define transfer function
         FunctionDescription transferDescriptor = new FunctionDescription();
         //Define transfer's 1st state accesses
@@ -135,7 +124,7 @@ public class SLClient extends Client {
         //Add state accesses to transaction
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
         transferDescriptor.addStateAccess("destTransfer", destTransfer);
-        txnDescriptions.put("transfer", transferDescriptor);
+        this.txnDescriptions.put("transfer", transferDescriptor);
 
         //Define deposit transaction
         FunctionDescription depositDescriptor = new FunctionDescription();
@@ -144,23 +133,18 @@ public class SLClient extends Client {
         deposit.addValueName("depositAmount");
         depositDescriptor.addStateAccess("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);
+    }
 
-        morphStreamWorker.registerFunction(txnDescriptions);
-        morphStreamWorker.start();
-
+    public static void startClient(String[] args) throws Exception {
+        WebServer.createJobInfoJSON("StreamLedger");
         List<Thread> threads = new ArrayList<>();
         int clientNum = MorphStreamEnv.get().configuration().getInt("clientNum");
         for (int threadNum = 0; threadNum < clientNum; threadNum++) {
-            Client t = new SLClient();
+            Client t = new BankingSystemClient();
             t.initialize(threadNum, MorphStreamEnv.get().latch());
             threads.add(t);
             t.start();
         }
 
-    }
-
-    public static void main(String[] args) throws Exception {
-//        WebServer.createJobInfoJSON("StreamLedger");
-        startJob(args);
     }
 }

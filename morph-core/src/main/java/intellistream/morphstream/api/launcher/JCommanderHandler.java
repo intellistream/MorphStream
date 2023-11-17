@@ -225,14 +225,18 @@ public class JCommanderHandler {
     public String abortRatioForEvents = "0,0";
 
     //Cluster configure
+    @Parameter(names = {"--isDriver"}, description = "isDriver")
+    public int isDriver = 1;//
     @Parameter(names = {"--nodeId"}, description = "nodeId")
     public int nodeId = 0;//
-    @Parameter(names = {"--nodeNum"}, description = "total nodes")
-    public int nodeNum = 1;// default total node in the cluster
-    @Parameter(names = {"--tthread"}, description = "total execution threads each node")
+    @Parameter(names = {"--workerNum"}, description = "total workerNum in the cluster")
+    public int workerNum = 1;// default total node in the cluster
+    @Parameter(names = {"--tthread"}, description = "total execution threads each worker")
     public int tthread = 4;// default total execution threads
-    @Parameter(names = {"--clientNum"}, description = "total client threads each node")
+    @Parameter(names = {"--clientNum"}, description = "total client threads")
     public int clientNum = 4;// default total client threads
+    @Parameter(names = {"--frontendNum"}, description = "total frontendNum threads in the MorphStreamDriver")
+    public int frontendNum = 4;// default total client threads
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 2500;//checkpoint per thread.
 
@@ -298,8 +302,14 @@ public class JCommanderHandler {
         }
         config.put("tthread", tthread);
         config.put("clientNum", clientNum);
-        config.put("nodeNum", nodeNum);
+        config.put("workerNum", workerNum);
         config.put("nodeId", nodeId);
+        config.put("frontendNum", frontendNum);
+        if (isDriver == 1) {
+            config.put("isDriver", true);
+        } else {
+            config.put("isDriver", false);
+        }
         config.put("checkpoint", checkpoint_interval);
         config.put("fanoutDist", fanoutDist);
         if (isCyclic == 1) {

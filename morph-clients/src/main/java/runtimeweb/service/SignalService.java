@@ -1,6 +1,6 @@
 package runtimeweb.service;
 
-import client.SLClient;
+import client.BankingSystemClient;
 import worker.WebServer;
 import intellistream.morphstream.api.input.InputSource;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ public class SignalService extends AbstractService {
     public Boolean onStartSignal(String jobId) {
         WebServer.createJobInfoJSON("StreamLedger");
         try {
-            SLClient.startJob(new String[]{}); // start the job
+            BankingSystemClient.startClient(new String[]{}); // start the job
         } catch (Exception e) {
             return false;
         }
@@ -44,7 +44,7 @@ public class SignalService extends AbstractService {
         WebServer.createJobInfoJSON(jobName);
         if (startNow) {
             try {
-                SLClient.startJob(new String[]{}); // start the job
+                BankingSystemClient.startClient(new String[]{}); // start the job
                 return true;
             } catch (Exception e) {
                 return false;

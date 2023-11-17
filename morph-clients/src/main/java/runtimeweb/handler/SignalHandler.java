@@ -1,5 +1,5 @@
 package runtimeweb.handler;
-import client.SLClient;
+import client.BankingSystemClient;
 import worker.WebServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import communication.dao.Response;
@@ -28,7 +28,7 @@ public class SignalHandler extends SimpleChannelInboundHandler<SignalRequest> {
             channelHandlerContext.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(response)));
             // start the job
             WebServer.createJobInfoJSON("StreamLedger");
-            SLClient.startJob(new String[]{});
+            BankingSystemClient.startClient(new String[]{});
         } else if (request.getSignal().equals("stop")) {
             log.info("Stop signal received");
             InputSource.get().insertStopSignal(); // notify spout to pass stop signal downstream
