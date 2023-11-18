@@ -1,5 +1,6 @@
 package worker;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
@@ -7,8 +8,7 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MorphStreamFrontend extends Thread{
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamFrontend.class);
@@ -22,33 +22,49 @@ public class MorphStreamFrontend extends Thread{
         this.frontend = zContext.createSocket(SocketType.DEALER);
         frontend.connect("inproc://backend");
 
-        ZMQ.Socket toWorker = zContext.createSocket(SocketType.DEALER);
-        toWorker.connect("tcp://" + "localhost" + ":" + 5555);
-        sockets.put("localhost", toWorker);
-        poller = zContext.createPoller(1);
-        poller.register(sockets.get("localhost"), ZMQ.Poller.POLLIN);
+        String[] workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.socket.workerHosts").split(",");
+        String[] workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.socket.workerPorts").split(",");
+        poller = zContext.createPoller(workerPorts.length);
+        for (int i = 0; i < workerHosts.length; i++) {
+            ZMQ.Socket toWorker = zContext.createSocket(SocketType.DEALER);
+            toWorker.connect("tcp://" + workerHosts[i] + ":" + workerPorts[i]);
+            sockets.put(workerHosts[i] + ":" + workerPorts[i], toWorker);
+            poller.register(toWorker, ZMQ.Poller.POLLIN);
+        }
     }
-    public void asyncReceiveFunctionOutput(String workerName) {
+    public void asyncReceiveFunctionOutput() {
         for (int centitick = 0; centitick < 100; centitick++) {
             poller.poll(0);
-            if (poller.pollin(0)) {
-                ZMsg msg = ZMsg.recvMsg(sockets.get(workerName));
-                LOG.info("Receive: " + msg.popString());
-                msg.destroy();
+            for (int i = 0; i < sockets.size(); i ++) {
+                if (poller.pollin(i)) {
+                    ZMsg msg = ZMsg.recvMsg(getSocketFormIndex(i));
+                    LOG.info("Receive: " + msg.popString());
+                    msg.destroy();
+                }
             }
         }
     }
-    public void invokeFunctionToWorker(String address, ZMsg msg) {
-        sockets.get(address).send(msg.getLast().toString());
+    public void invokeFunctionToWorker(ZMQ.Socket address, ZMsg msg) {
+        address.send(msg.getLast().toString());
     }
 
     public void run(){
         while (!Thread.currentThread().interrupted()) {
             ZMsg msg = ZMsg.recvMsg(frontend, false);
             if (msg != null) {
-                invokeFunctionToWorker("localhost", msg);
+                invokeFunctionToWorker(getSocketRandom(), msg);
             }
-            asyncReceiveFunctionOutput("localhost");
+            asyncReceiveFunctionOutput();
         }
+    }
+    private ZMQ.Socket getSocketRandom() {
+        List<String> keyList = new ArrayList<>(sockets.keySet());
+        Random random = new Random();
+        int randomIndex = random.nextInt(keyList.size());
+        return sockets.get(keyList.get(randomIndex));
+    }
+    private ZMQ.Socket getSocketFormIndex(int index) {
+        List<String> keyList = new ArrayList<>(sockets.keySet());
+        return sockets.get(keyList.get(index));
     }
 }

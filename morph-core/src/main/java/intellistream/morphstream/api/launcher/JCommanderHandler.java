@@ -227,8 +227,8 @@ public class JCommanderHandler {
     //Cluster configuration
     @Parameter(names = {"--isDriver"}, description = "isDriver")
     public int isDriver = 1;//
-    @Parameter(names = {"--nodeId"}, description = "nodeId")
-    public int nodeId = 0;//
+    @Parameter(names = {"--workerId"}, description = "workerId")
+    public int workerId = 0;//
     @Parameter(names = {"--workerNum"}, description = "total workerNum in the cluster")
     public int workerNum = 1;// default total node in the cluster
     @Parameter(names = {"--tthread"}, description = "total execution threads each worker")
@@ -240,13 +240,17 @@ public class JCommanderHandler {
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 2500;//checkpoint per thread.
 
-    //RDMA configuration
-    @Parameter(names = {"--morphstream.driver.host"}, description = "morphstream driver host for rdma")
-    public String driverHost = "";
-    @Parameter(names = {"--morphstream.rdma.driverPort"}, description = "morphstream driver port for rdma")
-    public String driverPort = "";
-    @Parameter(names = {"--morphstream.rdma.workerPort"}, description = "morphstream worker port for rdma")
-    public String workerPort = "";
+    //Network configuration
+    @Parameter(names = {"--isRDMA"}, description = "whether is rdma connection")
+    public int isRDMA = 0;
+    @Parameter(names = {"--morphstream.driverHost"}, description = "morphstream driver host")
+    public String driverHost = "localhost";
+    @Parameter(names = {"--morphstream.driverPort"}, description = "morphstream driver port")
+    public int driverPort = 5570;
+    @Parameter(names = {"--morphstream.workerHosts"}, description = "morphstream worker hosts")
+    public String workerHosts = "localhost,localhost";
+    @Parameter(names = {"--morphstream.workerPorts"}, description = "morphstream worker ports")
+    public String workerPorts = "5540,5550";
 
     /**
      * Benchmarking and evaluation parameters
@@ -309,16 +313,27 @@ public class JCommanderHandler {
         config.put("tthread", tthread);
         config.put("clientNum", clientNum);
         config.put("workerNum", workerNum);
-        config.put("nodeId", nodeId);
+        config.put("workerId", workerId);
         config.put("frontendNum", frontendNum);
         if (isDriver == 1) {
             config.put("isDriver", true);
         } else {
             config.put("isDriver", false);
         }
-        config.put("morphstream.driver.host", driverHost);
-        config.put("morphstream.rdma.driverPort", driverPort);
-        config.put("morphstream.rdma.workerPort", driverPort);
+        if (isRDMA == 1) {
+            config.put("isRDMA", true);
+            config.put("morphstream.rdma.driverHost", driverHost);
+            config.put("morphstream.rdma.driverPort", driverPort);
+            config.put("morphstream.rdma.workerPorts", workerPorts);
+            config.put("morphstream.rdma.workerHosts", workerHosts);
+        } else {
+            config.put("isRDMA", false);
+            config.put("morphstream.socket.driverHost", driverHost);
+            config.put("morphstream.socket.driverPort", driverPort);
+            config.put("morphstream.socket.workerPorts", workerPorts);
+            config.put("morphstream.socket.workerHosts", workerHosts);
+        }
+
 
         config.put("checkpoint", checkpoint_interval);
         config.put("fanoutDist", fanoutDist);
@@ -420,7 +435,7 @@ public class JCommanderHandler {
 
         /* Database configurations */
         config.put("NUM_ITEMS", NUM_ITEMS);
-        config.put("loadDBThreadNum", loadDBThreadNum);
+        config.put("loadDBThreadNum", tthread);
         config.put("tableNames", tableNames);
         String[] tableNameString = tableNames.split(",");
         for (int i = 0; i < tableNameString.length; i ++) {
@@ -433,7 +448,7 @@ public class JCommanderHandler {
         /* Input configurations */
         config.put("rootPath", rootPath);
         config.put("inputFileType", inputFileType);
-        config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs") + OsUtils.OS_wrapper(clientClassName) + OsUtils.OS_wrapper("event_" + nodeId + ".txt"));
+        config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs") + OsUtils.OS_wrapper(clientClassName) + OsUtils.OS_wrapper("event.txt"));
         config.put("inputFileName", inputFileName);
         config.put("dataDirectory", dataDirectory);
         config.put("totalEvents", totalEvents);

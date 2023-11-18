@@ -21,7 +21,9 @@ public class MorphStreamDriver extends Thread {
     public MorphStreamDriver() {
         this.numFrontend = env.configuration().getInt("frontendNum");
         frontend = zContext.createSocket(SocketType.ROUTER);//  Frontend socket talks to clients over TCP
-        frontend.bind("tcp://*:5570");
+        String address = env.configuration().getString("morphstream.socket.driverHost");
+        int port = env.configuration().getInt("morphstream.socket.driverPort");
+        frontend.bind("tcp://"+ address +":" + port);
         backend = zContext.createSocket(SocketType.DEALER); //  Backend socket talks to workers over inproc
         backend.bind("inproc://backend");
     }

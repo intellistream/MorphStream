@@ -33,14 +33,20 @@ public class MorphStreamWorker extends Thread {
     private final ZMQ.Socket backend;// Backend socket talks to workers over inproc\
     private final FunctionExecutor spout;
     private final int numTasks;
+    private final int workerId;
 
     public MorphStreamWorker() throws Exception {
+        workerId = env.configuration().getInt("workerId", 0);
         this.numTasks = env.configuration().getInt("tthread", 1);
         this.spout = new FunctionExecutor("functionExecutor");
+        String[] workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.socket.workerHosts").split(",");
+        String[] workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.socket.workerPorts").split(",");
         frontend = env.zContext().createSocket(SocketType.ROUTER);//  Frontend socket talks to clients over TCP
-        frontend.bind("tcp://*:5555");
+        frontend.bind("tcp://" + workerHosts[workerId] + ":" + workerPorts[workerId]);
         backend = env.zContext().createSocket(SocketType.DEALER); //  Backend socket talks to workers over inproc
         backend.bind("inproc://backend");
+        LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is initialized, listening on " + "tcp://" + workerHosts[workerId] + ":" + workerPorts[workerId]);
+
     }
     public void registerFunction(HashMap<String, FunctionDescription> functions) {
         this.spout.registerFunction(functions);
