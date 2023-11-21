@@ -1,26 +1,16 @@
 package worker;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
-import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.spout.FunctionExecutor;
 import intellistream.morphstream.engine.stream.components.Topology;
-import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
-import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.concurrent.CountDownLatch;
-
-import static intellistream.morphstream.configuration.CONTROL.*;
 
 /**
  * TODO: Implementation of a simple command line frontend for executing programs.
