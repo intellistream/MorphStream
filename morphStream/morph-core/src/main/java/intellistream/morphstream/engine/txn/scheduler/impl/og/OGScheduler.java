@@ -109,60 +109,61 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
      * @param clean
      */
     public void execute(Operation operation, long mark_ID, boolean clean) {
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
-            //otherwise, skip (those +already been tagged as aborted).
-            if (operation.isNonDeterministicOperation && operation.deterministicRecords != null) {
-                for (TableRecord tableRecord : operation.deterministicRecords) {
-                    tableRecord.content_.DeleteLWM(operation.bid);
-                }
-            } else {
-                operation.d_record.content_.DeleteLWM(operation.bid);
-            }
-            commitLog(operation);
-            return;
-        }
-
-        /**
-         * Start of newly defined txn execution logic
-         */
-        //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
-        for (TableRecord tableRecord : operation.condition_records) {
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
-            operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
-        }
-
-        //UDF updates operation.udfResult, which is the value to be written to writeRecord
-        boolean udfSuccess = false;
-        try {
-            Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-            if (Client.class.isAssignableFrom(clientClass)) {
-                Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                udfSuccess = clientObj.transactionUDF(operation.stateAccess);
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (udfSuccess) {
-            if (operation.accessType == CommonMetaTypes.AccessType.WRITE
-                    || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
-                    || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
-                //Update udf results to writeRecord
-                Object udfResult = operation.stateAccess.udfResult; //value to be written
-                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-                //TODO: pass in the write object-type, avoid isInstanceOf check
-                tempo_record.getValues().get(1).setDouble((double) udfResult);
-                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
-                //Assign updated schemaRecord back to stateAccess
-                operation.stateAccess.setUpdatedStateObject(tempo_record);
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        } else {
-            operation.isFailed.set(true);
-        }
+        //TODO: Copy from OP after refinement
+//        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+//            //otherwise, skip (those +already been tagged as aborted).
+//            if (operation.isNonDeterministicOperation && operation.deterministicRecords != null) {
+//                for (TableRecord tableRecord : operation.deterministicRecords) {
+//                    tableRecord.content_.DeleteLWM(operation.bid);
+//                }
+//            } else {
+//                operation.d_record.content_.DeleteLWM(operation.bid);
+//            }
+//            commitLog(operation);
+//            return;
+//        }
+//
+//        /**
+//         * Start of newly defined txn execution logic
+//         */
+//        //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
+//        for (TableRecord tableRecord : operation.condition_records) {
+//            SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
+//            operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
+//        }
+//
+//        //UDF updates operation.udfResult, which is the value to be written to writeRecord
+//        boolean udfSuccess = false;
+//        try {
+//            Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+//            if (Client.class.isAssignableFrom(clientClass)) {
+//                Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+//                udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+//            }
+//        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+//                 InvocationTargetException | NoSuchMethodException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        if (udfSuccess) {
+//            if (operation.accessType == CommonMetaTypes.AccessType.WRITE
+//                    || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
+//                    || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
+//                //Update udf results to writeRecord
+//                Object udfResult = operation.stateAccess.udfResult; //value to be written
+//                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+//                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+//                //TODO: pass in the write object-type, avoid isInstanceOf check
+//                tempo_record.getValues().get(1).setDouble((double) udfResult);
+//                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
+//                //Assign updated schemaRecord back to stateAccess
+//                operation.stateAccess.setUpdatedStateObject(tempo_record);
+//            } else {
+//                throw new UnsupportedOperationException();
+//            }
+//        } else {
+//            operation.isFailed.set(true);
+//        }
         /**
          * End of newly defined txn execution logic
          */

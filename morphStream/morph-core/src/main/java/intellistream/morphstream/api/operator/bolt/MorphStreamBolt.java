@@ -1,12 +1,10 @@
 package intellistream.morphstream.api.operator.bolt;
 
-import commonStorage.TxnTemplates;
+import commonStorage.RequestTemplates;
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
-import intellistream.morphstream.api.state.*;
-import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
@@ -46,8 +44,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     public MorphStreamBolt(String id, int fid) {
         super(id, LOG, fid);
-        txnTemplates = TxnTemplates.sharedTxnTemplates;
-        saTemplates = TxnTemplates.sharedSATemplates;
+        txnTemplates = RequestTemplates.sharedTxnTemplates;
+        saTemplates = RequestTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
@@ -56,8 +54,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         super(id, LOG, fid);
         this.sink = sink;
         this.isCombo = true;
-        txnTemplates = TxnTemplates.sharedTxnTemplates;
-        saTemplates = TxnTemplates.sharedSATemplates;
+        txnTemplates = RequestTemplates.sharedTxnTemplates;
+        saTemplates = RequestTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();

@@ -32,6 +32,11 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     }
 
     @Override
+    public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+        return false;
+    }
+
+    @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException, InterruptedException {
 //		BEGIN_PHASE_MEASURE(thread_id_, INSERT_PHASE);

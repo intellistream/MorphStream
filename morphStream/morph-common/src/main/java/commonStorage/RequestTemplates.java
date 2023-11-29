@@ -2,7 +2,7 @@ package commonStorage;
 
 import java.util.HashMap;
 
-public class TxnTemplates {
+public class RequestTemplates {
     /**
      * For each StateAccess, saDataNameToIndex maps name to index in saData array
      * "<stateObjName>": <index> *N

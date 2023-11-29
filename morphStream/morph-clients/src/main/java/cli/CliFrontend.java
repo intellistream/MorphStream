@@ -2,7 +2,7 @@ package cli;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
-import commonStorage.TxnTemplates;
+import commonStorage.RequestTemplates;
 import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
@@ -73,13 +73,13 @@ public class CliFrontend {
 
     public static double getDoubleField(String stateObjID, String[] txnData) {
         String saID = txnData[0]; //saId determines which saNameToIndex map to refer to
-        int readFieldIndex = TxnTemplates.saDataNameToIndex.get(saID).get(stateObjID);
+        int readFieldIndex = RequestTemplates.saDataNameToIndex.get(saID).get(stateObjID);
         return Double.parseDouble(txnData[readFieldIndex]);
     }
 
     public static void setDoubleField(String stateObjID, double value, String[] txnData) {
         String saID = txnData[0];
-        int writeFieldIndex = TxnTemplates.saDataNameToIndex.get(saID).get(stateObjID);
+        int writeFieldIndex = RequestTemplates.saDataNameToIndex.get(saID).get(stateObjID);
         txnData[writeFieldIndex] = Double.toString(value);
     }
 
@@ -95,7 +95,7 @@ public class CliFrontend {
 
         String[] stateAccessTemplate = new String[2 + stateObjectIDs.length * 4]; //saType, writeKeyIndex, N*[tableName, keyIndex, fieldIndex, saType]
         stateAccessTemplate[0] = type;
-        TxnTemplates.saDataNameToIndex.put(stateAccessID, new HashMap<>());
+        RequestTemplates.saDataNameToIndex.put(stateAccessID, new HashMap<>());
         int templateIndex = 2;
         int stateFieldIndex = 3; //index of field in saData, the first 3 are: saID, txnAbortFlag, saResult
 
@@ -105,25 +105,25 @@ public class CliFrontend {
             stateAccessTemplate[templateIndex + 1] = stateObjectTemplate[1]; //key index in event
             stateAccessTemplate[templateIndex + 2] = stateObjectTemplate[2]; //field index in table
             stateAccessTemplate[templateIndex + 3] = stateObjectTemplate[3]; //state access type
-            TxnTemplates.saDataNameToIndex.get(stateAccessID).put(stateObjectID, stateFieldIndex);
+            RequestTemplates.saDataNameToIndex.get(stateAccessID).put(stateObjectID, stateFieldIndex);
             if (stateObjectTemplate[3].equals("WRITE")) {
                 stateAccessTemplate[1] = String.valueOf(templateIndex); //first index of writeStateObject's subarray in stateAccess array
             }
             templateIndex += 4;
             stateFieldIndex++;
         }
-        TxnTemplates.sharedSATemplates.put(stateAccessID, stateAccessTemplate);
+        RequestTemplates.sharedSATemplates.put(stateAccessID, stateAccessTemplate);
     }
 
     public void registerTxn(String txnID, String[] stateAccessIDs) {
-        TxnTemplates.sharedTxnTemplates.put(txnID, stateAccessIDs);
+        RequestTemplates.sharedTxnTemplates.put(txnID, stateAccessIDs);
     }
 
     /**
      * Register a new operator to the system. This combines both operator (VNF) creation and topology node registration
     * */
     public void registerOperator(String operatorID, String[] txnIDs, int stage, int parallelism) {
-        TxnTemplates.sharedOperatorTemplates.put(operatorID, txnIDs);
+        RequestTemplates.sharedOperatorTemplates.put(operatorID, txnIDs);
         try {
             AbstractBolt bolt = setBolt(operatorID, parallelism, stage);
             boltMap.put(operatorID, bolt);

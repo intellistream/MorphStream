@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction.impl.ordered;
 
+import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
@@ -48,6 +49,11 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
         } else {
             return true;
         }
+    }
+
+    @Override
+    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+        return false;
     }
 
     /**

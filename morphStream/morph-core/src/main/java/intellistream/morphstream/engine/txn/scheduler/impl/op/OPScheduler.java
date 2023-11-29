@@ -109,12 +109,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         if (enable_latency_measurement) {
-            String operationID = operation.stateAccess.getOperationID(); //TODO: Pass-in with SA or refer to shared data structure
-            TPGNode node = new TPGNode(operationID, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
+//            String operationID = operation.stateAccess.getOperationID(); //TODO: Pass-in with SA or refer to shared data structure
+            String defaultString = "";
+//            TPGNode node = new TPGNode(operationID, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
+            TPGNode node = new TPGNode(defaultString, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
             for (MetaTypes.DependencyType type : dependencyTypes) {
                 for (Operation child : operation.getChildren(type)) {
-                    TPGEdge edge = new TPGEdge(operationID, child.stateAccess.getOperationID(), type.toString());
-                    RuntimeMonitor.get().UPDATE_TPG_EDGE(operation.stateAccess.getOperatorID(), batchID, node, edge);
+//                    TPGEdge edge = new TPGEdge(operationID, child.stateAccess.getOperationID(), type.toString());  //TODO: Refine saData
+//                    RuntimeMonitor.get().UPDATE_TPG_EDGE(operation.stateAccess.getOperatorID(), batchID, node, edge);  //TODO: Refine saData
+                    TPGEdge edge = new TPGEdge(defaultString, defaultString, type.toString());
+                    RuntimeMonitor.get().UPDATE_TPG_EDGE(defaultString, batchID, node, edge);
                 }
             }
         }
@@ -123,14 +127,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         AppConfig.randomDelay();
 
         String[] saData = new String[3 + operation.condition_records.size()]; //saID, txnAbortFlag, saResult, N*<stateObj field value>
-        saData[0] = operation.stateAccess.getOperationID(); //determine which UDF to execute
+//        saData[0] = operation.stateAccess.getOperationID(); //determine which UDF to execute  //TODO: Refine saData
+        saData[0] = "";
         saData[1] = "true"; //txnSuccessFlag
         saData[2] = ""; //saResult
 
         int index = 3;
         for (TableRecord tableRecord : operation.condition_records) {
             SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
-            int fieldTableIndex = operation.stateAccess.getStateObject(entry.getKey()).getFieldIndex();
+//            int fieldTableIndex = operation.stateAccess.getStateObject(entry.getKey()).getFieldIndex();  //TODO: Refine saData
+            int fieldTableIndex = 0;
             saData[index] = readRecord.getValues().get(fieldTableIndex).getString();
             index++;
         }
@@ -143,7 +149,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                 if (Client.class.isAssignableFrom(clientClass)) {
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                    saData = clientObj.execute_txn_udf(operation.stateAccess.getStateAccessName(), saData);
+                    String defaultString = "";
+//                    saData = clientObj.execute_txn_udf(operation.stateAccess.getStateAccessName(), saData);  //TODO: Refine saData
+                    saData = clientObj.execute_txn_udf(defaultString, saData);  //TODO: Refine saData
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                      InvocationTargetException | NoSuchMethodException e) {
@@ -156,19 +164,20 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
                 //Update udf results to writeRecord
-                Object udfResult = operation.stateAccess.udfResult; //value to be written
+//                Object udfResult = operation.stateAccess.udfResult; //value to be written  //TODO: Refine saData
+                Object udfResult = new Object(); //value to be written  //TODO: Refine saData
                 SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(srcRecord);
                 //TODO: pass in the write object-type, avoid isInstanceOf check
                 tempo_record.getValues().get(1).setDouble((double) udfResult);
                 operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
                 //Assign updated schemaRecord back to stateAccess
-                operation.stateAccess.setUpdatedStateObject(tempo_record);
+//                operation.stateAccess.setUpdatedStateObject(tempo_record);  //TODO: Refine saData
             } else {
                 throw new UnsupportedOperationException();
             }
         } else {
-            operation.stateAccess.setAborted();
+//            operation.stateAccess.setAborted(); //TODO: Refine saData
             operation.isFailed.set(true);
         }
         /**
@@ -261,11 +270,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
 
             // Update LD
-            String operationID = set_op.stateAccess.getOperationID();
-            String LDParentOperationID = String.valueOf(headerOperation.stateAccess.getOperationID());
+//            String operationID = set_op.stateAccess.getOperationID(); //TODO: Refine saData
+            String operationID = "";
+//            String LDParentOperationID = String.valueOf(headerOperation.stateAccess.getOperationID());  //TODO: Refine saData
+            String LDParentOperationID = "";
             TPGNode node = new TPGNode(operationID, set_op.accessType.toString(), set_op.table_name, set_op.d_record.record_.GetPrimaryKey());
             TPGEdge edge = new TPGEdge(LDParentOperationID, operationID, MetaTypes.DependencyType.LD.toString());
-            RuntimeMonitor.get().UPDATE_TPG_EDGE(set_op.stateAccess.getOperatorID(), batchID, node, edge);
+//            RuntimeMonitor.get().UPDATE_TPG_EDGE(set_op.stateAccess.getOperatorID(), batchID, node, edge);  //TODO: Refine saData
+            RuntimeMonitor.get().UPDATE_TPG_EDGE("", batchID, node, edge);
 
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
             set_op.setTxnOpId(txnOpId++);
