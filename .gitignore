@@ -9,6 +9,7 @@
 /state-engine/state-engine.iml
 /stream-engine/stream-engine.iml
 .idea/
+.vscode/
 /metric_output/
 
 # builds
