@@ -29,12 +29,10 @@ import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
 import communication.dao.TPGEdge;
 import communication.dao.TPGNode;
-import libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_latency_measurement;
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
@@ -108,28 +106,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             return;
         }
 
-        if (enable_latency_measurement) {
-//            String operationID = operation.stateAccess.getOperationID(); //TODO: Pass-in with SA or refer to shared data structure
-            String defaultString = "";
-//            TPGNode node = new TPGNode(operationID, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
-            TPGNode node = new TPGNode(defaultString, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
-            for (MetaTypes.DependencyType type : dependencyTypes) {
-                for (Operation child : operation.getChildren(type)) {
-//                    TPGEdge edge = new TPGEdge(operationID, child.stateAccess.getOperationID(), type.toString());  //TODO: Refine saData
-//                    RuntimeMonitor.get().UPDATE_TPG_EDGE(operation.stateAccess.getOperatorID(), batchID, node, edge);  //TODO: Refine saData
-                    TPGEdge edge = new TPGEdge(defaultString, defaultString, type.toString());
-                    RuntimeMonitor.get().UPDATE_TPG_EDGE(defaultString, batchID, node, edge);
-                }
-            }
-        }
-
         // apply function
         AppConfig.randomDelay();
 
-        String[] saData = new String[3 + operation.condition_records.size()]; //saID, txnAbortFlag, saResult, N*<stateObj field value>
-//        saData[0] = operation.stateAccess.getOperationID(); //determine which UDF to execute  //TODO: Refine saData
+        String[] saData = new String[3 + operation.condition_records.size()]; //saID, toAbort, saResult, <stateObj field value> * N
+        //stateAccess: type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
         saData[0] = "";
-        saData[1] = "true"; //txnSuccessFlag
+//        saData[0] = operation.stateAccess.getOperationID(); //determine which UDF to execute  //TODO: Refine saData
+        saData[1] = "false"; //toAbort
         saData[2] = ""; //saResult
 
         int index = 3;
@@ -231,8 +215,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             Operation set_op;
             switch (request.accessType) {
                 case WRITE_ONLY:
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ:
                 case WRITE:
@@ -240,25 +224,25 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 case READ_WRITE_COND:
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE_READ:
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case NON_DETER_READ:
                 case NON_DETER_WRITE:
                 case NON_READ_WRITE_COND_READN:
-                    set_op = new Operation(true, request.tables, request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess);
+                    set_op = new Operation(true, request.tables, request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case WINDOW_READ:
                 case WINDOW_WRITE:
                 case WINDOWED_READ_ONLY:
                     WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, windowContext, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, request.condition_records, windowContext, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 default:
                     throw new UnsupportedOperationException();

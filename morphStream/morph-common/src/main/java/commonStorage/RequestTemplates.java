@@ -12,12 +12,13 @@ public class RequestTemplates {
     public static HashMap<String, String[]> sharedOperatorTemplates = new HashMap<>(); //op -> txns
     public static HashMap<String, String[]> sharedTxnTemplates = new HashMap<>(); //txn -> state accesses
     /**
-     * Maps saID to its templates
-     * Each 4-element substring of String[] template describes one StateAccessObject:
-     * 0: table name
-     * 1: key index (which key in input pkt)
-     * 2: field index (which field in table)
-     * 3: state access type (READ/WRITE)
+     * Maps stateAccessID to stateAccessTemplate
+     * Key: stateAccessID, Value: stateAccessTemplate
+     * Each stateAccessTemplate is a String array of:
+     * --> 0: stateAccessType
+     * --> 1: writeObjIndex (which stateObject to write in stateObjectTemplateArray)
+     * --> 2 onwards: stateObjectTemplateArray, each stateObjectTemplate consists of four elements:
+     * --> --> table name, key index (which key in input pkt), field index (which field in table), state access type (READ/WRITE)
      */
     public static HashMap<String, String[]> sharedSATemplates = new HashMap<>(); //state access -> state access objects
 }

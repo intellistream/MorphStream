@@ -1,9 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.og;
 
 
-import intellistream.morphstream.api.Client;
-import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.LogRecord;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.DependencyLoggingManager;
@@ -22,7 +19,6 @@ import intellistream.morphstream.engine.txn.scheduler.struct.og.OperationChain;
 import intellistream.morphstream.engine.txn.scheduler.struct.og.TaskPrecedenceGraph;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.MyList;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
@@ -30,10 +26,8 @@ import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
 
@@ -303,34 +297,34 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     private Operation constructOp(List<Operation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         Operation set_op;
-        Context targetContext = getTargetContext(request.write_key);
+        Context targetContext = getTargetContext(request.d_key);
         switch (request.accessType) {
             case WRITE_ONLY:
-                set_op = new Operation(false, null, request.write_key, request.table_name, null,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                set_op = new Operation(false, null, request.d_key, request.d_table, null,
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new Operation(false, null, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                set_op = new Operation(false, null, request.d_key, request.d_table, request.condition_records,
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case READ_WRITE_COND_READ:
             case READ_WRITE_COND_READN:
-                set_op = new Operation(false, null, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                set_op = new Operation(false, null, request.d_key, request.d_table, request.condition_records,
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case NON_READ_WRITE_COND_READN:
-                set_op = new Operation(true, request.tables, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                set_op = new Operation(true, request.tables, request.d_key, request.d_table, request.condition_records,
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case READ_WRITE_READ:
-                set_op = new Operation(false, null, request.write_key, request.table_name, null,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                set_op = new Operation(false, null, request.d_key, request.d_table, null,
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case WINDOWED_READ_ONLY:
                 WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
-                set_op = new Operation(false, null, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext, request.stateAccess);
+                set_op = new Operation(false, null, request.d_key, request.d_table, request.condition_records,
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");

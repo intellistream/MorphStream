@@ -55,8 +55,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            List<TableRecord> read_records, String[] stateAccess) {
-        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
+            List<TableRecord> read_records, String[] stateAccess, int d_fieldIndex, int[] condition_fieldIndexes) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey, d_fieldIndex, condition_fieldIndexes);
         this.context = context;
 
         ld_head_operation = null;
@@ -85,8 +85,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            List<TableRecord> read_records, WindowDescriptor windowContext, String[] stateAccess) {
-        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, windowContext, pKey);
+            List<TableRecord> read_records, WindowDescriptor windowContext, String[] stateAccess, int d_fieldIndex, int[] condition_fieldIndexes) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, windowContext, pKey, d_fieldIndex, condition_fieldIndexes);
         this.context = context;
 
         ld_head_operation = null;
@@ -115,8 +115,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
                                                           String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                           CommonMetaTypes.AccessType accessType, TableRecord record,
-                                                          List<TableRecord> read_records, String[] stateAccess) {
-        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
+                                                          List<TableRecord> read_records, String[] stateAccess, int d_fieldIndex, int[] condition_fieldIndexes) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey, d_fieldIndex, condition_fieldIndexes);
         this.context = context;
         this.isNonDeterministicOperation = isNonDeterministicOperation;
         this.tables = tables;

@@ -10,67 +10,71 @@ import java.util.List;
 public class Request {
     public final TxnContext txn_context;
     public final CommonMetaTypes.AccessType accessType;
-    public final String table_name;
-    public final String write_key;
+    public final String d_table;
+    public final String d_key;
+    public final int d_fieldIndex;
     public final TableRecord d_record;
     public final String[] stateAccess;
     public final String[] condition_tables;
     public final String[] condition_keys;
+    public final int[] condition_fieldIndexes;
     public final List<TableRecord> condition_records;
     public BaseTable[] tables;
 
     public Request(String[] stateAccess) {
-        this(null, null, null, stateAccess);
+        this(null, null, null, null, stateAccess);
     }
 
     //READY ONLY
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
-                   String table_name, String[] stateAccess) {
-        this(txn_context, null, accessType, table_name, null, null, null, null, null, stateAccess);
+                   String d_table, Integer d_fieldIndex, String[] stateAccess) {
+        this(txn_context, null, accessType, d_table, null, d_fieldIndex, null, null, null, null, null, stateAccess);
     }
 
     //no column id
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
-                   String table_name,
-                   String write_key,
-                   TableRecord d_record,
+                   String d_table,
+                   String d_key,
+                   int d_fieldIndex, TableRecord d_record,
                    String[] condition_tables,
                    String[] condition_keys,
-                   List<TableRecord> condition_records,
+                   int[] condition_fieldIndexes, List<TableRecord> condition_records,
                    String[] stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, condition_tables, condition_keys, condition_records, stateAccess);
+        this(txn_context, null, accessType, d_table, d_key, d_fieldIndex, d_record, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess);
     }
 
     //no condition, no ref.
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
-                   String table_name,
-                   String write_key,
-                   TableRecord d_record,
+                   String d_table,
+                   String d_key,
+                   int d_fieldIndex, TableRecord d_record,
                    String[] stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, null, null, null, stateAccess);
+        this(txn_context, null, accessType, d_table, d_key, d_fieldIndex, d_record, null, null, null, null, stateAccess);
     }
 
     public Request(TxnContext txn_context,
                    BaseTable[] baseTable,
                    CommonMetaTypes.AccessType accessType,
-                   String table_name,
-                   String write_key,
-                   TableRecord d_record,
+                   String d_table,
+                   String d_key,
+                   int d_fieldIndex, TableRecord d_record,
                    String[] condition_tables,
                    String[] condition_keys,
-                   List<TableRecord> condition_records,
+                   int[] condition_fieldIndexes, List<TableRecord> condition_records,
                    String[] stateAccess) {
         this.txn_context = txn_context;
         this.accessType = accessType;
-        this.table_name = table_name;
-        this.write_key = write_key;
+        this.d_table = d_table;
+        this.d_key = d_key;
+        this.d_fieldIndex = d_fieldIndex;
         this.d_record = d_record; //record to write to (or read-from if txn only has one read request)
         this.stateAccess = stateAccess;
         this.condition_tables = condition_tables;
         this.condition_keys = condition_keys;
+        this.condition_fieldIndexes = condition_fieldIndexes;
         this.condition_records = condition_records; //records to read from in write operation
         this.tables = baseTable; //used for non-deter, allow null input
     }

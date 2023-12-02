@@ -25,10 +25,12 @@ public abstract class AbstractOperation {
     public final TxnContext txn_context;
     public final CommonMetaTypes.AccessType accessType;
     public final TableRecord d_record;
+    public final int d_fieldIndex;
     public final long bid;
     //required by READ_WRITE_and Condition.
     public final String pKey;
-    public volatile String[] stateAccess; //carries all schemaRecords involved
+    public volatile String[] stateAccess; //type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
+    public volatile int[] condition_fieldIndexes; //state objects' desired field indexes in tables
     public volatile List<TableRecord> condition_records;//client-defined record name -> TableRecord
     public boolean isCommit = true;//It means that this operation has been added to LoggingManager.
     //required by Write-ahead-logging, Dependency logging, LV logging.
@@ -36,13 +38,15 @@ public abstract class AbstractOperation {
     public WindowDescriptor windowContext;
 
     public AbstractOperation(String table_name, String[] stateAccess, List<TableRecord> condition_records,
-                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, WindowDescriptor windowContext, String pKey) {
+                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, WindowDescriptor windowContext, String pKey, int d_fieldIndex, int[] condition_fieldIndexes) {
         this.table_name = table_name;
         this.stateAccess = stateAccess;
         this.condition_records = condition_records;
+        this.condition_fieldIndexes = condition_fieldIndexes;
         this.txn_context = txn_context;
         this.accessType = accessType;
         this.d_record = d_record;
+        this.d_fieldIndex = d_fieldIndex;
         this.bid = bid;
         this.windowContext = windowContext;
         this.pKey = pKey;

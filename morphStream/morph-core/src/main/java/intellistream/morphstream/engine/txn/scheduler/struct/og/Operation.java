@@ -43,8 +43,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private OperationChain oc; // used for dependency resolved notification under greedy smart
 
     public <Context extends OGSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables, String pKey, String table_name, List<TableRecord> read_records,
-                                                          TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, Context context, WindowDescriptor windowDescriptor, String[] stateAccess) {
-        super(table_name, stateAccess, read_records, txn_context, accessType, d_record, bid, windowDescriptor, pKey);
+                                                          TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, Context context, WindowDescriptor windowDescriptor, String[] stateAccess, int d_fieldIndex, int[] condition_fieldIndexes) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, d_record, bid, windowDescriptor, pKey, d_fieldIndex, condition_fieldIndexes);
 
         // finctional dependencies, this should be concurrent because cross thread access
         fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance

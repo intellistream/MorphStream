@@ -8,28 +8,17 @@ import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
-import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.recovery.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.recovery.OperationChain;
 import intellistream.morphstream.engine.txn.scheduler.struct.recovery.TaskPrecedenceGraph;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.storage.datatype.DoubleDataBox;
-import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
-import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static intellistream.morphstream.common.constants.TPConstants.Constant.MAX_INT;
-import static intellistream.morphstream.common.constants.TPConstants.Constant.MAX_SPEED;
-import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType.*;
-import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
 import static intellistream.morphstream.util.FaultToleranceConstants.LOGOption_no;
 import static intellistream.morphstream.util.FaultToleranceConstants.LOGOption_path;
 
@@ -94,22 +83,22 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             Operation set_op;
             switch (request.accessType) {
                 case WRITE_ONLY:
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE_READ:
-                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess);
+                    set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
+                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 default:
                     throw new UnsupportedOperationException();
@@ -117,7 +106,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             OperationChain curOC = tpg.addOperationToChain(set_op);
             set_op.setTxnOpId(txnOpId++);
             if (request.condition_keys != null) {
-                inspectDependency(context.groupId, curOC, set_op, request.table_name, request.write_key, request.condition_tables, request.condition_keys);
+                inspectDependency(context.groupId, curOC, set_op, request.d_table, request.d_key, request.condition_tables, request.condition_keys);
             }
             MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         }

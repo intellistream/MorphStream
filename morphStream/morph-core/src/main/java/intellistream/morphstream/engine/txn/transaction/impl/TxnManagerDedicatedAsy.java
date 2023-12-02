@@ -1,8 +1,5 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
-import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.api.state.StateObject;
-import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
@@ -23,7 +20,6 @@ import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
 import intellistream.morphstream.engine.txn.storage.*;
-import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
@@ -216,17 +212,22 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public boolean Asy_WriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
+        // stateAccess: type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
 
         int recordNum = (stateAccess.length - 2) / 4;
         int writeIndex = Integer.parseInt(stateAccess[1]);
         List<TableRecord> condition_records = new ArrayList<>();
         String[] condition_tables = new String[recordNum];
         String[] condition_keys = new String[recordNum];
+        int[] condition_fieldIndexes = new int[recordNum];
 
         for (int i = 2; i < stateAccess.length; i += 4) {
             String table = stateAccess[i];
             String key = stateAccess[i + 1];
-            String field = stateAccess[i + 2]; //TODO: pass field index
+            int fieldIndex = Integer.parseInt(stateAccess[i + 2]);
+            condition_tables[(i-2)/4] = table;
+            condition_keys[(i-2)/4] = key;
+            condition_fieldIndexes[(i-2)/4] = fieldIndex;
             TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
             if (condition_record != null) {
                 condition_records.add(condition_record);
@@ -238,15 +239,15 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         String writeTable = stateAccess[writeIndex];
         String writeKey = stateAccess[writeIndex + 1];
-        String writeField = stateAccess[writeIndex + 2]; //TODO: Useful?
+        int writeFieldIndex = Integer.parseInt(stateAccess[writeIndex + 2]);
         TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
 
         if (enableGroup) {
             return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                    writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                    writeKey, writeFieldIndex, writeRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
         } else {
             return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                    writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                    writeKey, writeFieldIndex, writeRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
         }
     }
 

@@ -147,7 +147,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else {
             // FD
             if (request.condition_keys != null)
-                checkFD(oc, operation, request.table_name, request.write_key, request.condition_tables, request.condition_keys);
+                checkFD(oc, operation, request.d_table, request.d_key, request.condition_tables, request.condition_keys);
         }
     }
 

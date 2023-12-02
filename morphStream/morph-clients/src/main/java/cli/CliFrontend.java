@@ -97,7 +97,7 @@ public class CliFrontend {
         stateAccessTemplate[0] = type;
         RequestTemplates.saDataNameToIndex.put(stateAccessID, new HashMap<>());
         int templateIndex = 2;
-        int stateFieldIndex = 3; //index of field in saData, the first 3 are: saID, txnAbortFlag, saResult
+        int saIndex = 3; //indexes in saData, the first 3 are: saID, txnAbortFlag, saResult, the rest are all stateObject fields read from table
 
         for (String stateObjectID : stateObjectIDs) {
             String[] stateObjectTemplate = stateObjectTemplates.get(stateObjectID);
@@ -105,12 +105,12 @@ public class CliFrontend {
             stateAccessTemplate[templateIndex + 1] = stateObjectTemplate[1]; //key index in event
             stateAccessTemplate[templateIndex + 2] = stateObjectTemplate[2]; //field index in table
             stateAccessTemplate[templateIndex + 3] = stateObjectTemplate[3]; //state access type
-            RequestTemplates.saDataNameToIndex.get(stateAccessID).put(stateObjectID, stateFieldIndex);
+            RequestTemplates.saDataNameToIndex.get(stateAccessID).put(stateObjectID, saIndex);
             if (stateObjectTemplate[3].equals("WRITE")) {
-                stateAccessTemplate[1] = String.valueOf(templateIndex); //first index of writeStateObject's subarray in stateAccess array
+                stateAccessTemplate[1] = String.valueOf(templateIndex); //indicating this state object is to be written during state access
             }
             templateIndex += 4;
-            stateFieldIndex++;
+            saIndex++;
         }
         RequestTemplates.sharedSATemplates.put(stateAccessID, stateAccessTemplate);
     }
