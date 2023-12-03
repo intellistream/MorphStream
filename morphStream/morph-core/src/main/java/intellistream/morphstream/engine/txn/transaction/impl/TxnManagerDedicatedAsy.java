@@ -212,22 +212,22 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public boolean Asy_WriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        // stateAccess: type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
+        // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
 
-        int recordNum = (stateAccess.length - 2) / 4;
-        int writeIndex = Integer.parseInt(stateAccess[1]);
+        int recordNum = (stateAccess.length - 3) / 4;
+        int writeStateIndex = Integer.parseInt(stateAccess[2]);
         List<TableRecord> condition_records = new ArrayList<>();
         String[] condition_tables = new String[recordNum];
         String[] condition_keys = new String[recordNum];
         int[] condition_fieldIndexes = new int[recordNum];
 
-        for (int i = 2; i < stateAccess.length; i += 4) {
+        for (int i = 3; i < stateAccess.length; i += 4) {
             String table = stateAccess[i];
             String key = stateAccess[i + 1];
             int fieldIndex = Integer.parseInt(stateAccess[i + 2]);
-            condition_tables[(i-2)/4] = table;
-            condition_keys[(i-2)/4] = key;
-            condition_fieldIndexes[(i-2)/4] = fieldIndex;
+            condition_tables[(i-3)/4] = table;
+            condition_keys[(i-3)/4] = key;
+            condition_fieldIndexes[(i-3)/4] = fieldIndex;
             TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
             if (condition_record != null) {
                 condition_records.add(condition_record);
@@ -237,9 +237,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             }
         }
 
-        String writeTable = stateAccess[writeIndex];
-        String writeKey = stateAccess[writeIndex + 1];
-        int writeFieldIndex = Integer.parseInt(stateAccess[writeIndex + 2]);
+        String writeTable = stateAccess[writeStateIndex];
+        String writeKey = stateAccess[writeStateIndex + 1];
+        int writeFieldIndex = Integer.parseInt(stateAccess[writeStateIndex + 2]);
         TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
 
         if (enableGroup) {

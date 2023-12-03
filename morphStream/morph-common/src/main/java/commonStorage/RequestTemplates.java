@@ -15,9 +15,10 @@ public class RequestTemplates {
      * Maps stateAccessID to stateAccessTemplate
      * Key: stateAccessID, Value: stateAccessTemplate
      * Each stateAccessTemplate is a String array of:
-     * --> 0: stateAccessType
-     * --> 1: writeObjIndex (which stateObject to write in stateObjectTemplateArray)
-     * --> 2 onwards: stateObjectTemplateArray, each stateObjectTemplate consists of four elements:
+     * --> 0: stateAccessID
+     * --> 1: stateAccessType
+     * --> 2: writeObjIndex (which stateObject to write in stateObjectTemplateArray)
+     * --> 3 onwards: stateObjectTemplateArray, each stateObjectTemplate consists of four elements:
      * --> --> table name, key index (which key in input pkt), field index (which field in table), state access type (READ/WRITE)
      */
     public static HashMap<String, String[]> sharedSATemplates = new HashMap<>(); //state access -> state access objects

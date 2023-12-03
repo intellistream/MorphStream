@@ -101,12 +101,12 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             String[] stateAccess = saTemplates.get(saID).clone();
 
             // Pass event data (value of key) to state access
-            for (int i = 2; i < stateAccess.length; i += 4) {
+            for (int i = 3; i < stateAccess.length; i += 4) {
                 String tableName = stateAccess[i];
                 String keyIndex = stateAccess[i + 1];
                 String key = event.getKey(tableName, Integer.parseInt(keyIndex));
                 stateAccess[i + 1] = key;
-                // stateAccess: type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
+                // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
             }
             // txn-UDF and post-UDF needs a shared data structure to pass txn results to post-UDF. TODO: Improve this
 //            eventStateAccessesMap.get(event.getBid()).put(saID, stateAccess);

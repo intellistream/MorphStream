@@ -93,10 +93,11 @@ public class CliFrontend {
 
     public void registerStateAccess(String stateAccessID, String[] stateObjectIDs, String[] valueNames, String type) {
 
-        String[] stateAccessTemplate = new String[2 + stateObjectIDs.length * 4]; //saType, writeKeyIndex, N*[tableName, keyIndex, fieldIndex, saType]
+        String[] stateAccessTemplate = new String[2 + stateObjectIDs.length * 4]; //saID, saType, writeKeyIndex, N*[tableName, keyIndex, fieldIndex, saType]
         stateAccessTemplate[0] = type;
+        stateAccessTemplate[1] = stateAccessID;
         RequestTemplates.saDataNameToIndex.put(stateAccessID, new HashMap<>());
-        int templateIndex = 2;
+        int templateIndex = 3;
         int saIndex = 3; //indexes in saData, the first 3 are: saID, txnAbortFlag, saResult, the rest are all stateObject fields read from table
 
         for (String stateObjectID : stateObjectIDs) {
@@ -107,7 +108,7 @@ public class CliFrontend {
             stateAccessTemplate[templateIndex + 3] = stateObjectTemplate[3]; //state access type
             RequestTemplates.saDataNameToIndex.get(stateAccessID).put(stateObjectID, saIndex);
             if (stateObjectTemplate[3].equals("WRITE")) {
-                stateAccessTemplate[1] = String.valueOf(templateIndex); //indicating this state object is to be written during state access
+                stateAccessTemplate[2] = String.valueOf(templateIndex); //indicating this state object is to be written during state access
             }
             templateIndex += 4;
             saIndex++;
