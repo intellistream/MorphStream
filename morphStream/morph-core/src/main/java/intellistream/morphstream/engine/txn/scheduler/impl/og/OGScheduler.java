@@ -76,7 +76,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
 
-    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
         INITIALIZE(context);
 
@@ -85,7 +85,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            PROCESS(context, mark_ID, batchID);
+            PROCESS(context, mark_ID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
@@ -166,7 +166,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID, int batchID) {
+    public void PROCESS(Context context, long mark_ID) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
         OperationChain next = next(context);
@@ -274,7 +274,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     @Override
-    public void TxnSubmitFinished(Context context, int batchID) {
+    public void TxnSubmitFinished(Context context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<Operation> operationGraph = new ArrayList<>();

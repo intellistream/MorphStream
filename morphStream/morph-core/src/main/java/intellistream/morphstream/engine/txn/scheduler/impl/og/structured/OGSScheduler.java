@@ -75,12 +75,12 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 //    }
 
     @Override
-    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         INITIALIZE(context);
 
         do {
             EXPLORE(context);
-            PROCESS(context, mark_ID, batchID);
+            PROCESS(context, mark_ID);
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
@@ -90,7 +90,7 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
             REINITIALIZE(context);
             do {
                 EXPLORE(context);
-                PROCESS(context, mark_ID, batchID);
+                PROCESS(context, mark_ID);
             } while (!FINISHED(context));
         }
         RESET(context);

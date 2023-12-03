@@ -10,6 +10,7 @@ import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.api.operator.spout.ApplicationSpout;
 import intellistream.morphstream.api.operator.spout.ApplicationSpoutCombo;
+import intellistream.morphstream.api.operator.spout.SACombo;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.grouping.Grouping;
@@ -53,9 +54,9 @@ public class CliFrontend {
         this.appName = appName;
     }
 
-    public void loadConfig() {
+    public void loadConfig(String[] args) {
         try {
-            LoadConfiguration(null, null);
+            LoadConfiguration(null, args);
             prepare();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -93,7 +94,7 @@ public class CliFrontend {
 
     public void registerStateAccess(String stateAccessID, String[] stateObjectIDs, String[] valueNames, String type) {
 
-        String[] stateAccessTemplate = new String[2 + stateObjectIDs.length * 4]; //saID, saType, writeKeyIndex, N*[tableName, keyIndex, fieldIndex, saType]
+        String[] stateAccessTemplate = new String[3 + stateObjectIDs.length * 4]; //saID, saType, writeKeyIndex, N*[tableName, keyIndex, fieldIndex, saType]
         stateAccessTemplate[0] = type;
         stateAccessTemplate[1] = stateAccessID;
         RequestTemplates.saDataNameToIndex.put(stateAccessID, new HashMap<>());
@@ -126,8 +127,11 @@ public class CliFrontend {
     public void registerOperator(String operatorID, String[] txnIDs, int stage, int parallelism) {
         RequestTemplates.sharedOperatorTemplates.put(operatorID, txnIDs);
         try {
-            AbstractBolt bolt = setBolt(operatorID, parallelism, stage);
-            boltMap.put(operatorID, bolt);
+//            AbstractBolt bolt = setBolt(operatorID, parallelism, stage);
+//            boltMap.put(operatorID, bolt); //TODO: Extract bolt logic from SASpout for optimization
+            SACombo operator = new SACombo(operatorID);
+            env.setSpout(operatorID, operator, parallelism);
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

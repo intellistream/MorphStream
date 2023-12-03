@@ -2,7 +2,6 @@ package intellistream.morphstream.api.input;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.CONTROL;
 
 import java.io.BufferedReader;
@@ -24,16 +23,18 @@ public class InputSource {
     private InputSourceType inputSourceType; //from file or streaming
 //    private static int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
-    //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
-    private final ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
+    private final ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> executorInputQueues; //round-robin input queues for each executor (combo/bolt)
     private int bid;
+    private int spoutNum;
+    private int rrIndex = 0; //round-robin index for distributing input data to executor queues
     private boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     public enum InputSourceType {
         FILE_STRING,
         FILE_JSON,
         KAFKA,
         HTTP,
-        WEBSOCKET
+        WEBSOCKET,
+        JNI
     }
 
     public static InputSource get() {
@@ -41,7 +42,7 @@ public class InputSource {
     }
 
     public InputSource() {
-        this.inputQueues = new ConcurrentHashMap<>();
+        this.executorInputQueues = new ConcurrentHashMap<>();
         this.bid = 0;
     }
 
@@ -49,35 +50,48 @@ public class InputSource {
 //        int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
         int spoutNum = 4;
         for (int i = 0; i < spoutNum; i++) {
-            BlockingQueue<TransactionalEvent> inputQueue = inputQueues.get(i);
+            BlockingQueue<TransactionalEvent> inputQueue = executorInputQueues.get(i);
             inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));
         }
     }
 
     /**
-     * For InputSource from file, once file path is specified, automatically convert all lines into TransactionalEvents
+     * Receives input data from streaming source (e.g., JNI) and round-robin inserts data into executor input queues
+     */
+    public void insertInputData(String input) {
+        executorInputQueues.get(rrIndex).add(inputFromStringToTxnEvent(input));
+        rrIndex = (rrIndex + 1) % spoutNum;
+    }
+
+    /**
+     * Handles initialization and data insertion for InputSource from static file
      */
     public void initialize(String staticFilePath, InputSourceType inputSourceType, int spoutNum) throws IOException {
         this.staticFilePath = staticFilePath;
         this.inputSourceType = inputSourceType;
-        BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));
-        String input;
+        this.spoutNum = spoutNum;
         for (int i = 0; i < spoutNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
-            this.inputQueues.put(i, inputQueue);
+            this.executorInputQueues.put(i, inputQueue);
         }
-        int index = 0;
-        while ((input = csvReader.readLine()) != null) {
-            if (this.inputSourceType == InputSourceType.FILE_STRING)
-                inputQueues.get(index).add(inputFromStringToTxnEvent(input));
-            else if (this.inputSourceType == InputSourceType.FILE_JSON)
-                inputQueues.get(index).add(inputFromJsonToTxnEvent(input));
-            index = (index + 1) % spoutNum;
+        if (this.inputSourceType == InputSourceType.FILE_STRING || this.inputSourceType == InputSourceType.FILE_JSON) {
+            BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));
+            String input;
+            int index = 0;
+            while ((input = csvReader.readLine()) != null) {
+                if (this.inputSourceType == InputSourceType.FILE_STRING)
+                    executorInputQueues.get(index).add(inputFromStringToTxnEvent(input));
+                else if (this.inputSourceType == InputSourceType.FILE_JSON)
+                    executorInputQueues.get(index).add(inputFromJsonToTxnEvent(input));
+                index = (index + 1) % spoutNum;
+            }
+        } else if (this.inputSourceType == InputSourceType.JNI) {
+            rrIndex = 0;
         }
     }
 
     public BlockingQueue<TransactionalEvent> getInputQueue(int spoutId) {
-        return this.inputQueues.get(spoutId);
+        return this.executorInputQueues.get(spoutId);
     }
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {

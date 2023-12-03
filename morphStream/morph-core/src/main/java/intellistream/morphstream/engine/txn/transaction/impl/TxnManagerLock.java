@@ -60,7 +60,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txnContext, int batchID) {
+    public boolean CommitTransaction(TxnContext txnContext) {
         // release locks.
         for (int i = 0; i < access_list_.access_count_; ++i) {
             TxnAccess.Access access_ptr = access_list_.GetAccess(i);

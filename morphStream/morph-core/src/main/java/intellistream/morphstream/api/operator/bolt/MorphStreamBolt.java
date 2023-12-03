@@ -13,7 +13,6 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import libVNFFrontend.NativeInterface;
-import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,10 +35,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private int currentBatchID = 1; //batchID starts from 1
-    private final SynchronizedDescriptiveStatistics latencyStat = new SynchronizedDescriptiveStatistics(); //latency statistics of current batch
-    private long batchStartTime = 0; //Timestamp of the first event in the current batch
-    private boolean isNewBatch = true; //Whether the input event indicates a new batch
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
 
     public MorphStreamBolt(String id, int fid) {
@@ -62,9 +57,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
-        RuntimeMonitor.get().PREPARE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_EXECUTE(in);
-        RuntimeMonitor.get().ACC_PREPARE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_TXN_PROCESS(_bid);
     }
 
@@ -80,7 +73,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
-        RuntimeMonitor.get().PRE_EXE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = (TransactionalEvent) input_event;
@@ -88,7 +80,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 event.setOperationTimestamp(operatorTimestamp);
             }
             Transaction_Request_Construct(event, txnContext);
-            RuntimeMonitor.get().ACC_PRE_EXE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         }
     }
 
@@ -113,7 +104,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }
 
-        transactionManager.CommitTransaction(txnContext, currentBatchID);
+        transactionManager.CommitTransaction(txnContext);
         eventQueue.add(event);
     }
 
@@ -135,9 +126,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                         udfResultReflect = new Result();
                         //TODO: Pass txn result to post UDF
 //                        udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
-                    }
-                    if (enable_latency_measurement) {
-                        latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
                     }
                     if (!isCombo) {
                         assert udfResultReflect != null;
@@ -168,38 +156,17 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
             { // state access
-                transactionManager.start_evaluate(this.getOperatorID(), currentBatchID, numEvents, thread_Id, in.getBID());
+                transactionManager.start_evaluate(this.getOperatorID(), numEvents, thread_Id, in.getBID());
             }
             { // post-processing
-                RuntimeMonitor.get().POST_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
                 Transaction_Post_Process();
-                RuntimeMonitor.get().POST_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
-            }
-            if (enable_latency_measurement) {
-                isNewBatch = true;
-                RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
-                latencyStat.clear();
             }
             eventQueue.clear();
             eventStateAccessesMap.clear();
-            RuntimeMonitor.get().END_TOTAL_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
-            currentBatchID += 1;
             if (isCombo) {
                 sink.execute(in);
             }
-            if (Objects.equals(in.getMarker().getMessage(), "pause")) { //TODO: Call stage.SOURCE_CONTROL to perform the following operations
-//                SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
-//                SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
-//                getContext().stop_running();
-            }
-//            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, numEvents); //TODO: Double confirm for FT measurement
         } else {
-            if (enable_latency_measurement) {
-                if (isNewBatch) { //only executed by 1st event in a batch
-                    isNewBatch = false;
-                    batchStartTime = System.nanoTime();
-                }
-            }
             execute_ts_normal(in);
         }
     }

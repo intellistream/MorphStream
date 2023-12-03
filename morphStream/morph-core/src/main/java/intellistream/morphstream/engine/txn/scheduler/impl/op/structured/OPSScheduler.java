@@ -40,14 +40,14 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
     }
 
     @Override
-    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 
         INITIALIZE(context);
 
         do {
             EXPLORE(context);
-            PROCESS(context, mark_ID, batchID);
+            PROCESS(context, mark_ID);
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
@@ -60,7 +60,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
             do {
                 EXPLORE(context);
                 MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-                PROCESS(context, mark_ID, batchID);
+                PROCESS(context, mark_ID);
             } while (!FINISHED(context));
         }
         RESET(context);
@@ -104,7 +104,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID, int batchID) {
+    public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -126,7 +126,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
 //        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            execute(operation, mark_ID, false, batchID);
+            execute(operation, mark_ID, false);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 

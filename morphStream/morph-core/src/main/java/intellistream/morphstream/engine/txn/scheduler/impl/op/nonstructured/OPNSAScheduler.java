@@ -59,7 +59,7 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID, int batchID) {
+    public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -80,7 +80,7 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
 
         for (Operation operation : context.batchedOperations) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            execute(operation, mark_ID, false, batchID);
+            execute(operation, mark_ID, false);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 

@@ -153,7 +153,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
+    public boolean CommitTransaction(TxnContext txn_context) {
         boolean is_success = true;
         long certify_count = 0;// count number of certify locks.
 

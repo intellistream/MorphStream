@@ -41,7 +41,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
     @Override
-    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 
         INITIALIZE(context);
@@ -52,7 +52,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            PROCESS(context, mark_ID, batchID);
+            PROCESS(context, mark_ID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
@@ -69,7 +69,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
                 EXPLORE(context);
 //                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
                 MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-                PROCESS(context, mark_ID, batchID);
+                PROCESS(context, mark_ID);
 //                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             } while (!FINISHED(context));
@@ -103,7 +103,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID, int batchID) {
+    public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -124,7 +124,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 
         for (Operation operation : context.batchedOperations) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            execute(operation, mark_ID, false, batchID);
+            execute(operation, mark_ID, false);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 

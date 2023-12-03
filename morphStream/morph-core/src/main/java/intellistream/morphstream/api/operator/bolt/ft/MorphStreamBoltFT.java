@@ -150,7 +150,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }
 
-        transactionManager.CommitTransaction(txnContext, currentBatchID);
+        transactionManager.CommitTransaction(txnContext);
         eventQueue.add(event);
     }
 
@@ -196,7 +196,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
             {
-                transactionManager.start_evaluate(this.getOperatorID(), currentBatchID, numEvents, thread_Id, in.getBID());
+                transactionManager.start_evaluate(this.getOperatorID(), numEvents, thread_Id, in.getBID());
                 if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
                     BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                     this.db.asyncSnapshot(in.getMarker().getSnapshotId(), this.thread_Id, this.ftManager);

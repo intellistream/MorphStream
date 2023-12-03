@@ -15,7 +15,6 @@ import intellistream.morphstream.engine.txn.durability.struct.Logging.Dependency
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LVCLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.NativeCommandLog;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
-import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.op.OPSchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
@@ -27,14 +26,11 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
-import communication.dao.TPGEdge;
-import communication.dao.TPGNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
-import static intellistream.morphstream.configuration.CONTROL.enable_latency_measurement;
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
 
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
@@ -88,9 +84,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
      * @param operation
      * @param mark_ID
      * @param clean
-     * @param batchID
      */
-    public void execute(Operation operation, long mark_ID, boolean clean, int batchID) {
+    public void execute(Operation operation, long mark_ID, boolean clean) {
         // if the operation is in state aborted or committable or committed, we can bypass the execution
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED) || operation.isFailed.get()) {
             if (operation.isNonDeterministicOperation && operation.deterministicRecords != null) {
@@ -194,7 +189,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     @Override
-    public void TxnSubmitFinished(Context context, int batchID) {
+    public void TxnSubmitFinished(Context context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         int txnOpId = 0;
@@ -253,7 +248,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     protected abstract void NOTIFY(Operation operation, Context context);
 
-    public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 
         INITIALIZE(context);
@@ -263,7 +258,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            PROCESS(context, mark_ID, batchID);
+            PROCESS(context, mark_ID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));

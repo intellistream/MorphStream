@@ -78,7 +78,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         return commit_ts;
     }
 
-    public void start_evaluate(String operatorID, int batchID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(String operatorID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
 
@@ -190,7 +190,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
-    public abstract boolean CommitTransaction(TxnContext txn_context, int batchID);
+    public abstract boolean CommitTransaction(TxnContext txn_context);
 
     @Override
     public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) {

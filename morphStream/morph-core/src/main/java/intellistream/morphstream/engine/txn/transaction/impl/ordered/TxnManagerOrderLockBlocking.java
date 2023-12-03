@@ -177,7 +177,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
+    public boolean CommitTransaction(TxnContext txn_context) {
 //		long curr_epoch = Epoch.GetEpoch();
         long commit_ts = txn_context.getBID();//This makes the execution appears to execute at one atomic time unit. //GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
         for (int i = 0; i < access_list_.access_count_; ++i) {

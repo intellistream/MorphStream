@@ -45,7 +45,7 @@ public class FastSLClient extends Client {
 
     public static void main(String[] args) throws Exception {
         CliFrontend fastSLClient = new CliFrontend("FastSLClient");
-        fastSLClient.loadConfig();
+        fastSLClient.loadConfig(args);
 
         fastSLClient.registerStateObject("srcAccountState", "accounts", 0, 1, "WRITE");
         fastSLClient.registerStateObject("destAccountState", "accounts", 0, 1, "WRITE");

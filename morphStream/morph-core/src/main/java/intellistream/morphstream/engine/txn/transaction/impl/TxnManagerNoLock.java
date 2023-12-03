@@ -37,7 +37,7 @@ public class TxnManagerNoLock extends TxnManagerLock {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txnContext, int batchID) {
+    public boolean CommitTransaction(TxnContext txnContext) {
 //        for (int i = 0; i < access_list_.access_count_; ++i) {
 //            Access access_ptr = access_list_.GetAccess(i);
 //            if (access_ptr.access_type_ == READ_ONLY) {
