@@ -155,7 +155,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     @Override
     public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
-        String accessType = stateAccess[0];
+        String accessType = stateAccess[1];
         if (accessType == "READ") {
             return Asy_ReadRecord(stateAccess, txnContext);
         } else if (accessType == "WRITE") {

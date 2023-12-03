@@ -12,10 +12,9 @@ public class FastSLClient extends Client {
     /**
      * saData contains:
      * 0: saID
-     * 1: saType
-     * 2: txnAbortFlag
-     * 3: saResult
-     * 4 onwards: stateObj1's field (each stateObj specifies 1 field of 1 TableRecord, assume txnData already contains retrieved field)
+     * 1: txnAbortFlag
+     * 2: saResult
+     * 3 onwards: stateObj1's field (each stateObj specifies 1 field of 1 TableRecord, assume txnData already contains retrieved field)
      * ...
      */
     public String[] execute_txn_udf(String saID, String[] saData) {
@@ -24,7 +23,7 @@ public class FastSLClient extends Client {
             if (srcBalance > 100) {
                 setDoubleField("srcAccountBalance", srcBalance - 100, saData);
             } else {
-                abortTxn(saData);
+                abortTxn(saData); //an example of abort txn at application-level
             }
         } else if (saID == "destTransfer") {
             double srcBalance = getDoubleField("srcAccountBalance", saData);
@@ -47,10 +46,10 @@ public class FastSLClient extends Client {
         CliFrontend fastSLClient = new CliFrontend("FastSLClient");
         fastSLClient.loadConfig(args);
 
-        fastSLClient.registerStateObject("srcAccountState", "accounts", 0, 1, "WRITE");
-        fastSLClient.registerStateObject("destAccountState", "accounts", 0, 1, "WRITE");
-        String[] srcTransferStateObjs = {"srcAccountState"};
-        String[] destTransferStateObjs = {"srcAccountState", "destAccountState"};
+        fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
+        fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");
+        String[] srcTransferStateObjs = {"srcAccountBalance"};
+        String[] destTransferStateObjs = {"srcAccountBalance", "destAccountBalance"};
 
         fastSLClient.registerStateAccess("srcTransfer", srcTransferStateObjs, null, "WRITE");
         fastSLClient.registerStateAccess("destTransfer", destTransferStateObjs, null, "WRITE");

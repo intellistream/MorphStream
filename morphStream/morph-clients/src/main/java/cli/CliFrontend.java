@@ -78,14 +78,12 @@ public class CliFrontend {
         return Double.parseDouble(txnData[readFieldIndex]);
     }
 
-    public static void setDoubleField(String stateObjID, double value, String[] txnData) {
-        String saID = txnData[0];
-        int writeFieldIndex = RequestTemplates.saDataNameToIndex.get(saID).get(stateObjID);
-        txnData[writeFieldIndex] = Double.toString(value);
+    public static void setDoubleField(String stateObjID, double value, String[] saData) {
+        saData[2] = Double.toString(value);
     }
 
     public static void abortTxn(String[] txnData) {
-        txnData[1] = "false";
+        txnData[1] = "true";
     }
 
     public void registerStateObject(String stateObjID, String stateID, int keyIndexInEvent, int fieldTableIndex, String type) {
@@ -95,8 +93,8 @@ public class CliFrontend {
     public void registerStateAccess(String stateAccessID, String[] stateObjectIDs, String[] valueNames, String type) {
 
         String[] stateAccessTemplate = new String[3 + stateObjectIDs.length * 4]; //saID, saType, writeKeyIndex, N*[tableName, keyIndex, fieldIndex, saType]
-        stateAccessTemplate[0] = type;
-        stateAccessTemplate[1] = stateAccessID;
+        stateAccessTemplate[0] = stateAccessID;
+        stateAccessTemplate[1] = type;
         RequestTemplates.saDataNameToIndex.put(stateAccessID, new HashMap<>());
         int templateIndex = 3;
         int saIndex = 3; //indexes in saData, the first 3 are: saID, txnAbortFlag, saResult, the rest are all stateObject fields read from table

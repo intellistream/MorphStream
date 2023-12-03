@@ -110,9 +110,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         int saIndex = 3;
         for (TableRecord tableRecord : operation.condition_records) {
-            int stateFieldIndex = (saIndex - 3) * 4 + 3;
+            int stateFieldIndex = Integer.parseInt(operation.stateAccess[3 + (saIndex - 3) * 4 + 2]);
             SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
-            saData[saIndex] = readRecord.getValues().get(stateFieldIndex).getString();
+            saData[saIndex] = String.valueOf(readRecord.getValues().get(stateFieldIndex).getDouble());
             saIndex++;
         }
 
@@ -132,7 +132,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         }
 
-        if (saData[1] != "aborted") {
+        if (saData[1] == "false") { //txn is not aborted
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
@@ -149,9 +149,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             operation.stateAccess[1] = "true"; //pass isAbort back to bolt
             operation.isFailed.set(true);
         }
-        /**
-         * End of newly defined txn execution logic
-        */
 
         commitLog(operation);
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
