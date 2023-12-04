@@ -1,5 +1,7 @@
 package libVNFFrontend;
 
+import java.util.HashMap;
+
 public class NativeInterface {
 
     //TODO: This native interface is copied from MorphStream & libVNF integration, modify it to fit OpenNFController's needs:
@@ -20,6 +22,9 @@ public class NativeInterface {
 
     // Native method declaration for __handle_done
     public static native int __txn_finished(long txnID); //TODO: This should be txnID (or packet ID)
+
+    public static native void __process_packet(String instanceID, String packet); //OpenNF controller calls libVNF instance to process the packet
+    public static native HashMap<String, String> __get_instance_state(String instanceID); //TODO: OpenNF controller enters state-sharing mode and get latest states from instances
 
     // Load the native library when the class is initialized
     static {

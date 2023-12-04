@@ -2,29 +2,50 @@ import libVNFFrontend.NativeInterface;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class OpenNFController implements Runnable {
-    //TODO: OpenNF controller should stay alive, waiting for packets.
+    //FlowID: (srcIP, destIP, srcPort, destPort, protocol), each flow of packets is mapped to a dedicated instance
+    private HashMap<String, HashMap<String, String[]>> forwardingTable; // VNF ID -> (flow ID -> instance ID under the VNF) because VNFs have different levels of parallelism
+    private HashMap<String, ArrayDeque<String>> packetQueues; // Each VNF has a packet queue
+    private BlockingQueue<String> pktSignalQueue; //which VNF receives a new packet
 
-    private HashMap<String, String[]> forwardingTable; // Synchronized with input source, maps packet's flowID to the instanceIDs of all instances sharing that flow
+    // SFC: input source -> (controller) -> VNF1 -> (controller) -> VNF2 -> (controller) -> VNF3 -> output
 
-    private ArrayDeque<String[]> eventQueue; // Paper Section 5.2.2 FIFO queue, receive packets directly from input source, datatype not sure
-
-    public void sendPktToController(String[] pkt) {
-        eventQueue.add(pkt);
+    //Initialized by libVNF
+    public OpenNFController(String[] vnfIDs, HashMap<String, HashMap<String, String[]>> forwardingTable) {
+        this.forwardingTable = forwardingTable;
+        packetQueues = new HashMap<>();
+        for (String vnfID : vnfIDs) {
+            packetQueues.put(vnfID, new ArrayDeque<>());
+        }
+        pktSignalQueue = new LinkedBlockingQueue<>();
     }
 
+    public void sendPktToController(String vnfID, String pkt) {
+        packetQueues.get(vnfID).add(pkt);
+        pktSignalQueue.add(vnfID);
+    }
+
+    /**
+     * Packet format: String -> String.split(",")
+     * 0 -> flowID
+     * 1 onwards -> stateIDs (optional)
+     * 2 onwards -> application-layer payload (optional)
+     * */
     public void run() {
-        while (true) {
-            if (eventQueue.isEmpty()) {
-                continue;
+        try {
+            while (true) {
+                String vnfID = pktSignalQueue.take();
+                String pkt = packetQueues.get(vnfID).poll();
+                String flowID = pkt.split(",")[0];
+                for (String instanceID : forwardingTable.get(vnfID).get(flowID)) {
+                    NativeInterface.__process_packet(instanceID, pkt);
+                }
             }
-            String[] pkt = eventQueue.poll();
-            String flowID = pkt[0];
-            for (String instanceID : forwardingTable.get(flowID)) {
-                //TODO: extract state update actions from packet and call corresponding packets to execute.
-            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
