@@ -4,6 +4,8 @@ import intellistream.morphstream.api.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+
 import static cli.CliFrontend.*;
 
 public class FastSLClient extends Client {
@@ -17,6 +19,58 @@ public class FastSLClient extends Client {
      * 3 onwards: stateObj1's field (each stateObj specifies 1 field of 1 TableRecord, assume txnData already contains retrieved field)
      * ...
      */
+    public byte[] execute_txn_udf(String saID, byte[] saBytes) {
+        String[] saData = decodeStringArray(saBytes);
+        if (saID == "srcTransfer") {
+            double srcBalance = getDoubleField("srcAccountBalance", saData);
+            if (srcBalance > 100) {
+                setDoubleField("srcAccountBalance", srcBalance - 100, saData);
+            } else {
+                abortTxn(saData); //an example of abort txn at application-level
+            }
+        } else if (saID == "destTransfer") {
+            double srcBalance = getDoubleField("srcAccountBalance", saData);
+            double destBalance = getDoubleField("destAccountBalance", saData);
+            if (srcBalance > 100) {
+                setDoubleField("destAccountBalance", destBalance + 100, saData);
+            } else {
+                abortTxn(saData);
+            }
+        } else if (saID == "deposit") {
+            double srcBalance = getDoubleField("srcAccountBalance", saData);
+            setDoubleField("srcAccountBalance", srcBalance + 100, saData);
+        } else {
+            abortTxn(saData);
+        }
+        return encodeStringArray(saData);
+    }
+
+    // Method to encode string array into byte stream (for testing)
+    public static byte[] encodeStringArray(String[] stringArray) {
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+            objectOutputStream.writeObject(stringArray);
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Method to decode byte stream into string array (for testing)
+    public static String[] decodeStringArray(byte[] bytes) {
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
+            Object object = objectInputStream.readObject();
+            if (object instanceof String[]) {
+                return (String[]) object;
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public String[] execute_txn_udf(String saID, String[] saData) {
         if (saID == "srcTransfer") {
             double srcBalance = getDoubleField("srcAccountBalance", saData);

@@ -8,7 +8,7 @@ public class NativeInterface {
     public native void __VNFThread(int argc, String[] argv);
 
     // Native method declaration for _callBack
-    public static native int _execute_txn_udf(String txnID, byte[] value, int length);
+    public static native byte[] _execute_txn_udf(String saID, byte[] value, int length);
 
     // Native method declaration for __handle_done
     public static native int __txn_finished(long txnID); //TODO: This should be txnID (or packet ID)

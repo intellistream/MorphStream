@@ -59,7 +59,7 @@ public class InputSource {
      * Receives input data from streaming source (e.g., JNI) and round-robin inserts data into executor input queues
      */
     public void insertInputData(String input) {
-        executorInputQueues.get(rrIndex).add(inputFromStringToTxnEvent(input));
+        executorInputQueues.get(rrIndex).add(packetToEvent(input));
         rrIndex = (rrIndex + 1) % spoutNum;
     }
 
@@ -171,6 +171,45 @@ public class InputSource {
             }
         } else {
             throw new UnsupportedOperationException("Unsupported input format: " + input);
+        }
+    }
+
+    /**
+     * Packet string format
+     * */
+    public TransactionalEvent packetToEvent(String packet) {
+        String[] inputArray = packet.split(";");
+        if (inputArray.length == 3) {
+
+            HashMap<String, List<String>> keyMap = new HashMap<>();
+            String [] keyMapPairs = inputArray[0].split(",");
+            for (String pair : keyMapPairs) {
+                List<String> keys = new ArrayList<>();
+                String[] keyMapPair = pair.split(":");
+                for (int j = 1; j < keyMapPair.length; j++) {
+                    keys.add(keyMapPair[j]);
+                }
+                keyMap.put(keyMapPair[0], keys);
+            }
+
+            String flag = inputArray[1]; //which txn to execute
+            String isAbort = inputArray[2]; //control whether to abort txn
+
+            TransactionalEvent txnEvent;
+            if (isAbort.equals("true")) {
+                txnEvent = new TransactionalEvent(this.bid, keyMap, null, null, flag, true);
+            } else {
+                txnEvent = new TransactionalEvent(this.bid, keyMap, null, null, flag, false);
+            }
+            if (createTimestampForEvent) {
+                txnEvent.setOriginTimestamp(System.nanoTime());
+            } else {
+                txnEvent.setOriginTimestamp(0L);
+            }
+            bid++; //bid only used for normal events, not control signals
+            return txnEvent;
+        } else {
+            throw new UnsupportedOperationException("Unsupported input format: " + packet);
         }
     }
 

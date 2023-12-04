@@ -26,10 +26,13 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
+import libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.io.*;
+import java.util.Objects;
 
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
 
@@ -104,7 +107,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         //stateAccess: saID, type, writeObjIndex, [table name, key's value, field index in table, access type] * N
         String[] saData = new String[3 + operation.condition_records.size()]; //saID, toAbort, saResult, <stateObj field value> * N
-        saData[0] = operation.stateAccess[0]; //determine which UDF to execute
+        saData[0] = operation.stateAccess[0]; //saID, determine which UDF to execute
         saData[1] = "false"; //toAbort
         saData[2] = ""; //saResult
 
@@ -117,14 +120,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         if (useNativeLib) {
-            log.info("Executing native txnUDF");
-            //TODO: Add support for byte stream optimization
+            byte[] saDataBytes = encodeStringArray(saData);
+            saDataBytes = NativeInterface._execute_txn_udf(operation.stateAccess[0], saDataBytes, saData.length);
+            saData = decodeStringArray(saDataBytes);
         } else {
             try {
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                 if (Client.class.isAssignableFrom(clientClass)) {
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                    saData = clientObj.execute_txn_udf(operation.stateAccess[0], saData);
+                    byte[] testBytes = encodeStringArray(saData);
+                    testBytes = clientObj.execute_txn_udf(operation.stateAccess[0], testBytes);
+                    saData = decodeStringArray(testBytes);
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                      InvocationTargetException | NoSuchMethodException e) {
@@ -132,12 +138,13 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         }
 
-        if (saData[1] == "false") { //txn is not aborted
+        assert saData != null;
+        if (Objects.equals(saData[1], "false")) { //txn is not aborted
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
                 //Update udf results to writeRecord
-                Double udfResult = Double.parseDouble(saData[2]); //TODO: Refine datatype transformation
+                double udfResult = Double.parseDouble(saData[2]); //TODO: Refine datatype transformation
                 SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(srcRecord);
                 tempo_record.getValues().get(1).setDouble(udfResult);
@@ -316,6 +323,32 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
         operation.isCommit = true;
         MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+    }
+
+    // Method to encode string array into byte stream
+    public static byte[] encodeStringArray(String[] stringArray) {
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+            objectOutputStream.writeObject(stringArray);
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Method to decode byte stream into string array
+    public static String[] decodeStringArray(byte[] bytes) {
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
+            Object object = objectInputStream.readObject();
+            if (object instanceof String[]) {
+                return (String[]) object;
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }
