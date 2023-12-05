@@ -1,8 +1,11 @@
 package cli;
 
 import intellistream.morphstream.api.Client;
+import intellistream.morphstream.common.io.ByteIO.InputWithDecompression.NativeDataInputView;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import libVNFFrontend.NativeInterface;
 
 import java.io.*;
 
@@ -75,6 +78,9 @@ public class FastSLClient extends Client {
         CliFrontend fastSLClient = new CliFrontend("FastSLClient");
         fastSLClient.loadConfig(args);
 
+        NativeInterface VNF_JNI = new NativeInterface();
+        String _ = VNF_JNI.__init_SFC(0, null);
+
         fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
         fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");
         String[] srcTransferStateObjs = {"srcAccountBalance"};
@@ -91,6 +97,13 @@ public class FastSLClient extends Client {
         String[] txnIDs = {"transfer", "deposit"};
 
         fastSLClient.registerOperator("fastSLClient", txnIDs, 0, 4);
+
+        Thread libVNFThread = new Thread(() -> {
+            VNF_JNI.__VNFThread(0, null);
+        });
+
+        // Start the thread
+        libVNFThread.start();
 
         fastSLClient.start();
     }
