@@ -45,7 +45,7 @@
 #include <fstream>
 #include <chrono>
 
-#include "cli_libVNFFrontend_Interface.h"
+#include "libVNFFrontend_NativeInterface.h"
 
 #include "datastore/dspackethandler.hpp"
 #include "json.hpp"

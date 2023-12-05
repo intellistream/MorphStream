@@ -1821,7 +1821,7 @@ int _callBack(uint64_t txnId, void * value, int length){
 
 // TODO. TO BE DEBUGGED.
 JNIEXPORT jstring 
-JNICALL Java_cli_libVNFFrontend_Interface__1_1init_1SFC
+JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
   (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
 
 		// Convert the jobjectArray to a char* array
@@ -1875,15 +1875,15 @@ JNICALL Java_cli_libVNFFrontend_Interface__1_1init_1SFC
 
 // Actual vnfs loop.
 JNIEXPORT void 
-JNICALL Java_cli_libVNFFrontend_Interface__1_1VNFThread
+JNICALL Java_libVNFFrontend_NativeInterface__1_1VNFThread
   (JNIEnv * env, jobject obj, jint c, jobjectArray v){
 	startEventLoop();
   }
 
 
 // The callback handling entrance.
-JNIEXPORT jint 
-JNICALL Java_cli_libVNFFrontend_Interface__1callBack
+JNIEXPORT jbyteArray 
+JNICALL Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf
   (JNIEnv * env, jobject obj, jlong saReqId_jni, jbyteArray value, jint length){
     // Save the value in ctx.
     uint64_t saReqId = static_cast<uint64_t>(saReqId_jni); 
@@ -1913,7 +1913,7 @@ JNICALL Java_cli_libVNFFrontend_Interface__1callBack
 
 // Report done.
 JNIEXPORT jint 
-JNICALL Java_cli_libVNFFrontend_Interface__1_1handle_1done
+JNICALL Java_libVNFFrontend_NativeInterface__1_1txn_1finished
   (JNIEnv * env, jobject obj, jlong saReqId_jni){
     uint64_t saReqId = static_cast<uint64_t>(saReqId_jni); 
     // Write to the fd to suggest done.
