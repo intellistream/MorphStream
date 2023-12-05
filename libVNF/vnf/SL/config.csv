@@ -1,0 +1,13 @@
+dataLocation,UDS
+backendServer,127.0.0.1:8080
+backendServer,127.0.0.1:8081
+bufferSize,128
+dataStoreThreshold,131072
+coreNumbers,1
+dataStoreSocketPath,/home/kailian/libVNF/vnf/tmp/
+dataStoreFileNames,1
+dataStoreIP,127.0.0.1
+dataStorePort,9090
+serverIP,127.0.0.1
+serverPort,8080
+reuseMode,1
