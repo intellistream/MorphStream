@@ -135,36 +135,6 @@ public class CliFrontend {
         }
     }
 
-    public void sendTxnRequest(int bid, String operatorID, String txnFlag,
-                               HashMap<String, List<String>> keyMap,
-                               HashMap<String, Object> valueMap,
-                               HashMap<String, String> valueTypeMap) {
-        TransactionalEvent event = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, txnFlag, false);
-        AbstractBolt bolt = boltMap.get(operatorID);
-        GeneralMsg generalMsg;
-        if (CONTROL.enable_latency_measurement)
-            generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-        else {
-            generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
-        }
-
-        //TODO: Initialize multiple txn request handler threads and identify them using sourceID below
-        Tuple tuple = new Tuple(bid, 0, null, generalMsg); //tuple.context is useless everywhere
-        try {
-            bolt.execute(tuple);
-            counter++;
-            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {
-                if (counter % punctuation_interval == 0) {
-                    Tuple marker = new Tuple(bid, 0, null, new Marker(DEFAULT_STREAM_ID, -1, bid, 0, "punctuation")); //myIteration is always 0
-                    bolt.execute(marker);
-                }
-            }
-        } catch (InterruptedException | DatabaseException | BrokenBarrierException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
 
     public boolean LoadConfiguration(String configPath, String[] args) throws IOException {
         if (configPath != null) {

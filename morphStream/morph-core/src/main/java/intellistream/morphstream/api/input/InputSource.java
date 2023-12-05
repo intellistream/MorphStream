@@ -58,8 +58,8 @@ public class InputSource {
     /**
      * Receives input data from streaming source (e.g., JNI) and round-robin inserts data into executor input queues
      */
-    public void insertInputData(String input) {
-        executorInputQueues.get(rrIndex).add(packetToEvent(input));
+    public void insertInputData(String input) { //TODO: Input should be txn request: key, (flag, isAbort)
+        executorInputQueues.get(rrIndex).add(inputFromStringToTxnEvent(input));
         rrIndex = (rrIndex + 1) % spoutNum;
     }
 
@@ -178,7 +178,7 @@ public class InputSource {
      * Packet string format
      * */
     public TransactionalEvent packetToEvent(String packet) {
-        String[] inputArray = packet.split(";");
+        String[] inputArray = packet.split(";"); //pkt: ;null;null
         if (inputArray.length == 3) {
 
             HashMap<String, List<String>> keyMap = new HashMap<>();

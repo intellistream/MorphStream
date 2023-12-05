@@ -12,6 +12,7 @@ public class OpenNFController implements Runnable {
     private BlockingQueue<String> pktSignalQueue; //which VNF receives a new packet
 
     // SFC: input source -> (controller) -> VNF1 -> (controller) -> VNF2 -> (controller) -> VNF3 -> output
+    // libVNF: instance local state storage + read/write state, listen to controller for new packet and state update actions, send processed packet to controller
 
     //Initialized by libVNF
     public OpenNFController(String[] vnfIDs, HashMap<String, HashMap<String, String[]>> forwardingTable) {
@@ -41,7 +42,7 @@ public class OpenNFController implements Runnable {
                 String pkt = packetQueues.get(vnfID).poll();
                 String flowID = pkt.split(",")[0];
                 for (String instanceID : forwardingTable.get(vnfID).get(flowID)) {
-                    NativeInterface.__process_packet(instanceID, pkt);
+                    NativeInterface.__process_packet(instanceID, pkt); //TODO: instance, state update action
                 }
             }
         } catch (InterruptedException e) {

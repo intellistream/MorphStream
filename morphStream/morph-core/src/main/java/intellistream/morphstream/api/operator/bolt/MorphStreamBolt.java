@@ -112,7 +112,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (useNativeLib) {
             for (TransactionalEvent event : eventQueue) {
-                NativeInterface.__txn_finished(event.getBid()); //Notify libVNF for txn completion
+                NativeInterface.__txn_finished(event.getBid()); //TODO: Notify libVNF for txn completion
             }
         } else {
             for (TransactionalEvent event : eventQueue) {

@@ -88,7 +88,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
     public int isDynamic = 0;
     @Parameter(names = {"--useNativeLib"}, description = "Use native library declared in c/c++")
-    public boolean useNativeLib = false;
+    public boolean useNativeLib = true;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
     public String schedulerPools = "OP_BFS_A,OP_BFS,OP_NS_A,OP_NS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")

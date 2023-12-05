@@ -71,31 +71,6 @@ public class FastSLClient extends Client {
         return null;
     }
 
-    public String[] execute_txn_udf(String saID, String[] saData) {
-        if (saID == "srcTransfer") {
-            double srcBalance = getDoubleField("srcAccountBalance", saData);
-            if (srcBalance > 100) {
-                setDoubleField("srcAccountBalance", srcBalance - 100, saData);
-            } else {
-                abortTxn(saData); //an example of abort txn at application-level
-            }
-        } else if (saID == "destTransfer") {
-            double srcBalance = getDoubleField("srcAccountBalance", saData);
-            double destBalance = getDoubleField("destAccountBalance", saData);
-            if (srcBalance > 100) {
-                setDoubleField("destAccountBalance", destBalance + 100, saData);
-            } else {
-                abortTxn(saData);
-            }
-        } else if (saID == "deposit") {
-            double srcBalance = getDoubleField("srcAccountBalance", saData);
-            setDoubleField("srcAccountBalance", srcBalance + 100, saData);
-        } else {
-            abortTxn(saData);
-        }
-        return saData;
-    }
-
     public static void main(String[] args) throws Exception {
         CliFrontend fastSLClient = new CliFrontend("FastSLClient");
         fastSLClient.loadConfig(args);
