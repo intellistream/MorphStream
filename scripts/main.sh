@@ -8,18 +8,18 @@
 # Stages: Setup, Compile, Run.
 
 # DIRS
-SCRIPT_DIR=${dirname "$0"}
+SCRIPT_DIR=$(pwd)
 BUILD_DIR=$SCRIPT_DIR/build
 TMP_DIR=$SCRIPT_DIR/tmp
-LIBVNF_DIR=$BASE_DIR/libVNF
-MORPH_DIR=$BASE_DIR/morphStream
+LIBVNF_DIR=$SCRIPT_DIR/libVNF
+MORPH_DIR=$SCRIPT_DIR/morphStream
 
 PROJ_DIR=$MORPH_DIR/morph-common/src/main/java
 INTERFACE_FILE=$PROJ_DIR/libVNFFrontend/NativeInterface.java
 HEADER=$LIBVNF_DIR/include
 
 # Executable
-CMAKE=$TMP_DIR/bin/cmake
+CMAKE=$TMP_DIR/cmake/bin/cmake
 
 # If you let script make the vm.
 VM_ISO=$TMP_DIR/ubuntu-18.04.1-live-server-amd64.iso
@@ -34,69 +34,83 @@ VM_DISK=$TMP_DIR/$VM_NAME.raw
 SCRIPT='./main'
 NEWVM='--new_vm'
 RUN='--run'
+HELP='--help'
+COMPILE_JNI='--compile_jni'
 COMPILE='--compile'
 KERNEL_BYPASS="--KENREL_BYPASS" 
 KERNEL_STACK="--KERNEL_STACK"
 
-USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable kernel to run the system. \n\t $RUN [$KENREL_STACK|$KENREL_BYPASS] to run the compiled system. \n\t $COMPILE [$KENREL_STACK|$KENREL_BYPASS] to set up the environment and compile. "
+USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable kernel to run the system. \n\t $RUN [$KERNEL_STACK|$KERNEL_BYPASS] to run the compiled system. \n\t $COMPILE [$KERNEL_STACK|$KERNEL_BYPASS] to set up the environment and compile. "
+
+compile_libVNF(){
+	# TODO. check if includes has been there.
+	# TODO. If needs kernel_bypass. remind to use kernel_bypass
+	if [ $# -ge 2 ] && [[ $2 == "$KERNEL_STACK" ]]; then
+		rm -dfr "$BUILD_DIR" &> /dev/null || true
+		mkdir "$BUILD_DIR" && cd "$BUILD_DIR"
+		$CMAKE "$LIBVNF_DIR" -DSTACK=KERNEL \
+			-DBACKEND_MORPH=True \
+			-DCMAKE_BUILD_TYPE=Debug \
+			-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
+		make -j4
+		make install && echo "Done: libVNF built and installed." 
+		exit 0
+	elif [ $# -ge 2 ] && [[ $2 == "$KERNEL_BYPASS" ]]; then 
+		local 
+	fi
+	exit 0
+}
+
+compile_jni_header(){
+	cd "$MORPH_DIR"
+	# TODO. Copy header file to dir.
+	javac -cp .:"$PROJ_DIR" -h "$HEADER" "$INTERFACE_FILE"
+	echo "JNI Header generated at $HEADER"
+}
+
+compile_morphStream(){
+	compile_jni_header
+	mvn -fn install -Dmaven.test.failure.ignore=false -DskipTests
+	# TODO. Copy header file to dir.
+}
+
+run(){
+	# Check if setup_kernel_bypass_stack and compiled. If not, do.
+	# Else just run the corresponding stack.
+	:
+}
+
+error_exit(){
+	echo "failed to compile. exit." 
+	exit 1
+}
+
+ynSelect(){
+	echo $1
+	read res 
+	if [[ $res == "y" ]]; then
+		return 0
+	elif [[ $res == "n" ]]; then 
+		return 1
+	else
+		return "$(ynSelect "$1")"
+	fi
+}
 
 check_environment(){
 	# Check the environment.
-	if [[ `uname -r | awk -F'-' '{print $1}'` != "4.15.0-213" ]]; then 
+	if [[ $(uname -r | awk -F'-' '{print $1}') != "4.15.0" ]]; then 
 		echo "Your system is not matching required kernel version 4.15.0-213."
 		echo "You are suggested to create a virtual machine.  Configure the script and use $SCRIPT $STARTVM to start." 
-		install_vm=`ynSelect "Install qualified ubuntu vm now? [y/n]"`
+		install_vm=$(ynSelect "Install qualified ubuntu vm now? [y/n]")
 		if [[ $install_vm == 0 ]]; then
 			new_vm
 		else
-			exit -1
+			exit 0
 		fi
 	fi
 	return 0
 }
-
-# Entry route.
-if [ $# == 0 ] ; then
-    echo $USAGE
-    exit -1;
-fi
-
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
-  exit -1
-fi
-
-case $1 in 
-	$NEWVM)
-		check_environment && echo "Your system already qualified. Use $SCRIPT $RUN to run."
-		exit 0
-		;;
-	$RUN)
-		echo "starting compiled DB4NFV system."
-		echo "to be done later."
-		check_environment
-		exit 0
-		;;
-	$COMPILE)
-		echo "starting compilation.."
-		check_environment || ( echo "failed. exit." && exit -1 )
-		if [ $# >= 2 && $2 == $KENREL_BYPASS ]; then
-			IS_KENREL_BYPASS=true
-		elif [ $# >= 2 && $2 == $KERNEL_STACK ]; then
-			IS_KENREL_BYPASS=false
-			# setup_kernel_stack
-		else 
-			echo $USAGE 
-			echo "failed. exit." 
-			exit -1
-		fi
-		setup
-		compile_morphStream
-		compile_libVNF
-		echo "Setup done"
-		exit 0;
-		;;
-esac
 
 new_vm(){
 	echo "creating new vm.."
@@ -107,6 +121,7 @@ new_vm(){
 	# Check if the VM is already running
 	running_machine=`ps -ef | grep "qemu" | grep "\-name $VM_NAME"`
 	if [[ -z $running_machine ]]; then
+		:
 	else
 		echo "VM is already running."
 		exit 1
@@ -130,12 +145,57 @@ new_vm(){
 	&& echo "create success. use vnc to get in and install." \
 	&& return 0
 
-	echo "new vm installation failed. exit."  && return -1
+	echo "new vm installation failed. exit."  && return 1
 }
 
-setup(){
+setup_normal() {
+	# Requiring manually installation of spdlog.
+	if [ -d "$HEADER/spdlog" ]; then
+		:
+	else
+		cd "$TMP_DIR"
+		git clone https://github.com/gabime/spdlog.git
+		cd spdlog && $CMAKE . && make
+		# apt spdlog version is too old.
+		if [[ -f include/spdlog.h ]]; then
+			mkdir $HEADER/spdlog
+			cp include/* "$HREADER"/spdlog
+		else
+			echo "spdlog build failed."
+			exit 1
+		fi
+	fi
+
+	if command -v java >/dev/null 2>&1 && java -version >/dev/null 2>&1; then
+		:
+	else
+		echo "java not installed."
+		exit 1
+	fi
+
+	# Check and install JAVA
+	if [[ -z $(echo $JAVA_HOME) ]]; then
+		export JAVA_HOME=$(java -XshowSettings:properties -version 2>&1 | grep java.home | awk '{print $3}')
+	fi
+
+	if [[ -f $JAVA_HOME/include/jni.h ]]; then
+		echo "Jni.h not found"
+		exit 1
+	else
+		echo "JNI in $JAVA_HOME/include/jni.h"
+	fi
+}
+
+# TODO.
+setup_kernel_stack(){
+	setup_normal || error_exit
+}
+
+# TODO.
+setup_kernel_bypass_stack(){
+	setup_normal || error_exit
 	# Setup gcc and use gcc version	
-	GCC_VERSION=`gcc --version | head -n 1 | awk '{print $4}'`
+	GCC_VERSION=$(gcc --version | head -n 1 | awk '{print $4}')
 	local DEPENDENCY="libdpdk-dev libnuma-dev librt-client-rest-perl libgmp-dev \
 	linux-headers-$(uname -r) \
 	build-essential \
@@ -147,7 +207,7 @@ setup(){
 	if [[ $GCC_VERSION != "7.5.0" ]]; then 
 	 	# TODO
 		echo "GCC version is not 7.5.0. exit"
-		exit -1
+		exit 1
 	fi
 
 	apt-get install -y $DEPENDENCY
@@ -156,6 +216,7 @@ setup(){
 
 	# TODO.
 	if [[ -f automake_1.16.1-4ubuntu6_all.deb ]]; then 
+		:
 	else
 		wget http://mirrors.kernel.org/ubuntu/pool/main/a/automake-1.16/automake_1.16.1-4ubuntu6_all.deb
 		apt install ./automake_1.16.1-4ubuntu6_all.deb
@@ -164,15 +225,17 @@ setup(){
 	# apt cmake is too old. We need a new one here.
 	# TODO.
 	if [[ -f $CMAKE ]]; then
+		:
 	else
 		wget https://github.com/Kitware/CMake/releases/download/v3.12.0/cmake-3.12.0-Linux-x86_64.sh
 		./cmake-3.12.0-Linux-x86_64.sh 
 	fi
 
 	if [[ -f $CMAKE ]]; then
+		:
 	else
 		echo "Cmake installation failed. Exit".
-		exit -1
+		exit 1
 	fi
 
 	echo "building mTCP.."
@@ -201,85 +264,59 @@ setup(){
 	if [[ -f include/mtcp_api.h ]]; then 
 		echo "mTCP building done."
 	fi
-
-	# Requiring manually installation of spdlog.
-	cd tmp
-	git clone https://github.com/gabime/spdlog.git
-	cd spdlog && $CMAKE . && make
-
-	# apt spdlog version is too old.
-	if [[ -f include/spdlog.h ]]; then
-		mkdir $HEADER/spdlog
-		cp include/* $HREADER/spdlog
-	else
-		echo "spdlog build failed."
-		exit -1
-	fi
-
-	if [[ -x java ]]; then
-	else
-		echo "java not installed."
-		exit -1
-	fi
-
-	# Check and install JAVA
-	if [[ $((echo $JAVA_HOME)) -z ]]; then
-		export JAVA_HOME=$((java -XshowSettings:properties -version 2>&1 | grep java.home | awk '{print $3}'))
-	fi
-
-	if [[ -f $JAVA_HOME/include/jni.h ]]; then
-		echo "Jni.h not found"
-		exit -1
-	else
-		echo "JNI in $JAVA_HOME/include/jni.h"
-	fi
-
 	echo "Installation done. Use $SCRIPT $RUN to start."
 }
 
-compile_libVNF(){
-	# TODO. check if includes has been there.
-	# TODO. If needs kernel_bypass. remind to use kernel_bypass
+# Entry route.
+if [ $# == 0 ] ; then
+    echo $USAGE
+    exit 1;
+fi
 
-	if [ $# >= 2 && $2 == $KENREL_BYPASS ]; then
-		rm -dfr $BUILD_DIR &> /dev/null || true
-		mkdir $BUILD_DIR && cd $BUILD_DIR
-		$CMAKE .. -DSTACK=KERNEL \
-			-DBACKEND_MORPH=True \
-			-DCMAKE_BUILD_TYPE=Debug
-		make -j${PROC}
-		make install && echo "Done: libVNF built and installed." 
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit 1;
+fi
+
+case $1 in 
+	$HELP)
+		echo -e $USAGE
 		exit 0
-	elif [ $# >= 2 && $2 == $KERNEL_STACK ]; then 
-		local 
-	fi
-}
-
-compile_morphStream(){
-	cd "~/MorphStream"
-	mvn -fn pacakge -Dmaven.test.failure.ignore=true
-	# TODO. Copy header file to dir.
-	javac -cp .:$PROJ_DIR -h $HEADER $INTERFACE_FILE
-}
-
-run(){
-	# Check if setup and compiled. If not, do.
-	# Else just run the corresponding stack.
-}
-
-error_exit(){
-	echo "failed to compile. exit." 
-	return -1
-}
-
-ynSelect(){
-	echo $1
-	read res 
-	if [[ $res == "y" ]]; then
-		return 0
-	elif [[ $res == "n" ]]; then 
-		return -1
-	else
-		return `ynSelect $1`
-	fi
-}
+		;;
+	$NEWVM)
+		check_environment && echo "Your system already qualified. Use $SCRIPT $RUN to run."
+		exit 0
+		;;
+	$RUN)
+		echo "starting compiled DB4NFV system."
+		echo "to be done later."
+		check_environment
+		exit 0
+		;;
+	$COMPILE_JNI)
+		echo "starting compiling JNI header."
+		check_environment
+		compile_jni_header
+		exit 0
+		;;
+	$COMPILE)
+		echo "starting compilation.."
+		check_environment || ( echo "failed. exit." && exit 1 )
+		if [ $# -ge 2 ] && [[ $2 == $KENREL_BYPASS ]]; then
+			IS_KENREL_BYPASS=true
+			setup_kernel_bypass_stack
+		elif [ $# -ge 2 ] && [[ $2 == $KERNEL_STACK ]]; then
+			IS_KENREL_BYPASS=false
+			setup_kernel_stack
+		else 
+			echo $USAGE 
+			echo "failed. exit." 
+			exit 1
+		fi
+		compile_jni_header
+		compile_libVNF "$@" || error_exit
+		compile_morphStream || error_exit
+		echo "Setup done"
+		exit 0;
+		;;
+esac

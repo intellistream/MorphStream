@@ -136,9 +136,9 @@ endif ()
 
 if (${BACKEND_MORPH})
 	set(JAVA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-	set(JAVA_SOURCE_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/utils/java/Loader/Loader.java)
+	# set(JAVA_JNI_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils/java/Loader/Loader.java)
 	set(JNI_HEADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-  set(JAVA_INCLUDE_PATH "$ENV{JAVA_HOME}/include")
+  set(JAVA_INCLUDE_PATH "$ENV{JAVA_HOME}/../include")
 
 	message("Compiling with morphStream.")
 	add_definitions(-DBACKEND_MORPH)
@@ -148,6 +148,7 @@ if (${BACKEND_MORPH})
 	if(JAVA_FOUND)
 		message(STATUS "Java found: ${Java_JAVA_EXECUTABLE}")
 		message(STATUS "Java compiler: ${Java_JAVAC_EXECUTABLE}")
+		message(STATUS "Java include path: ${JAVA_INCLUDE_PATH}")
 	else()
 		message(FATAL_ERROR "Java not found. Please install Java and set JAVA_HOME.")
 	endif()
@@ -166,7 +167,7 @@ if (${BACKEND_MORPH})
 
 	# Declair dependency for the main library. Choose to build to /lib.
 	add_custom_target(jni_headers_generation ALL
-		COMMAND ${Java_JAVAC_EXECUTABLE} -cp ${JAVA_SOURCE_DIR} -h ${JNI_HEADERS_DIR} ${JAVA_SOURCE_MAIN}
+		COMMAND ${Java_JAVAC_EXECUTABLE} -cp ${JAVA_SOURCE_DIR} -h ${JNI_HEADERS_DIR} ${JAVA_JNI_INTERFACE}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		COMMENT "Generating JNI headers"
 	)
