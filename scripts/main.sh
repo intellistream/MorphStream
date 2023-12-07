@@ -73,7 +73,7 @@ compile_jni_header(){
 
 compile_morphStream(){
 	compile_jni_header
-	mvn -fn install -Dmaven.test.failure.ignore=false -DskipTests
+	mvn -fn install -Dmaven.test.failure.ignore=false
 	# TODO. Copy header file to dir.
 }
 
