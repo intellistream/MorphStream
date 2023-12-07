@@ -124,7 +124,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             // TODO. @Zhonghao 
             // result_ptr is the pointer to write back result for Write type 
             // saDataBytes = NativeInterface._execute_sa_udf(txnReqId, saId, saDataBytes, saData.length, resultp_ptr);
-            saDataBytes = NativeInterface._execute_sa_udf(operation.stateAccess[0], saDataBytes, saData.length);
+            saDataBytes = NativeInterface._execute_sa_udf(operation.bid, Integer.parseInt(operation.stateAccess[0]), saDataBytes, saData.length);
             saData = decodeStringArray(saDataBytes);
         } else {
             try {
