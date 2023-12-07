@@ -89,11 +89,12 @@
 #define TIMER_DEFAULT_DURATION (6)
 #define TIMER_DEFAULT_RETRIES  (4)
 
-#define CONTEXT(REQOBJ) (static_cast<uint8_t *>(REQOBJ)-sizeof(Context))
+#define CONTEXT(REQOBJ) (static_cast<Context *>(static_cast<void *>(REQOBJ)-sizeof(Context)))
 #define COREID(TXNID) (static_cast<int>((TXNID) >> sizeof(int)))
 #define PACKETID(TXNID) (static_cast<int>(TXNID))
 #define TXNID(COREID, PACKETID) ((COREID) << sizeof(int) | (PACKETID))
 
+#define RESULT_PTR(REQOBJ) (static_cast<char *>(CONTEXT(REQOBJ)->result))
 
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
@@ -101,7 +102,7 @@ int VNFMain(int argc, char ** argv);
 namespace vnf {
 
 enum EventType {
-    READ = 0, ACCEPT = 1, ERROR = 2, WAIT = 3
+    READ = 0, ACCEPT = 1, ERROR = 2, WAIT = 3, ABORT = 4
 };
 
 enum DataLocation {
@@ -685,9 +686,12 @@ struct Context{
     char * packet_record;
     int packet_len;
 
-    // Packet to be saved.
+    // Data fetched.
     void * value;
     int value_len;
+
+	// Data ptr to be write back.
+	void * result = nullptr;
 
     // ReqObjId;
     int reqObjId;
@@ -707,8 +711,8 @@ class SFC;
 class Transaction;
 class StateAccess;
 
-typedef void (*TxnCallBackHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, void* value, int valueLen, int errorCode);
-typedef void (*PacketHandler)(vnf::ConnId& connId, const std::vector<Transaction*>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, int errorCode);
+typedef void (*TxnCallBackHandler)(vnf::ConnId& connId, const std::vector<Transaction>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, void* value, int valueLen, int errorCode);
+typedef void (*PacketHandler)(vnf::ConnId& connId, const std::vector<Transaction>& availableTransactions, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, int errorCode);
 
 typedef PacketHandler AcceptHandler;
 typedef PacketHandler ReadHandler;
@@ -727,7 +731,7 @@ enum ConsistencyRequirement {
 class App{
 friend SFC;
 public:
-	App(std::vector<Transaction*> txns, 
+	App(std::vector<Transaction> txns, 
         AcceptHandler accept, 
         ReadHandler read, 
         ErrorHandler error,
@@ -748,44 +752,35 @@ public:
     void *reqObjClip(void * reqObjClip);
 	int reqObjSize = 0; // Register the size of per-thread user defined structure.
 
-    const std::vector<Transaction*> Txns;
+    std::vector<Transaction> Txns;
 
     int appIndex;
 	App* next = nullptr;
 	App* MoveNext() { return this->next;}
 };
 
-
-class Transaction {
-friend SFC;
-public:
-    Transaction(std::vector<StateAccess*> sas):sas(sas){}
-    void TxnStart() { perror("javaProvide.");}
-    void TxnDone()  { perror("javaProvide.");}
-	const std::vector<StateAccess*> sas;	// The State Access event to be used for transaction handlers. Including transaction handlers.
-	const App* app;
-	int txnIndex;
-};
-
 class StateAccess {
 friend SFC;
 public:
     // What is a state scope?
-    StateAccess(const std::vector<std::string> &fields,
-                const std::vector<std::string> &types,
+    StateAccess(
+		const std::vector<int> keys,
+		const std::vector<int> fields,
+		// const std::vector<std::string> types,
                 ConsistencyRequirement cr,
                 TxnCallBackHandler txnHandler,
                 TxnCallBackHandler errTxnHandler,
                 PostTxnHandler postHandler,
                 RWType rw)
-        : fields_(fields), types_(types), cr_(cr),
+        : fields_(fields), keys_(keys), cr_(cr),
+        // : fields_(fields), types_(types), cr_(cr),
           txnHandler_(txnHandler), rw_(rw), errorTxnHandler_(errTxnHandler),
           postTxnHandler_(postHandler) {}
 
 	const enum RWType rw_;	
 
-    const std::vector<std::string> &fields_;
-    const std::vector<std::string> &types_;
+    const std::vector<int> &keys_;
+    const std::vector<int> &fields_;
     const ConsistencyRequirement cr_;
 
 	// The binded transaction handler for this State Access.
@@ -803,6 +798,21 @@ public:
     int saIndex;
 };
 
+class Transaction {
+friend SFC;
+public:
+    Transaction(std::vector<StateAccess> sas):sas(sas){}
+	std::vector<StateAccess> sas = {};	// The State Access event to be used for transaction handlers. Including transaction handlers.
+	const App* app;
+	int txnIndex;
+	void Trigger(vnf::ConnId& connId, char * packet, int packetLen, int packetId, void * reqObj, int reqObjId) const
+	{ 
+		for (auto sa: sas){
+			sa.Request(connId, packet, packetLen, packetId, reqObj, reqObjId); 
+		}
+	}
+};
+
 /**
  * @brief Define the whole SFC topology. Collect meta data for the whole SFC and communicate with txnEngine.
  * 	
@@ -817,7 +827,7 @@ public:
 	int cores = 1;	
 
 	// Construct SFC topology.
-	void Entry(App & entry);
+	void Entry(App& entry);
 	void Add(App& last, App& app);
 
 	// Report SFC apps to txnEngine.

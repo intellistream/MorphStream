@@ -344,14 +344,14 @@ void *serverThread(void *args) {
                 // Some handler done. Now we are going to trigger the continue handling.
                 if (perCoreStates[coreId].txnSocket == currentSocketId) {
                     // read from socket.
-                    uint64_t saReqId = 0; 
-                    if (read(currentSocketId, &saReqId, sizeof(uint64_t)) < 0) {
+                    uint64_t txnReqId = 0; 
+                    if (read(currentSocketId, &txnReqId, sizeof(uint64_t)) < 0) {
                         perror("serverThread.transactions.read");
                     }
                     // TODO. Make sure only the right thread receives this.
-                    if (COREID(saReqId) == coreId) {
+                    if (COREID(txnReqId) == coreId) {
 
-                        auto o = perCoreStates[coreId].packetNumberContextMap[PACKETID(saReqId)];
+                        auto o = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
                         ConnId connId = ConnId(coreId, o->old_socket);
 
                         // TODO. Debug. Set the cache.
@@ -379,7 +379,7 @@ void *serverThread(void *args) {
                                     o->packet_record, o->packet_len, 0);
                         // Delete ctx from the hashmap. No need to delete ctx since it belongs to reqObj.
                         perCoreStates[coreId].packetNumberContextMap.erase(
-                            perCoreStates[coreId].packetNumberContextMap.find(PACKETID(saReqId))
+                            perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
                         );
                     // TODO. How to recover packates here.
                     }
@@ -1664,6 +1664,11 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
         switch (o->ret)
         {
         case vnf::ERROR:
+            if ((*app->errorHandler) == nullptr ){
+                // Abort if error but no handler.
+                o->ret = ABORT;
+                return;
+            }
             (*app->errorHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
             break;
         case vnf::ACCEPT:
@@ -1672,6 +1677,8 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
         case vnf::READ:
             (*app->readHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
             break;
+        case vnf::ABORT:
+            return;
         } 
         // If transactions handler being called, the mark would be set.
         if ( o->waiting_for_transaction_back == true ){
@@ -1788,7 +1795,6 @@ void __request(uint64_t txnId){
     );
 }
 
-
 int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId) {
     // Create a new event blocking fd.
     if (uint64_t(reqObj) == 0){
@@ -1804,19 +1810,49 @@ int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetL
 
     // Register call back parameters in the context.
     perCoreStates[connId.coreId].packetNumberContextMap[packetId] = o;
+    // TODO. Fix parameter passing.
 	__request(TXNID(connId.coreId, packetId));
 }
 
 // Routing to the context of transaction breakpoint.
-int _callBack(uint64_t txnId, void * value, int length){
+int _callBack(uint64_t txnReqId, void * value, int length, void * result){
     // Write the value to the corresponding context.
-    perCoreStates[COREID(txnId)].packetNumberContextMap[PACKETID(txnId)]->value = value;
-    perCoreStates[COREID(txnId)].packetNumberContextMap[PACKETID(txnId)]->value_len = length;
+    auto ctx = perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)];
+    ctx->value = value;
+    ctx->value_len = length;
 
+    // FIXME: If callback handled this way, it would need another way to report abortion and write back.
     // Trigger the hook and return.
-    if (write(perCoreStates[COREID(txnId)].epollFd, &txnId, sizeof(uint64_t)) < 0){
-        perror("_callback.write");
-    }
+    // if (write(perCoreStates[COREID(txnId)].epollFd, &txnId, sizeof(uint64_t)) < 0){
+    //     perror("_callback.write");
+    // }
+
+    ConnId connId = ConnId(COREID(txnReqId), ctx->old_socket);
+    // TODO. Debug. Set the cache.
+    // No need to modify to use the cache. Since it's totally inside.
+    // void *dsMalloc;
+    // globals.dataStoreLock.lock();
+    // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+    //     freeDSPool();
+    // }
+    // // cache the state
+    // dsMalloc = globals.dsMemPoolManager.malloc();
+    // globals.dsSize++;
+    // memcpy(dsMalloc, buffer.c_str(), buffer.length());
+    // // The local datastore is used as cache for reading.
+    // globals.localDatastore[bufKey] = dsMalloc;
+    // globals.localDatastoreLens[bufKey] = buffer.length();
+    // globals.cachedRemoteDatastore[bufKey] = dsMalloc;
+    // cache_void_list[dsMalloc] = bufKey;
+    // globals.dataStoreLock.unlock();
+
+    // TODO. Can receive error here.
+
+	// Return -1 if abort.
+    _disposalBody(connId, ctx->reqObjId,
+                perCoreStates[COREID(txnReqId)].socketIdReqObjIdToReqObjMap[ctx->old_socket][ctx->reqObjId],
+                ctx->packet_record, ctx->packet_len, 0);
+    return ctx->ret == ABORT? -1:0;    
 }
 
 // TODO. TO BE DEBUGGED.
@@ -1886,18 +1922,18 @@ JNIEXPORT jbyteArray
 JNICALL Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf
   (JNIEnv * env, jobject obj, jlong saReqId_jni, jbyteArray value, jint length){
     // Save the value in ctx.
-    uint64_t saReqId = static_cast<uint64_t>(saReqId_jni); 
+    uint64_t txnReqId = static_cast<uint64_t>(saReqId_jni); 
     jbyte *inputBuffer = env->GetByteArrayElements(value, NULL);
 
-	int coreId = COREID(saReqId);
-	auto ctx = perCoreStates[COREID(saReqId)].packetNumberContextMap[PACKETID(saReqId)];
+	int coreId = COREID(txnReqId);
+	auto ctx = perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)];
     // TODO. Check if deallocated.
     auto tmp = new uint8_t[length];
     ctx->value = tmp;
     ctx->value_len = length;
     memcpy(ctx->value, inputBuffer, length);
 
-    ConnId conn = ConnId(COREID(saReqId), ctx->old_socket);
+    ConnId conn = ConnId(COREID(txnReqId), ctx->old_socket);
 
     // How to recover the Index.
 	globals.sfc._callBack(conn, ctx->AppIdx, ctx->TxnIdx, ctx->SAIdx, 
@@ -1915,9 +1951,9 @@ JNICALL Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf
 JNIEXPORT jint 
 JNICALL Java_libVNFFrontend_NativeInterface__1_1txn_1finished
   (JNIEnv * env, jobject obj, jlong saReqId_jni){
-    uint64_t saReqId = static_cast<uint64_t>(saReqId_jni); 
+    uint64_t txnReqId = static_cast<uint64_t>(saReqId_jni); 
     // Write to the fd to suggest done.
-    if (write(perCoreStates[COREID(saReqId)].txnSocket, &saReqId, sizeof(uint64_t)) < 0){
+    if (write(perCoreStates[COREID(txnReqId)].txnSocket, &txnReqId, sizeof(uint64_t)) < 0){
         perror("jni.handle_done.write");
         return -1;
     }
@@ -1940,16 +1976,16 @@ void DB4NFV::SFC::Init(int maxCores){
         reqObjIndex += 1;
         
         for (int j = 0 ; j < app->Txns.size(); j += 1){
-            auto Txn = app->Txns.at(j);
+            auto Txn = &app->Txns.at(j);
             Txn->txnIndex = j;
             Txn->app = app;
             for (int k = 0; k < (Txn->sas).size(); k += 1){
                 auto sa = Txn->sas.at(k);
-                sa->app = app;
-                sa->txn = Txn;
-                sa->appIndex = i;
-                sa->txnIndex = j;
-                sa->saIndex = k;
+                sa.app = app;
+                sa.txn = Txn;
+                sa.appIndex = i;
+                sa.txnIndex = j;
+                sa.saIndex = k;
             }
         }
     }

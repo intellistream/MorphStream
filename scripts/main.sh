@@ -40,6 +40,10 @@ COMPILE='--compile'
 KERNEL_BYPASS="--KENREL_BYPASS" 
 KERNEL_STACK="--KERNEL_STACK"
 
+# Compile Example VNF options
+EXAMPLE="--EXAMPLE_VNF"
+VNF_PATH="$LIBVNF_DIR/vnf/SL"
+
 USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable kernel to run the system. \n\t $RUN [$KERNEL_STACK|$KERNEL_BYPASS] to run the compiled system. \n\t $COMPILE [$KERNEL_STACK|$KERNEL_BYPASS] to set up the environment and compile. "
 
 compile_libVNF(){
@@ -52,7 +56,6 @@ compile_libVNF(){
 			-DBACKEND_MORPH=True \
 			-DCMAKE_BUILD_TYPE=Debug \
 			-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
-		make -j4
 		make install && echo "Done: libVNF built and installed." 
 		exit 0
 	elif [ $# -ge 2 ] && [[ $2 == "$KERNEL_BYPASS" ]]; then 
@@ -97,7 +100,7 @@ ynSelect(){
 	fi
 }
 
-check_environment(){
+check_system(){
 	# Check the environment.
 	if [[ $(uname -r | awk -F'-' '{print $1}') != "4.15.0" ]]; then 
 		echo "Your system is not matching required kernel version 4.15.0-213."
@@ -152,14 +155,16 @@ setup_normal() {
 	# Requiring manually installation of spdlog.
 	if [ -d "$HEADER/spdlog" ]; then
 		:
+	elif [ -d "/usr/include/spdlog" ]; then
+		:
 	else
 		cd "$TMP_DIR"
 		git clone https://github.com/gabime/spdlog.git
-		cd spdlog && $CMAKE . && make
+		cd spdlog && $CMAKE . && make -j
 		# apt spdlog version is too old.
-		if [[ -f include/spdlog.h ]]; then
-			mkdir $HEADER/spdlog
-			cp include/* "$HREADER"/spdlog
+		if [[ -f include/spdlog/spdlog.h ]]; then
+			cp -r include/spdlog "$HEADER/"
+			cp -r include/spdlog "/usr/include"
 		else
 			echo "spdlog build failed."
 			exit 1
@@ -184,6 +189,14 @@ setup_normal() {
 	else
 		echo "JNI in $JAVA_HOME/include/jni.h"
 	fi
+}
+
+compile_example_vnf() {
+	echo "Compiling Example VNF: $VNF_PATH"
+	cd "$VNF_PATH"
+	make clean
+	make kernel-dynamic JAVA_HOME="$JAVA_HOME" || error_exit
+	# echo "Compiling Done"
 }
 
 # TODO.
@@ -245,7 +258,7 @@ setup_kernel_bypass_stack(){
 		&& git submodule update 
 
 	export RTE_TARGET=x86_64-native-linuxapp-clang
-	export RTE_SDK=`pwd`/dpdk
+	export RTE_SDK=$(pwd)/dpdk
 
 	ln -s /usr/lib/python3 /usr/lib/python
 	# Shall be mannually operated.
@@ -258,7 +271,7 @@ setup_kernel_bypass_stack(){
 	# 35
 	# EOF
 
-	cd .. && ./configure --with-dpdk-lib=$RTE_SDK/$RTE_TARGET
+	cd .. && ./configure --with-dpdk-lib="$RTE_SDK/$RTE_TARGET"
 	make
 
 	if [[ -f include/mtcp_api.h ]]; then 
@@ -269,7 +282,7 @@ setup_kernel_bypass_stack(){
 
 # Entry route.
 if [ $# == 0 ] ; then
-    echo $USAGE
+    echo "$USAGE"
     exit 1;
 fi
 
@@ -280,34 +293,39 @@ fi
 
 case $1 in 
 	$HELP)
-		echo -e $USAGE
+		echo -e "$USAGE"
 		exit 0
 		;;
 	$NEWVM)
-		check_environment && echo "Your system already qualified. Use $SCRIPT $RUN to run."
+		check_system && echo "Your system already qualified. Use $SCRIPT $RUN to run."
 		exit 0
 		;;
 	$RUN)
 		echo "starting compiled DB4NFV system."
 		echo "to be done later."
-		check_environment
+		check_system
 		exit 0
 		;;
 	$COMPILE_JNI)
 		echo "starting compiling JNI header."
-		check_environment
+		check_system
 		compile_jni_header
 		exit 0
 		;;
 	$COMPILE)
 		echo "starting compilation.."
-		check_environment || ( echo "failed. exit." && exit 1 )
+		check_system || error_exit
+		setup_normal || error_exit
 		if [ $# -ge 2 ] && [[ $2 == $KENREL_BYPASS ]]; then
 			IS_KENREL_BYPASS=true
 			setup_kernel_bypass_stack
 		elif [ $# -ge 2 ] && [[ $2 == $KERNEL_STACK ]]; then
 			IS_KENREL_BYPASS=false
 			setup_kernel_stack
+		elif [ $# -ge 2 ] && [[ $2 == $EXAMPLE ]]; then
+			compile_example_vnf 
+			mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic"
+			exit 0
 		else 
 			echo $USAGE 
 			echo "failed. exit." 

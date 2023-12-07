@@ -28,7 +28,7 @@ if (${STACK} STREQUAL KERNEL)
 	# Flags
 	set(CMAKE_CXX_STANDARD 11)
 	if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
-	  set(CMAKE_CXX_FLAGS "-lnuma -lrt -DLIBVNF_STACK=1 -g")
+	  set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -Wno-pointer-arith -lnuma -lrt -DLIBVNF_STACK=1 -g")
 	else ()
 	  set(CMAKE_CXX_FLAGS "-lnuma -lrt -DLIBVNF_STACK=1")
 	endif()
