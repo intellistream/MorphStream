@@ -26,6 +26,12 @@ public class NativeInterface {
     public static native void __process_packet(String instanceID, String packet); //OpenNF controller calls libVNF instance to process the packet
     public static native HashMap<String, String> __get_instance_state(String instanceID); //TODO: OpenNF controller enters state-sharing mode and get latest states from instances
 
+    // Additional methods for notifying packet processing completion and sending state updates
+    public static native void __packet_processing_complete(String instanceID);
+
+    // Send state update event to controller
+    public static native void __send_state_update(String instanceID, String stateKey, String stateValue);
+
     // Load the native library when the class is initialized
     static {
         System.load("/home/kailian/MorphStream/libVNF/build/libvnf-kernel-dynamic.so");
