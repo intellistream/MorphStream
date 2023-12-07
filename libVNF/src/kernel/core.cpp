@@ -1936,15 +1936,24 @@ JNICALL Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf
     ConnId conn = ConnId(COREID(txnReqId), ctx->old_socket);
 
     // How to recover the Index.
-	globals.sfc._callBack(conn, ctx->AppIdx, ctx->TxnIdx, ctx->SAIdx, 
+	bool abortion = globals.sfc._callBack(conn, ctx->AppIdx, ctx->TxnIdx, ctx->SAIdx, 
         ctx->reqObjId, 
         perCoreStates[coreId].socketIdReqObjIdToReqObjMap[ctx->old_socket][ctx->reqObjId],
         ctx->packet_record, 
-        ctx->packet_len, ctx->value, ctx->value_len, 0);
+        ctx->packet_len, ctx->value, ctx->value_len, 0) == 1? true: false;
 
     delete tmp;
     ctx->value_len = -1;
-    return 0;
+
+    auto ret = env->NewByteArray(sizeof(bool) + sizeof(ctx->result_len));
+    if (env == nullptr) {
+        perror("core.cpp.Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf.NewByteArray.nullptr");
+    }
+
+    jbyte firstByte = static_cast<jbyte>(abortion);
+    env->SetByteArrayRegion(ret, 0, 1, &firstByte);
+    env->SetByteArrayRegion(ret, 1, static_cast<jsize>(ctx->result_len), reinterpret_cast<jbyte *>(ctx->result));
+    return ret;
   }
 
 // Report done.

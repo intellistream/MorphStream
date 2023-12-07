@@ -1,7 +1,7 @@
 package cli;
 
 import intellistream.morphstream.api.Client;
-import intellistream.morphstream.common.io.ByteIO.InputWithDecompression.NativeDataInputView;
+// import intellistream.morphstream.common.io.ByteIO.InputWithDecompression.NativeDataInputView;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

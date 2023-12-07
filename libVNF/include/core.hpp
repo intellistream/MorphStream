@@ -691,7 +691,8 @@ struct Context{
     int value_len;
 
 	// Data ptr to be write back.
-	void * result = nullptr;
+	void * result;
+	int result_len;
 
     // ReqObjId;
     int reqObjId;

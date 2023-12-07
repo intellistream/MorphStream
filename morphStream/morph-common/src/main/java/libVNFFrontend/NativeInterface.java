@@ -15,7 +15,7 @@ public class NativeInterface {
 
     // Load the native library when the class is initialized
     static {
-        System.load("/home/kailian/MorphStream/libVNF/build/libvnf-kernel-dynamic.so");
+        System.load("/home/kailian/MorphStream/tmp/SL-kernel-dynamic.so");
     }
 
     public static void main(String[] args) {

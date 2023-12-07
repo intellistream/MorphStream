@@ -122,7 +122,7 @@ new_vm(){
 	fi
 
 	# Check if the VM is already running
-	running_machine=`ps -ef | grep "qemu" | grep "\-name $VM_NAME"`
+	running_machine=$(ps -ef | grep "qemu" | grep "\-name $VM_NAME")
 	if [[ -z $running_machine ]]; then
 		:
 	else
@@ -192,6 +192,7 @@ setup_normal() {
 }
 
 compile_example_vnf() {
+	setup_normal || error_exit
 	echo "Compiling Example VNF: $VNF_PATH"
 	cd "$VNF_PATH"
 	make clean
@@ -315,7 +316,6 @@ case $1 in
 	$COMPILE)
 		echo "starting compilation.."
 		check_system || error_exit
-		setup_normal || error_exit
 		if [ $# -ge 2 ] && [[ $2 == $KENREL_BYPASS ]]; then
 			IS_KENREL_BYPASS=true
 			setup_kernel_bypass_stack
@@ -324,7 +324,7 @@ case $1 in
 			setup_kernel_stack
 		elif [ $# -ge 2 ] && [[ $2 == $EXAMPLE ]]; then
 			compile_example_vnf 
-			mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic"
+			mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
 			exit 0
 		else 
 			echo $USAGE 

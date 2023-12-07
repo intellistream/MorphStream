@@ -121,7 +121,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         if (useNativeLib) {
             byte[] saDataBytes = encodeStringArray(saData);
-            saDataBytes = NativeInterface._execute_txn_udf(operation.stateAccess[0], saDataBytes, saData.length);
+            // TODO. @Zhonghao 
+            // result_ptr is the pointer to write back result for Write type 
+            // saDataBytes = NativeInterface._execute_sa_udf(txnReqId, saId, saDataBytes, saData.length, resultp_ptr);
+            saDataBytes = NativeInterface._execute_sa_udf(operation.stateAccess[0], saDataBytes, saData.length);
             saData = decodeStringArray(saDataBytes);
         } else {
             try {
