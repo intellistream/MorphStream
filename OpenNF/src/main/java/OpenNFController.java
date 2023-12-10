@@ -91,7 +91,11 @@ public class OpenNFController implements Runnable {
                 if (pkt != null) {
                     processPacket(instanceID, pkt);
                 }
-                updateStates(instanceID, vnfID);
+                // TODO: Block until the instance finishes processing the packet and sends back a SIGNAL.
+                //  After controller receives the signal, it use getState() to retrieve the state update results from the instance,
+                //  and then broadcast this state update action to all corresponding instances using putState().
+                //
+                updateStates(instanceID, vnfID); //TODO: Notify all corresponding instances that share the state, retrieve state sharing information from a table.
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
