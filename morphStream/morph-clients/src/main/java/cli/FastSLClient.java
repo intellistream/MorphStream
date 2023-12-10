@@ -5,7 +5,7 @@ import intellistream.morphstream.api.Client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import libVNFFrontend.NativeInterface;
+import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.io.*;
 

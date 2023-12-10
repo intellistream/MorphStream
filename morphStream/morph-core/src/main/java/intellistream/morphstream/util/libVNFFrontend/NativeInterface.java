@@ -1,4 +1,4 @@
-package libVNFFrontend;
+package intellistream.morphstream.util.libVNFFrontend;
 
 public class NativeInterface {
     // Native method declaration for __init_SFC
