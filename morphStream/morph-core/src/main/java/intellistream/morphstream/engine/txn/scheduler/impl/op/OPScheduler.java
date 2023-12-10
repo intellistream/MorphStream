@@ -26,7 +26,7 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
-import libVNFFrontend.NativeInterface;
+import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

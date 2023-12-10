@@ -11,8 +11,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tupl
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
-import libVNFFrontend.NativeInterface;
+import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +19,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
