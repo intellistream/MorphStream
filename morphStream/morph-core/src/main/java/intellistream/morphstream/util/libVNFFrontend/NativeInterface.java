@@ -1,6 +1,14 @@
 package intellistream.morphstream.util.libVNFFrontend;
+// import intellistream.morphstream.api.input.InputSource;
 
 public class NativeInterface {
+
+    // Delegate EventRequestInsertion.
+    // private static InputSource IS = new InputSource();
+    // public static void __insert_input_source(String input){
+    //     IS.insertInputData(input);
+    // }
+
     // Native method declaration for __init_SFC
     public native String __init_SFC(int argc, String[] argv);
 

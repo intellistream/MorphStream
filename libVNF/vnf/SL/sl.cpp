@@ -46,7 +46,7 @@ void sl_app_accept_packet_handler(vnf::ConnId& connId, const std::vector<Transac
 };
 
 void sl_app_read_packet_handler(vnf::ConnId& connId, const std::vector<Transaction>& txns, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, int errorCode){
-    std::cout << "Connection accepted" << std::endl;
+    std::cout << "New Packet accepted" << std::endl;
     auto content = string(static_cast<char *>(packet));
     if (content == "transfer\n"){
         txns[1].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId);

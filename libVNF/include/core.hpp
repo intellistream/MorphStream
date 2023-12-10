@@ -45,7 +45,7 @@
 #include <fstream>
 #include <chrono>
 
-#include "libVNFFrontend_NativeInterface.h"
+#include "intellistream_morphstream_util_libVNFFrontend_NativeInterface.h"
 
 #include "datastore/dspackethandler.hpp"
 #include "json.hpp"

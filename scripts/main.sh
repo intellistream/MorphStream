@@ -14,8 +14,8 @@ TMP_DIR=$SCRIPT_DIR/tmp
 LIBVNF_DIR=$SCRIPT_DIR/libVNF
 MORPH_DIR=$SCRIPT_DIR/morphStream
 
-PROJ_DIR=$MORPH_DIR/morph-common/src/main/java
-INTERFACE_FILE=$PROJ_DIR/libVNFFrontend/NativeInterface.java
+PROJ_DIR=$MORPH_DIR/morph-core/src/main/java
+INTERFACE_FILE=$PROJ_DIR/intellistream/morphstream/util/libVNFFrontend/NativeInterface.java
 HEADER=$LIBVNF_DIR/include
 
 # Executable

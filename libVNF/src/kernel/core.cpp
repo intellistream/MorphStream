@@ -1751,12 +1751,34 @@ void DB4NFV::SFC::Add(App& last, App& app){
 // The entry for sending txn execution request to txnEngine.
 // TODO. Extend the other information.
 void __request(uint64_t txnReqId){
-    // Call JVM. Errored. TODO.
-    return globals.__java_env->CallVoidMethod(
-        globals.__client_obj, globals.__request,
-        txnReqId
+    char msg[sizeof(uint64_t)+1];
+    memcpy(msg, &txnReqId, sizeof(uint64_t));
+    msg[sizeof(uint64_t)] = '\0';
+
+    // FIXME. To be optimized. Cache Jenv in one persistent VNF thread.
+    JNIEnv *env;
+    jint rs = (*globals.__jvm).AttachCurrentThread((void **)&env, NULL);
+    assert(rs == JNI_OK);
+
+    jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
+    assert( cls != NULL);
+
+    jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
+    assert( constructor != NULL);
+
+    jobject IS = env->NewObject(cls, constructor);
+    // Set Permanenet Ref.
+
+    jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+    assert( methodId != NULL);
+
+    // We can't cache jenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
+    return env->CallVoidMethod(
+        IS, methodId,
+        env->NewStringUTF(msg)
         // Other parameters to be added.
     );
+    std::cout << "req create success." << std::endl;
 }
 
 int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId) {
@@ -1821,7 +1843,7 @@ int _callBack(uint64_t txnReqId, void * value, int length, void * result){
 
 // TODO. TO BE DEBUGGED.
 JNIEXPORT jstring 
-JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
+JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1init_1SFC
   (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
 		// Convert the jobjectArray to a char* array
 		char **argvC;
@@ -1843,25 +1865,31 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
         // Find the method and save in globals.
         // Find the class that contains the sendTxnRequest method
         jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
-        if (cls == NULL)
-        {
-            perror("utils.jni.init_SFC:class not found.");
-		    return env->NewStringUTF("");
-        }
+        assert( cls != NULL);
 
         // Get a reference to the txn method
-        jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+        // jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "(Ljava/lang/String;)V");
 
-        if (methodId == NULL)
-        {
-            perror("utils.jni.init_SFC:method not found.");
-		    return env->NewStringUTF("");
-        }
+        // Create a static object of the InputSource class.
+        jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
+        assert( constructor != NULL);
+
+        jobject IS = env->NewObject(cls, constructor);
+        // Set Permanenet Ref.
+
+        jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+        assert( methodId != NULL);
 
         // Call the __request method
-        globals.__request = methodId;
-        globals.__client_obj = obj;
-        globals.__java_env = env;
+        jint rs = env->GetJavaVM(&globals.__jvm);
+        assert(rs == JNI_OK);
+
+        // Call JVM. Errored. TODO.
+        // globals.__java_env->CallVoidMethod(
+        //     globals.__client_obj, globals.__request,
+        //     globals.__java_env->NewStringUTF(msg)
+        //     // Other parameters to be added.
+        // );
 
         // Call the __init_SFC function
         int res = VNFMain(argc, argvC);
@@ -1948,7 +1976,7 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
 
 // Actual vnfs loop.
 JNIEXPORT void 
-JNICALL Java_libVNFFrontend_NativeInterface__1_1VNFThread
+JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1VNFThread
   (JNIEnv * env, jobject obj, jint c, jobjectArray v){
 	startEventLoop();
   }
@@ -1956,7 +1984,7 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1VNFThread
 
 // The callback handling entrance.
 JNIEXPORT jbyteArray 
-JNICALL Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf
+JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf
   (JNIEnv * env, jobject obj, jlong saReqId_jni, jbyteArray value, jint length){
     // Save the value in ctx.
     uint64_t txnReqId = static_cast<uint64_t>(saReqId_jni); 
@@ -1984,7 +2012,7 @@ JNICALL Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf
 
     auto ret = env->NewByteArray(sizeof(bool) + sizeof(ctx->result_len));
     if (env == nullptr) {
-        perror("core.cpp.Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf.NewByteArray.nullptr");
+        perror("core.cpp.Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf.NewByteArray.nullptr");
     }
 
     jbyte firstByte = static_cast<jbyte>(abortion);
@@ -1995,7 +2023,7 @@ JNICALL Java_libVNFFrontend_NativeInterface__1execute_1sa_1udf
 
 // Report done.
 JNIEXPORT jint 
-JNICALL Java_libVNFFrontend_NativeInterface__1_1txn_1finished
+JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1txn_1finished
   (JNIEnv * env, jobject obj, jlong saReqId_jni){
     uint64_t txnReqId = static_cast<uint64_t>(saReqId_jni); 
     // Write to the fd to suggest done.

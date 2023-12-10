@@ -241,9 +241,7 @@ struct Globals {
     DSCallbackFn onAcceptByServerDSCallback;
     ReqObjExtractorFn onAcceptByServerReqObjIdExtractor;
     PacketBoundaryDisambiguatorFn onAcceptByServerPBD;
-    JNIEnv * __java_env;
-    jobject __client_obj;
-    jmethodID __request; 
+    JavaVM * __jvm;
 
     // DB4NFV globals.
     DB4NFV::SFC sfc;
