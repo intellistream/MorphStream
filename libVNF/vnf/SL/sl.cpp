@@ -95,7 +95,7 @@ auto SLApp = DB4NFV::App{
 
 int VNFMain(int argc, char *argv[]){
     // Get the main SFC to construct.
-    auto SFC = GetSFC();
+    auto& SFC = GetSFC();
     SFC.Entry(SLApp);
 
     // No nextApp

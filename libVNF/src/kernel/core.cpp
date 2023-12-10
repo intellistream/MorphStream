@@ -1697,21 +1697,26 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
     }
 }
 
+// Could only be called once.
 void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
+    requestObject = connId.allocReqObj(1);
     auto o = static_cast<Context *> (requestObject);
     o->ret = vnf::ACCEPT;
+    o->AppIdx = 0;
 	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
 }
 
 void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto o = static_cast<Context *> (requestObject);
-    o->ret = vnf::ACCEPT;
+    o->ret = vnf::READ;
+    o->AppIdx = 0;
 	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
 }
 
 void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto o = static_cast<Context *> (requestObject);
-    o->ret = vnf::ACCEPT;
+    o->ret = vnf::ERROR;
+    o->AppIdx = 0;
 	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
 }
 
@@ -2003,5 +2008,6 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1txn_1finished
 void *DB4NFV::App::reqObjClip(void * reqObjClip) { return reqObjClip + sizeof(Context) + globals.sfc.objSizes.at(globals.sfc.AppIdxMap[this]);}
 
 DB4NFV::SFC& GetSFC(){ 
-    return globals.sfc; 
+    auto &ref =  globals.sfc; 
+    return ref;
 };
