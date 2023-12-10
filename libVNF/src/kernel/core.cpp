@@ -758,6 +758,10 @@ void vnf::startEventLoop() {
         globals.listeningSocketFd = socket(AF_INET, SOCK_DGRAM, 0);
     }
     if (globals.listeningSocketFd < 0) {
+        std::cout << globals.listeningSocketFd << std::endl;
+        std::cout << globals.serverPort << std::endl;
+        std::cout << globals.serverProtocol << std::endl;
+        std::cout << globals.serverIp << std::endl;
         spdlog::error("Failed to create listening socket!");
         return;
     }
@@ -1711,54 +1715,8 @@ void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject,
 	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
 }
 
-int __initSFC(int argc, char *argv[]){
-	// User construct Main.
-	int ret = VNFMain(argc, argv);
-
-	if (ret != 0){
-		return ret;
-	}
-
-	std::string ip;
-	int port = 0; // Initialize to a default value, or you can set an error value if no valid port is provided.
-
-	if (argc != 3)
-	{
-		std::cerr << "Usage: " << argv[0] << " <IP address> <port>" << std::endl;
-		return -1; // Return an error code
-	}
-
-	// Parse port (argv[2])
-	try
-	{
-		port = std::stoi(argv[2]);
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << "Invalid port number: " << e.what() << std::endl;
-		return 1; // Return an error code
-	}
-
-	// Parse IP address (argv[1])
-	ip = argv[1];
-
-	// TODO. Param Init.
-    vnf::ConnId serverId = vnf::initServer("", ip, port, "tcp");
-
-    int size[] = {globals.sfc.reqObjTotalSize};
-    vnf::initReqPool(size, 1);
-
-	serverId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
-	serverId.registerCallback(vnf::READ, _AppsDisposalRead);
-	serverId.registerCallback(vnf::ERROR, _AppsDisposalError);
-
-	// report to txnEngine.
-	return globals.sfc.NFs();
-};
-
-
 // TODO. Define the structure for message convey.
-int DB4NFV::SFC::NFs(){};
+std::string DB4NFV::SFC::NFs(){};
 
 void DB4NFV::SFC::Entry(App& app){
 	if (this->SFC_chain.size() != 0){
@@ -1859,22 +1817,26 @@ int _callBack(uint64_t txnReqId, void * value, int length, void * result){
 JNIEXPORT jstring 
 JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
   (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
-
 		// Convert the jobjectArray to a char* array
-		jsize arrayLength = env->GetArrayLength(argv);
-		char **argvC = new char *[arrayLength];
-
-		for (jsize i = 0; i < arrayLength; i++)
-		{
-			jstring string = (jstring)env->GetObjectArrayElement(argv, i);
-			const char *str = env->GetStringUTFChars(string, 0);
-			argvC[i] = strdup(str);
-			env->ReleaseStringUTFChars(string, str);
-		}
+		char **argvC;
+        jsize arrayLength;
+        if (argv != nullptr){
+		    arrayLength = env->GetArrayLength(argv);
+            argvC = new char *[arrayLength];
+            for (jsize i = 0; i < arrayLength; i++)
+            {
+                jstring string = (jstring)env->GetObjectArrayElement(argv, i);
+                const char *str = env->GetStringUTFChars(string, 0);
+                argvC[i] = strdup(str);
+                env->ReleaseStringUTFChars(string, str);
+            }
+        }  else {
+            arrayLength = 0;
+        }
 
         // Find the method and save in globals.
         // Find the class that contains the sendTxnRequest method
-        jclass cls = env->FindClass("cli/CliFrontend");
+        jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
         if (cls == NULL)
         {
             perror("utils.jni.init_SFC:class not found.");
@@ -1882,7 +1844,7 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
         }
 
         // Get a reference to the sendTxnRequest method
-        jmethodID methodId = env->GetMethodID(cls, "sendTxnRequest", "()V");
+        jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
 
         if (methodId == NULL)
         {
@@ -1896,7 +1858,44 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
         globals.__java_env = env;
 
         // Call the __init_SFC function
-		std::string result = __init_SFC(argc, argvC);
+        int res = VNFMain(argc, argvC);
+
+        if (res < 0){
+            perror("VNFMain returns error");
+            return  env->NewStringUTF(std::string("").c_str());
+        }
+
+        // TODO. Recover get from config IP and port from config after fully test.
+        std::string ip = "127.0.0.1";
+        int port = 9090; // Initialize to a default value, or you can set an error value if no valid port is provided.
+        globals.sfc.cores = 3;
+
+        // if (argc != 3)
+        // {
+        // 	std::cerr << "Usage: " << argv[0] << " <IP address> <port>" << std::endl;
+        // 	return -1; // Return an error code
+        // }
+
+        // // Parse port (argv[2])
+        // try
+        // {
+        // 	port = std::stoi(argv[2]);
+        // }
+        // catch (const std::exception &e)
+        // {
+        // 	std::cerr << "Invalid port number: " << e.what() << std::endl;
+        // 	return 1; // Return an error code
+        // }
+
+        vnf::initLibvnf(globals.sfc.cores, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
+        vnf::ConnId serverSocketId = vnf::initServer("", ip, port, "tcp");
+
+        int size[] = {globals.sfc.reqObjTotalSize};
+        vnf::initReqPool(size, 1);
+
+        serverSocketId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
+        serverSocketId.registerCallback(vnf::READ, _AppsDisposalRead);
+        serverSocketId.registerCallback(vnf::ERROR, _AppsDisposalError);
 
 		// Clean up the allocated memory
 		for (jsize i = 0; i < arrayLength; i++)
@@ -1905,8 +1904,40 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
 		}
 		delete[] argvC;
 
+        // Fix the backlink.
+        int reqObjStart = 0;
+        int reqObjIndex = 0;
+        for (int i = 0 ; i < globals.sfc.SFC_chain.size(); i += 1)
+        {
+            auto app = globals.sfc.SFC_chain.at(i);
+            app->appIndex = i;
+            // Sort the reqObj. TODO.
+            globals.sfc.objSizes.push_back(app->reqObjSize);
+            globals.sfc.objSizesStarting.push_back(reqObjStart);
+            reqObjStart += app->reqObjSize;
+            globals.sfc.AppIdxMap[app] = reqObjIndex;
+            reqObjIndex += 1;
+            
+            for (int j = 0 ; j < app->Txns.size(); j += 1){
+                auto Txn = &app->Txns.at(j);
+                Txn->txnIndex = j;
+                Txn->app = app;
+                for (int k = 0; k < (Txn->sas).size(); k += 1){
+                    auto sa = &Txn->sas.at(k);
+                    sa->app = app;
+                    sa->txn = Txn;
+                    sa->appIndex = i;
+                    sa->txnIndex = j;
+                    sa->saIndex = k;
+                }
+            }
+        }
+        // Config and init libVNF.
+        globals.sfc.reqObjTotalSize = reqObjStart;
+        // Create back links for transactions and state access.
+
 		// Return the result as a Java string
-		return env->NewStringUTF(result.c_str());
+		return env->NewStringUTF(globals.sfc.NFs().c_str());
 }
 
 // Actual vnfs loop.
@@ -1968,42 +1999,6 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1txn_1finished
     }
     return 0;
   }
-
-void DB4NFV::SFC::Init(int maxCores){
-    // Fix the backlink.
-    int reqObjStart = 0;
-    int reqObjIndex = 0;
-    for (int i = 0 ; i < SFC_chain.size(); i += 1)
-    {
-        auto app = SFC_chain.at(i);
-        app->appIndex = i;
-        // Sort the reqObj. TODO.
-        this->objSizes.push_back(app->reqObjSize);
-        this->objSizesStarting.push_back(reqObjStart);
-        reqObjStart += app->reqObjSize;
-        this->AppIdxMap[app] = reqObjIndex;
-        reqObjIndex += 1;
-        
-        for (int j = 0 ; j < app->Txns.size(); j += 1){
-            auto Txn = &app->Txns.at(j);
-            Txn->txnIndex = j;
-            Txn->app = app;
-            for (int k = 0; k < (Txn->sas).size(); k += 1){
-                auto sa = Txn->sas.at(k);
-                sa.app = app;
-                sa.txn = Txn;
-                sa.appIndex = i;
-                sa.txnIndex = j;
-                sa.saIndex = k;
-            }
-        }
-    }
-    this->reqObjTotalSize = reqObjStart;
-    // Config and init libVNF.
-    this->cores = maxCores;
-    // Create back links for transactions and state access.
-    vnf::initLibvnf(cores, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
-}
 
 void *DB4NFV::App::reqObjClip(void * reqObjClip) { return reqObjClip + sizeof(Context) + globals.sfc.objSizes.at(globals.sfc.AppIdxMap[this]);}
 

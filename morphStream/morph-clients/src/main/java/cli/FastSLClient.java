@@ -79,7 +79,8 @@ public class FastSLClient extends Client {
         fastSLClient.loadConfig(args);
 
         NativeInterface VNF_JNI = new NativeInterface();
-        String _ = VNF_JNI.__init_SFC(0, null);
+        String[] param = {""};
+        String _ = VNF_JNI.__init_SFC(1, param);
 
         fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
         fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");

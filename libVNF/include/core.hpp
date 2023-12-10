@@ -832,9 +832,7 @@ public:
 	void Add(App& last, App& app);
 
 	// Report SFC apps to txnEngine.
-	int NFs();
-
-	void Init(int maxCores);
+	std::string NFs();
 
     // The Callbacks router for the whole SFC.
     int _callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqobj, char * packet, int packetlen, void * value, int length, int errCode);
@@ -851,8 +849,7 @@ public:
 	std::vector<int> objSizes;
     std::vector<int> objSizesStarting;
 };
-// User get SFC single instance.
-DB4NFV::SFC& GetSFC();
+
 
 }
 
@@ -873,6 +870,8 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
 
 // The entry of the SFC thread from java.
 int __VNFThread(int argc, char *argv[]);
-std::string __init_SFC(int argc, char *argv[]);
+
+// User get SFC single instance.
+DB4NFV::SFC& GetSFC();
 
 #endif

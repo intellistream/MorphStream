@@ -93,14 +93,14 @@ auto SLApp = DB4NFV::App{
     sizeof(BState),
 };
 
-std::string __init_SFC(int argc, char *argv[]){
+int VNFMain(int argc, char *argv[]){
     // Get the main SFC to construct.
-    auto SFC = DB4NFV::GetSFC();
+    auto SFC = GetSFC();
     SFC.Entry(SLApp);
 
     // No nextApp
     // SFC.Add(SLApp, SomeNextApp);
 
     // TODO. Call Json to formalize.
-    return nullptr;
+    return 0;
 }
