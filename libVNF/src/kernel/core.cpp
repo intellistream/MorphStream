@@ -1750,10 +1750,11 @@ void DB4NFV::SFC::Add(App& last, App& app){
 
 // The entry for sending txn execution request to txnEngine.
 // TODO. Extend the other information.
-void __request(uint64_t txnId){
+void __request(uint64_t txnReqId){
+    // Call JVM. Errored. TODO.
     return globals.__java_env->CallVoidMethod(
         globals.__client_obj, globals.__request,
-        txnId
+        txnReqId
         // Other parameters to be added.
     );
 }
@@ -1848,7 +1849,7 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
 		    return env->NewStringUTF("");
         }
 
-        // Get a reference to the sendTxnRequest method
+        // Get a reference to the txn method
         jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
 
         if (methodId == NULL)
@@ -1857,7 +1858,7 @@ JNICALL Java_libVNFFrontend_NativeInterface__1_1init_1SFC
 		    return env->NewStringUTF("");
         }
 
-        // Call the sendTxnRequest method
+        // Call the __request method
         globals.__request = methodId;
         globals.__client_obj = obj;
         globals.__java_env = env;
