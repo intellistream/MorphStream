@@ -16,7 +16,7 @@ public class NativeInterface {
     public native void __VNFThread(int argc, String[] argv);
 
     // Native method declaration for _callBack
-    public static native byte[] _execute_sa_udf(long txnReqId, int saId, byte[] value, int length);
+    public static native byte[] _execute_sa_udf(long txnReqId, int saFlag, byte[] saData, int length);
 
     // Native method declaration for __handle_done
     public static native int __txn_finished(long txnID); //TODO: This should be txnID (or packet ID)
