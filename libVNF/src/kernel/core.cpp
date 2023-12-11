@@ -1751,9 +1751,8 @@ void DB4NFV::SFC::Add(App& last, App& app){
 // The entry for sending txn execution request to txnEngine.
 // TODO. Extend the other information.
 void __request(uint64_t txnReqId){
-    char msg[sizeof(uint64_t)+1];
+    char msg[sizeof(uint64_t)];
     memcpy(msg, &txnReqId, sizeof(uint64_t));
-    msg[sizeof(uint64_t)] = '\0';
 
     // FIXME. To be optimized. Cache Jenv in one persistent VNF thread.
     JNIEnv *env;
@@ -1773,12 +1772,13 @@ void __request(uint64_t txnReqId){
     assert( methodId != NULL);
 
     // We can't cache jenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
-    return env->CallVoidMethod(
+    env->CallVoidMethod(
         IS, methodId,
         env->NewStringUTF(msg)
         // Other parameters to be added.
     );
-    std::cout << "req create success." << std::endl;
+    perror("req create success.");
+    assert(false);
 }
 
 int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId) {
