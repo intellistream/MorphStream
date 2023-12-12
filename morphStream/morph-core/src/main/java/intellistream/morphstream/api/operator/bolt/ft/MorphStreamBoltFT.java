@@ -139,11 +139,6 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                 }
             }
 
-            //Each state access involves multiple conditions (values that are not commonly shared among events)
-            for (String valueName: stateAccessDesc.getValueNames()) {
-                stateAccess.addValue(valueName, event.getValue(valueName));
-            }
-
             eventStateAccessesMap.get(event.getBid()).put(stateAccessName, stateAccess);
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }

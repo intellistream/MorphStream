@@ -44,10 +44,6 @@ public class TransactionalEvent extends TxnEvent {
         this.flag = flag;
     }
 
-    public Object getValue(String valueName) {
-        return this.valueMap.get(valueName);
-    }
-
     public String getKey(String tableName, int keyIndex) {
         return this.keyMap.get(tableName).get(keyIndex);
     }
@@ -56,10 +52,6 @@ public class TransactionalEvent extends TxnEvent {
     }
     public long getTxnRequestID() {
         return -1;
-    }
-
-    public HashMap<String, String> getValueTypeMap() {
-        return this.valueTypeMap;
     }
 
     public String getFlag() {
