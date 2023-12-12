@@ -92,21 +92,19 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             operatorTimestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
-        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
+//        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
     }
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
         RuntimeMonitor.get().PRE_EXE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            TransactionalEvent event = (TransactionalEvent) input_event;
-            if (enable_latency_measurement) {
-                event.setOperationTimestamp(operatorTimestamp);
-            }
-            Transaction_Request_Construct(event, txnContext);
-            RuntimeMonitor.get().ACC_PRE_EXE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
+        TxnContext txnContext = new TxnContext(thread_Id, this.fid, _bid, ((TransactionalEvent) input_event).getTxnRequestID());
+        TransactionalEvent event = (TransactionalEvent) input_event;
+        if (enable_latency_measurement) {
+            event.setOperationTimestamp(operatorTimestamp);
         }
+        Transaction_Request_Construct(event, txnContext);
+        RuntimeMonitor.get().ACC_PRE_EXE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
     }
 
     protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {

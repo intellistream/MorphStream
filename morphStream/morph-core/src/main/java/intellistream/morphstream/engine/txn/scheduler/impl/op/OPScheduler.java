@@ -121,10 +121,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         if (useNativeLib) {
             byte[] saDataBytes = encodeStringArray(saData);
-            // TODO. @Zhonghao 
-            // result_ptr is the pointer to write back result for Write type 
+            // TODO. @Zhonghao: result_ptr is the pointer to write back result for Write type
             // saDataBytes = NativeInterface._execute_sa_udf(txnReqId, saId, saDataBytes, saData.length, resultp_ptr);
-            saDataBytes = NativeInterface._execute_sa_udf(operation.bid, Integer.parseInt(operation.stateAccess[0]), saDataBytes, saData.length);
+            saDataBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), saDataBytes, saData.length);
             saData = decodeStringArray(saDataBytes);
         } else {
             try {
@@ -239,6 +238,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 default:
                     throw new UnsupportedOperationException();
             }
+            set_op.txnReqID = request.txn_context.getTxnReqID();
 //            set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
             tpg.setupOperationTDFD(set_op, request);
             if (txnOpId == 0) {

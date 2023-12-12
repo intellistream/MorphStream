@@ -27,6 +27,7 @@ public abstract class AbstractOperation {
     public final TableRecord d_record;
     public final int d_fieldIndex;
     public final long bid;
+    public long txnReqID; //Used under NFV context, created by VNF instance to track txn request
     //required by READ_WRITE_and Condition.
     public final String pKey;
     public volatile String[] stateAccess; //type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N

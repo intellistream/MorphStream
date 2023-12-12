@@ -64,21 +64,19 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             operatorTimestamp = System.nanoTime();
         else
             operatorTimestamp = 0L;//
-        _bid = in.getBID();
+        _bid = in.getBID(); //TODO: Refine this, pass bid directly to PRE_TXN_PROCESS?
         input_event = in.getValue(0);
-        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
+//        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid, ((TransactionalEvent) input_event).getTxnRequestID());
     }
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            TransactionalEvent event = (TransactionalEvent) input_event;
-            if (enable_latency_measurement) {
-                event.setOperationTimestamp(operatorTimestamp);
-            }
-            Transaction_Request_Construct(event, txnContext);
+        TransactionalEvent event = (TransactionalEvent) input_event;
+        TxnContext txnContext = new TxnContext(thread_Id, this.fid, _bid, ((TransactionalEvent) input_event).getTxnRequestID());
+        if (enable_latency_measurement) {
+            event.setOperationTimestamp(operatorTimestamp);
         }
+        Transaction_Request_Construct(event, txnContext);
     }
 
     protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {
@@ -91,9 +89,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
             // Pass event data (value of key) to state access
             for (int i = 3; i < stateAccess.length; i += 4) {
-                String tableName = stateAccess[i];
+//                String tableName = stateAccess[i];
                 String keyIndex = stateAccess[i + 1];
-                String key = event.getKey(tableName, Integer.parseInt(keyIndex));
+                String key = event.getKey(Integer.parseInt(keyIndex)); //only valid for VNFEvent
                 stateAccess[i + 1] = key;
                 // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
             }
@@ -110,7 +108,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (useNativeLib) {
             for (TransactionalEvent event : eventQueue) {
-                NativeInterface.__txn_finished(event.getBid()); //TODO: Notify libVNF for txn completion
+                NativeInterface.__txn_finished(event.getTxnRequestID()); //Notify libVNF for txn completion
             }
         } else {
             for (TransactionalEvent event : eventQueue) {

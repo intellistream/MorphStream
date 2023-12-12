@@ -58,8 +58,8 @@ public class InputSource {
     /**
      * Receives input data from streaming source (e.g., JNI) and round-robin inserts data into executor input queues
      */
-    public void insertInputData(String input) { //TODO: Input should be txn request: key, (flag, isAbort)
-        executorInputQueues.get(rrIndex).add(inputFromStringToTxnEvent(input));
+    public void insertInputData(String input) {
+        executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(input));
         rrIndex = (rrIndex + 1) % spoutNum;
     }
 
@@ -92,6 +92,34 @@ public class InputSource {
 
     public BlockingQueue<TransactionalEvent> getInputQueue(int spoutId) {
         return this.executorInputQueues.get(spoutId);
+    }
+
+    /**
+     * Packet string format (split by ";"):
+     * ts (timestamp or bid, increasing by each request); txnReqID; key(s) (split by ":"); flag; isAbort
+     * */
+    public TransactionalEvent inputFromStringToTxnVNFEvent(String request) {
+        String[] inputArray = request.split(";");
+
+        if (inputArray.length == 5) {
+            long bid = Long.parseLong(inputArray[0]);
+            long txnReqID = Long.parseLong(inputArray[1]);
+            String[] keys = inputArray[2].split(":");
+            String flag = inputArray[3];
+            boolean isAbort = Boolean.parseBoolean(inputArray[4]);
+
+            TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(bid, txnReqID, keys, flag, isAbort);
+
+            if (createTimestampForEvent) {
+                txnEvent.setOriginTimestamp(System.nanoTime());
+            } else {
+                txnEvent.setOriginTimestamp(0L);
+            }
+            return txnEvent;
+
+        } else {
+            throw new UnsupportedOperationException("Unsupported input format: " + request);
+        }
     }
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {
@@ -171,45 +199,6 @@ public class InputSource {
             }
         } else {
             throw new UnsupportedOperationException("Unsupported input format: " + input);
-        }
-    }
-
-    /**
-     * Packet string format
-     * */
-    public TransactionalEvent packetToEvent(String packet) {
-        String[] inputArray = packet.split(";"); //pkt: ;null;null
-        if (inputArray.length == 3) {
-
-            HashMap<String, List<String>> keyMap = new HashMap<>();
-            String [] keyMapPairs = inputArray[0].split(",");
-            for (String pair : keyMapPairs) {
-                List<String> keys = new ArrayList<>();
-                String[] keyMapPair = pair.split(":");
-                for (int j = 1; j < keyMapPair.length; j++) {
-                    keys.add(keyMapPair[j]);
-                }
-                keyMap.put(keyMapPair[0], keys);
-            }
-
-            String flag = inputArray[1]; //which txn to execute
-            String isAbort = inputArray[2]; //control whether to abort txn
-
-            TransactionalEvent txnEvent;
-            if (isAbort.equals("true")) {
-                txnEvent = new TransactionalEvent(this.bid, keyMap, null, null, flag, true);
-            } else {
-                txnEvent = new TransactionalEvent(this.bid, keyMap, null, null, flag, false);
-            }
-            if (createTimestampForEvent) {
-                txnEvent.setOriginTimestamp(System.nanoTime());
-            } else {
-                txnEvent.setOriginTimestamp(0L);
-            }
-            bid++; //bid only used for normal events, not control signals
-            return txnEvent;
-        } else {
-            throw new UnsupportedOperationException("Unsupported input format: " + packet);
         }
     }
 
