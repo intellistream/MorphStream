@@ -54,6 +54,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     private final SynchronizedDescriptiveStatistics latencyStat = new SynchronizedDescriptiveStatistics(); //latency statistics of current batch
     private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
+    protected ZMsg msg;
     public FTManager ftManager;
     public FTManager loggingManager;
 
