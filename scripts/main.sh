@@ -17,6 +17,7 @@ MORPH_DIR=$SCRIPT_DIR/morphStream
 PROJ_DIR=$MORPH_DIR/morph-core/src/main/java
 INTERFACE_FILE=$PROJ_DIR/intellistream/morphstream/util/libVNFFrontend/NativeInterface.java
 HEADER=$LIBVNF_DIR/include
+HEADER_INSTALL=/usr/local/include/libvnf/
 
 # Executable
 CMAKE=$TMP_DIR/cmake/bin/cmake
@@ -56,6 +57,8 @@ compile_libVNF(){
 			-DBACKEND_MORPH=True \
 			-DCMAKE_BUILD_TYPE=Debug \
 			-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
+		# rm -dfr $HEADER_INSTALL 
+		# mkdir $HEADER_INSTALL && cp "$HEADER/core.hpp" "$HEADER_INSTALL/"
 		make install && echo "Done: libVNF built and installed." 
 		exit 0
 	elif [ $# -ge 2 ] && [[ $2 == "$KERNEL_BYPASS" ]]; then 

@@ -44,7 +44,6 @@
 #include <mutex>
 #include <fstream>
 #include <chrono>
-
 #include "intellistream_morphstream_util_libVNFFrontend_NativeInterface.h"
 
 #include "datastore/dspackethandler.hpp"
@@ -790,7 +789,10 @@ public:
 	const PostTxnHandler postTxnHandler_ = nullptr;
 
 	// Called by user to start request, send the transaction request to schedule.
-	int Request(vnf::ConnId& connId, char * packet, int packetLen, int packetId, void * reqObj, int reqObjId);
+	void Request(
+		vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId,
+		uint64_t ts, const char *key, bool isAbort
+	);
 
 	App* app;
 	Transaction* txn;
@@ -806,10 +808,14 @@ public:
 	std::vector<StateAccess> sas = {};	// The State Access event to be used for transaction handlers. Including transaction handlers.
 	const App* app;
 	int txnIndex;
-	void Trigger(vnf::ConnId& connId, char * packet, int packetLen, int packetId, void * reqObj, int reqObjId) const
+	void Trigger(vnf::ConnId& connId, char * packet, int packetLen, int packetId, void * reqObj, int reqObjId,
+    	uint64_t ts, const char *key, bool isAbort
+	) const
 	{ 
 		for (auto sa: sas){
-			sa.Request(connId, packet, packetLen, packetId, reqObj, reqObjId); 
+			sa.Request(connId, packet, packetLen, packetId, reqObj, reqObjId,
+				ts, key, isAbort
+			); 
 		}
 	}
 };
@@ -874,4 +880,10 @@ int __VNFThread(int argc, char *argv[]);
 // User get SFC single instance.
 DB4NFV::SFC& GetSFC();
 
+uint64_t GetCurrentTime()
+{
+	auto currentTimePoint = std::chrono::high_resolution_clock::now();
+	auto duration = currentTimePoint.time_since_epoch();
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+}
 #endif

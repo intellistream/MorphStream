@@ -7,10 +7,13 @@ import intellistream.morphstream.configuration.CONTROL;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import org.apache.commons.configuration2.SystemConfiguration;
 
 
 /**
@@ -53,6 +56,12 @@ public class InputSource {
             BlockingQueue<TransactionalEvent> inputQueue = executorInputQueues.get(i);
             inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));
         }
+    }
+
+    public void libVNFInsertInputData(byte [] input){
+        String s = new String(input);
+        executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(s));
+        rrIndex = (rrIndex + 1) % spoutNum;
     }
 
     /**

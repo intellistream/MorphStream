@@ -48,10 +48,13 @@ void sl_app_accept_packet_handler(vnf::ConnId& connId, const std::vector<Transac
 void sl_app_read_packet_handler(vnf::ConnId& connId, const std::vector<Transaction>& txns, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, int errorCode){
     std::cout << "New Packet accepted" << std::endl;
     auto content = string(static_cast<char *>(packet));
+    // TODO. Clear timeStamping out of the user code.
     if (content == "transfer\n"){
-        txns[1].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId);
+        txns[1].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId,
+            GetCurrentTime(), "0000:0001", false);
     } else if (content == "deposit\n") {
-        txns[0].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId);
+        txns[0].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId,
+            GetCurrentTime(), "0000:0001", false);
     } else {
         assert(false);
     }
@@ -59,7 +62,6 @@ void sl_app_read_packet_handler(vnf::ConnId& connId, const std::vector<Transacti
 };
 
 auto SLApp = DB4NFV::App{
-    // TODO: ADD: Transactions.
     {
         Transaction{
             // "deposit_transaction",

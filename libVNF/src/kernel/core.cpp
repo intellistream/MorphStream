@@ -1749,39 +1749,76 @@ void DB4NFV::SFC::Add(App& last, App& app){
 // }
 
 // The entry for sending txn execution request to txnEngine.
-// TODO. Extend the other information.
-void __request(uint64_t txnReqId){
-    char msg[sizeof(uint64_t)];
-    memcpy(msg, &txnReqId, sizeof(uint64_t));
-
-    // FIXME. To be optimized. Cache Jenv in one persistent VNF thread.
+// The entry for sending txn execution request to txnEngine.
+void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool isAbort)
+{
+    // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
     JNIEnv *env;
     jint rs = (*globals.__jvm).AttachCurrentThread((void **)&env, NULL);
     assert(rs == JNI_OK);
 
+    int len = sizeof(uint64_t) * 3 + strlen(key) + 3;
+    auto msg = env->NewByteArray(len); // 3 semicolons and null terminator
+    assert(msg != NULL);
+
+    // Use SetByteArrayRegion to copy data into the byte array
+    jbyte data[len];
+    int offset = 0;
+
+    memcpy(data + offset, &ts, sizeof(uint64_t));
+    offset += sizeof(uint64_t);
+    data[offset++] = jbyte(';');
+
+    memcpy(data + offset, &txnReqId, sizeof(uint64_t));
+    offset += sizeof(uint64_t);
+    data[offset++] = ';';
+
+    memcpy(data + offset, key, strlen(key));
+    offset += strlen(key);
+    data[offset++] = ';';
+
+    memcpy(data + offset, &flag, sizeof(int));
+    offset += sizeof(int);
+    data[offset++] = ';';
+
+    memcpy(data + offset, &isAbort, sizeof(bool));
+    offset += sizeof(bool);
+    data[offset] = '\0';
+
+    // Copy the data into the msg byte array
+    env->SetByteArrayRegion(msg, 0, len, data);
+
     jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
-    assert( cls != NULL);
+    assert(cls != NULL);
 
     jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
-    assert( constructor != NULL);
+    assert(constructor != NULL);
 
     jobject IS = env->NewObject(cls, constructor);
-    // Set Permanenet Ref.
+    // Set Permanent Ref.
 
-    jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
-    assert( methodId != NULL);
+    jmethodID methodId = env->GetMethodID(cls, "libVNFInsertInputData", "([B)V");
+    assert(methodId != NULL);
 
-    // We can't cache jenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
-    env->CallVoidMethod(
-        IS, methodId,
-        env->NewStringUTF(msg)
-        // Other parameters to be added.
-    );
-    perror("req create success.");
-    assert(false);
+    // Remove
+    for (int i = 0; i < len; i++)
+    {
+        printf("%02X ", data[i]); // Print each byte in hexadecimal format
+    }
+    printf("\n");
+
+    // We can't cache JNIEnv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
+    env->CallVoidMethod(IS, methodId, msg);
+
+    // Clean up resources when done
+    env->DeleteLocalRef(IS);  // Release the reference to IS
+    env->DeleteLocalRef(msg); // Release the reference to msg
 }
 
-int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId) {
+void DB4NFV::StateAccess::Request(
+    vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId,
+    uint64_t ts, const char *key, bool isAbort
+) {
     // Create a new event blocking fd.
     if (uint64_t(reqObj) == 0){
         perror("fatal: reqObj is null.");
@@ -1797,7 +1834,7 @@ int DB4NFV::StateAccess::Request(vnf::ConnId& connId, char * packet, int packetL
     // Register call back parameters in the context.
     perCoreStates[connId.coreId].packetNumberContextMap[packetId] = o;
     // TODO. Fix parameter passing.
-	__request(TXNID(connId.coreId, packetId));
+	__request(ts, TXNID(connId.coreId, packetId), key, this->txnIndex, isAbort);
 }
 
 // Routing to the context of transaction breakpoint.
