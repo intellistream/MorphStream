@@ -1,5 +1,6 @@
 package intellistream.morphstream.configuration;
 
+import intellistream.morphstream.common.io.Rdma.Conf.RdmaChannelConf;
 import intellistream.morphstream.util.datatypes.DataTypeUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -8,12 +9,6 @@ import java.util.Map;
 import java.util.Properties;
 
 public class Configuration extends HashMap {
-    public static final String TOPOLOGY_WORKER_CHILDOPTS = "work_opt";
-    public static final String METRICS_ENABLED = "metrics.enabled";
-    public static final String METRICS_REPORTER = "metrics.reporter";
-    public static final String METRICS_INTERVAL_VALUE = "metrics.interval.value";
-    public static final String METRICS_INTERVAL_UNIT = "metrics.interval.unit";
-    public static final String METRICS_OUTPUT = "metrics.output";
     public static final String TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT = "topology.bolts.window.length.count";
     public static final String TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS = "topology.bolts.window.length.duration.ms";
     public static final String TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT = "topology.bolts.window.sliding.interval.count";
@@ -35,10 +30,12 @@ public class Configuration extends HashMap {
     public static final String TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS = "topology.enable.message.timeouts";
     public static final String TOPOLOGY_MESSAGE_TIMEOUT_SECS = "topology.message.timeout.secs";
     private static final long serialVersionUID = -694570235097133148L;
-    public int timeSliceLengthMs = 100;
     public boolean useLocalEventGenerator;
     protected String configPrefix = "";
-    String GENERATOR_COUNT = "generator.count";
+    public RdmaChannelConf rdmaChannelConf;
+    public Configuration() {
+        this.rdmaChannelConf = new RdmaChannelConf();
+    }
 
     public static Configuration fromMap(Map map) {
         Configuration config = new Configuration();

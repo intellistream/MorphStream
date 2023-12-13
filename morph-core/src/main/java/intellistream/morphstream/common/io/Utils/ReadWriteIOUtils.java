@@ -3,7 +3,6 @@ package intellistream.morphstream.common.io.Utils;
 import intellistream.morphstream.common.io.Enums.CompressionType;
 import intellistream.morphstream.common.io.Enums.DataType;
 import intellistream.morphstream.common.io.Enums.Encoding;
-import intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read.FileInput;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -800,53 +799,6 @@ public class ReadWriteIOUtils {
         return bytes;
     }
 
-    /**
-     * read bytes from buffer with offset position to the end of buffer.
-     */
-    public static int readAsPossible(FileInput input, long position, ByteBuffer buffer)
-            throws IOException {
-        int length = 0;
-        int read;
-        while (buffer.hasRemaining() && (read = input.read(buffer, position)) != NO_BYTE_TO_READ) {
-            length += read;
-            position += read;
-            input.read(buffer, position);
-        }
-        return length;
-    }
-
-    /**
-     * read util to the end of buffer.
-     */
-    public static int readAsPossible(FileInput input, ByteBuffer buffer) throws IOException {
-        int length = 0;
-        int read;
-        while (buffer.hasRemaining() && (read = input.read(buffer)) != NO_BYTE_TO_READ) {
-            length += read;
-        }
-        return length;
-    }
-
-    /**
-     * read bytes from buffer with offset position to the end of buffer or up to len.
-     */
-    public static int readAsPossible(FileInput input, ByteBuffer target, long offset, int len)
-            throws IOException {
-        int length = 0;
-        int limit = target.limit();
-        if (target.remaining() > len) {
-            target.limit(target.position() + len);
-        }
-        int read;
-        while (length < len
-                && target.hasRemaining()
-                && (read = input.read(target, offset)) != NO_BYTE_TO_READ) {
-            length += read;
-            offset += read;
-        }
-        target.limit(limit);
-        return length;
-    }
 
     /**
      * read string list with self define length.

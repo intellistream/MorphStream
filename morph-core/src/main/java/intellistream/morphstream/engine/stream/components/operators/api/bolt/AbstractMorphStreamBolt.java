@@ -18,7 +18,6 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 
 public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt {
-    protected ZMsg msg;
     protected TransactionalEvent input_event;
     protected long _bid;
     public AbstractMorphStreamBolt(String id, Logger log, int fid) {

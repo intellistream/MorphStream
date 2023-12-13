@@ -8,8 +8,6 @@ import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import worker.WebServer;
 
 import java.util.ArrayList;

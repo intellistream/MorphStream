@@ -8,6 +8,7 @@ import intellistream.morphstream.configuration.CONTROL;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -134,6 +135,10 @@ public class InputSource {
             txnEvent = new TransactionalEvent(bid, keyMap, valueMap, valueTypeMap, flag, false);
         }
         return txnEvent;
+    }
+    public static TransactionalEvent inputFromByteToTxnEvent(byte[] bytes) {
+        String string = new String(bytes, StandardCharsets.UTF_8);
+        return inputFromStringToTxnEvent(string);
     }
 
     public String getStaticFilePath() {

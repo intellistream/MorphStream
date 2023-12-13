@@ -1,6 +1,5 @@
 package intellistream.morphstream.api;
 
-import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
@@ -13,7 +12,6 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +21,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class Client extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
-    private final MorphStreamEnv env = MorphStreamEnv.get();
     private final Map<String, ZMQ.Socket> sockets = new HashMap<>();
     public HashMap<String, FunctionDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
     protected final ZContext zContext = new ZContext();

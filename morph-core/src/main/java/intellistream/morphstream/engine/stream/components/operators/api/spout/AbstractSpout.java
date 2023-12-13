@@ -26,6 +26,7 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
     public Tuple tuple;
     public Tuple marker;
     public int taskId; //global ID for this executorNode in current Brisk.topology
+    public int threadId;
     protected int ccOption;
     protected int myiteration = 0;//start from 1st iteration.
     public long systemStartTime;
@@ -45,6 +46,7 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
         tthread = config.getInt("tthread");
         ccOption = config.getInt("CCOption", 0);
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
+        threadId = thread_Id;
     }
     public abstract void nextTuple() throws InterruptedException;
     @Override

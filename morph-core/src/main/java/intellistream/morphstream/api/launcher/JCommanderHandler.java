@@ -251,6 +251,12 @@ public class JCommanderHandler {
     public String workerHosts = "localhost,localhost";
     @Parameter(names = {"--morphstream.workerPorts"}, description = "morphstream worker ports")
     public String workerPorts = "5540,5550";
+    @Parameter(names = {"--CircularBufferCapacity"}, description = "CircularBufferCapacity")
+    public int CircularBufferCapacity = 1024 * 1024 * 1024;
+    @Parameter(names = {"--BatchMessageCapacity"}, description = "BatchMessageCapacity")
+    public int BatchMessageCapacity = 1000;
+    @Parameter(names = {"--shuffleType"}, description = "shuffleType: Sort (0), Random (1), Optimized (2)")
+    public int shuffleType = 0;
 
     /**
      * Benchmarking and evaluation parameters
@@ -333,6 +339,9 @@ public class JCommanderHandler {
             config.put("morphstream.socket.workerPorts", workerPorts);
             config.put("morphstream.socket.workerHosts", workerHosts);
         }
+        config.put("CircularBufferCapacity", CircularBufferCapacity);
+        config.put("BatchMessageCapacity", BatchMessageCapacity);
+        config.put("shuffleType", shuffleType);
 
 
         config.put("checkpoint", checkpoint_interval);
