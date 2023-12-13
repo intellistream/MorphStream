@@ -57,8 +57,8 @@ compile_libVNF(){
 			-DBACKEND_MORPH=True \
 			-DCMAKE_BUILD_TYPE=Debug \
 			-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
-		# rm -dfr $HEADER_INSTALL 
-		# mkdir $HEADER_INSTALL && cp "$HEADER/core.hpp" "$HEADER_INSTALL/"
+		rm -dfr $HEADER_INSTALL 
+		mkdir $HEADER_INSTALL && cp "$HEADER/core.hpp" "$HEADER_INSTALL/"
 		make install && echo "Done: libVNF built and installed." 
 		exit 0
 	elif [ $# -ge 2 ] && [[ $2 == "$KERNEL_BYPASS" ]]; then 

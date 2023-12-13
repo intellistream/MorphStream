@@ -1,4 +1,5 @@
-#include <libvnf/core.hpp>
+#include <core.hpp>
+// #include <libvnf/core.hpp>
 #include <utility>
 #include <unordered_map>
 #include <cassert>
@@ -14,47 +15,48 @@ Config config("/home/kailian/libVNF/vnf/SL/config.csv");
 using namespace DB4NFV;
 
 // Handler function.
-void src_transfer_sa_udf(vnf::ConnId& connId, const std::vector<Transaction>& txns, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, void* value, int valueLen, int errorCode){
-    double* srcBalance = static_cast<double *> (value);
+void src_transfer_sa_udf(vnf::ConnId& connId, Context &ctx){
+    double* srcBalance = static_cast<double *>(ctx.value());
     if (*srcBalance > double(100)) {
-        *RESULT_PTR(reqObj) = *srcBalance - 100;
+        double res = *srcBalance - 100; 
+        ctx.WriteBack(&res, sizeof(double));
     } else {
         // Forgot how to dispose abortion.. TODO.
-        registerNextApp(nullptr, -1, ABORT);
+        ctx.Abort();
     }   
 };
 
-void dest_transfer_sa_udf(vnf::ConnId& connId, const std::vector<Transaction>& txns, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, void* value, int valueLen, int errorCode){
-    double** balances = static_cast<double **> (value);
+void dest_transfer_sa_udf(vnf::ConnId& connId, Context &ctx){
     // balance0 is the src balance
     // balance1 is the dst balance
-    if (*(balances[0]) > double(100)) {
-        *RESULT_PTR(reqObj) = *(balances[1]) - 100;
+    if (*(double*)(ctx.value()) > double(100)) {
+        // Double1 = *(double*)(ctx.value() + sizeof(double));
+        double res = *(double*)(ctx.value() + sizeof(double)) - 100;
+        ctx.WriteBack(&res, sizeof(double));
     } else {
-        registerNextApp(nullptr, -1, ABORT);
+        ctx.Abort();
     }   
 };
 
-void deposit_sa_udf(vnf::ConnId& connId, const std::vector<Transaction>& txns, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, void* value, int valueLen, int errorCode){
-    double* srcBalance = static_cast<double *> (value);
-    *RESULT_PTR(reqObj) = *srcBalance - 100;
+void deposit_sa_udf(vnf::ConnId& connId, Context &ctx){
+    double* srcBalance = static_cast<double *> (ctx.value());
+    double res = *srcBalance - 100;
+    ctx.WriteBack(&res, sizeof(double));
 }
 
-void sl_app_accept_packet_handler(vnf::ConnId& connId, const std::vector<Transaction>& txns, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, int errorCode){
+void sl_app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
     std::cout << "Connection accepted" << std::endl;
     return;
 };
 
-void sl_app_read_packet_handler(vnf::ConnId& connId, const std::vector<Transaction>& txns, int reqObjId, void* reqObj, char * packet, int packetLen, int packetId, int errorCode){
+void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
     std::cout << "New Packet accepted" << std::endl;
-    auto content = string(static_cast<char *>(packet));
+    auto content = string(ctx.packet());
     // TODO. Clear timeStamping out of the user code.
     if (content == "transfer\n"){
-        txns[1].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId,
-            GetCurrentTime(), "0000:0001", false);
+        ctx.Transaction(1).Trigger(connId, ctx, "0000:0001", false);
     } else if (content == "deposit\n") {
-        txns[0].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId,
-            GetCurrentTime(), "0000:0001", false);
+        ctx.Transaction(0).Trigger(connId, ctx, "0000:0001", false);
         std::cout << GetSFC().SFC_chain[0]->Txns.size() << std::endl;
     } else {
         assert(false);

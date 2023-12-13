@@ -351,8 +351,8 @@ void *serverThread(void *args) {
                     // TODO. Make sure only the right thread receives this.
                     if (COREID(txnReqId) == coreId) {
 
-                        auto o = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
-                        ConnId connId = ConnId(coreId, o->old_socket);
+                        auto ctx = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
+                        ConnId connId = ConnId(coreId, ctx->_old_socket());
 
                         // TODO. Debug. Set the cache.
                         // No need to modify to use the cache. Since it's totally inside.
@@ -374,9 +374,11 @@ void *serverThread(void *args) {
 
                         // TODO. Can receive error here.
 
-                        _disposalBody(connId, o->reqObjId,
-                                    perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
-                                    o->packet_record, o->packet_len, 0);
+                        // _disposalBody(connId, o->reqObjId,
+                        //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
+                        //             o->packet_record, o->packet_len, 0);
+                        _disposalBody(connId, *ctx);
+
                         // Delete ctx from the hashmap. No need to delete ctx since it belongs to reqObj.
                         perCoreStates[coreId].packetNumberContextMap.erase(
                             perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
@@ -1659,39 +1661,36 @@ int __VNFThread(int argc, char *argv[]){
 	vnf::startEventLoop();
 }
 
-void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode){
-    auto o = static_cast<Context *> (requestObject);
-    while (o->AppIdx != -1){
-        auto app = globals.sfc.SFC_chain[o->AppIdx];
+void _disposalBody(vnf::ConnId& connId, Context & ctx){
+    while (ctx.AppIdx() != -1){
+        auto app = globals.sfc.SFC_chain[ctx.AppIdx()];
         // Only user manually point the next app to send.
-        o->AppIdx = -1;
-        switch (o->ret)
+        ctx._reset_appIdx();
+        switch (ctx.ReturnValue())
         {
         case vnf::ERROR:
             if ((*app->errorHandler) == nullptr ){
                 // Abort if error but no handler.
-                o->ret = ABORT;
+                ctx._clear_value();
+                ctx.Abort();
                 return;
             }
-            (*app->errorHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
+            (*app->errorHandler)(connId, ctx);
             break;
         case vnf::ACCEPT:
-            (*app->acceptHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
+            (*app->acceptHandler)(connId, ctx);
             break;
         case vnf::READ:
-            (*app->readHandler)(connId, app->Txns, reqObjId, app->reqObjClip(requestObject), packet, packetId, packetLen, 0);
+            (*app->readHandler)(connId, ctx);
             break;
         case vnf::ABORT:
+            ctx._clear_value();
             return;
         } 
+        // If it's called from some saUDF. Clear value for next app. Prevent leaking.
+        ctx._clear_value();
         // If transactions handler being called, the mark would be set.
-        if ( o->waiting_for_transaction_back == true ){
-        // FIXME. Copy to preserver for now.
-            // Copy the packet.
-            o->packet_record = new char[packetLen];
-            memcpy(o->packet_record, packet, packetLen);
-            o->packet_len = packetLen;
-            // Break out if called request.
+        if ( ctx.IsWaitingForTxnBack()){
             return;
         }
     }
@@ -1700,24 +1699,21 @@ void _disposalBody(vnf::ConnId& connId, int reqObjId, void * requestObject, char
 // Could only be called once.
 void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     requestObject = connId.allocReqObj(1);
-    auto o = static_cast<Context *> (requestObject);
-    o->ret = vnf::ACCEPT;
-    o->AppIdx = 0;
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
+    auto ctx = static_cast<Context *> (requestObject);
+    ctx->_set_status(ACCEPT);
+	_disposalBody(connId, *ctx);
 }
 
 void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
-    auto o = static_cast<Context *> (requestObject);
-    o->ret = vnf::READ;
-    o->AppIdx = 0;
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
+    auto ctx = static_cast<Context *> (requestObject);
+    ctx->_set_status(READ);
+	_disposalBody(connId, *ctx);
 }
 
 void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
-    auto o = static_cast<Context *> (requestObject);
-    o->ret = vnf::ERROR;
-    o->AppIdx = 0;
-	_disposalBody(connId, reqObjId, requestObject, packet, packetLen, packetId, errorCode);
+    auto ctx = static_cast<Context *> (requestObject);
+    ctx->_set_status(ERROR);
+	_disposalBody(connId, *ctx);
 }
 
 // TODO. Define the structure for message convey.
@@ -1737,9 +1733,9 @@ void DB4NFV::SFC::Add(App& last, App& app){
 	this->SFC_chain.push_back(&app);
 }
 
-// int DB4NFV::SFC::_callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqObj, char * packet, int packetlen, void * value, int length, int errCode){
+// int DB4NFV::SFC::_callBack(vnf::ConnId& connId, int AppIdx(), int TxnIdx, int SAIdx, int reqObjId, void* reqObj, char * packet, int packetlen, void * value, int length, int errCode){
 // 	// Seems we need to find out the ConnId from the context queue and continue.
-//     auto app = this->SFC_chain.at(AppIdx);
+//     auto app = this->SFC_chain.at(AppIdx());
 // 	return (*app.Txns.at(TxnIdx)->sas.at(SAIdx)->txnHandler_)(
 //         connId,
 //         app.Txns,
@@ -1753,8 +1749,7 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool i
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
     JNIEnv *env;
-    jint rs = (*globals.__jvm).AttachCurrentThread((void **)&env, NULL);
-    assert(rs == JNI_OK);
+    GetJniEnv(&env);
 
     int len = sizeof(uint64_t) * 3 + strlen(key) + 3;
     auto msg = env->NewByteArray(len); // 3 semicolons and null terminator
@@ -1808,32 +1803,27 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool i
 }
 
 void DB4NFV::StateAccess::Request(
-    vnf::ConnId& connId, char * packet, int packetLen,  int packetId, void * reqObj, int reqObjId,
-    uint64_t ts, const char *key, bool isAbort
+    vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort
 ) {
     // Create a new event blocking fd.
-    if (uint64_t(reqObj) == 0){
+    if (uint64_t(ctx.reqObj()) == 0){
         perror("fatal: reqObj is null.");
     }
-    auto o = CONTEXT(reqObj);
-
-    o->AppIdx = this->appIndex;
-    o->TxnIdx = this->txnIndex;
-    o->old_socket = connId.socketId;
-    o->reqObjId = reqObjId;
+    ctx._set_old_socket(connId.socketId);  
 
     // Register call back parameters in the context.
-    perCoreStates[connId.coreId].packetNumberContextMap[packetId] = o;
+    perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
     // TODO. Fix parameter passing.
-	__request(ts, TXNID(connId.coreId, packetId), key, this->txnIndex, isAbort);
+	__request(ctx._ts_low_32b(), TXNREQID(connId.coreId, int(ctx._ts_low_32b())), key, this->txnIndex, isAbort);
 }
 
 // Routing to the context of transaction breakpoint.
 int _callBack(uint64_t txnReqId, void * value, int length, void * result){
     // Write the value to the corresponding context.
-    auto ctx = perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)];
-    ctx->value = value;
-    ctx->value_len = length;
+
+    // FIXME. Optimize. Redundant recording. Just extract reqObjId like normal libVNF packet..?
+    // auto ctx = perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)];
+    // ctx->_set_value_from_callback(value, length);
 
     // FIXME: If callback handled this way, it would need another way to report abortion and write back.
     // Trigger the hook and return.
@@ -1841,7 +1831,7 @@ int _callBack(uint64_t txnReqId, void * value, int length, void * result){
     //     perror("_callback.write");
     // }
 
-    ConnId connId = ConnId(COREID(txnReqId), ctx->old_socket);
+    // ConnId connId = ConnId(COREID(txnReqId), ctx->_old_socket());
     // TODO. Debug. Set the cache.
     // No need to modify to use the cache. Since it's totally inside.
     // void *dsMalloc;
@@ -1863,10 +1853,8 @@ int _callBack(uint64_t txnReqId, void * value, int length, void * result){
     // TODO. Can receive error here.
 
 	// Return -1 if abort.
-    _disposalBody(connId, ctx->reqObjId,
-                perCoreStates[COREID(txnReqId)].socketIdReqObjIdToReqObjMap[ctx->old_socket][ctx->reqObjId],
-                ctx->packet_record, ctx->packet_len, 0);
-    return ctx->ret == ABORT? -1:0;    
+    // _disposalBody(connId, *ctx);
+    // return ctx->ReturnValue() == ABORT? -1:0;    
 }
 
 // TODO. TO BE DEBUGGED.
@@ -2020,33 +2008,38 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
 
 	int coreId = COREID(txnReqId);
 	auto ctx = perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)];
-    // TODO. Check if deallocated.
-    auto tmp = new uint8_t[length];
-    ctx->value = tmp;
-    ctx->value_len = length;
-    memcpy(ctx->value, inputBuffer, length);
 
-    ConnId conn = ConnId(COREID(txnReqId), ctx->old_socket);
+    /*
+    Value fetched deallocation happens: 
+    1. Requesting another transaction.
+    2. Return from the saUDF.
+    */
+
+    // Copy allocation value.
+    auto tmp = new char[length];
+    memcpy(tmp, inputBuffer, length);
+    ctx->_set_value_from_callback(tmp, length);
+
+    ConnId conn = ConnId(COREID(txnReqId), ctx->_old_socket());
 
     // How to recover the Index.
-	bool abortion = globals.sfc._callBack(conn, ctx->AppIdx, ctx->TxnIdx, saIdx, 
-        ctx->reqObjId, 
-        perCoreStates[coreId].socketIdReqObjIdToReqObjMap[ctx->old_socket][ctx->reqObjId],
-        ctx->packet_record, 
-        ctx->packet_len, ctx->value, ctx->value_len, 0) == 1? true: false;
+    _disposalBody(conn, *ctx);
+	bool abortion = ( ctx->ReturnValue())? true: false;
 
-    delete tmp;
-    ctx->value_len = -1;
+    // FIXME. Try to remove this.
+    ctx->_clear_value();
 
-    auto ret = env->NewByteArray(sizeof(bool) + sizeof(ctx->result_len));
+	// Write back.
     if (env == nullptr) {
         perror("core.cpp.Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf.NewByteArray.nullptr");
     }
 
+    // Set Abortion.
     jbyte firstByte = static_cast<jbyte>(abortion);
-    env->SetByteArrayRegion(ret, 0, 1, &firstByte);
-    env->SetByteArrayRegion(ret, 1, static_cast<jsize>(ctx->result_len), reinterpret_cast<jbyte *>(ctx->result));
-    return ret;
+	env->SetByteArrayRegion(ctx->_res_ptr(), 0, 1, &firstByte);
+
+    // How to release write back value? We don't need to release. They are managed.
+    return ctx->_res_ptr();
   }
 
 // Report done.
@@ -2063,9 +2056,15 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1t
   }
 
 // FIXME. TODO. CONTEXT shall not be done so easily...
-void *DB4NFV::App::reqObjClip(void * reqObjClip) { return reqObjClip + sizeof(Context) + globals.sfc.objSizesStarting.at(globals.sfc.AppIdxMap[this]);}
+void *DB4NFV::App::reqObjClip(void * reqObjClip) {
+    return reqObjClip + sizeof(Context) + globals.sfc.objSizesStarting.at(globals.sfc.AppIdxMap[this]);
+}
 
 DB4NFV::SFC& GetSFC(){ 
     auto &ref =  globals.sfc; 
     return ref;
 };
+
+Globals& GetGlobal(){
+    return globals;
+}
