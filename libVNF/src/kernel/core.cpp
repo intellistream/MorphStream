@@ -1749,7 +1749,6 @@ void DB4NFV::SFC::Add(App& last, App& app){
 // }
 
 // The entry for sending txn execution request to txnEngine.
-// The entry for sending txn execution request to txnEngine.
 void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool isAbort)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
@@ -1795,17 +1794,10 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool i
     assert(constructor != NULL);
 
     jobject IS = env->NewObject(cls, constructor);
-    // Set Permanent Ref.
 
+    // jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
     jmethodID methodId = env->GetMethodID(cls, "libVNFInsertInputData", "([B)V");
     assert(methodId != NULL);
-
-    // Remove
-    for (int i = 0; i < len; i++)
-    {
-        printf("%02X ", data[i]); // Print each byte in hexadecimal format
-    }
-    printf("\n");
 
     // We can't cache JNIEnv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
     env->CallVoidMethod(IS, methodId, msg);
@@ -1823,11 +1815,10 @@ void DB4NFV::StateAccess::Request(
     if (uint64_t(reqObj) == 0){
         perror("fatal: reqObj is null.");
     }
-    auto o = reinterpret_cast<Context *>(CONTEXT(reqObj));
+    auto o = CONTEXT(reqObj);
 
     o->AppIdx = this->appIndex;
     o->TxnIdx = this->txnIndex;
-    o->SAIdx = this->saIndex;
     o->old_socket = connId.socketId;
     o->reqObjId = reqObjId;
 
@@ -2022,9 +2013,9 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1V
 // The callback handling entrance.
 JNIEXPORT jbyteArray 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf
-  (JNIEnv * env, jobject obj, jlong saReqId_jni, jbyteArray value, jint length){
+  (JNIEnv * env, jclass cls, jlong txnReqId_jni, jint saIdx , jbyteArray value, jint length){
     // Save the value in ctx.
-    uint64_t txnReqId = static_cast<uint64_t>(saReqId_jni); 
+    uint64_t txnReqId = static_cast<uint64_t>(txnReqId_jni); 
     jbyte *inputBuffer = env->GetByteArrayElements(value, NULL);
 
 	int coreId = COREID(txnReqId);
@@ -2038,7 +2029,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     ConnId conn = ConnId(COREID(txnReqId), ctx->old_socket);
 
     // How to recover the Index.
-	bool abortion = globals.sfc._callBack(conn, ctx->AppIdx, ctx->TxnIdx, ctx->SAIdx, 
+	bool abortion = globals.sfc._callBack(conn, ctx->AppIdx, ctx->TxnIdx, saIdx, 
         ctx->reqObjId, 
         perCoreStates[coreId].socketIdReqObjIdToReqObjMap[ctx->old_socket][ctx->reqObjId],
         ctx->packet_record, 
@@ -2061,8 +2052,8 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
 // Report done.
 JNIEXPORT jint 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1txn_1finished
-  (JNIEnv * env, jobject obj, jlong saReqId_jni){
-    uint64_t txnReqId = static_cast<uint64_t>(saReqId_jni); 
+  (JNIEnv * env, jobject obj, jlong txnReqId_jni){
+    uint64_t txnReqId = static_cast<uint64_t>(txnReqId_jni); 
     // Write to the fd to suggest done.
     if (write(perCoreStates[COREID(txnReqId)].txnSocket, &txnReqId, sizeof(uint64_t)) < 0){
         perror("jni.handle_done.write");
@@ -2071,7 +2062,8 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1t
     return 0;
   }
 
-void *DB4NFV::App::reqObjClip(void * reqObjClip) { return reqObjClip + sizeof(Context) + globals.sfc.objSizes.at(globals.sfc.AppIdxMap[this]);}
+// FIXME. TODO. CONTEXT shall not be done so easily...
+void *DB4NFV::App::reqObjClip(void * reqObjClip) { return reqObjClip + sizeof(Context) + globals.sfc.objSizesStarting.at(globals.sfc.AppIdxMap[this]);}
 
 DB4NFV::SFC& GetSFC(){ 
     auto &ref =  globals.sfc; 

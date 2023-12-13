@@ -55,6 +55,7 @@ void sl_app_read_packet_handler(vnf::ConnId& connId, const std::vector<Transacti
     } else if (content == "deposit\n") {
         txns[0].Trigger(connId, packet, packetLen, packetId, reqObj, reqObjId,
             GetCurrentTime(), "0000:0001", false);
+        std::cout << GetSFC().SFC_chain[0]->Txns.size() << std::endl;
     } else {
         assert(false);
     }

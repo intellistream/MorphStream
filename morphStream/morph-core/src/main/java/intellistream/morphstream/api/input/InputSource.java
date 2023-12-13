@@ -58,10 +58,10 @@ public class InputSource {
         }
     }
 
-    public void libVNFInsertInputData(byte [] input){
+    // Delegate calling from libVNF for possible type changing.
+    public void libVNFInsertInputData(byte[] input){
         String s = new String(input);
-        executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(s));
-        rrIndex = (rrIndex + 1) % spoutNum;
+        this.insertInputData(s);
     }
 
     /**

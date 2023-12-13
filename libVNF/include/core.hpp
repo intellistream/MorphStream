@@ -679,7 +679,6 @@ struct Context{
     // Breakpoint status.
     int AppIdx;
     int TxnIdx;
-    int SAIdx;
 
     // Data fetching to be saved.
     char * packet_record;
@@ -812,6 +811,9 @@ public:
     	uint64_t ts, const char *key, bool isAbort
 	) const
 	{ 
+		auto o = CONTEXT(reqObj); 
+		o->waiting_for_transaction_back = true;
+
 		for (auto sa: sas){
 			sa.Request(connId, packet, packetLen, packetId, reqObj, reqObjId,
 				ts, key, isAbort
