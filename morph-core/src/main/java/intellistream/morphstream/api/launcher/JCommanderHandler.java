@@ -97,8 +97,6 @@ public class JCommanderHandler {
     public Integer Ratio_of_Transaction_Aborts_Highest = 0;
 
 
-
-
     /**
      * Workload tuning configurations
      */
@@ -218,7 +216,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
     public String eventRatio = "50,50";
     @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
-    public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
+    public String ratioOfMultiPartitionTransactionsForEvents = "0,0";
     @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
     public String stateAccessSkewnessForEvents = "0,0";
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
@@ -458,8 +456,7 @@ public class JCommanderHandler {
         config.put("rootPath", rootPath);
         config.put("inputFileType", inputFileType);
         config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs") + OsUtils.OS_wrapper(clientClassName) + OsUtils.OS_wrapper("event.txt"));
-        config.put("inputFileName", inputFileName);
-        config.put("dataDirectory", dataDirectory);
+        config.put("dataDirectory", rootPath + OsUtils.OS_wrapper("data") + OsUtils.OS_wrapper("jobs"));
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);
         config.put("eventTypes", eventTypes);

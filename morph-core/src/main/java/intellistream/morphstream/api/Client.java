@@ -30,6 +30,8 @@ public abstract class Client extends Thread {
     protected ZMQ.Poller poller;
     protected CountDownLatch latch;
     protected int msgCount = 0;
+    private String driverHost;
+    private int driverPort;
     public abstract boolean transactionUDF(StateAccess access);
     public abstract Result postUDF(String txnFlag, HashMap<String, StateAccess> stateAccessMap);
     public abstract void defineFunction();
@@ -74,7 +76,9 @@ public abstract class Client extends Thread {
             throw new RuntimeException(e);
         }
         this.inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(clientId);
-        connectFrontend("localhost",5570);
+        driverHost = MorphStreamEnv.get().configuration().getString("morphstream.socket.driverHost");
+        driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.socket.driverPort");
+        connectFrontend(driverHost, driverPort);
         while (!Thread.currentThread().isInterrupted()) {
             if (!inputQueue.isEmpty()) {
                 asyncInvokeFunction("localhost", inputQueue.poll().toString());

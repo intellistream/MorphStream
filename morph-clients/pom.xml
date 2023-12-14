@@ -87,7 +87,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>benchmark.BankingSystemSocket</mainClass>
+                            <mainClass>benchmark.socket.BankingSystemSocket</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

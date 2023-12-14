@@ -1,4 +1,4 @@
-package benchmark;
+package benchmark.socket;
 
 import client.BankingSystemClient;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
