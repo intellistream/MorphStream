@@ -94,6 +94,7 @@
 
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
+class Context;
 
 namespace vnf {
 
@@ -672,113 +673,6 @@ private:
 	}
 };
 
-class Context{
-
-public:
-	// Exposing packet.
-	int packet_len() { assert( _packet != NULL); return _packet_len; }
-	char * packet() { assert( _packet != NULL); return _packet; }
-	
-	// Fetched Value
-	int value_len() { assert( _value != NULL); return _value_len; }
-	void * value() { assert( _value != NULL); return _value; }
-
-	// Execution Status.
-	int AppIdx() { return _AppIdx; }
-	int TxnIdx() { return _TxnIdx; }
-
-	// ReqObj
-	void * reqObj(){ return GetGlobal().sfc.SFC_chain[_AppIdx]->reqObjClip(this);}
-	int reqObjId(){ return _reqObjId;}
-
-	// Write back.
-	void WriteBack(void * v, int len){
-		assert(_result == NULL);
-		JNIEnv * env;
-		GetJniEnv(&env);
-		_result = env->NewByteArray(sizeof(bool) + len);
-		env->SetByteArrayRegion(_result, 1, static_cast<jsize>(len), reinterpret_cast<jbyte *>(v));
-	}
-
-	void Abort() { _ret = ABORT;}
-
-	// Available Transactions.
-	DB4NFV::Transaction& const Transaction(int idx) {
-		assert(idx < GetGlobal().sfc.SFC_chain[_AppIdx]->Txns.size());
-		_clear_value();
-		return GetGlobal().sfc.SFC_chain[_AppIdx]->Txns[idx];
-	}
-
-	// Register Next App.
-	void NextApp(int appIdx, vnf::EventType ret){
-		_AppIdx = appIdx;
-		_ret = ret;
-	}
-
-	vnf::EventType ReturnValue(){
-		return _ret;
-	}
-
-	// Used to register is returning from a txnRequest?
-	bool IsWaitingForTxnBack() { return waiting_for_transaction_back;}
-
-	/*
-		These interface shall not be called by user.
-	*/
-	// Reserved Interface to provide lifecycle manage.
-	void _reset_appIdx() { _AppIdx = -1;}
-
-	// Context wont need a malloc type constructor. It's alias of reqObj.
-	void _set_status(vnf::EventType status){
-		_AppIdx = 0;
-		_ret = status;
-	}
-	void _set_value_from_callback(void * value, int value_len){
-		_clear_value();
-		_value = value;
-		_value_len = value_len;
-	}
-	void _clear_value(){
-		if (_value) {
-			delete _value;
-			_value_len = -1;
-		}
-	}
-	inline int _old_socket() { return old_socket; }
-	inline void _set_old_socket(int s) { old_socket = s; }
-	inline void _set_wait_txn_callback() {waiting_for_transaction_back = true;}
-	inline jbyteArray _res_ptr() {return _result;}
-	inline int _ts_low_32b(){ return ts_low_32b; }
-private:
-	// Sequence. 
-	int ts_low_32b;
-
-    // Breakpoint status.
-    int _AppIdx;
-    int _TxnIdx;
-
-    // Data fetching to be saved.
-    char * _packet;
-    int _packet_len;
-
-    // Data fetched.
-    void * _value;
-    int _value_len;
-
-	// Data ptr to be write back.
-	jbyteArray _result;
-
-    // ReqObjId;
-    int _reqObjId;
-
-    // Running status.
-    bool waiting_for_transaction_back = false;
-
-    // The socketId for the last request.
-    int old_socket = -1;
-    vnf::EventType _ret;
-};
-
 namespace DB4NFV{
 
 class App;
@@ -882,13 +776,7 @@ public:
 	std::vector<StateAccess> sas = {};	// The State Access event to be used for transaction handlers. Including transaction handlers.
 	const App* app;
 	int txnIndex;
-	void Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const
-	{ 
-		ctx._set_wait_txn_callback();
-		for (auto sa: sas){
-			sa.Request(connId, ctx, key, isAbort); 
-		}
-	}
+	void Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const;
 };
 
 /**
@@ -941,388 +829,50 @@ int __VNFThread(int argc, char *argv[]);
 // User get SFC single instance.
 DB4NFV::SFC& GetSFC();
 
-uint64_t GetCurrentTime()
+class Context
 {
-	auto currentTimePoint = std::chrono::high_resolution_clock::now();
-	auto duration = currentTimePoint.time_since_epoch();
-	return std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
-}
+public:
+    int packet_len();
+    char *packet();
+    int value_len();
+    void *value();
+    int AppIdx();
+    int TxnIdx();
+    void *reqObj();
+    int reqObjId();
+    void WriteBack(void *v, int len);
+    void Abort();
+    DB4NFV::Transaction & Transaction(int idx);
+    void NextApp(int appIdx, vnf::EventType ret);
+    vnf::EventType ReturnValue();
+    bool IsWaitingForTxnBack();
 
-#define MAX_REQUEST_OBJECT_TYPES 4
-#define FIRST_TIME_CONN_ID ConnId(0, 0)
+    void _reset_appIdx();
+    void _set_status(vnf::EventType status);
+    void _set_value_from_callback(void *value, int value_len);
+    void _clear_value();
+    int _old_socket();
+    void _set_old_socket(int s);
+    void _set_packet(char * packet, int len);
+    void _set_wait_txn_callback();
+    jbyteArray _res_ptr();
+    int _ts_low_32b();
+    void _move_next();
 
-using namespace vnf;
-using namespace std;
-
-struct alignas(16) PendingData {
-    char *data;
-    int dataLen;
-    int streamNum;
-
-    PendingData() : data(NULL), dataLen(0), streamNum(-1) {}
-
-    PendingData(char* data, int dataLen, int streamNum = -1) : data(data), dataLen(dataLen), streamNum(streamNum) {}
+private:
+    int ts_low_32b;
+    int _AppIdx;
+    int _next_AppIdx;
+    int _TxnIdx;
+    char *_packet;
+    int _packet_len;
+    void *_value;
+    int _value_len;
+    jbyteArray _result;
+    int _reqObjId;
+    bool waiting_for_transaction_back;
+    int old_socket;
+    vnf::EventType _ret;
 };
-
-typedef queue<PendingData> PendingDataQueue;
-
-struct ServerPThreadArgument {
-    int coreId;
-    string ip;
-    int port;
-    CallbackFn onAcceptByServerCallback[NUM_CALLBACK_EVENTS];
-    // DSInitFn InitFn;
-    DSCallbackFn onAcceptByServerDSCallback;
-    ReqObjExtractorFn onAcceptByServerReqObjIdExtractor;
-    PacketBoundaryDisambiguatorFn onAcceptByServerPBD;
-
-    ServerPThreadArgument() : coreId(-1), ip(""), port(-1),
-                              onAcceptByServerCallback(),
-                              onAcceptByServerDSCallback(nullptr),
-                              onAcceptByServerReqObjIdExtractor(nullptr),
-                              onAcceptByServerPBD(nullptr) {}
-
-    void set(int id, string ip, int portNo,
-             CallbackFn* onAcceptByServerCallback,
-             DSCallbackFn onAcceptByServerDSCallback,
-             ReqObjExtractorFn reqObjExtractorFn,
-             PacketBoundaryDisambiguatorFn disambiguatorFn) {
-            //  DSInitFn dataStoreInitfn) {
-        this->coreId = id;
-        this->ip = ip;
-        this->port = portNo;
-        for (int eventType = 0; eventType < NUM_CALLBACK_EVENTS; ++eventType)
-        {
-            this->onAcceptByServerCallback[eventType] = onAcceptByServerCallback[eventType];
-        }
-        this->onAcceptByServerDSCallback = onAcceptByServerDSCallback;
-        this->onAcceptByServerReqObjIdExtractor = reqObjExtractorFn;
-        this->onAcceptByServerPBD = disambiguatorFn;
-        // this->InitFn = dataStoreInitfn;
-    }
-};
-
-struct PerCoreState {
-    bool isJobDone;
-    // callback maps
-    unordered_map<int, CallbackFn> socketIdCallbackMap[NUM_CALLBACK_EVENTS];
-    unordered_map<int, CallbackFn> socketIdErrorCallbackMap;
-
-    // ds callback maps
-    unordered_map<int, DSCallbackFn> socketIdDSCallbackMap;
-    unordered_map<int, DSCallbackFn> socketIdDSErrorCallbackMap;
-
-    // // just registered postTransacrtion maps.
-    // unordered_map<int, DB4NFV::PostTxnHandler> socketIdPostTxnHandlerMap;
-    // unordered_map<int, DB4NFV::PostTxnHandler> socketIdPostTxnErrorHandlerMap;
-
-    // Increasing packet number. Used to mark each packet.
-    int packetNumber;
-    unordered_map<int, Context *> packetNumberContextMap;
-
-    // request object memory management
-    int reqObjSizesInPowersOf2[MAX_REQUEST_OBJECT_TYPES];
-    vector<vector<char>> reqObjMemPoolBlocks;
-    boost::simple_segregated_storage<size_t> reqObjMemPoolManagers[MAX_REQUEST_OBJECT_TYPES];
-    // request object memory management
-    unordered_map<int, unordered_map<int, void *> > socketIdReqObjIdToReqObjMap;
-    unordered_map<int, unordered_map<int, int> > reqObjAllocatorSocketIdReqObjIdToReqObjIdMap;
-    unordered_map<int, ReqObjExtractorFn> socketIdReqObjIdExtractorMap;
-    unordered_map<int, PacketBoundaryDisambiguatorFn> socketIdPBDMap;
-    map<int, class timer*> fdToObjectMap;
-
-    // packet memory management
-    vector<char> packetMemPoolBlock;
-    boost::simple_segregated_storage<size_t> packetsMemPoolManager;
-    unordered_map<void *, bool> doNotEvictPacketBoolMap;
-    unordered_map<int, string> socketIdLeftOverPacketFragmentMap;
-
-    // datastore socket ids and id-loopers
-    int dsSocketId1, dsSocketId2;
-    string dsSocketProtocol;
-    int dsSockIdSetLooper, dsSockIdGetLooper;
-
-    // The epFD used for notifications.
-    int epollFd = -1;
-
-    // FD used to transmit the morphMessage.
-    int txnSocket = -1;
-
-    // stat counters
-    int connCounter;
-    int numSends, numRecvs;
-    int numPacketsSentToDs, numPacketsRecvFromDs;
-
-    //moved from globals
-    string serverProtocol;
-    unordered_map<int, string> socketProtocolMap;
-    unordered_map<int, sockaddr_in> udpSocketAddrMap;
-
-    unordered_map<int, PendingDataQueue> socketIdPendingDataQueueMap;
-
-    PerCoreState() : isJobDone(false),
-                     epollFd(0),
-                     txnSocket(0),
-                     dsSocketId1(0), dsSocketId2(0),
-                     dsSockIdSetLooper(0), dsSockIdGetLooper(0),
-                     connCounter(0),
-                     numSends(0), numRecvs(0),
-                     numPacketsSentToDs(0), numPacketsRecvFromDs(0) {
-        for (int &reqObjSizeInPowerOf2 : reqObjSizesInPowersOf2) {
-            reqObjSizeInPowerOf2 = 0;
-        }
-        reqObjMemPoolBlocks.resize(MAX_REQUEST_OBJECT_TYPES);
-        // packet vector size. may have to increase it for very high I/O application
-        // assuming pkt size 1024 TODO
-        packetMemPoolBlock.resize(1500 * 2048); //1024
-    }
-
-    /**
-     * Expects reqObjType to start from 0
-     * */
-    void initMemPoolOfRequestObject(int reqObjType) {
-        if (reqObjSizesInPowersOf2[reqObjType] != 0) {
-            reqObjMemPoolBlocks[reqObjType].resize(reqObjSizesInPowersOf2[reqObjType] * 2097152);
-            spdlog::info("Request object type {} has memory pool size of {} bytes", reqObjType, reqObjMemPoolBlocks[reqObjType].size());
-            reqObjMemPoolManagers[reqObjType].add_block(&reqObjMemPoolBlocks[reqObjType].front(),
-                                                        reqObjMemPoolBlocks[reqObjType].size(),
-                                                        reqObjSizesInPowersOf2[reqObjType]);
-        }
-    }
-
-    /**
-     * Expects reqObjIndex to start from 0
-     * */
-    int mallocReqObj(int socketId, int reqObjType, int reqObjId) {
-        reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId][reqObjId] = socketId;
-        socketIdReqObjIdToReqObjMap[socketId][reqObjId] = reqObjMemPoolManagers[reqObjType].malloc(); // TODO lock
-        return socketIdReqObjIdToReqObjMap[socketId][reqObjId] == nullptr ? -1 : 0;
-    }
-
-    /**
-     * Expects reqObjIndex to start from 0
-     * */
-    void freeReqObj(int socketId, int reqObjType, int reqObjId) {
-        reqObjMemPoolManagers[reqObjType].free(socketIdReqObjIdToReqObjMap[socketId][reqObjId]);
-        socketIdReqObjIdToReqObjMap[socketId].erase(reqObjId);
-        if (socketIdReqObjIdToReqObjMap[socketId].empty()) {
-            socketIdReqObjIdToReqObjMap.erase(socketId);
-        }
-        reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId].erase(reqObjId);
-        if (reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId].empty()) {
-            reqObjAllocatorSocketIdReqObjIdToReqObjIdMap.erase(socketId);
-        }
-    }
-
-    bool isARequestObjectAllocator(int socketId, int reqObjId) {
-        auto socketIdIter = reqObjAllocatorSocketIdReqObjIdToReqObjIdMap.find(socketId);
-        if (socketIdIter != reqObjAllocatorSocketIdReqObjIdToReqObjIdMap.end()) {
-            auto reqObjIdIter = socketIdIter->second.find(reqObjId);
-            return reqObjIdIter != socketIdIter->second.end();
-        }
-        return false;
-    }
-
-    void tagPacketNonEvictable(void *packet) {
-        doNotEvictPacketBoolMap[packet] = true;
-    }
-
-    void tagPacketEvictable(void *packet) {
-        doNotEvictPacketBoolMap.erase(packet);
-    }
-
-    bool canEvictPacket(void *packet) {
-        unordered_map<void *, bool>::const_iterator iterator = doNotEvictPacketBoolMap.find(packet);
-        return iterator == doNotEvictPacketBoolMap.end();
-    }
-
-    bool isDatastoreSocket(int socketId) {
-        return socketId == dsSocketId1 || socketId == dsSocketId2;
-    }
-
-    string getLeftOverPacketFragment(int socketId) {
-        auto it = socketIdLeftOverPacketFragmentMap.find(socketId);
-        if (it == socketIdLeftOverPacketFragmentMap.end()) {
-            socketIdLeftOverPacketFragmentMap[socketId] = "";
-        }
-        return socketIdLeftOverPacketFragmentMap[socketId];
-    }
-
-    void setLeftOverPacketFragment(int socketId, string leftOver) {
-        socketIdLeftOverPacketFragmentMap[socketId] = leftOver;
-    }
-
-    void delLeftOverPacketFragment(int socketId) {
-        auto it = socketIdLeftOverPacketFragmentMap.find(socketId);
-        if (it != socketIdLeftOverPacketFragmentMap.end()) {
-            socketIdLeftOverPacketFragmentMap.erase(it);
-        }
-    }
-
-    bool isPendingDataQueueEmpty(int socketId) {
-        auto it = socketIdPendingDataQueueMap.find(socketId);
-        if (it == socketIdPendingDataQueueMap.end()) {
-           return true;
-        }
-
-        return it->second.empty();
-    }
-};
-
-
-// cache list of addr for clearing cache..cache remove
-unordered_map<void *, int> cache_void_list; // TODO put this into Globals struct appropriately
-/**
- * Container for globals
- * */
-struct Globals {
-    // server
-    int listeningSocketFd;
-    string serverIp;
-    int serverPort;
-    string serverProtocol;
-    bool hasInitialized = false;
-    CallbackFn onAcceptByServerCallback[NUM_CALLBACK_EVENTS];
-    DSCallbackFn onAcceptByServerDSCallback;
-    ReqObjExtractorFn onAcceptByServerReqObjIdExtractor;
-    PacketBoundaryDisambiguatorFn onAcceptByServerPBD;
-    JavaVM * __jvm;
-
-    // DB4NFV globals.
-    DB4NFV::SFC sfc;
-	int txnNotifyFd = -1;
-
-    // data store management
-    // may have to increase this at high load
-    vector<char> dsMemPoolBlock;
-    boost::simple_segregated_storage<size_t> dsMemPoolManager;
-    unordered_map<int, void *> localDatastore;
-    unordered_map<int, int> localDatastoreLens;
-    unordered_map<int, void *> cachedRemoteDatastore;
-    unordered_map<void *, int> doNotEvictCachedDSValueKeyMap;
-  //  unordered_map<int, string> socketProtocolMap;
-    int dsSize;
-
-    // locks
-    mutex epollArrayLock, dataStoreLock, listenLock;
-
-    Globals() : listeningSocketFd(-1),
-                onAcceptByServerCallback(),
-                onAcceptByServerDSCallback(nullptr),
-                onAcceptByServerReqObjIdExtractor(nullptr),
-                onAcceptByServerPBD(nullptr),
-                serverIp(""), serverPort(0),
-                serverProtocol(""), dsSize(0) {
-        dsMemPoolBlock.resize(1024 * 32768);
-    }
-
-    bool keyExistsInLocalDatastore(int key) {
-        unordered_map<int, void *>::const_iterator iterator = localDatastore.find(key);
-        return iterator != localDatastore.end();
-    }
-
-    bool keyExistsInCachedRemoteDatastore(int key) {
-        unordered_map<int, void *>::const_iterator iterator = cachedRemoteDatastore.find(key);
-        return iterator != cachedRemoteDatastore.end();
-    }
-
-    bool canEvictCachedDSKey(void *value) {
-        return doNotEvictCachedDSValueKeyMap.find(value) == doNotEvictCachedDSValueKeyMap.end();
-    }
-};
-
-/**
- * Container for constants user passes in initLibvnf() function
- * */
-struct UserConfig {
-    const int MAX_CORES;
-    const int BUFFER_SIZE;
-    const string DATASTORE_IP;
-    const vector<int> DATASTORE_PORTS;
-    const int DATASTORE_THRESHOLD;
-    const enum DataLocation USE_REMOTE_DATASTORE;
-
-    UserConfig(int maxCores, int bufferSize,
-               string &dataStoreIP,
-               vector<int> &dataStorePorts,
-               int dataStoreThreshold,
-               enum DataLocation dsType) : MAX_CORES(maxCores),
-                                          BUFFER_SIZE(bufferSize),
-                                        //   DATASTORE_TYPE(dataStoreType),
-                                          DATASTORE_IP(dataStoreIP),
-                                          DATASTORE_PORTS(dataStorePorts),
-                                          DATASTORE_THRESHOLD(dataStoreThreshold),
-                                          USE_REMOTE_DATASTORE(dsType) {
-        spdlog::info("UserConfig: [ MAX_CORES={}, BUFFER_SIZE={},  DATASTORE_THRESHOLD={}, DS_TYPE={} ]",
-               MAX_CORES, BUFFER_SIZE, DATASTORE_THRESHOLD, USE_REMOTE_DATASTORE);
-    }
-};
-
-int readFromStream(int connFd, uint8_t *buf, int len) {
-    if (connFd < 0 || len <= 0) {
-        return -1;
-    }
-
-    int remainingBytes = len;
-    int ptr = 0;
-    while (true) {
-        int readBytes = static_cast<int>(read(connFd, buf + ptr, remainingBytes));
-        if (readBytes <= 0) {
-            return readBytes;
-        }
-        ptr += readBytes;
-        remainingBytes -= readBytes;
-        if (remainingBytes == 0) {
-            return len;
-        }
-    }
-}
-
-int makeSocketNonBlocking(int socketFd) {
-    int flags = fcntl(socketFd, F_GETFL, 0);
-    if (flags == -1) {
-        spdlog::error("NBS fcntl");
-        return -1;
-    }
-
-    flags |= O_NONBLOCK;
-    int s = fcntl(socketFd, F_SETFL, flags);
-    if (s == -1) {
-        spdlog::error("NBS fcntl flags");
-        return -1;
-    }
-
-    return 0;
-}
-
-// Get JVM and jenv related. FIXME. Optimize.
-// TODO. May not be working.
-bool GetJniEnv(JNIEnv **env)
-{
-	// bool did_attach_thread = false;
-	// *env = nullptr;
-	// // Check if the current thread is attached to the VM
-	// auto get_env_result = globals.__jvm->GetEnv((void **)env, JNI_VERSION_1_6);
-	// if (get_env_result == JNI_EDETACHED)
-	// {
-	// 	if (globals.__jvm->AttachCurrentThread((void **)env, NULL) == JNI_OK)
-	// 	{
-	// 		did_attach_thread = true;
-	// 	}
-	// 	else
-	// 	{
-	// 		assert(false);
-	// 	}
-	// }
-	// else if (get_env_result == JNI_EVERSION)
-	// {
-	// 	assert(false);
-	// }
-	// return did_attach_thread;
-    jint rs = (*GetGlobal().__jvm).AttachCurrentThread((void **)&env, NULL);
-	return true;
-}
-
-Globals& GetGlobal();
 
 #endif

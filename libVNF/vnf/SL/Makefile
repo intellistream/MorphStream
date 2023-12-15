@@ -5,7 +5,7 @@ SL_KERNEL_STATIC=kernel-static
 SL_KERNEL_DYNAMIC=kernel-dynamic
 SL_KERNELBYPASS_STATIC=kernelbypass-static
 SL_KERNELBYPASS_DYNAMIC=kernelbypass-dynamic
-CXX_FLAGS=-fpermissive -std=c++11 ${DEBUG} -O$(CPP_OPTIMIZE) -Wno-write-strings -Wall -Wcomment -fPIC
+CXX_FLAGS=-fpermissive -std=c++11 ${DEBUG} -O$(CPP_OPTIMIZE) -Wno-write-strings -Wall -Wcomment -fPIC 
 
 # options
 DPDK=0
@@ -70,7 +70,7 @@ $(SL_KERNEL_STATIC): sl.cpp
 	g++ sl.o -O${CPP_OPTIMIZE} $(DEBUG) -std=c++11 -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -o $(SL_KERNEL_STATIC)
 
 $(SL_KERNEL_DYNAMIC): sl.cpp
-	g++ sl.cpp -O$(CPP_OPTIMIZE) $(DEBUG) -shared -fPIC $(JAVA_INCLUDE) -std=c++11 -lvnf-kernel-dynamic -lpthread -lboost_system -o $(SL_KERNEL_DYNAMIC)
+	g++ sl.cpp -O$(CPP_OPTIMIZE) $(DEBUG) -Wno-pointer-arith -shared -fPIC $(JAVA_INCLUDE) -std=c++11 -lvnf-kernel-dynamic -lpthread -lboost_system -o $(SL_KERNEL_DYNAMIC)
 
 clean:
 	rm -f *~ *.o *.log $(SL_KERNEL_STATIC) $(SL_KERNEL_DYNAMIC) $(SL_KERNELBYPASS_STATIC) $(SL_KERNELBYPASS_DYNAMIC)  log_*

@@ -1664,8 +1664,7 @@ int __VNFThread(int argc, char *argv[]){
 void _disposalBody(vnf::ConnId& connId, Context & ctx){
     while (ctx.AppIdx() != -1){
         auto app = globals.sfc.SFC_chain[ctx.AppIdx()];
-        // Only user manually point the next app to send.
-        ctx._reset_appIdx();
+        ctx.NextApp(-1, ctx.ReturnValue());
         switch (ctx.ReturnValue())
         {
         case vnf::ERROR:
@@ -1676,12 +1675,15 @@ void _disposalBody(vnf::ConnId& connId, Context & ctx){
                 return;
             }
             (*app->errorHandler)(connId, ctx);
+            ctx._move_next();
             break;
         case vnf::ACCEPT:
             (*app->acceptHandler)(connId, ctx);
+            ctx._move_next();
             break;
         case vnf::READ:
             (*app->readHandler)(connId, ctx);
+            ctx._move_next();
             break;
         case vnf::ABORT:
             ctx._clear_value();
@@ -1700,19 +1702,22 @@ void _disposalBody(vnf::ConnId& connId, Context & ctx){
 void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     requestObject = connId.allocReqObj(1);
     auto ctx = static_cast<Context *> (requestObject);
-    ctx->_set_status(ACCEPT);
+	ctx->_set_status(ACCEPT);
+    ctx->_set_packet(packet, packetLen);
 	_disposalBody(connId, *ctx);
 }
 
 void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto ctx = static_cast<Context *> (requestObject);
     ctx->_set_status(READ);
+    ctx->_set_packet(packet, packetLen);
 	_disposalBody(connId, *ctx);
 }
 
 void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto ctx = static_cast<Context *> (requestObject);
     ctx->_set_status(ERROR);
+    ctx->_set_packet(packet, packetLen);
 	_disposalBody(connId, *ctx);
 }
 
@@ -1748,12 +1753,10 @@ void DB4NFV::SFC::Add(App& last, App& app){
 void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool isAbort)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
-    JNIEnv *env;
-    GetJniEnv(&env);
+    // JNIEnv *env;
+    GetJniEnv(&globals.__env);
 
     int len = sizeof(uint64_t) * 3 + strlen(key) + 3;
-    auto msg = env->NewByteArray(len); // 3 semicolons and null terminator
-    assert(msg != NULL);
 
     // Use SetByteArrayRegion to copy data into the byte array
     jbyte data[len];
@@ -1780,26 +1783,28 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool i
     data[offset] = '\0';
 
     // Copy the data into the msg byte array
-    env->SetByteArrayRegion(msg, 0, len, data);
+    auto msg = globals.__env->NewByteArray(len); // 3 semicolons and null terminator
+    assert(msg != NULL);
+    globals.__env->SetByteArrayRegion(msg, 0, len, data);
 
-    jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
+    jclass cls = globals.__env->FindClass("intellistream/morphstream/api/input/InputSource");
     assert(cls != NULL);
 
-    jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
+    jmethodID constructor = globals.__env->GetMethodID(cls, "<init>", "()V");
     assert(constructor != NULL);
 
-    jobject IS = env->NewObject(cls, constructor);
+    jobject IS = globals.__env->NewObject(cls, constructor);
 
-    // jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
-    jmethodID methodId = env->GetMethodID(cls, "libVNFInsertInputData", "([B)V");
+    // jmethodID methodId = globals.__env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+    jmethodID methodId = globals.__env->GetMethodID(cls, "libVNFInsertInputData", "([B)V");
     assert(methodId != NULL);
 
-    // We can't cache JNIEnv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
-    env->CallVoidMethod(IS, methodId, msg);
+    // We can't cache JNIglobals.__env and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jniglobals.__env-globals.__environment.
+    globals.__env->CallVoidMethod(IS, methodId, msg);
 
     // Clean up resources when done
-    env->DeleteLocalRef(IS);  // Release the reference to IS
-    env->DeleteLocalRef(msg); // Release the reference to msg
+    globals.__env->DeleteLocalRef(IS);  // Release the reference to IS
+    globals.__env->DeleteLocalRef(msg); // Release the reference to msg
 }
 
 void DB4NFV::StateAccess::Request(
@@ -1994,6 +1999,9 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
 JNIEXPORT void 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1VNFThread
   (JNIEnv * env, jobject obj, jint c, jobjectArray v){
+    jint rs = env->GetJavaVM(&globals.__jvm);
+    assert(rs == JNI_OK);
+    // globals.__env = env;
 	startEventLoop();
   }
 
@@ -2067,4 +2075,196 @@ DB4NFV::SFC& GetSFC(){
 
 Globals& GetGlobal(){
     return globals;
+}
+
+/*
+    Operations about context.
+*/
+int Context::packet_len()
+{
+    assert(_packet != NULL);
+    return _packet_len;
+}
+
+char *Context::packet()
+{
+    assert(_packet != NULL);
+    return _packet;
+}
+
+int Context::value_len()
+{
+    assert(_value != NULL);
+    return _value_len;
+}
+
+void *Context::value()
+{
+    assert(_value != NULL);
+    return _value;
+}
+
+int Context::AppIdx()
+{
+    return _AppIdx;
+}
+
+int Context::TxnIdx()
+{
+    return _TxnIdx;
+}
+
+void *Context::reqObj()
+{
+    return GetGlobal().sfc.SFC_chain[_AppIdx]->reqObjClip(this);
+}
+
+int Context::reqObjId()
+{
+    return _reqObjId;
+}
+
+void Context::WriteBack(void *v, int len)
+{
+    assert(_result == NULL);
+    JNIEnv *env;
+    GetJniEnv(&env);
+    _result = env->NewByteArray(sizeof(bool) + len);
+    env->SetByteArrayRegion(_result, 1, static_cast<jsize>(len), reinterpret_cast<jbyte *>(v));
+}
+
+void Context::Abort()
+{
+    _ret = ABORT;
+}
+
+DB4NFV::Transaction & Context::Transaction(int idx)
+{
+    assert(idx < GetGlobal().sfc.SFC_chain[_AppIdx]->Txns.size());
+    _clear_value();
+    return GetGlobal().sfc.SFC_chain[_AppIdx]->Txns[idx];
+}
+
+void Context::_move_next(){
+    _AppIdx = _next_AppIdx;
+    _next_AppIdx = -1;
+    // // Already end.
+    // if (_AppIdx == -1){
+    //     return;
+    // // Move to end.
+    // } else if (globals.sfc.SFC_chain[_AppIdx]->MoveNext() != nullptr){
+    //     this->_next_AppIdx = globals.sfc.SFC_chain[_AppIdx]->MoveNext()->appIndex;
+    // } else {
+    // }
+}
+
+void Context::NextApp(int appIdx, vnf::EventType ret)
+{
+    _next_AppIdx = appIdx;
+    _ret = ret;
+}
+
+vnf::EventType Context::ReturnValue()
+{
+    return _ret;
+}
+
+bool Context::IsWaitingForTxnBack()
+{
+    return waiting_for_transaction_back;
+}
+
+void Context::_reset_appIdx()
+{
+    _AppIdx = -1;
+}
+
+void Context::_set_packet(char * packet, int len){
+    _packet = packet;
+    _packet_len = len;
+}
+
+
+void Context::_set_status(vnf::EventType status)
+{
+    _AppIdx = 0;
+    _ret = status;
+}
+
+void Context::_set_value_from_callback(void *value, int value_len)
+{
+    _clear_value();
+    _value = value;
+    _value_len = value_len;
+}
+
+void Context::_clear_value()
+{
+    if (_value)
+    {
+        // delete _value;   // FIXME. LEAK.
+        _value_len = -1;
+    }
+}
+
+int Context::_old_socket()
+{
+    return old_socket;
+}
+
+void Context::_set_old_socket(int s)
+{
+    old_socket = s;
+}
+
+void Context::_set_wait_txn_callback()
+{
+    waiting_for_transaction_back = true;
+}
+
+jbyteArray Context::_res_ptr()
+{
+    return _result;
+}
+
+int Context::_ts_low_32b()
+{
+    return ts_low_32b;
+}
+
+void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const
+{ 
+    ctx._set_wait_txn_callback();
+    for (auto sa: sas){
+        sa.Request(connId, ctx, key, isAbort); 
+    }
+}
+
+// Get JVM and jenv related. FIXME. Optimize.
+// TODO. May not be working.
+bool GetJniEnv(JNIEnv **env)
+{
+	bool did_attach_thread = false;
+	*env = nullptr;
+	// Check if the current thread is attached to the VM
+	auto get_env_result = globals.__jvm->GetEnv((void **)env, JNI_VERSION_1_6);
+	if (get_env_result == JNI_EDETACHED)
+	{
+		if (globals.__jvm->AttachCurrentThread((void **)env, NULL) == JNI_OK)
+		{
+			did_attach_thread = true;
+		}
+		else
+		{
+			assert(false);
+		}
+	}
+	else if (get_env_result == JNI_EVERSION)
+	{
+		assert(false);
+	}
+	return did_attach_thread;
+    // // jint rs = (*GetGlobal().__jvm).AttachCurrentThread((void **)&env, NULL);
+    // // assert(rs == JNI_OK);
+	// return true;
 }

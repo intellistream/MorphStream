@@ -1,5 +1,5 @@
-#include <core.hpp>
-// #include <libvnf/core.hpp>
+// #include <core.hpp>
+#include <libvnf/core.hpp>
 #include <utility>
 #include <unordered_map>
 #include <cassert>
