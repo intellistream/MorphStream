@@ -45,12 +45,12 @@ void deposit_sa_udf(vnf::ConnId& connId, Context &ctx){
 }
 
 void sl_app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
-    std::cout << "Connection accepted" << std::endl;
+    std::cout << "[DEBUG] New Connection" << std::endl;
     return;
 };
 
 void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
-    std::cout << "New Packet accepted" << std::endl;
+    std::cout << "[DEBUG] New Packet accepted" << std::endl;
     auto content = string(ctx.packet());
     // TODO. Clear timeStamping out of the user code.
     if (content == "transfer\n"){

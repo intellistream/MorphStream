@@ -74,10 +74,6 @@ struct PerCoreState {
     unordered_map<int, DSCallbackFn> socketIdDSCallbackMap;
     unordered_map<int, DSCallbackFn> socketIdDSErrorCallbackMap;
 
-    // // just registered postTransacrtion maps.
-    // unordered_map<int, DB4NFV::PostTxnHandler> socketIdPostTxnHandlerMap;
-    // unordered_map<int, DB4NFV::PostTxnHandler> socketIdPostTxnErrorHandlerMap;
-
     // Increasing packet number. Used to mark each packet.
     int packetNumber;
     unordered_map<int, Context *> packetNumberContextMap;

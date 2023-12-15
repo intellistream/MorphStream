@@ -1750,12 +1750,9 @@ void DB4NFV::SFC::Add(App& last, App& app){
 // }
 
 // The entry for sending txn execution request to txnEngine.
-void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool isAbort)
+void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool isAbort)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
-    // JNIEnv *env;
-    GetJniEnv(&globals.__env);
-
     int len = sizeof(uint64_t) * 3 + strlen(key) + 3;
 
     // Use SetByteArrayRegion to copy data into the byte array
@@ -1783,28 +1780,29 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool i
     data[offset] = '\0';
 
     // Copy the data into the msg byte array
-    auto msg = globals.__env->NewByteArray(len); // 3 semicolons and null terminator
+    auto msg = env->NewByteArray(len); // 3 semicolons and null terminator
     assert(msg != NULL);
-    globals.__env->SetByteArrayRegion(msg, 0, len, data);
+    env->SetByteArrayRegion(msg, 0, len, data);
 
-    jclass cls = globals.__env->FindClass("intellistream/morphstream/api/input/InputSource");
+    jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
     assert(cls != NULL);
 
-    jmethodID constructor = globals.__env->GetMethodID(cls, "<init>", "()V");
+    jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
     assert(constructor != NULL);
 
-    jobject IS = globals.__env->NewObject(cls, constructor);
+    jobject IS = env->NewObject(cls, constructor);
 
-    // jmethodID methodId = globals.__env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
-    jmethodID methodId = globals.__env->GetMethodID(cls, "libVNFInsertInputData", "([B)V");
+    // jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+    jmethodID methodId = env->GetMethodID(cls, "libVNFInsertInputData", "([B)V");
     assert(methodId != NULL);
 
-    // We can't cache JNIglobals.__env and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jniglobals.__env-globals.__environment.
-    globals.__env->CallVoidMethod(IS, methodId, msg);
+    // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
+    env->CallVoidMethod(IS, methodId, msg);
+    std::cout << "[DEBUG] Txn Requested." << std::endl;
 
     // Clean up resources when done
-    globals.__env->DeleteLocalRef(IS);  // Release the reference to IS
-    globals.__env->DeleteLocalRef(msg); // Release the reference to msg
+    env->DeleteLocalRef(IS);  // Release the reference to IS
+    env->DeleteLocalRef(msg); // Release the reference to msg
 }
 
 void DB4NFV::StateAccess::Request(
@@ -1818,8 +1816,10 @@ void DB4NFV::StateAccess::Request(
 
     // Register call back parameters in the context.
     perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
-    // TODO. Fix parameter passing.
-	__request(ctx._ts_low_32b(), TXNREQID(connId.coreId, int(ctx._ts_low_32b())), key, this->txnIndex, isAbort);
+
+    JNIEnv * env; 
+    GetJniEnv(&env);
+	__request(env, ctx._ts_low_32b(), TXNREQID(connId.coreId, int(ctx._ts_low_32b())), key, this->txnIndex, isAbort);
 }
 
 // Routing to the context of transaction breakpoint.
