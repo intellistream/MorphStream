@@ -4,23 +4,16 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import commonStorage.RequestTemplates;
 import intellistream.morphstream.api.input.InputSource;
-import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.api.operator.spout.ApplicationSpout;
 import intellistream.morphstream.api.operator.spout.ApplicationSpoutCombo;
 import intellistream.morphstream.api.operator.spout.SACombo;
-import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.grouping.Grouping;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
-import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
-import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,13 +21,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
 
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.*;
-import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
 
 /**
  * TODO: Implementation of a simple command line frontend for executing programs.
@@ -54,19 +44,28 @@ public class CliFrontend {
         this.appName = appName;
     }
 
-    public void loadConfig(String[] args) {
+    public void loadConfigStatic(String[] args) {
         try {
             LoadConfiguration(null, args);
-            prepare();
+            prepareStatic();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void loadConfig(String configPath, String[] args) throws IOException {
+    public void loadConfigStatic(String configPath, String[] args) throws IOException {
         try {
             LoadConfiguration(configPath, args);
-            prepare();
+            prepareStatic();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void loadConfigStreaming(String[] args) {
+        try {
+            LoadConfiguration(null, args);
+            prepareStreaming();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -152,7 +151,13 @@ public class CliFrontend {
         return true;
     }
 
-    public void prepare() throws IOException {
+
+    public void prepareStreaming() {
+        env.DatabaseInitialize();
+        env.inputSource().initializeStreaming(InputSource.InputSourceType.JNI, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+    }
+
+    public void prepareStatic() throws IOException {
         env.DatabaseInitialize();
         if (env.configuration().getInt("inputSourceType", 0) == 0) { //read input as string
             String inputFile = env.configuration().getString("inputFilePath");
@@ -173,7 +178,7 @@ public class CliFrontend {
                 stringBuilder.deleteCharAt(stringBuilder.length()-1);
                 env.configuration().put("WorkloadConfig",stringBuilder.toString()); //For each workload, how many TD/LD/PD
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         } else if (env.configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
             String inputFile = env.configuration().getString("inputFilePath");
             File file = new File(inputFile);
@@ -183,13 +188,12 @@ public class CliFrontend {
                 String fileName = env.fileDataGenerator().prepareInputData(false);
                 env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         }
     }
     public void start() throws InterruptedException {
-        MeasureTools.Initialize();
+//        MeasureTools.Initialize();
         runTopologyLocally();
-        //TODO: run for distributed mode
     }
     public void setSpoutCombo(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks) throws Exception {
         ApplicationSpoutCombo spout = new ApplicationSpoutCombo(id, txnDescriptionHashMap);

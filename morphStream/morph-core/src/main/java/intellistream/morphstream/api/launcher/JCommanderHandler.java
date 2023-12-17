@@ -274,7 +274,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
     public String operatorThreadNum = "4";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 2500;//checkpoint per thread.
+    public int checkpoint_interval = 100;//checkpoint per thread.
 
 
 

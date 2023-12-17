@@ -3,9 +3,9 @@ package cli;
 import intellistream.morphstream.api.Client;
 // import intellistream.morphstream.common.io.ByteIO.InputWithDecompression.NativeDataInputView;
 
+import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.io.*;
 
@@ -76,7 +76,7 @@ public class FastSLClient extends Client {
 
     public static void main(String[] args) throws Exception {
         CliFrontend fastSLClient = new CliFrontend("FastSLClient");
-        fastSLClient.loadConfig(args);
+        fastSLClient.loadConfigStreaming(args);
 
         NativeInterface VNF_JNI = new NativeInterface();
         String[] param = {""};

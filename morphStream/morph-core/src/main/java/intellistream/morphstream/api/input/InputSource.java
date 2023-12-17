@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.input;
 
+import com.esotericsoftware.minlog.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import intellistream.morphstream.configuration.CONTROL;
@@ -7,13 +8,10 @@ import intellistream.morphstream.configuration.CONTROL;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.apache.commons.configuration2.SystemConfiguration;
 
 
 /**
@@ -26,11 +24,11 @@ public class InputSource {
     private InputSourceType inputSourceType; //from file or streaming
 //    private static int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
-    private final ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> executorInputQueues; //round-robin input queues for each executor (combo/bolt)
-    private int bid;
-    private int spoutNum;
-    private int rrIndex = 0; //round-robin index for distributing input data to executor queues
-    private boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
+    private static ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> executorInputQueues; //round-robin input queues for each executor (combo/bolt)
+    private static int bid;
+    private static int spoutNum;
+    private static int rrIndex = 0; //round-robin index for distributing input data to executor queues
+    private static final boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     public enum InputSourceType {
         FILE_STRING,
         FILE_JSON,
@@ -44,18 +42,13 @@ public class InputSource {
         return ourInstance;
     }
 
-    public InputSource() {
-        this.executorInputQueues = new ConcurrentHashMap<>();
-        this.bid = 0;
-    }
-
-    public void insertStopSignal() { //TODO: Modify workload, so that stop signal can be inserted before spout finish reading all events
+    public void insertStopSignal() {
 //        int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
-        int spoutNum = 4;
-        for (int i = 0; i < spoutNum; i++) {
-            BlockingQueue<TransactionalEvent> inputQueue = executorInputQueues.get(i);
-            inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));
-        }
+//        int spoutNum = 4;
+//        for (int i = 0; i < spoutNum; i++) {
+//            BlockingQueue<TransactionalEvent> inputQueue = executorInputQueues.get(i);
+//            inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));
+//        }
     }
 
     // Delegate calling from libVNF for possible type changing.
@@ -67,7 +60,7 @@ public class InputSource {
     /**
      * Receives input data from streaming source (e.g., JNI) and round-robin inserts data into executor input queues
      */
-    public void insertInputData(String input) {
+    public static void insertInputData(String input) {
         executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(input));
         rrIndex = (rrIndex + 1) % spoutNum;
     }
@@ -75,39 +68,49 @@ public class InputSource {
     /**
      * Handles initialization and data insertion for InputSource from static file
      */
-    public void initialize(String staticFilePath, InputSourceType inputSourceType, int spoutNum) throws IOException {
+    public void initializeStatic(String staticFilePath, InputSourceType inputSourceType, int spoutNum) throws IOException {
+        executorInputQueues = new ConcurrentHashMap<>();
+        bid = 0;
         this.staticFilePath = staticFilePath;
         this.inputSourceType = inputSourceType;
-        this.spoutNum = spoutNum;
+        InputSource.spoutNum = spoutNum;
         for (int i = 0; i < spoutNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
-            this.executorInputQueues.put(i, inputQueue);
+            executorInputQueues.put(i, inputQueue);
         }
-        if (this.inputSourceType == InputSourceType.FILE_STRING || this.inputSourceType == InputSourceType.FILE_JSON) {
-            BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));
-            String input;
-            int index = 0;
-            while ((input = csvReader.readLine()) != null) {
-                if (this.inputSourceType == InputSourceType.FILE_STRING)
-                    executorInputQueues.get(index).add(inputFromStringToTxnEvent(input));
-                else if (this.inputSourceType == InputSourceType.FILE_JSON)
-                    executorInputQueues.get(index).add(inputFromJsonToTxnEvent(input));
-                index = (index + 1) % spoutNum;
-            }
-        } else if (this.inputSourceType == InputSourceType.JNI) {
-            rrIndex = 0;
+        BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));
+        String input;
+        int index = 0;
+        while ((input = csvReader.readLine()) != null) {
+            if (this.inputSourceType == InputSourceType.FILE_STRING)
+                executorInputQueues.get(index).add(inputFromStringToTxnEvent(input));
+            else if (this.inputSourceType == InputSourceType.FILE_JSON)
+                executorInputQueues.get(index).add(inputFromJsonToTxnEvent(input));
+            index = (index + 1) % spoutNum;
         }
     }
 
+    public void initializeStreaming(InputSourceType inputSourceType, int _spoutNum) {
+        executorInputQueues = new ConcurrentHashMap<>();
+        bid = 0;
+        ourInstance.inputSourceType = inputSourceType;
+        spoutNum = _spoutNum;
+        for (int i = 0; i < _spoutNum; i++) {
+            BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
+            executorInputQueues.put(i, inputQueue);
+        }
+        rrIndex = 0;
+    }
+
     public BlockingQueue<TransactionalEvent> getInputQueue(int spoutId) {
-        return this.executorInputQueues.get(spoutId);
+        return executorInputQueues.get(spoutId);
     }
 
     /**
      * Packet string format (split by ";"):
      * ts (timestamp or bid, increasing by each request); txnReqID; key(s) (split by ":"); flag; isAbort
      * */
-    public TransactionalEvent inputFromStringToTxnVNFEvent(String request) {
+    private static TransactionalEvent inputFromStringToTxnVNFEvent(String request) {
         String[] inputArray = request.split(";");
 
         if (inputArray.length == 5) {

@@ -149,6 +149,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
 
+        LOG.info("Request received: " + in.getValue(0).toString());
+
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
             { // state access
