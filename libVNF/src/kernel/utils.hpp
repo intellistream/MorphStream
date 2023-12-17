@@ -64,6 +64,72 @@ struct ServerPThreadArgument {
     }
 };
 
+/**
+ * Container for globals
+ * */
+struct Globals {
+    // server
+    int listeningSocketFd;
+    string serverIp;
+    int serverPort;
+    string serverProtocol;
+    bool hasInitialized = false;
+    CallbackFn onAcceptByServerCallback[NUM_CALLBACK_EVENTS];
+    DSCallbackFn onAcceptByServerDSCallback;
+    ReqObjExtractorFn onAcceptByServerReqObjIdExtractor;
+    PacketBoundaryDisambiguatorFn onAcceptByServerPBD;
+    JavaVM * __jvm;
+    JNIEnv* __env;
+    std::mutex boost_malloc_mutex;
+
+    // DB4NFV globals.
+    DB4NFV::SFC sfc;
+	int txnNotifyFd = -1;
+
+    // data store management
+    // may have to increase this at high load
+    vector<char> dsMemPoolBlock;
+    boost::simple_segregated_storage<size_t> dsMemPoolManager;
+    unordered_map<int, void *> localDatastore;
+    unordered_map<int, int> localDatastoreLens;
+    unordered_map<int, void *> cachedRemoteDatastore;
+    unordered_map<void *, int> doNotEvictCachedDSValueKeyMap;
+  //  unordered_map<int, string> socketProtocolMap;
+    int dsSize;
+
+    // locks
+    mutex epollArrayLock, dataStoreLock, listenLock;
+
+    Globals() : listeningSocketFd(-1),
+                onAcceptByServerCallback(),
+                onAcceptByServerDSCallback(nullptr),
+                onAcceptByServerReqObjIdExtractor(nullptr),
+                onAcceptByServerPBD(nullptr),
+                serverIp(""), serverPort(0),
+                serverProtocol(""), dsSize(0) {
+        dsMemPoolBlock.resize(1024 * 32768);
+    }
+
+    bool keyExistsInLocalDatastore(int key) {
+        unordered_map<int, void *>::const_iterator iterator = localDatastore.find(key);
+        return iterator != localDatastore.end();
+    }
+
+    bool keyExistsInCachedRemoteDatastore(int key) {
+        unordered_map<int, void *>::const_iterator iterator = cachedRemoteDatastore.find(key);
+        return iterator != cachedRemoteDatastore.end();
+    }
+
+    bool canEvictCachedDSKey(void *value) {
+        return doNotEvictCachedDSValueKeyMap.find(value) == doNotEvictCachedDSValueKeyMap.end();
+    }
+};
+
+// Get JVM and jenv related. FIXME. Optimize.
+bool GetJniEnv(JNIEnv **env);
+
+Globals& GetGlobal();
+
 struct PerCoreState {
     bool isJobDone;
     // callback maps
@@ -153,6 +219,7 @@ struct PerCoreState {
      * */
     int mallocReqObj(int socketId, int reqObjType, int reqObjId) {
         reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId][reqObjId] = socketId;
+        assert(reqObjMemPoolManagers[reqObjType].empty() == false);
         socketIdReqObjIdToReqObjMap[socketId][reqObjId] = reqObjMemPoolManagers[reqObjType].malloc(); // TODO lock
         return socketIdReqObjIdToReqObjMap[socketId][reqObjId] == nullptr ? -1 : 0;
     }
@@ -230,65 +297,6 @@ struct PerCoreState {
 
 // cache list of addr for clearing cache..cache remove
 unordered_map<void *, int> cache_void_list; // TODO put this into Globals struct appropriately
-/**
- * Container for globals
- * */
-struct Globals {
-    // server
-    int listeningSocketFd;
-    string serverIp;
-    int serverPort;
-    string serverProtocol;
-    bool hasInitialized = false;
-    CallbackFn onAcceptByServerCallback[NUM_CALLBACK_EVENTS];
-    DSCallbackFn onAcceptByServerDSCallback;
-    ReqObjExtractorFn onAcceptByServerReqObjIdExtractor;
-    PacketBoundaryDisambiguatorFn onAcceptByServerPBD;
-    JavaVM * __jvm;
-    JNIEnv* __env;
-
-    // DB4NFV globals.
-    DB4NFV::SFC sfc;
-	int txnNotifyFd = -1;
-
-    // data store management
-    // may have to increase this at high load
-    vector<char> dsMemPoolBlock;
-    boost::simple_segregated_storage<size_t> dsMemPoolManager;
-    unordered_map<int, void *> localDatastore;
-    unordered_map<int, int> localDatastoreLens;
-    unordered_map<int, void *> cachedRemoteDatastore;
-    unordered_map<void *, int> doNotEvictCachedDSValueKeyMap;
-  //  unordered_map<int, string> socketProtocolMap;
-    int dsSize;
-
-    // locks
-    mutex epollArrayLock, dataStoreLock, listenLock;
-
-    Globals() : listeningSocketFd(-1),
-                onAcceptByServerCallback(),
-                onAcceptByServerDSCallback(nullptr),
-                onAcceptByServerReqObjIdExtractor(nullptr),
-                onAcceptByServerPBD(nullptr),
-                serverIp(""), serverPort(0),
-                serverProtocol(""), dsSize(0) {
-        dsMemPoolBlock.resize(1024 * 32768);
-    }
-
-    bool keyExistsInLocalDatastore(int key) {
-        unordered_map<int, void *>::const_iterator iterator = localDatastore.find(key);
-        return iterator != localDatastore.end();
-    }
-
-    bool keyExistsInCachedRemoteDatastore(int key) {
-        unordered_map<int, void *>::const_iterator iterator = cachedRemoteDatastore.find(key);
-        return iterator != cachedRemoteDatastore.end();
-    }
-
-    bool canEvictCachedDSKey(void *value) {
-        return doNotEvictCachedDSValueKeyMap.find(value) == doNotEvictCachedDSValueKeyMap.end();
-    }
-};
 
 /**
  * Container for constants user passes in initLibvnf() function
@@ -353,10 +361,5 @@ int makeSocketNonBlocking(int socketFd) {
 
     return 0;
 }
-
-// Get JVM and jenv related. FIXME. Optimize.
-bool GetJniEnv(JNIEnv **env);
-
-Globals& GetGlobal();
 
 #endif

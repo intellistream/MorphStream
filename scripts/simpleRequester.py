@@ -11,13 +11,13 @@ deposit_content = b'deposit\n'
 transfer_content = b'transfer\n'
 
 # Customize the number of connections and packets
-num_connections = 10
-num_packets_per_connection = 15
+num_connections = 50
+num_packets_per_connection = 100
 
 def send_packet(sock,num_packets):
     for _ in range(num_packets):
         sock.send(deposit_content)
-        time.sleep(0.5)
+        time.sleep(0.1)
     sock.close()
 
 # Create and establish multiple connections

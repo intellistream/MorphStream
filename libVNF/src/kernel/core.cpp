@@ -1945,13 +1945,6 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
         vnf::initLibvnf(globals.sfc.cores, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
         vnf::ConnId serverSocketId = vnf::initServer("", ip, port, "tcp");
 
-        int size[] = {globals.sfc.reqObjTotalSize};
-        vnf::initReqPool(size, 1);
-
-        serverSocketId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
-        serverSocketId.registerCallback(vnf::READ, _AppsDisposalRead);
-        serverSocketId.registerCallback(vnf::ERROR, _AppsDisposalError);
-
 		// Clean up the allocated memory
 		for (jsize i = 0; i < arrayLength; i++)
 		{
@@ -1988,8 +1981,15 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
             }
         }
         // Config and init libVNF.
-        globals.sfc.reqObjTotalSize = reqObjStart;
+        globals.sfc.reqObjTotalSize = reqObjStart + sizeof(Context);
         // Create back links for transactions and state access.
+
+        int size[] = {globals.sfc.reqObjTotalSize};
+        vnf::initReqPool(size, 1);
+
+        serverSocketId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
+        serverSocketId.registerCallback(vnf::READ, _AppsDisposalRead);
+        serverSocketId.registerCallback(vnf::ERROR, _AppsDisposalError);
 
 		// Return the result as a Java string
 		return env->NewStringUTF(globals.sfc.NFs().c_str());
