@@ -3,8 +3,6 @@ package intellistream.morphstream.api.launcher;
 import intellistream.morphstream.api.input.FileDataGenerator;
 import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.state.DatabaseInitializer;
-import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
@@ -28,8 +26,6 @@ public class MorphStreamEnv {
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
-    private RdmaShuffleManager RM;
-    private BlockManagerId blockManagerId;
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
@@ -48,8 +44,6 @@ public class MorphStreamEnv {
     public OptimizationManager OM() {
         return OM;
     }
-    public RdmaShuffleManager RM() {return RM;}
-    public BlockManagerId blockManagerId() {return blockManagerId;}
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
     public InputSource inputSource() {return inputSource;}
