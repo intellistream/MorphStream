@@ -50,6 +50,12 @@ USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable 
 compile_libVNF(){
 	# TODO. check if includes has been there.
 	# TODO. If needs kernel_bypass. remind to use kernel_bypass
+	if [ -d $TMP ]; then 
+		:
+	else 
+		mkdir $TMP
+	fi
+
 	if [ $# -ge 2 ] && [[ $2 == "$KERNEL_STACK" ]]; then
 		rm -dfr "$BUILD_DIR" &> /dev/null || true
 		mkdir "$BUILD_DIR" && cd "$BUILD_DIR"
@@ -318,12 +324,13 @@ case $1 in
 		;;
 	$COMPILE)
 		echo "starting compilation.."
-		check_system || error_exit
 		if [ $# -ge 2 ] && [[ $2 == $KENREL_BYPASS ]]; then
+			check_system || error_exit
 			IS_KENREL_BYPASS=true
 			setup_kernel_bypass_stack
 		elif [ $# -ge 2 ] && [[ $2 == $KERNEL_STACK ]]; then
 			IS_KENREL_BYPASS=false
+			CMAKE=cmake
 			setup_kernel_stack
 		elif [ $# -ge 2 ] && [[ $2 == $EXAMPLE ]]; then
 			compile_example_vnf 
