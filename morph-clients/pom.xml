@@ -87,7 +87,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>benchmark.rdma.BankingSystemSocket</mainClass>
+                            <mainClass>benchmark.rdma.BankingSystemRdma</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

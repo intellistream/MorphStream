@@ -1,11 +1,11 @@
 #!/bin/bash
-source dir.sh || exit
+source ../dir.sh || exit
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
     workerId=0
-    workerNum=1
-    tthread=4
+    workerNum=2
+    tthread=10
     clientNum=4
     frontendNum=4
     clientClassName="client.BankingSystemClient"
@@ -15,7 +15,7 @@ function ResetParameters() {
     driverPort=5570
     workerHosts="localhost,localhost"
     workerPorts="5540,5550"
-    CircularBufferCapacity=`1024 * 1024 * 1024`
+    CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     BatchMessageCapacity=1000
     shuffleType=0
     #Database Configurations
@@ -40,11 +40,10 @@ function ResetParameters() {
     isDynamic=1
     workloadType="default,unchanging,unchanging,unchanging"
     shiftRate=1
-    totalEvents=`expr $checkpointInterval \* $tthread \* 4 \* $shiftRate \* $workerNum`
+    checkpointInterval=10000
+    totalEvents=`expr $checkpointInterval \* $tthread \* $shiftRate \* $workerNum`
     #System Configurations
     schedulerPool="OG_NS_A"
-    checkpointInterval=10000
-    tthread=24
     scheduler="OG_NS_A"
     defaultScheduler="OG_NS_A"
     CCOption=3 #TSTREAM
@@ -90,8 +89,7 @@ function runApplication() {
       --shiftRate $shiftRate \
       --totalEvents $totalEvents \
       --schedulerPool $schedulerPool \
-      --checkpointInterval $checkpointInterval \
-      --tthread $tthread \
+      --checkpoint_interval $checkpointInterval \
       --scheduler $scheduler \
       --defaultScheduler $defaultScheduler \
       --CCOption $CCOption \
@@ -135,8 +133,7 @@ function runApplication() {
       --shiftRate $shiftRate \
       --totalEvents $totalEvents \
       --schedulerPool $schedulerPool \
-      --checkpointInterval $checkpointInterval \
-      --tthread $tthread \
+      --checkpoint_interval $checkpointInterval \
       --scheduler $scheduler \
       --defaultScheduler $defaultScheduler \
       --CCOption $CCOption \
@@ -145,5 +142,6 @@ function runApplication() {
 
 function application_runner() {
  ResetParameters
+ runApplication
 }
 application_runner
