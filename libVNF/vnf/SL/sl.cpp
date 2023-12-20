@@ -53,9 +53,9 @@ void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
     std::cout << "[DEBUG] New Packet accepted" << std::endl;
     auto content = string(ctx.packet());
     // TODO. Clear timeStamping out of the user code.
-    if (content == "transfer\n"){
+    if (content == "transfer"){
         ctx.Transaction(1).Trigger(connId, ctx, "0000:0001", false);
-    } else if (content == "deposit\n") {
+    } else if (content == "deposit") {
         ctx.Transaction(0).Trigger(connId, ctx, "0000:0001", false);
         std::cout << GetSFC().SFC_chain[0]->Txns.size() << std::endl;
     } else {
