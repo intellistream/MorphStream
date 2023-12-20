@@ -21,6 +21,12 @@ HEADER_INSTALL=/usr/local/include/libvnf/
 
 # Executable
 CMAKE=$TMP_DIR/cmake/bin/cmake
+if [ -x "$CMAKE" ]; then
+	:
+else
+	sudo apt-get install -y cmake && CMAKE=cmake
+fi
+echo "Using cmake: $CMAKE"
 
 # If you let script make the vm.
 VM_ISO=$TMP_DIR/ubuntu-18.04.1-live-server-amd64.iso
@@ -330,7 +336,6 @@ case $1 in
 			setup_kernel_bypass_stack
 		elif [ $# -ge 2 ] && [[ $2 == $KERNEL_STACK ]]; then
 			IS_KENREL_BYPASS=false
-			CMAKE=cmake
 			setup_kernel_stack
 		elif [ $# -ge 2 ] && [[ $2 == $EXAMPLE ]]; then
 			compile_example_vnf 

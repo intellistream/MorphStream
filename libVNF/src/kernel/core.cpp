@@ -1857,6 +1857,22 @@ int _callBack(uint64_t txnReqId, void * value, int length, void * result){
     // return ctx->ReturnValue() == ABORT? -1:0;    
 }
 
+vector<int> pbdSemiColonSeparator(char* buffer, int bufLen) {
+    vector<int> ret = {};
+    int size = 0;
+    for ( int i = 0; i< bufLen; i+=1 ){
+        size += 1;
+        // Assume last char is ; or \0.
+        if (buffer[i] == ';' || i == bufLen - 1){
+            assert(buffer[i] == ';' || buffer[i] == '\0');
+            buffer[i] = '\0';
+            ret.push_back(size);
+            size = 0;
+        }
+    }
+    return ret;
+}
+
 // TODO. TO BE DEBUGGED.
 JNIEXPORT jstring 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1init_1SFC
@@ -1985,6 +2001,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
         serverSocketId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
         serverSocketId.registerCallback(vnf::READ, _AppsDisposalRead);
         serverSocketId.registerCallback(vnf::ERROR, _AppsDisposalError);
+        registerPacketBoundaryDisambiguator(serverSocketId, pbdSemiColonSeparator);
 
 		// Return the result as a Java string
 		return env->NewStringUTF(globals.sfc.NFs().c_str());
