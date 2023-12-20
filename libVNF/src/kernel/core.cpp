@@ -1863,11 +1863,15 @@ vector<int> pbdSemiColonSeparator(char* buffer, int bufLen) {
     for ( int i = 0; i< bufLen; i+=1 ){
         size += 1;
         // Assume last char is ; or \0.
-        if (buffer[i] == ';' || i == bufLen - 1){
+        if (buffer[i] == ';' ){
             assert(buffer[i] == ';' || buffer[i] == '\0');
             buffer[i] = '\0';
             ret.push_back(size);
             size = 0;
+        } else if ( i == bufLen - 1 ){
+            // No substitution at the last.
+            ret.push_back(size);
+            break;
         }
     }
     return ret;
