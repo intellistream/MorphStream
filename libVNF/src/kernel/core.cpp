@@ -1753,7 +1753,7 @@ void DB4NFV::SFC::Add(App& last, App& app){
 void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool isAbort)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
-    int len = sizeof(uint64_t) * 3 + strlen(key) + 3;
+    int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
 
     // Use SetByteArrayRegion to copy data into the byte array
     jbyte data[len];
@@ -1781,7 +1781,7 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     data[offset] = '\0';
 
     // Copy the data into the msg byte array
-    auto msg = env->NewByteArray(len); 
+    auto msg = env->NewByteArray(len);
     assert(msg != NULL);
     env->SetByteArrayRegion(msg, 0, len, data);
 

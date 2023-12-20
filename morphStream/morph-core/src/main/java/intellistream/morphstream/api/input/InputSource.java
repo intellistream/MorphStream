@@ -5,9 +5,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import intellistream.morphstream.configuration.CONTROL;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +29,8 @@ public class InputSource {
     private static int spoutNum;
     private static int rrIndex = 0; //round-robin index for distributing input data to executor queues
     private static final boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
+    private static final byte fullSeparator = 59;
+    private static final byte keySeparator = 58;
     public enum InputSourceType {
         FILE_STRING,
         FILE_JSON,
@@ -53,14 +55,6 @@ public class InputSource {
 
     // Delegate calling from libVNF for possible type changing.
     public static void libVNFInsertInputData(byte[] input){
-        String s = new String(input);
-        insertInputData(s);
-    }
-
-    /**
-     * Receives input data from streaming source (e.g., JNI) and round-robin inserts data into executor input queues
-     */
-    public static void insertInputData(String input) {
         executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(input));
         rrIndex = (rrIndex + 1) % spoutNum;
     }
@@ -110,28 +104,47 @@ public class InputSource {
      * Packet string format (split by ";"):
      * ts (timestamp or bid, increasing by each request); txnReqID; key(s) (split by ":"); flag; isAbort
      * */
-    private static TransactionalEvent inputFromStringToTxnVNFEvent(String request) {
-        String[] inputArray = request.split(";");
+    private static TransactionalEvent inputFromStringToTxnVNFEvent(byte[] byteArray) {
 
-        if (inputArray.length == 5) {
-            long bid = Long.parseLong(inputArray[0]);
-            long txnReqID = Long.parseLong(inputArray[1]);
-            String[] keys = inputArray[2].split(":");
-            String flag = inputArray[3];
-            boolean isAbort = Boolean.parseBoolean(inputArray[4]);
+        List<byte[]> splitByteArrays = splitByteArray(byteArray, fullSeparator);
 
-            TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(bid, txnReqID, keys, flag, isAbort);
+        byte[] bidByte = splitByteArrays.get(0);
+        byte[] reqIDByte = splitByteArrays.get(1);
+        byte[] keysByte = splitByteArrays.get(2);
+        byte[] flagByte = splitByteArrays.get(3);
+        byte[] isAbortByte = splitByteArrays.get(4);
 
-            if (createTimestampForEvent) {
-                txnEvent.setOriginTimestamp(System.nanoTime());
-            } else {
-                txnEvent.setOriginTimestamp(0L);
-            }
-            return txnEvent;
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.clear();
+        buffer.put(bidByte);
+        buffer.flip();
+        long bid = buffer.getLong();
 
-        } else {
-            throw new UnsupportedOperationException("Unsupported input format: " + request);
+        buffer.clear();
+        buffer.put(reqIDByte);
+        buffer.flip();
+        long txnReqID = buffer.getLong();
+
+        List<byte[]> splitKeyByteArrays = splitByteArray(keysByte, keySeparator);
+        String[] keys = new String[splitKeyByteArrays.size()];
+        for (int i = 0; i < splitKeyByteArrays.size(); i++) {
+            keys[i] = new String(splitKeyByteArrays.get(i), StandardCharsets.US_ASCII);
         }
+
+        int flag = ByteBuffer.wrap(flagByte).getInt();
+        int isAbort = ByteBuffer.wrap(isAbortByte).getInt();
+
+        String flagStr = String.valueOf(flag);
+        boolean isAbortBool = isAbort != 0;
+
+        TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(bid, txnReqID, keys, flagStr, isAbortBool);
+
+        if (createTimestampForEvent) {
+            txnEvent.setOriginTimestamp(System.nanoTime());
+        } else {
+            txnEvent.setOriginTimestamp(0L);
+        }
+        return txnEvent;
     }
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {
@@ -212,6 +225,34 @@ public class InputSource {
         } else {
             throw new UnsupportedOperationException("Unsupported input format: " + input);
         }
+    }
+
+    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
+        List<byte[]> splitByteArrays = new ArrayList<>();
+        List<Integer> indexes = new ArrayList<>();
+
+        for (int i = 0; i < byteArray.length; i++) {
+            if (byteArray[i] == separator) {
+                indexes.add(i);
+            }
+        }
+
+        int startIndex = 0;
+        for (Integer index : indexes) {
+            byte[] subArray = new byte[index - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
+            splitByteArrays.add(subArray);
+            startIndex = index + 1;
+        }
+
+        // Handling the remaining part after the last occurrence of 59
+        if (startIndex < byteArray.length) {
+            byte[] subArray = new byte[byteArray.length - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
+            splitByteArrays.add(subArray);
+        }
+
+        return splitByteArrays;
     }
 
     public String getStaticFilePath() {
