@@ -43,7 +43,7 @@ function ResetParameters() {
     totalEvents=`expr $checkpointInterval \* $tthread \* 4 \* $shiftRate \* $workerNum`
     #System Configurations
     schedulerPool="OG_NS_A"
-    checkpointInterval=10240
+    checkpointInterval=10000
     tthread=24
     scheduler="OG_NS_A"
     defaultScheduler="OG_NS_A"
@@ -52,7 +52,7 @@ function ResetParameters() {
 }
 
 function runApplication() {
-  echo "java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn200g -XX:+UseG1GC -jar -d64 ${JAR} \
+  echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} \
       --isDriver $isDriver \
       --workerId $workerId \
       --workerNum $workerNum \
@@ -97,7 +97,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn200g -XX:+UseG1GC -jar -d64 $JAR \
+  java -Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 $JAR \
       --isDriver $isDriver \
       --workerId $workerId \
       --workerNum $workerNum \
