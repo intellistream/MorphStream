@@ -77,8 +77,8 @@ auto SLApp = DB4NFV::App{
                 },
                 StateAccess{
                     // "dst_transfer_sa",
-                    {1}, {1}, None, 
-                    src_transfer_sa_udf, nullptr, nullptr, WRITE
+                    {1}, {1}, None,
+                    dest_transfer_sa_udf, nullptr, nullptr, WRITE
                 }
             }
         },

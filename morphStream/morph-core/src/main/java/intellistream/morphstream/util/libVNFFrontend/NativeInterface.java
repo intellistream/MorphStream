@@ -23,7 +23,7 @@ public class NativeInterface {
 
     // Load the native library when the class is initialized
     static {
-        System.load("/home/shuhao/MorphStream/tmp/SL-kernel-dynamic.so");
+        System.load("/home/shuhao/DB4NFV/tmp/SL-kernel-dynamic.so");
     }
 
     public static void main(String[] args) {
