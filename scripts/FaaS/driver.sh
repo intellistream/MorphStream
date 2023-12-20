@@ -10,7 +10,7 @@ function ResetParameters() {
     frontendNum=4
     clientClassName="client.BankingSystemClient"
     #Network Configurations
-    isRdma=1
+    isRDMA=1
     driverHost="localhost"
     driverPort=5570
     workerHosts="localhost,localhost"
@@ -60,7 +60,7 @@ function runApplication() {
       --clientNum $clientNum \
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
-      --isRdma $isRdma \
+      --isRDMA $isRDMA \
       --driverHost $driverHost \
       --driverPort $driverPort \
       --workerHosts $workerHosts \
@@ -105,7 +105,7 @@ function runApplication() {
       --clientNum $clientNum \
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
-      --isRdma $isRdma \
+      --isRDMA $isRDMA \
       --driverHost $driverHost \
       --driverPort $driverPort \
       --workerHosts $workerHosts \

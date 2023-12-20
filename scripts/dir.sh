@@ -8,6 +8,6 @@
 #export RSTDIR="/home/myc/workspace/jjzhao/Benchmark/MorphStreamDR"
 #export JAR="/home/myc/workspace/jjzhao/MorphStreamDR/application/target/application-0.0.2-jar-with-dependencies.jar"
 #Node26
-export RUNDIR="/home/jjzhao/project/MorphStreamDR"
-export RSTDIR="/home/jjzhao/Benchmark/MorphStreamDR"
-export JAR="/home/jjzhao/project/MorphStreamDR/application/target/application-0.0.2-jar-with-dependencies.jar"
+export RUNDIR="/home/jjzhao/project/MorphStream"
+export RSTDIR="/home/jjzhao/Benchmark/MorphStream"
+export JAR="/home/jjzhao/project/MorphStream/morph-clients/target/morph-clients-0.1-jar-with-dependencies.jar"

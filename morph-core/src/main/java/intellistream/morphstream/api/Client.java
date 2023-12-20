@@ -76,8 +76,12 @@ public abstract class Client extends Thread {
             throw new RuntimeException(e);
         }
         this.inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(clientId);
-        driverHost = MorphStreamEnv.get().configuration().getString("morphstream.socket.driverHost");
-        driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.socket.driverPort");
+        driverHost = "localhost";
+        if (MorphStreamEnv.get().configuration().getBoolean("isRDMA")) {
+            driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
+        } else {
+            driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.socket.driverPort");
+        }
         connectFrontend(driverHost, driverPort);
         while (!Thread.currentThread().isInterrupted()) {
             if (!inputQueue.isEmpty()) {

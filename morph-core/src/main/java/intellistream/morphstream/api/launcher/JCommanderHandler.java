@@ -241,13 +241,13 @@ public class JCommanderHandler {
     //Network configuration
     @Parameter(names = {"--isRDMA"}, description = "whether is rdma connection")
     public int isRDMA = 0;
-    @Parameter(names = {"--morphstream.driverHost"}, description = "morphstream driver host")
+    @Parameter(names = {"--driverHost"}, description = "morphstream driver host")
     public String driverHost = "localhost";
-    @Parameter(names = {"--morphstream.driverPort"}, description = "morphstream driver port")
+    @Parameter(names = {"--driverPort"}, description = "morphstream driver port")
     public int driverPort = 5570;
-    @Parameter(names = {"--morphstream.workerHosts"}, description = "morphstream worker hosts")
+    @Parameter(names = {"--workerHosts"}, description = "morphstream worker hosts")
     public String workerHosts = "localhost,localhost";
-    @Parameter(names = {"--morphstream.workerPorts"}, description = "morphstream worker ports")
+    @Parameter(names = {"--workerPorts"}, description = "morphstream worker ports")
     public String workerPorts = "5540,5550";
     @Parameter(names = {"--CircularBufferCapacity"}, description = "CircularBufferCapacity")
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
