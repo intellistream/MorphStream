@@ -1775,12 +1775,13 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     offset += sizeof(int);
     data[offset++] = ';';
 
-    memcpy(data + offset, &isAbort, sizeof(bool));
-    offset += sizeof(bool);
+    int isAbort_i = isAbort? 1: 0;
+    memcpy(data + offset, &isAbort_i, sizeof(int));
+    offset += sizeof(int);
     data[offset] = '\0';
 
     // Copy the data into the msg byte array
-    auto msg = env->NewByteArray(len); // 3 semicolons and null terminator
+    auto msg = env->NewByteArray(len); 
     assert(msg != NULL);
     env->SetByteArrayRegion(msg, 0, len, data);
 
