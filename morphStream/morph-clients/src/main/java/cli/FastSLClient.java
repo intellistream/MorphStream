@@ -87,14 +87,14 @@ public class FastSLClient extends Client {
         String[] srcTransferStateObjs = {"srcAccountBalance"};
         String[] destTransferStateObjs = {"srcAccountBalance", "destAccountBalance"};
 
-        fastSLClient.registerStateAccess("srcTransfer", srcTransferStateObjs, null, "WRITE");
-        fastSLClient.registerStateAccess("destTransfer", destTransferStateObjs, null, "WRITE");
-        fastSLClient.registerStateAccess("deposit", srcTransferStateObjs, null, "WRITE");
-        String[] transferStateAccessIDs = {"srcTransfer", "destTransfer"};
-        String[] depositStateAccessIDs = {"deposit"};
+        fastSLClient.registerStateAccess("0", srcTransferStateObjs, null, "WRITE"); //deposit
+        fastSLClient.registerStateAccess("1", srcTransferStateObjs, null, "WRITE"); //srcTransfer
+        fastSLClient.registerStateAccess("2", destTransferStateObjs, null, "WRITE"); //destTransfer
+        String[] transferStateAccessIDs = {"1", "2"};
+        String[] depositStateAccessIDs = {"0"};
 
-        fastSLClient.registerTxn("transfer", transferStateAccessIDs);
-        fastSLClient.registerTxn("deposit", depositStateAccessIDs);
+        fastSLClient.registerTxn("0", depositStateAccessIDs);
+        fastSLClient.registerTxn("1", transferStateAccessIDs);
         String[] txnIDs = {"transfer", "deposit"};
 
         fastSLClient.registerOperator("fastSLClient", txnIDs, 0, 4);

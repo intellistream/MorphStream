@@ -149,24 +149,28 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
 
-        LOG.info("Request received: " + in.getValue(0).toString());
-
-        if (in.isMarker()) {
-            int numEvents = eventQueue.size();
-            { // state access
-                transactionManager.start_evaluate(this.getOperatorID(), numEvents, thread_Id, in.getBID());
+        try {
+            if (in.isMarker()) {
+                int numEvents = eventQueue.size();
+                { // state access
+                    transactionManager.start_evaluate(this.getOperatorID(), numEvents, thread_Id, in.getBID());
+                }
+                { // post-processing
+                    Transaction_Post_Process();
+                }
+                eventQueue.clear();
+                eventStateAccessesMap.clear();
+                if (isCombo) {
+                    sink.execute(in);
+                }
+            } else {
+                execute_ts_normal(in);
             }
-            { // post-processing
-                Transaction_Post_Process();
-            }
-            eventQueue.clear();
-            eventStateAccessesMap.clear();
-            if (isCombo) {
-                sink.execute(in);
-            }
-        } else {
-            execute_ts_normal(in);
+        } catch (Exception e) {
+            LOG.info("Exception");
+            throw new RuntimeException(e);
         }
+
     }
 
 }

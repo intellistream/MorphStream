@@ -118,7 +118,7 @@ public class InputSource {
         buffer.clear();
         buffer.put(bidByte);
         buffer.flip();
-        long bid = buffer.getLong();
+        long ts = buffer.getLong();
 
         buffer.clear();
         buffer.put(reqIDByte);
@@ -144,6 +144,7 @@ public class InputSource {
         } else {
             txnEvent.setOriginTimestamp(0L);
         }
+        bid++;
         return txnEvent;
     }
 

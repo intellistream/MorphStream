@@ -210,7 +210,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public boolean Asy_WriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
         // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
-
         int recordNum = (stateAccess.length - 3) / 4;
         int writeStateIndex = Integer.parseInt(stateAccess[2]);
         List<TableRecord> condition_records = new ArrayList<>();
@@ -225,6 +224,8 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             condition_tables[(i-3)/4] = table;
             condition_keys[(i-3)/4] = key;
             condition_fieldIndexes[(i-3)/4] = fieldIndex;
+
+            key = String.valueOf(Integer.parseInt(key)); //TODO: Refine this
             TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
             if (condition_record != null) {
                 condition_records.add(condition_record);
@@ -235,7 +236,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
 
         String writeTable = stateAccess[writeStateIndex];
-        String writeKey = stateAccess[writeStateIndex + 1];
+        String writeKey = String.valueOf(Integer.parseInt(stateAccess[writeStateIndex + 1]));
         int writeFieldIndex = Integer.parseInt(stateAccess[writeStateIndex + 2]);
         TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
 
