@@ -1787,21 +1787,15 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
     assert(cls != NULL);
 
-    jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
-    assert(constructor != NULL);
-
-    jobject IS = env->NewObject(cls, constructor);
-
     // jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
-    jmethodID methodId = env->GetMethodID(cls, "libVNFInsertInputData", "([B)V");
+    jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "([B)V");
     assert(methodId != NULL);
 
     // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
-    env->CallVoidMethod(IS, methodId, msg);
+    env->CallStaticVoidMethod(cls, methodId, msg);
     std::cout << "[DEBUG] Txn Requested." << std::endl;
 
     // Clean up resources when done
-    env->DeleteLocalRef(IS);  // Release the reference to IS
     env->DeleteLocalRef(msg); // Release the reference to msg
 }
 
@@ -1885,21 +1879,21 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
 
         // Find the method and save in globals.
         // Find the class that contains the sendTxnRequest method
-        jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
-        assert( cls != NULL);
+        // jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
+        // assert( cls != NULL);
 
         // Get a reference to the txn method
         // jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "(Ljava/lang/String;)V");
 
         // Create a static object of the InputSource class.
-        jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
-        assert( constructor != NULL);
+        // jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
+        // assert( constructor != NULL);
 
-        jobject IS = env->NewObject(cls, constructor);
+        // jobject IS = env->NewObject(cls, constructor);
         // Set Permanenet Ref.
 
-        jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
-        assert( methodId != NULL);
+        // jmethodID methodId = env->GetStaticMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+        // assert( methodId != NULL);
 
         // Call the __request method
         jint rs = env->GetJavaVM(&globals.__jvm);

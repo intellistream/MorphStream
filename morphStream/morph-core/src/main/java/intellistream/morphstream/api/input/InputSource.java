@@ -52,9 +52,9 @@ public class InputSource {
     }
 
     // Delegate calling from libVNF for possible type changing.
-    public void libVNFInsertInputData(byte[] input){
+    public static void libVNFInsertInputData(byte[] input){
         String s = new String(input);
-        this.insertInputData(s);
+        insertInputData(s);
     }
 
     /**
