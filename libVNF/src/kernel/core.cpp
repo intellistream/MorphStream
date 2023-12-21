@@ -2025,26 +2025,14 @@ JNIEXPORT jbyteArray
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf
   (JNIEnv * env, jclass cls, jlong txnReqId_jni, jint saIdx , jbyteArray value, jint param_count){
     // Save the value in ctx.
-    auto endian = true;
     uint64_t txnReqId = 0;
-    if (endian){
-        uint8_t buf[sizeof(jlong)] = {};
-        memcpy(buf, &txnReqId_jni, sizeof(jlong));
-        uint8_t tmp = 0;
-        for (int  i = 0; i < sizeof(jlong) / 2; i += 1) {
-            tmp = buf[sizeof(jlong) - i - 1];
-            buf[sizeof(jlong) - i - 1] = buf[i];
-            buf[i] = tmp;
-        }
-        for (int i = 0; i < sizeof(jlong); i++)
-        {
-            txnReqId |= static_cast<uint64_t>(buf[i]) << (i * 8);
-        }
-        assert((txnReqId & 0xffffff0000000000) == 0);
-    } else {
-        txnReqId = static_cast<uint64_t>(txnReqId_jni); 
-        assert((txnReqId & 0xffffff0000000000) == 0);
+    // reverse for switching endianness.
+    uint8_t *buf = reinterpret_cast<uint8_t *>(&txnReqId);
+    uint8_t *buf_jni = reinterpret_cast<uint8_t *>(&txnReqId_jni);
+    for (int  i = 0; i < sizeof(jlong); i += 1) {
+        buf[sizeof(jlong) - i - 1] = buf_jni[i];
     }
+    assert((txnReqId & 0xffffff0000000000) == 0);
 
 	int coreId = COREID(txnReqId);
 	auto ctx = perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)];
