@@ -130,8 +130,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (useNativeLib) {
             // TODO. @Zhonghao: result_ptr is the pointer to write back result for Write type
             byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
-//            int flag = ByteBuffer.wrap(flagByte).getInt();
-            System.out.println(saResultBytes);
             isAbort = decodeInt(saResultBytes, 0);
             udfResult = decodeInt(saResultBytes, 4);
         } else {
