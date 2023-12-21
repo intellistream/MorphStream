@@ -2061,7 +2061,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     // Length. Here we are getting the length from: field number; type.
     int length = STATE_TYPE_SIZE * param_count;
 
-    auto tmp = new char[length];
+    auto tmp = new char[length]; // TO be Optimized.
     memcpy(tmp, inputBuffer, length);
     // ctx->_set_value_from_callback(tmp, length);
 
@@ -2081,11 +2081,11 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     }
 
     auto _result = env->NewByteArray(sizeof(bool) + STATE_TYPE_SIZE);
-    env->SetByteArrayRegion(_result, 1, static_cast<jsize>(STATE_TYPE_SIZE), reinterpret_cast<jbyte *>(&res));
+    env->SetByteArrayRegion(_result, sizeof(bool), static_cast<jsize>(STATE_TYPE_SIZE), reinterpret_cast<jbyte *>(&res));
 
     // Set Abortion.
     jbyte firstByte = static_cast<jbyte>(abortion);
-	env->SetByteArrayRegion(_result, 0, 1, &firstByte);
+	env->SetByteArrayRegion(_result, 0, sizeof(bool), &firstByte);
 
     // How to release write back value? We don't need to release. They are managed.
     return _result;
