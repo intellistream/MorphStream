@@ -124,12 +124,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             byteBuffer.putInt(value);
         }
         byte[] readBytes = byteBuffer.array();
+        int isAbort = -1;
+        int udfResult = -1;
 
         if (useNativeLib) {
             // TODO. @Zhonghao: result_ptr is the pointer to write back result for Write type
-            assert (operation.txnReqID & 0xfffffff000000000L) == 0 : "Assertion failed: (txnReqId & 0xfffffff000000000) != 0";
-            System.out.println("assertion passed");
             byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
+//            int flag = ByteBuffer.wrap(flagByte).getInt();
+            System.out.println(saResultBytes);
+            isAbort = decodeInt(saResultBytes, 0);
+            udfResult = decodeInt(saResultBytes, 4);
         } else {
             try {
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
@@ -145,23 +149,23 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         }
 
-        assert readValues != null;
-        if (Objects.equals(readValues[1], "false")) { //txn is not aborted
+        if (isAbort == 0) { //txn is not aborted
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
                 //Update udf results to writeRecord
-//                double udfResult = Double.parseDouble(readValues[2]); //TODO: Refine datatype transformation
-//                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-//                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-//                tempo_record.getValues().get(1).setDouble(udfResult);
-//                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
+                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+                tempo_record.getValues().get(1).setDouble(udfResult);
+                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
             } else {
                 throw new UnsupportedOperationException();
             }
-        } else {
+        } else if (isAbort == 1) {
             operation.stateAccess[1] = "true"; //pass isAbort back to bolt
             operation.isFailed.set(true);
+        } else {
+            throw new RuntimeException();
         }
 
         commitLog(operation);
@@ -331,6 +335,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
         operation.isCommit = true;
         MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+    }
+
+    private static int decodeInt(byte[] bytes, int offset) {
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            value |= (bytes[offset + i] & 0xFF) << (i * 8);
+        }
+        return value;
     }
 
     // Method to encode string array into byte stream
