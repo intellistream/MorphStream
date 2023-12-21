@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Objects;
 
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
@@ -106,35 +108,36 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         AppConfig.randomDelay();
 
         //stateAccess: saID, type, writeObjIndex, [table name, key's value, field index in table, access type] * N
-        String[] saData = new String[3 + operation.condition_records.size()]; //saID, toAbort, saResult, <stateObj field value> * N
-        saData[0] = operation.stateAccess[0]; //saID, determine which UDF to execute
-        saData[1] = "false"; //toAbort
-        saData[2] = ""; //saResult
+        int[] readValues = new int[operation.condition_records.size()]; //<stateObj field value> * N
 
-        int saIndex = 3;
+        int saIndex = 0;
         for (TableRecord tableRecord : operation.condition_records) {
-            int stateFieldIndex = Integer.parseInt(operation.stateAccess[3 + (saIndex - 3) * 4 + 2]);
+            int stateFieldIndex = Integer.parseInt(operation.stateAccess[3 + saIndex * 4 + 2]);
             SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
-            saData[saIndex] = String.valueOf(readRecord.getValues().get(stateFieldIndex).getDouble());
+            readValues[saIndex] = (int) readRecord.getValues().get(stateFieldIndex).getDouble();
             saIndex++;
         }
 
+        ByteBuffer byteBuffer = ByteBuffer.allocate(readValues.length * 4);
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        for (int value : readValues) {
+            byteBuffer.putInt(value);
+        }
+        byte[] readBytes = byteBuffer.array();
+
         if (useNativeLib) {
-            byte[] saDataBytes = encodeStringArray(saData);
             // TODO. @Zhonghao: result_ptr is the pointer to write back result for Write type
-            // saDataBytes = NativeInterface._execute_sa_udf(txnReqId, saId, saDataBytes, saData.length, resultp_ptr);
             assert (operation.txnReqID & 0xfffffff000000000L) == 0 : "Assertion failed: (txnReqId & 0xfffffff000000000) != 0";
             System.out.println("assertion passed");
-            saDataBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), saDataBytes, saData.length);
-            saData = decodeStringArray(saDataBytes);
+            byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
         } else {
             try {
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                 if (Client.class.isAssignableFrom(clientClass)) {
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                    byte[] testBytes = encodeStringArray(saData);
-                    testBytes = clientObj.execute_txn_udf(operation.stateAccess[0], testBytes);
-                    saData = decodeStringArray(testBytes);
+//                    byte[] testBytes = encodeStringArray(readValues);
+//                    testBytes = clientObj.execute_txn_udf(operation.stateAccess[0], testBytes);
+//                    readValues = decodeStringArray(testBytes);
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                      InvocationTargetException | NoSuchMethodException e) {
@@ -142,17 +145,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         }
 
-        assert saData != null;
-        if (Objects.equals(saData[1], "false")) { //txn is not aborted
+        assert readValues != null;
+        if (Objects.equals(readValues[1], "false")) { //txn is not aborted
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
                 //Update udf results to writeRecord
-                double udfResult = Double.parseDouble(saData[2]); //TODO: Refine datatype transformation
-                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-                tempo_record.getValues().get(1).setDouble(udfResult);
-                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
+//                double udfResult = Double.parseDouble(readValues[2]); //TODO: Refine datatype transformation
+//                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+//                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+//                tempo_record.getValues().get(1).setDouble(udfResult);
+//                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
             } else {
                 throw new UnsupportedOperationException();
             }
