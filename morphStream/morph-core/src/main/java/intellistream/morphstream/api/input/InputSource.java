@@ -124,7 +124,7 @@ public class InputSource {
         buffer.put(reqIDByte);
         buffer.flip();
         long txnReqID = buffer.getLong();
-
+        assert (txnReqID & 0xfffffff000000000L) == 0 : "Assertion failed: (txnReqId & 0xfffffff000000000) != 0";
         List<byte[]> splitKeyByteArrays = splitByteArray(keysByte, keySeparator);
         String[] keys = new String[splitKeyByteArrays.size()];
         for (int i = 0; i < splitKeyByteArrays.size(); i++) {

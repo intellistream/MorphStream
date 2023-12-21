@@ -123,7 +123,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             byte[] saDataBytes = encodeStringArray(saData);
             // TODO. @Zhonghao: result_ptr is the pointer to write back result for Write type
             // saDataBytes = NativeInterface._execute_sa_udf(txnReqId, saId, saDataBytes, saData.length, resultp_ptr);
-            
+            assert (operation.txnReqID & 0xfffffff000000000L) == 0 : "Assertion failed: (txnReqId & 0xfffffff000000000) != 0";
+            System.out.println("assertion passed");
             saDataBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), saDataBytes, saData.length);
             saData = decodeStringArray(saDataBytes);
         } else {

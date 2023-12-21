@@ -377,7 +377,7 @@ void *serverThread(void *args) {
                         // _disposalBody(connId, o->reqObjId,
                         //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
                         //             o->packet_record, o->packet_len, 0);
-                        _disposalBody(connId, *ctx);
+                        _disposalBody(connId, *ctx, -1);
 
                         // Delete ctx from the hashmap. No need to delete ctx since it belongs to reqObj.
                         perCoreStates[coreId].packetNumberContextMap.erase(
@@ -1661,39 +1661,48 @@ int __VNFThread(int argc, char *argv[]){
 	vnf::startEventLoop();
 }
 
-void _disposalBody(vnf::ConnId& connId, Context & ctx){
+void _disposalBody(vnf::ConnId& connId, Context & ctx, int saIdx){
     while (ctx.AppIdx() != -1){
         auto app = globals.sfc.SFC_chain[ctx.AppIdx()];
         ctx.NextApp(-1, ctx.ReturnValue());
-        switch (ctx.ReturnValue())
-        {
-        case vnf::ERROR:
-            if ((*app->errorHandler) == nullptr ){
-                // Abort if error but no handler.
-                ctx._clear_value();
-                ctx.Abort();
-                return;
-            }
-            (*app->errorHandler)(connId, ctx);
-            ctx._move_next();
-            break;
-        case vnf::ACCEPT:
-            (*app->acceptHandler)(connId, ctx);
-            ctx._move_next();
-            break;
-        case vnf::READ:
-            (*app->readHandler)(connId, ctx);
-            ctx._move_next();
-            break;
-        case vnf::ABORT:
+        if ( ctx.IsWaitingForTxnBack() && saIdx >= 0){
+            // Shortcut to handle transaction sa udf. 
+            // Udf are allowed to register NextApp. But continue to handle the next app shall be done after this transaction handle done.
+            // Shall be triggered by txn_handle_done().
+	        (*app->Txns[ctx.TxnIdx()].sas[saIdx].txnHandler_)(connId, ctx);
             ctx._clear_value();
             return;
-        } 
-        // If it's called from some saUDF. Clear value for next app. Prevent leaking.
-        ctx._clear_value();
-        // If transactions handler being called, the mark would be set.
-        if ( ctx.IsWaitingForTxnBack()){
-            return;
+        } else {
+            switch (ctx.ReturnValue())
+            {
+            case vnf::ERROR:
+                if ((*app->errorHandler) == nullptr ){
+                    // Abort if error but no handler.
+                    ctx._clear_value();
+                    ctx.Abort();
+                    return;
+                }
+                (*app->errorHandler)(connId, ctx);
+                ctx._move_next();
+                break;
+            case vnf::ACCEPT:
+                (*app->acceptHandler)(connId, ctx);
+                ctx._move_next();
+                break;
+            case vnf::READ:
+                (*app->readHandler)(connId, ctx);
+                ctx._move_next();
+                break;
+            case vnf::ABORT:
+                ctx._clear_value();
+                return;
+            } 
+            // If it's called from some saUDF. Clear value for next app. Prevent leaking.
+            ctx._clear_value();
+            // If transactions handler being called, the mark would be set.
+            if ( ctx.IsWaitingForTxnBack()){
+                return;
+            }
         }
     }
 }
@@ -1704,21 +1713,21 @@ void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject
     auto ctx = static_cast<Context *> (requestObject);
 	ctx->_set_status(ACCEPT);
     ctx->_set_packet(packet, packetLen);
-	_disposalBody(connId, *ctx);
+	_disposalBody(connId, *ctx, -1);
 }
 
 void _AppsDisposalRead(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto ctx = static_cast<Context *> (requestObject);
     ctx->_set_status(READ);
     ctx->_set_packet(packet, packetLen);
-	_disposalBody(connId, *ctx);
+	_disposalBody(connId, *ctx, -1);
 }
 
 void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int packetId, int errorCode, int streamNum) {
     auto ctx = static_cast<Context *> (requestObject);
     ctx->_set_status(ERROR);
     ctx->_set_packet(packet, packetLen);
-	_disposalBody(connId, *ctx);
+	_disposalBody(connId, *ctx, -1);
 }
 
 // TODO. Define the structure for message convey.
@@ -1764,6 +1773,7 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     data[offset++] = jbyte(';');
 
     memcpy(data + offset, &txnReqId, sizeof(uint64_t));
+    assert((txnReqId & 0xfffffff000000000) == 0);
     offset += sizeof(uint64_t);
     data[offset++] = ';';
 
@@ -1794,7 +1804,7 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
 
     // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
     env->CallStaticVoidMethod(cls, methodId, msg);
-    std::cout << "[DEBUG] Txn Requested." << std::endl;
+    spdlog::debug("[DEBUG:] txn request sent. ");
 
     // Clean up resources when done
     env->DeleteLocalRef(msg); // Release the reference to msg
@@ -1814,7 +1824,8 @@ void DB4NFV::StateAccess::Request(
 
     JNIEnv * env; 
     GetJniEnv(&env);
-	__request(env, ctx._ts_low_32b(), TXNREQID(connId.coreId, int(ctx._ts_low_32b())), key, this->txnIndex, isAbort);
+    assert((connId.coreId & 0xfffffff0) == 0);
+	__request(env, ctx._ts_low_32b(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, isAbort);
 }
 
 // Routing to the context of transaction breakpoint.
@@ -2027,8 +2038,26 @@ JNIEXPORT jbyteArray
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf
   (JNIEnv * env, jclass cls, jlong txnReqId_jni, jint saIdx , jbyteArray value, jint length){
     // Save the value in ctx.
-    uint64_t txnReqId = static_cast<uint64_t>(txnReqId_jni); 
-    jbyte *inputBuffer = env->GetByteArrayElements(value, NULL);
+    auto endian = true;
+    uint64_t txnReqId = 0;
+    if (endian){
+        uint8_t buf[sizeof(jlong)] = {};
+        memcpy(buf, &txnReqId_jni, sizeof(jlong));
+        uint8_t tmp = 0;
+        for (int  i = 0; i < sizeof(jlong) / 2; i += 1) {
+            tmp = buf[sizeof(jlong) - i - 1];
+            buf[sizeof(jlong) - i - 1] = buf[i];
+            buf[i] = tmp;
+        }
+        for (int i = 0; i < sizeof(jlong); i++)
+        {
+            txnReqId |= static_cast<uint64_t>(buf[i]) << (i * 8);
+        }
+        assert((txnReqId & 0xffffff0000000000) == 0);
+    } else {
+        txnReqId = static_cast<uint64_t>(txnReqId_jni); 
+        assert((txnReqId & 0xffffff0000000000) == 0);
+    }
 
 	int coreId = COREID(txnReqId);
 	auto ctx = perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)];
@@ -2040,6 +2069,8 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     */
 
     // Copy allocation value.
+    jbyte *inputBuffer = env->GetByteArrayElements(value, NULL);
+    // TODO. Release it.
     auto tmp = new char[length];
     memcpy(tmp, inputBuffer, length);
     ctx->_set_value_from_callback(tmp, length);
@@ -2047,7 +2078,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     ConnId conn = ConnId(COREID(txnReqId), ctx->_old_socket());
 
     // How to recover the Index.
-    _disposalBody(conn, *ctx);
+    _disposalBody(conn, *ctx, saIdx);
 	bool abortion = ( ctx->ReturnValue())? true: false;
 
     // FIXME. Try to remove this.
@@ -2071,6 +2102,9 @@ JNIEXPORT jint
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1txn_1finished
   (JNIEnv * env, jobject obj, jlong txnReqId_jni){
     uint64_t txnReqId = static_cast<uint64_t>(txnReqId_jni); 
+    // Release context transaction state.
+	perCoreStates[COREID(txnReqId)].packetNumberContextMap[PACKETID(txnReqId)]->_unset_wait_txn_callback();
+
     // Write to the fd to suggest done.
     if (write(perCoreStates[COREID(txnReqId)].txnSocket, &txnReqId, sizeof(uint64_t)) < 0){
         perror("jni.handle_done.write");
@@ -2238,6 +2272,11 @@ void Context::_set_wait_txn_callback()
     waiting_for_transaction_back = true;
 }
 
+void Context::_unset_wait_txn_callback()
+{
+    waiting_for_transaction_back = false;
+}
+
 jbyteArray Context::_res_ptr()
 {
     return _result;
@@ -2250,7 +2289,9 @@ int Context::_ts_low_32b()
 
 void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const
 { 
+    // Reset when transaction handle done.
     ctx._set_wait_txn_callback();
+    ctx.NextApp(ctx.AppIdx(), ctx.ReturnValue());
     for (auto sa: sas){
         sa.Request(connId, ctx, key, isAbort); 
     }

@@ -45,19 +45,22 @@ void deposit_sa_udf(vnf::ConnId& connId, Context &ctx){
 }
 
 void sl_app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
-    std::cout << "[DEBUG] New Connection" << std::endl;
+    spdlog::debug("[DEBUG] New Connection");
     return;
 };
 
 void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
-    std::cout << "[DEBUG] New Packet accepted" << std::endl;
+    spdlog::debug("[DEBUG] New Packet accepted");
     auto content = string(ctx.packet());
     // TODO. Clear timeStamping out of the user code.
     if (content == "transfer"){
+        // Set next app here if needed. Before Transaction triggered. Or you can place them in sa handler.
+        // ctx.NextApp(1, vnf::READ);
         ctx.Transaction(1).Trigger(connId, ctx, "0000:0001", false);
     } else if (content == "deposit") {
+        // Set next app here if needed. Before Transaction triggered. Or you can place them in sa handler.
+        // ctx.NextApp(1, vnf::READ);
         ctx.Transaction(0).Trigger(connId, ctx, "0000:0001", false);
-        std::cout << GetSFC().SFC_chain[0]->Txns.size() << std::endl;
     } else {
         assert(false);
     }

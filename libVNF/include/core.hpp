@@ -89,9 +89,11 @@
 #define TIMER_DEFAULT_DURATION (6)
 #define TIMER_DEFAULT_RETRIES  (4)
 
-#define COREID(TXNID) (static_cast<int>((TXNID) >> sizeof(int)))
-#define PACKETID(TXNID) (static_cast<int>(TXNID))
-#define TXNREQID(COREID, PACKETID) ((COREID) << sizeof(int) | (PACKETID))
+#define COREID(TXNID) (static_cast<int>((TXNID) >> (sizeof(int) * 8)))
+#define PACKETID(TXNID) (static_cast<int>(TXNID & 0x00000000ffffffff))
+// high 32 bits: COREID. Low 32 bits, Packet ID (Time Stamp low 32 bits.)
+#define TXNREQID(COREID, PACKETID) ((static_cast<uint64_t>(COREID) << sizeof(int) * 8) \
+		| (static_cast<uint64_t>(PACKETID)) & 0x00000000ffffffff)
 
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
@@ -822,7 +824,7 @@ void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject
 void _AppsDisposalRead  (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
 void _AppsDisposalError (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
 
-void _disposalBody(vnf::ConnId& connId, Context & ctx );
+void _disposalBody(vnf::ConnId& connId, Context & ctx, int saIdx);
 
 // The entry of the SFC thread from java.
 int __VNFThread(int argc, char *argv[]);
@@ -856,6 +858,7 @@ public:
     void _set_old_socket(int s);
     void _set_packet(char * packet, int len);
     void _set_wait_txn_callback();
+    void _unset_wait_txn_callback();
     jbyteArray _res_ptr();
     int _ts_low_32b();
     void _move_next();
