@@ -95,6 +95,9 @@
 #define TXNREQID(COREID, PACKETID) ((static_cast<uint64_t>(COREID) << sizeof(int) * 8) \
 		| (static_cast<uint64_t>(PACKETID)) & 0x00000000ffffffff)
 
+#define STATE_TYPE int
+#define STATE_TYPE_SIZE (sizeof(int))
+
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
 class Context;
@@ -683,7 +686,7 @@ class SFC;
 class Transaction;
 class StateAccess;
 
-typedef void (*TxnCallBackHandler)(vnf::ConnId& connId, Context &ctx);
+typedef STATE_TYPE (*TxnCallBackHandler)(vnf::ConnId& connId, Context &ctx, char * value, int length);
 typedef void (*PacketHandler)(vnf::ConnId& connId, Context &ctx);
 
 typedef PacketHandler AcceptHandler;
@@ -824,7 +827,7 @@ void _AppsDisposalAccept(vnf::ConnId& connId, int reqObjId, void * requestObject
 void _AppsDisposalRead  (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
 void _AppsDisposalError (vnf::ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum);
 
-void _disposalBody(vnf::ConnId& connId, Context & ctx, int saIdx);
+void _disposalBody(vnf::ConnId& connId, Context & ctx);
 
 // The entry of the SFC thread from java.
 int __VNFThread(int argc, char *argv[]);
@@ -837,13 +840,14 @@ class Context
 public:
     int packet_len();
     char *packet();
-    int value_len();
-    void *value();
+    // int value_len();
+    // void *value();
+	STATE_TYPE *get_value(char * raw, int length, int index);
     int AppIdx();
     int TxnIdx();
     void *reqObj();
     int reqObjId();
-    void WriteBack(void *v, int len);
+    // void WriteBack(void *v, int len);
     void Abort();
     DB4NFV::Transaction & Transaction(int idx);
     void NextApp(int appIdx, vnf::EventType ret);
@@ -852,14 +856,14 @@ public:
 
     void _reset_appIdx();
     void _set_status(vnf::EventType status);
-    void _set_value_from_callback(void *value, int value_len);
-    void _clear_value();
+    // void _set_value_from_callback(void *value, int value_len);
+    // void _clear_value();
     int _old_socket();
     void _set_old_socket(int s);
     void _set_packet(char * packet, int len);
     void _set_wait_txn_callback();
     void _unset_wait_txn_callback();
-    jbyteArray _res_ptr();
+    // jbyteArray _res_ptr();
     int _ts_low_32b();
     void _move_next();
 
@@ -870,9 +874,9 @@ private:
     int _TxnIdx;
     char *_packet;
     int _packet_len;
-    void *_value;
-    int _value_len;
-    jbyteArray _result;
+    // void *_value;
+    // int _value_len;
+    // jbyteArray _result;
     int _reqObjId;
     bool waiting_for_transaction_back;
     int old_socket;

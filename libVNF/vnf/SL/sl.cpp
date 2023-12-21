@@ -15,33 +15,33 @@ Config config("/home/kailian/libVNF/vnf/SL/config.csv");
 using namespace DB4NFV;
 
 // Handler function.
-void src_transfer_sa_udf(vnf::ConnId& connId, Context &ctx){
-    double* srcBalance = static_cast<double *>(ctx.value());
+int src_transfer_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
+    int* srcBalance = ctx.get_value(raw, length, 0);
     if (*srcBalance > double(100)) {
-        double res = *srcBalance - 100; 
-        ctx.WriteBack(&res, sizeof(double));
+        return *srcBalance - 100; 
+        // ctx.WriteBack(&res, sizeof(double));
     } else {
         // Forgot how to dispose abortion.. TODO.
         ctx.Abort();
+        return -1;
     }   
 };
 
-void dest_transfer_sa_udf(vnf::ConnId& connId, Context &ctx){
-    // balance0 is the src balance
-    // balance1 is the dst balance
-    if (*(double*)(ctx.value()) > double(100)) {
-        // Double1 = *(double*)(ctx.value() + sizeof(double));
-        double res = *(double*)(ctx.value() + sizeof(double)) - 100;
-        ctx.WriteBack(&res, sizeof(double));
+int dest_transfer_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
+    int* src_balance = ctx.get_value(raw, length, 0);
+    int* dst_balance = ctx.get_value(raw, length, 1);
+    if (* src_balance >= 100) {
+        return *dst_balance - 100;
     } else {
         ctx.Abort();
+        return -1;
     }   
 };
 
-void deposit_sa_udf(vnf::ConnId& connId, Context &ctx){
-    double* srcBalance = static_cast<double *> (ctx.value());
-    double res = *srcBalance - 100;
-    ctx.WriteBack(&res, sizeof(double));
+int deposit_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
+    int* srcBalance = ctx.get_value(raw, length, 0);
+    return *srcBalance - 100;
+    return -1;
 }
 
 void sl_app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
