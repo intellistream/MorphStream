@@ -97,6 +97,7 @@ public class RdmaDriverManager {
                     try {
                         rdmaBuffer.getByteBuffer().clear();
                         rdmaBufferManager.put(rdmaBuffer);
+                        regionToken.setAddress(remoteAddress + byteBuffer.capacity());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

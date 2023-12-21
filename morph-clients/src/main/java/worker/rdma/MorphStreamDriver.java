@@ -24,8 +24,13 @@ public class MorphStreamDriver extends Thread {
     public MorphStreamDriver() throws Exception {
         this.numFrontend = env.configuration().getInt("frontendNum");
         frontend = zContext.createSocket(SocketType.ROUTER);//  Frontend socket talks to clients over TCP
-        String address = env.configuration().getString("morphstream.socket.driverHost");
-        int port = env.configuration().getInt("morphstream.socket.driverPort");
+        String address = "localhost";
+        int port;
+        if (MorphStreamEnv.get().configuration().getBoolean("isRDMA")) {
+            port = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
+        } else {
+            port = MorphStreamEnv.get().configuration().getInt("morphstream.socket.driverPort");
+        }
         frontend.bind("tcp://"+ address +":" + port);
         backend = zContext.createSocket(SocketType.DEALER); //  Backend socket talks to workers over inproc
         backend.bind("inproc://backend");
