@@ -2071,7 +2071,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     // _disposalBody(conn, *ctx, saIdx);
     // Call actual sa udf.
 	STATE_TYPE res = (*globals.sfc.SFC_chain[ctx->AppIdx()]->Txns[ctx->TxnIdx()].sas[saIdx].txnHandler_)(conn, *ctx, tmp, length);
-	bool abortion = ( ctx->ReturnValue())? 1: 0;
+	int abortion = ( ctx->ReturnValue())? 1: 0;
 
     delete tmp;
 
@@ -2081,10 +2081,10 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     }
 
     auto _result = env->NewByteArray(sizeof(int) + STATE_TYPE_SIZE);
-    // Set result.
-    env->SetByteArrayRegion(_result, sizeof(int), static_cast<jsize>(STATE_TYPE_SIZE), reinterpret_cast<jbyte *>(&res));
     // Set Abortion.
-	env->SetByteArrayRegion(_result, 0, sizeof(int), reinterpret_cast<jbyte *>(&abortion));
+	env->SetByteArrayRegion(_result, static_cast<jsize>(0), static_cast<jsize>(sizeof(int)), reinterpret_cast<jbyte *>(&abortion));
+    // Set result.
+    env->SetByteArrayRegion(_result, static_cast<jsize>(sizeof(int)), static_cast<jsize>(STATE_TYPE_SIZE), reinterpret_cast<jbyte *>(&res));
 
     // How to release write back value? We don't need to release. They are managed.
     return _result;
