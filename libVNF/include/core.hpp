@@ -45,6 +45,7 @@
 #include <fstream>
 #include <chrono>
 #include <mutex>
+#include <boost/stacktrace.hpp>
 #include "intellistream_morphstream_util_libVNFFrontend_NativeInterface.h"
 
 #include "datastore/dspackethandler.hpp"
@@ -89,14 +90,24 @@
 #define TIMER_DEFAULT_DURATION (6)
 #define TIMER_DEFAULT_RETRIES  (4)
 
-#define COREID(TXNID) (static_cast<int>((TXNID) >> (sizeof(int) * 8)))
-#define PACKETID(TXNID) (static_cast<int>(TXNID & 0x00000000ffffffff))
+#define COREID(TXNREQID) (static_cast<int>((TXNREQID) >> (sizeof(int) * 8)))
+#define PACKETID(TXNREQID) (static_cast<int>(TXNREQID & 0x00000000ffffffff))
 // high 32 bits: COREID. Low 32 bits, Packet ID (Time Stamp low 32 bits.)
 #define TXNREQID(COREID, PACKETID) ((static_cast<uint64_t>(COREID) << sizeof(int) * 8) \
 		| (static_cast<uint64_t>(PACKETID)) & 0x00000000ffffffff)
 
 #define STATE_TYPE int
 #define STATE_TYPE_SIZE (sizeof(int))
+
+// DEBUG to print CONTEXT.
+#define DEBUG_PRINT_CONTEXT(sig, ctx) \
+	(spdlog::warn("DEBUG at {}: Context {}:\n\tcurrent app[{}].idx[{}] state {} \n\tpacket [{}] of length {} with reqObj {}.", sig, (ctx)->_ts_low_32b(), (ctx)->AppIdx(), (ctx)->TxnIdx(), (ctx)->ReturnValue(), (ctx)->packet() == NULL? "[isNull]" : (ctx)->packet(), (ctx)->packet_len(), reinterpret_cast<uint64_t>(ctx)))
+
+#define ENABLE_ASSERT true
+#define ASSERT(assert_sentence) (if (ENABLE_ASSERT) {assert(assert_sentence)})
+
+#define CONTEXT_MAGIC_HEADER (0x5086fadc)
+// #define REQOBJ_SIZE_TEMP (sizeof(Context) + 1)
 
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
@@ -135,28 +146,10 @@ class ConnId {
 public:
   const int coreId;
   const int socketId;
-  // Get the current timeStamp.
-  uint64_t id;
 
-  ConnId(int coreId, int socketId) : coreId(coreId), socketId(socketId) {
-	  auto currentTime = std::chrono::high_resolution_clock::now();
-	  auto nanosecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::nanoseconds>(currentTime).time_since_epoch().count();
-	  uint64_t timestamp = static_cast<uint64_t>(nanosecondsSinceEpoch);
-	  id = timestamp & 0x00000000FFFFFFFFULL | (static_cast<uint64_t>(coreId) << 32);
-  }
+  ConnId(int coreId, int socketId) : coreId(coreId), socketId(socketId) {}
 
-  ConnId(int value) : coreId(value), socketId(value) {
-	  auto currentTime = std::chrono::high_resolution_clock::now();
-	  auto nanosecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::nanoseconds>(currentTime).time_since_epoch().count();
-	  uint64_t timestamp = static_cast<uint64_t>(nanosecondsSinceEpoch);
-	  id = timestamp & 0x00000000FFFFFFFFULL | (static_cast<uint64_t>(coreId) << 32); }
-
-  // Recover ConnId
-  ConnId(int coreId, int socketId, int id) : coreId(coreId), socketId(socketId), id(id) {}
-
-  int coreIdFromId(){
-	return id >> 32;
-  }
+  ConnId(int value) : coreId(value), socketId(value) {}
 
   bool isValid() {
     return coreId > -1 || socketId > -1;
@@ -763,11 +756,6 @@ public:
 	const TxnCallBackHandler errorTxnHandler_ = nullptr;
 	const PostTxnHandler postTxnHandler_ = nullptr;
 
-	// Called by user to start request, send the transaction request to schedule.
-	void Request(
-    	vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort
-	);
-
 	App* app;
 	Transaction* txn;
     int appIndex;
@@ -838,15 +826,17 @@ DB4NFV::SFC& GetSFC();
 class Context
 {
 public:
+	static Context * Init(void * reqObj, char * packet, int packet_len);
     int packet_len();
     char *packet();
     // int value_len();
     // void *value();
 	STATE_TYPE *get_value(char * raw, int length, int index);
     int AppIdx();
+	void _record_ts();
     int TxnIdx();
     void *reqObj();
-    int reqObjId();
+    // int reqObjId();
     // void WriteBack(void *v, int len);
     void Abort();
     DB4NFV::Transaction & Transaction(int idx);
@@ -855,12 +845,18 @@ public:
     bool IsWaitingForTxnBack();
 
     void _reset_appIdx();
+    void _set_time_now(){ 
+		auto currentTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+		uint64_t ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime).count();
+    	ts_low_32b = static_cast<uint32_t>(ns_count & 0xFFFFFFFF);
+	}
+    void _set_txn_idx(int txnIdx);
     void _set_status(vnf::EventType status);
     // void _set_value_from_callback(void *value, int value_len);
     // void _clear_value();
     int _old_socket();
-    void _set_old_socket(int s);
-    void _set_packet(char * packet, int len);
+    inline void _set_old_socket(int s);
+    inline void _set_packet(char * packet, int len) { _packet = packet; _packet_len = len;}
     void _set_wait_txn_callback();
     void _unset_wait_txn_callback();
     // jbyteArray _res_ptr();
@@ -868,6 +864,7 @@ public:
     void _move_next();
 
 private:
+	int magic_number = CONTEXT_MAGIC_HEADER;
     int ts_low_32b;
     int _AppIdx;
     int _next_AppIdx;
@@ -877,7 +874,7 @@ private:
     // void *_value;
     // int _value_len;
     // jbyteArray _result;
-    int _reqObjId;
+    // int _reqObjId;
     bool waiting_for_transaction_back;
     int old_socket;
     vnf::EventType _ret;

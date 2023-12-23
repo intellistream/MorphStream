@@ -46,6 +46,7 @@ COMPILE_JNI='--compile_jni'
 COMPILE='--compile'
 KERNEL_BYPASS="--KENREL_BYPASS" 
 KERNEL_STACK="--KERNEL_STACK"
+MORPH="--MORPH_STREAM"
 
 # Compile Example VNF options
 EXAMPLE="--EXAMPLE_VNF"
@@ -88,7 +89,19 @@ compile_jni_header(){
 
 compile_morphStream(){
 	compile_jni_header
-	mvn -fn install -Dmaven.test.failure.ignore=false
+	find "$MORPH_DIR" -name "*jar" -print | xargs rm && rm -dfr ~/.m2/repository/intellistream/
+	# find "$MORPH_DIR" -name 'target' -type d -print | xargs sudo rm -dfr
+	# dest=("common" "core" "web" "clients")
+
+	# for i in "${dest[@]}" 
+	# do 
+	# 	cd $MORPH_DIR/morph-$i 
+	# 	sudo mvn clean install
+	# 	cd ..
+	# done
+
+	cd "$MORPH_DIR" && mvn install && cd -
+
 	# TODO. Copy header file to dir.
 }
 
@@ -338,9 +351,13 @@ case $1 in
 			IS_KENREL_BYPASS=false
 			setup_kernel_stack
 		elif [ $# -ge 2 ] && [[ $2 == $EXAMPLE ]]; then
-			compile_example_vnf 
+			compile_example_vnf || error_exit
+			rm "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so" &>/dev/null || true
 			mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
 			exit 0
+		elif [ $# -ge 2 ] && [[ $2 == "$MORPH" ]]; then
+			compile_morphStream
+			exit 1
 		else 
 			echo $USAGE 
 			echo "failed. exit." 
@@ -348,7 +365,6 @@ case $1 in
 		fi
 		compile_jni_header
 		compile_libVNF "$@" || error_exit
-		compile_morphStream || error_exit
 		echo "Setup done"
 		exit 0;
 		;;

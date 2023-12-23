@@ -131,7 +131,9 @@ bool GetJniEnv(JNIEnv **env);
 Globals& GetGlobal();
 
 struct PerCoreState {
+    // For joining threads.
     bool isJobDone;
+
     // callback maps
     unordered_map<int, CallbackFn> socketIdCallbackMap[NUM_CALLBACK_EVENTS];
     unordered_map<int, CallbackFn> socketIdErrorCallbackMap;
@@ -146,11 +148,16 @@ struct PerCoreState {
 
     // request object memory management
     int reqObjSizesInPowersOf2[MAX_REQUEST_OBJECT_TYPES];
+    // FIXME. Check if it requires to be optimized.
     vector<vector<char>> reqObjMemPoolBlocks;
     boost::simple_segregated_storage<size_t> reqObjMemPoolManagers[MAX_REQUEST_OBJECT_TYPES];
+    std::mutex reqObjMemPoolAllocatorLock;
+
     // request object memory management
     unordered_map<int, unordered_map<int, void *> > socketIdReqObjIdToReqObjMap;
     unordered_map<int, unordered_map<int, int> > reqObjAllocatorSocketIdReqObjIdToReqObjIdMap;
+    
+    // ?? We still don't know what does ReqObjIdExtractor do.
     unordered_map<int, ReqObjExtractorFn> socketIdReqObjIdExtractorMap;
     unordered_map<int, PacketBoundaryDisambiguatorFn> socketIdPBDMap;
     map<int, class timer*> fdToObjectMap;
@@ -169,8 +176,10 @@ struct PerCoreState {
     // The epFD used for notifications.
     int epollFd = -1;
 
-    // FD used to transmit the morphMessage.
+    // Handing txn handle_done.
     int txnSocket = -1;
+    std::queue<uint64_t> txnDoneQueue;
+    std::mutex txnDoneQueueLock;
 
     // stat counters
     int connCounter;
@@ -217,27 +226,42 @@ struct PerCoreState {
     /**
      * Expects reqObjIndex to start from 0
      * */
-    int mallocReqObj(int socketId, int reqObjType, int reqObjId) {
-        reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId][reqObjId] = socketId;
+    void * myMallocReqObj(int socketId, int reqObjType, int reqObjId) {
+        reqObjMemPoolAllocatorLock.lock(); 
         assert(reqObjMemPoolManagers[reqObjType].empty() == false);
-        socketIdReqObjIdToReqObjMap[socketId][reqObjId] = reqObjMemPoolManagers[reqObjType].malloc(); // TODO lock
-        return socketIdReqObjIdToReqObjMap[socketId][reqObjId] == nullptr ? -1 : 0;
+        auto ret = reqObjMemPoolManagers[reqObjType].malloc();
+        reqObjMemPoolAllocatorLock.unlock(); 
+        return ret;
+    }
+
+    // int mallocReqObj(int socketId, int reqObjType, int reqObjId) {
+    //     assert(false);
+    //     reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId][reqObjId] = socketId;
+    //     assert(reqObjMemPoolManagers[reqObjType].empty() == false);
+    //     socketIdReqObjIdToReqObjMap[socketId][reqObjId] = reqObjMemPoolManagers[reqObjType].malloc(); // TODO lock
+    //     return socketIdReqObjIdToReqObjMap[socketId][reqObjId] == nullptr ? -1 : 0;
+    // }
+
+    // It's another release. Incompatible with libVNF orginal design.
+    void myFreeReqObj(int type, void * ptr){
+        reqObjMemPoolManagers[type].free(ptr);
     }
 
     /**
      * Expects reqObjIndex to start from 0
      * */
-    void freeReqObj(int socketId, int reqObjType, int reqObjId) {
-        reqObjMemPoolManagers[reqObjType].free(socketIdReqObjIdToReqObjMap[socketId][reqObjId]);
-        socketIdReqObjIdToReqObjMap[socketId].erase(reqObjId);
-        if (socketIdReqObjIdToReqObjMap[socketId].empty()) {
-            socketIdReqObjIdToReqObjMap.erase(socketId);
-        }
-        reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId].erase(reqObjId);
-        if (reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId].empty()) {
-            reqObjAllocatorSocketIdReqObjIdToReqObjIdMap.erase(socketId);
-        }
-    }
+    // void freeReqObj(int socketId, int reqObjType, int reqObjId) {
+    //     assert(false);
+    //     reqObjMemPoolManagers[reqObjType].free(socketIdReqObjIdToReqObjMap[socketId][reqObjId]);
+    //     socketIdReqObjIdToReqObjMap[socketId].erase(reqObjId);
+    //     if (socketIdReqObjIdToReqObjMap[socketId].empty()) {
+    //         socketIdReqObjIdToReqObjMap.erase(socketId);
+    //     }
+    //     reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId].erase(reqObjId);
+    //     if (reqObjAllocatorSocketIdReqObjIdToReqObjIdMap[socketId].empty()) {
+    //         reqObjAllocatorSocketIdReqObjIdToReqObjIdMap.erase(socketId);
+    //     }
+    // }
 
     bool isARequestObjectAllocator(int socketId, int reqObjId) {
         auto socketIdIter = reqObjAllocatorSocketIdReqObjIdToReqObjIdMap.find(socketId);
