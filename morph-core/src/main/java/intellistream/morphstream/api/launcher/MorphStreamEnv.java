@@ -41,7 +41,10 @@ public class MorphStreamEnv {
     private final ZContext zContext = new ZContext();
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
-    private CountDownLatch latch;//The number of clients + MorphStreamDriver
+    //Clients need to wait for MorphStreamDriver to initialize
+    private CountDownLatch clientLatch;//The number of clients + MorphStreamDriver
+    //MorphStreamDriver needs to wait for all workers to initialize
+    private CountDownLatch workerLatch;//The number of workers
     public static MorphStreamEnv get() {
         return ourInstance;
     }
@@ -60,7 +63,8 @@ public class MorphStreamEnv {
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
     public InputSource inputSource() {return inputSource;}
-    public CountDownLatch latch() {return latch;}
+    public CountDownLatch clientLatch() {return clientLatch;}
+    public CountDownLatch workerLatch() {return workerLatch;}
     public ZContext zContext() {return zContext;}
     public boolean isDriver() {return isDriver;}
     public boolean LoadConfiguration(String configPath, String[] args) throws IOException {
@@ -78,7 +82,8 @@ public class MorphStreamEnv {
         this.jCommanderHandler().initializeCfg(this.configuration());
         this.isDriver = this.configuration().getBoolean("isDriver", false);
         if (isDriver) {
-            CountDownLatchInitialize(this.configuration().getInt("clientNum", 1) + 1);// Client Number + MorphStreamDriver
+            this.clientLatch = new CountDownLatch(this.configuration().getInt("clientNum", 1) + 1);// Client Number + MorphStreamDriver
+            this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));
             InputSourceInitialize();
         } else {
             DatabaseInitialize();
@@ -126,9 +131,6 @@ public class MorphStreamEnv {
             }
             inputSource().initialize(configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("clientNum"));
         }
-    }
-    public void CountDownLatchInitialize(int num) {
-        this.latch = new CountDownLatch(num);
     }
     public void setSpout(String id, AbstractSpout spout, int numTasks) {
         try {

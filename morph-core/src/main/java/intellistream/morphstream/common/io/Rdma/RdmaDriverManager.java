@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 public class RdmaDriverManager {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaDriverManager.class);
@@ -27,6 +28,7 @@ public class RdmaDriverManager {
     private final String driverHost;
     private final int driverPort;
     private final Configuration conf;
+    private final CountDownLatch workerLatch;
     private final RdmaBufferManager rdmaBufferManager;
     private ConcurrentHashMap<Integer, RdmaChannel> workerRdmaChannelMap = new ConcurrentHashMap<>();//workerId -> RdmaChannel
     private ConcurrentHashMap<Integer, RegionToken> workerRegionTokenMap = new ConcurrentHashMap<>();//workerId -> RegionToken
@@ -41,6 +43,7 @@ public class RdmaDriverManager {
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
         rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, conf.rdmaChannelConf.getRdmaChannelType());
         rdmaBufferManager = rdmaNode.getRdmaBufferManager();
+        workerLatch = MorphStreamEnv.get().workerLatch();
         //PreAllocate CircularRdmaBuffer to receive results from workers
         rdmaBufferManager.perAllocateResultBuffer(MorphStreamEnv.get().configuration().getInt("workerNum"), MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"));
         //Wait for workers to connect
@@ -59,6 +62,7 @@ public class RdmaDriverManager {
                         workerMessageBatchMap.put(i, new MessageBatch(MorphStreamEnv.get().configuration().getInt("BatchMessageCapacity"), MorphStreamEnv.get().configuration().getInt("tthread")));
                     }
                 }
+                workerLatch.countDown();
             }
             @Override
             public void onFailure(Throwable exception) {

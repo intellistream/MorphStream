@@ -8,7 +8,6 @@ import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
-import worker.WebServer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -138,7 +137,7 @@ public class BankingSystemClient extends Client {
         int clientNum = MorphStreamEnv.get().configuration().getInt("clientNum");
         for (int threadNum = 0; threadNum < clientNum; threadNum++) {
             Client t = new BankingSystemClient();
-            t.initialize(threadNum, MorphStreamEnv.get().latch());
+            t.initialize(threadNum, MorphStreamEnv.get().clientLatch());
             threads.add(t);
             t.start();
         }

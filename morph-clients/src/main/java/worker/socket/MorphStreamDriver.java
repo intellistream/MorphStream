@@ -39,7 +39,7 @@ public class MorphStreamDriver extends Thread {
         for (int i = 0; i < numFrontend; i++) {
             frontends.get(i).start();
         }
-        MorphStreamEnv.get().latch().countDown();
+        MorphStreamEnv.get().clientLatch().countDown();
         ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
     }
 }
