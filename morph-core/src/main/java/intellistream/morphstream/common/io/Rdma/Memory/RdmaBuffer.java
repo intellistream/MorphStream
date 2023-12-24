@@ -93,7 +93,7 @@ public class RdmaBuffer {
     public int getLkey() {
         return ibvMr.getLkey();
     }
-    public ByteBuffer getByteBuffer(long address, long length) throws IOException {
+    public ByteBuffer getByteBuffer(long address, int length) throws IOException {
         try {
             return (ByteBuffer) directBufferConstructor.newInstance(address, length);
         } catch (Exception e) {

@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 public class RdmaBufferManager {
-    private static final Logger logger = LoggerFactory.getLogger(RdmaBufferManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RdmaBufferManager.class);
     private IbvPd pd;
     private static final int MIN_BLOCK_SIZE = 16 * 1024;
     private final int minimumAllocationSize;
@@ -36,6 +36,7 @@ public class RdmaBufferManager {
                 resultBufferMap.put(i, new CircularRdmaBuffer(getPd(), length, totalThreads));
             }
         }
+        LOG.info("Pre allocated {} buffers of size {} KB for each worker", totalWorkers, (length / 1024));
     }
 
     public RdmaBuffer getDirect(int length) throws Exception {
@@ -82,11 +83,11 @@ public class RdmaBufferManager {
         return resultBufferMap.get(workerId);
     }
     public void stop() {
-        logger.info("Rdma buffers allocation statistics:");
+        LOG.info("Rdma buffers allocation statistics:");
         for (Integer size : allocStackMap.keySet()) {
             AllocatorStack allocatorStack = allocStackMap.remove(size);
             if (allocatorStack != null) {
-                logger.info( "Pre allocated {}, allocated {} buffers of size {} KB",
+                LOG.info( "Pre allocated {}, allocated {} buffers of size {} KB",
                         allocatorStack.getTotalPreAllocs(), allocatorStack.getTotalAlloc(), (size / 1024));
                 allocatorStack.close();
             }

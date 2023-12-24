@@ -26,7 +26,7 @@ public class CircularRdmaBuffer {
            while (byteBuffer.hasRemaining()) {
                readOffset = readOffset + byteBuffer.getInt();
            }
-           readOffset = readOffset + 4 * totalThreads;
+           readOffset = readOffset + 4L * totalThreads;
         }
         return this.buffer.getByteBuffer(readOffset, 4 * totalThreads);
     }

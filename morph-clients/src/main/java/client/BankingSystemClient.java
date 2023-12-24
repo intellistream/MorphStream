@@ -133,7 +133,7 @@ public class BankingSystemClient extends Client {
     }
 
     public static void startClient(String[] args) throws Exception {
-        WebServer.createJobInfoJSON("StreamLedger");
+//        WebServer.createJobInfoJSON("StreamLedger");
         List<Thread> threads = new ArrayList<>();
         int clientNum = MorphStreamEnv.get().configuration().getInt("clientNum");
         for (int threadNum = 0; threadNum < clientNum; threadNum++) {
@@ -142,6 +142,5 @@ public class BankingSystemClient extends Client {
             threads.add(t);
             t.start();
         }
-
     }
 }

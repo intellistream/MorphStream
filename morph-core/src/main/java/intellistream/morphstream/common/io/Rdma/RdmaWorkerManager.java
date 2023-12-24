@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Rdma.RdmaUtils;
+package intellistream.morphstream.common.io.Rdma;
 
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.input.MessageBatch;

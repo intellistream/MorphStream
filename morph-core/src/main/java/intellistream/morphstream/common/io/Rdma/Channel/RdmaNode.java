@@ -58,11 +58,16 @@ public class RdmaNode {
         }
         try {
             int bindPort = port;
+            int err = -1;
             for (int i = 0; i < conf.portMaxRetries(); i++) {
+                if (err == 0) {
+                    break;
+                }
                 try {
                     listenerRdmaCmId.bindAddr(new InetSocketAddress(InetAddress.getByName(hostName), bindPort));
+                    err = 0;
                 } catch (Exception e) {
-                    LOG.warn("Failed to bind to port {} on iteration {}", bindPort, i);
+                    LOG.warn("Failed to bind to port {} on iteration {}, with exception: {}", bindPort, i, e.getMessage());
                     bindPort = bindPort != 0 ? bindPort + 1 : 0;
                 }
             }

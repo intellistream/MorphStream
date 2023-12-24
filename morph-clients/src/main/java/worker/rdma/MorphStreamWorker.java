@@ -2,7 +2,7 @@ package worker.rdma;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.spout.rdma.FunctionExecutor;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.RdmaWorkerManager;
+import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;

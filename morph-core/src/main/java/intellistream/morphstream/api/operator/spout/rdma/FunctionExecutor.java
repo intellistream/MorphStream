@@ -5,7 +5,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.rdma.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.api.operator.sink.rdma.ApplicationSink;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.RdmaWorkerManager;
+import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutCombo;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
