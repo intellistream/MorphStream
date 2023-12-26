@@ -5,7 +5,6 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.rdma.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.api.operator.sink.rdma.ApplicationSink;
-import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutCombo;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -31,11 +30,9 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private HashMap<String, FunctionDescription> FunctionDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
     private ByteBuffer msgBuffer;
-    private RdmaWorkerManager rdmaWorkerManager;
-    public FunctionExecutor(String operatorID, RdmaWorkerManager rdmaWorkerManager) throws Exception {
+    public FunctionExecutor(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
         this.operatorID = operatorID;
-        this.rdmaWorkerManager = rdmaWorkerManager;
     }
     public void registerFunction(HashMap<String, FunctionDescription> functions) {
         this.FunctionDescriptionHashMap = functions;
@@ -59,7 +56,6 @@ public class FunctionExecutor extends AbstractSpoutCombo {
         }
         bolt.prepare(conf, context, collector);
         bolt.loadDB(conf, context, collector);
-        ((ApplicationSink)sink).setSender(rdmaWorkerManager);
     }
     @Override
     public void nextTuple() throws InterruptedException {
@@ -83,7 +79,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     }
     private byte[] getMsg() throws IOException {
         if (!msgBuffer.hasRemaining()) {
-            ByteBuffer address = rdmaWorkerManager.getCircularRdmaBuffer().canRead();
+            ByteBuffer address = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().canRead();
             int length = address.getInt();
             if (length == 0) {
                 return null;
@@ -98,7 +94,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                 for (int i = 0; i < this.threadId; i++) {
                     myOffset += lengthQueue.get(i);
                 }
-                msgBuffer = rdmaWorkerManager.getCircularRdmaBuffer().read(myOffset, myLength);
+                msgBuffer = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().read(myOffset, myLength);
             }
         }
         int length1 = msgBuffer.getInt();

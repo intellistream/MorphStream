@@ -6,6 +6,7 @@ import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,18 +22,20 @@ public class MorphStreamWorker extends Thread {
     private final FunctionExecutor spout;
     private final int numTasks;
     private final int workerId;
+    @Getter
     private final RdmaWorkerManager rdmaWorkerManager;
 
     public MorphStreamWorker() throws Exception {
         workerId = env.configuration().getInt("workerId", 0);
         this.numTasks = env.configuration().getInt("tthread", 1);
         this.rdmaWorkerManager = new RdmaWorkerManager(false, env.configuration());
-        this.spout = new FunctionExecutor("functionExecutor", rdmaWorkerManager);
+        this.spout = new FunctionExecutor("functionExecutor");
         LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is initialized");
     }
     public void registerFunction(HashMap<String, FunctionDescription> functions) {
         this.spout.registerFunction(functions);
     }
+
     @Override
     public void run() {
         env.setSpout("functionExecutor", spout, numTasks);
@@ -48,4 +51,5 @@ public class MorphStreamWorker extends Thread {
         Topology topology = env.createTopology();
         env.submitTopology(topology);
     }
+
 }

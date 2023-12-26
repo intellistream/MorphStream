@@ -14,11 +14,12 @@ import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
 import intellistream.morphstream.configuration.Configuration;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RdmaWorkerManager {
+public class RdmaWorkerManager implements Serializable {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaWorkerManager.class);
     private final RdmaNode rdmaNode;
     private final int totalFunctionExecutors;
@@ -51,9 +52,9 @@ public class RdmaWorkerManager {
         driverRdmaChannel = rdmaNode.getRdmaChannel(new InetSocketAddress(driverHost, driverPort), true, conf.rdmaChannelConf.getRdmaChannelType());
         //Receive region token from driver
         resultRegionToken = rdmaNode.getRemoteRegionToken(driverRdmaChannel);
-        //Send region token to driver
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
-        rdmaNode.sendRegionTokenToRemote(driverRdmaChannel, rdmaBufferManager.getCircularRdmaBuffer().createRegionToken());
+        //Send region token to driver
+        rdmaNode.sendRegionTokenToRemote(driverRdmaChannel, rdmaBufferManager.getCircularRdmaBuffer().createRegionToken(), driverHost);
         rdmaNode.bindConnectCompleteListener(new RdmaConnectionListener() {
             @Override
             public void onSuccess(InetSocketAddress inetSocketAddress, RdmaChannel rdmaChannel) {

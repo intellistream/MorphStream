@@ -13,11 +13,11 @@ public class MessageBatch {
     private final int totalThreads;
     private int buffer_size;
     private ArrayList<FunctionMessage> msgs;
-    private int encoded_length;//Total size in bytes of all messages in this batch, Total msgs(Short) + msg.length(Int) + msg
+    private int encoded_length;//Total size in bytes of all messages in this batch, MessageBlockLength...(totalThreads * 4) + msg.length(Int) + msg
     public MessageBatch(int buffer_size, int totalThreads) {
         this.buffer_size = buffer_size;
         msgs = new ArrayList<>();
-        encoded_length = 2;
+        encoded_length = totalThreads * 4;
         this.totalThreads = totalThreads;
     }
     public void add(FunctionMessage msg) {

@@ -19,6 +19,7 @@ public class BankingSystemRdma {
                 BankingSystemClient client = new BankingSystemClient();
                 client.defineFunction();
                 morphStreamWorker.registerFunction(client.txnDescriptions);
+                MorphStreamEnv.get().setRdmaWorkerManager(morphStreamWorker.getRdmaWorkerManager());
                 morphStreamWorker.start();
                 morphStreamWorker.join(10000);
             }

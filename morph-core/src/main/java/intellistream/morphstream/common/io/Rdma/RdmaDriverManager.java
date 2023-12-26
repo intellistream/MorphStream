@@ -52,9 +52,9 @@ public class RdmaDriverManager {
             public void onSuccess(InetSocketAddress inetSocketAddress, RdmaChannel rdmaChannel) throws Exception {
                 LOG.info("Driver accepts " + inetSocketAddress.toString());
                 for (int i = 0; i < workerHosts.length; i++) {
-                    if (workerHosts[i].equals(inetSocketAddress.getHostName()) && Integer.parseInt(workerPorts[i]) == inetSocketAddress.getPort()) {
+                    if (workerHosts[i].equals(inetSocketAddress.getHostName())) {
                         //Send region token to worker
-                        rdmaNode.sendRegionTokenToRemote(rdmaChannel, rdmaBufferManager.getResultBuffer(i).createRegionToken());
+                        rdmaNode.sendRegionTokenToRemote(rdmaChannel, rdmaBufferManager.getResultBuffer(i).createRegionToken(), inetSocketAddress.getHostName());
                         //Receive region token from worker
                         RegionToken regionToken = rdmaNode.getRemoteRegionToken(rdmaChannel);
                         workerRdmaChannelMap.put(i, rdmaChannel);

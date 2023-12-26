@@ -5,6 +5,7 @@ import com.beust.jcommander.ParameterException;
 import intellistream.morphstream.api.input.FileDataGenerator;
 import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.state.DatabaseInitializer;
+import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
@@ -38,6 +39,7 @@ public class MorphStreamEnv {
     private Database database;
     private OptimizationManager OM;
     private Topology topology;
+    private RdmaWorkerManager workerManager;
     private final ZContext zContext = new ZContext();
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
@@ -65,9 +67,11 @@ public class MorphStreamEnv {
     public InputSource inputSource() {return inputSource;}
     public CountDownLatch clientLatch() {return clientLatch;}
     public CountDownLatch workerLatch() {return workerLatch;}
+    public RdmaWorkerManager rdmaWorkerManager() {return workerManager;}
+    public void setRdmaWorkerManager(RdmaWorkerManager rdmaWorkerManager) {this.workerManager = rdmaWorkerManager;}
     public ZContext zContext() {return zContext;}
     public boolean isDriver() {return isDriver;}
-    public boolean LoadConfiguration(String configPath, String[] args) throws IOException {
+    public void LoadConfiguration(String configPath, String[] args) throws IOException {
         if (configPath != null) {
             this.jCommanderHandler().loadProperties(configPath);
         }
@@ -77,7 +81,7 @@ public class MorphStreamEnv {
         } catch (ParameterException ex) {
             if (enable_log) LOG.error("Argument error: " + ex.getMessage());
             cmd.usage();
-            return false;
+            return;
         }
         this.jCommanderHandler().initializeCfg(this.configuration());
         this.isDriver = this.configuration().getBoolean("isDriver", false);
@@ -88,7 +92,6 @@ public class MorphStreamEnv {
         } else {
             DatabaseInitialize();
         }
-        return true;
     }
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);

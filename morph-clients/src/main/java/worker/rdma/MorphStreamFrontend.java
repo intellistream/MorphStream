@@ -79,25 +79,25 @@ public class MorphStreamFrontend extends Thread{
     private int getWorkId(int shuffleType) {
         switch (shuffleType) {
             case 0://Sort
-                return 0;
+                return getNextWorkIdSort();
             case 1://Random
-                return 1;
+                return getNextWorkIdRandom();
             case 2://Optimized
-                return 2;
+                return getNextWorkIdOptimized();
             default:
                throw new RuntimeException("Wrong shuffle type!");
         }
     }
-    private int getNextWorkIdSort(){
+    private int getNextWorkIdSort() {
         if (currentId == workIdList.size()) {
             currentId = 0;
         }
         return workIdList.get(currentId++);
     }
-    private int getNextWorkIdRandom(){
+    private int getNextWorkIdRandom() {
        return random.nextInt(workIdList.size());
     }
-    private int getNextWorkIdOptimized(){
+    private int getNextWorkIdOptimized() {
         //TODO: Implement optimized shuffle
         return 0;
     }

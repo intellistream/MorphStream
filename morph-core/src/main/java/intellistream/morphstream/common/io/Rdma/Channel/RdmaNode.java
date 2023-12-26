@@ -274,6 +274,7 @@ public class RdmaNode {
                     }
                 }
             }
+
             if (rdmaChannel.isError()) {
                 activeRdmaChannelMap.remove(remoteAddr, rdmaChannel);
                 rdmaChannel.stop();
@@ -289,24 +290,26 @@ public class RdmaNode {
                 break;
             }
         } while (mustRetry && (connectionTimeout - elapsedTime) > 0);
+
         if (mustRetry && !rdmaChannel.isConnected()) {
-            throw new IOException("Failed to connect to " + remoteAddr + " after " + maxConnectionAttempts + " attempts");
+            throw new IOException("Timeout in establishing a connection to " + remoteAddr.toString());
         }
+
         return rdmaChannel;
     }
-    public void sendRegionTokenToRemote(RdmaChannel rdmaChannel, RegionToken regionToken) throws Exception {
+    public void sendRegionTokenToRemote(RdmaChannel rdmaChannel, RegionToken regionToken, String hostName) throws Exception {
         RdmaBuffer rdmaSend = rdmaBufferManager.get(1024);
         ByteBuffer sendBuffer = rdmaSend.getByteBuffer();
         sendBuffer.putInt(regionToken.getSizeInBytes());
         sendBuffer.putLong(regionToken.getAddress());
         sendBuffer.putInt(regionToken.getLocalKey());
         sendBuffer.putInt(regionToken.getRemoteKey());
-        CountDownLatch countDownLatch=new CountDownLatch(1);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
 
         rdmaChannel.rdmaSendInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buf, Integer IMM) {
-                System.out.println("SEND Success!!!");
+                LOG.info("Successfully send regionToken to: " + hostName);
                 countDownLatch.countDown();
             }
 
