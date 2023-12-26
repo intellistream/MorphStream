@@ -8,7 +8,10 @@
 using namespace vnf;
 
 // State to hold through out a request.
-struct BState {};
+struct BState {
+    int amount;
+    bool abortion;
+};
 
 Config config("/home/kailian/libVNF/vnf/SL/config.csv");
 
@@ -16,32 +19,52 @@ using namespace DB4NFV;
 
 // Handler function.
 int src_transfer_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
-    int* srcBalance = ctx.get_value(raw, length, 0);
-    if (*srcBalance > double(100)) {
-        return *srcBalance - 100; 
-        // ctx.WriteBack(&res, sizeof(double));
-    } else {
-        // Forgot how to dispose abortion.. TODO.
+    spdlog::warn("[DEBUG] src_transfer_sa_udf triggered");
+	auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
+    if (threadLocal->abortion){
         ctx.Abort();
         return -1;
-    }   
+    } else {
+        int* srcBalance = ctx.get_value(raw, length, 0);
+        if (*srcBalance > double(threadLocal->amount)) {
+            return *srcBalance - threadLocal->amount; 
+            // ctx.WriteBack(&res, sizeof(double));
+        } else {
+            // Forgot how to dispose abortion.. TODO.
+            ctx.Abort();
+            return -1;
+        }   
+    }
 };
 
 int dest_transfer_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
-    int* src_balance = ctx.get_value(raw, length, 0);
-    int* dst_balance = ctx.get_value(raw, length, 1);
-    if (* src_balance >= 100) {
-        return *dst_balance - 100;
-    } else {
+    spdlog::warn("[DEBUG] dest_transfer_sa_udf triggered");
+	auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
+    if (threadLocal->abortion){
         ctx.Abort();
         return -1;
-    }   
+    } else {
+        int* src_balance = ctx.get_value(raw, length, 0);
+        int* dst_balance = ctx.get_value(raw, length, 1);
+        if (* src_balance >= threadLocal->amount) {
+            return *dst_balance - threadLocal->amount;
+        } else {
+            ctx.Abort();
+            return -1;
+        }   
+    }
 };
 
 int deposit_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
-    int* srcBalance = ctx.get_value(raw, length, 0);
-    return *srcBalance - 100;
-    return -1;
+    spdlog::warn("[DEBUG] deposit_sa_udf triggered");
+	auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
+    if (threadLocal->abortion){
+        ctx.Abort();
+        return -1;
+    } else {
+        int* srcBalance = ctx.get_value(raw, length, 0);
+        return *srcBalance - threadLocal->amount;
+    }
 }
 
 void sl_app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
@@ -52,16 +75,47 @@ void sl_app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
 void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
     spdlog::debug("[DEBUG] New Packet accepted");
     auto content = string(ctx.packet());
-    // TODO. Clear timeStamping out of the user code.
-    if (content == "transfer"){
+
+    int comma_pos[3] = {0,0,0};
+    int com = 0;
+    for (int i = 0; i < content.length() && com < 3; i++)
+    {
+        if (content[i] == ','){
+            comma_pos[com] = i;
+            com++;
+        } 
+    }
+
+    // std::cout << content.substr(0, comma_pos[0]) << std::endl;
+    auto key = content.substr(0, comma_pos[0]).c_str();
+    // std::cout << "key" << key << std::endl;
+
+    // std::cout << content.substr(comma_pos[0] + 1, comma_pos[1] - comma_pos[0] - 1) << std::endl;
+    auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
+    assert(threadLocal != NULL);
+    threadLocal->amount = atoi(content.substr(comma_pos[0] + 1, comma_pos[1] - comma_pos[0] - 1).c_str());
+    // std::cout << "amount" << threadLocal->amount << std::endl;
+
+    // std::cout << content.substr(comma_pos[1] + 1, comma_pos[2] - comma_pos[1] - 1) << std::endl;
+    std::string txn = content.substr(comma_pos[1] + 1, comma_pos[2] - comma_pos[1] - 1);
+    // int res = (content.substr(comma_pos[1] + 1, comma_pos[2] - comma_pos[1] - 1) == string("transfer")) || 
+    //     (content.substr(comma_pos[1] + 1, comma_pos[2] - comma_pos[1] - 1) == string("deposit")) ? 1 : 0;
+
+    // std::cout << content.substr(comma_pos[2] + 1) << std::endl;
+    threadLocal->abortion = content.substr(comma_pos[2] + 1) == "false"? true: false;
+    // std::cout << "abortion" << threadLocal->abortion << std::endl;
+
+    if (txn == string("transfer")){
         // Set next app here if needed. Before Transaction triggered. Or you can place them in sa handler.
         // ctx.NextApp(1, vnf::READ);
-        ctx.Transaction(1).Trigger(connId, ctx, "0000:0001", false);
-    } else if (content == "deposit") {
+        ctx.Transaction(1).Trigger(connId, ctx, content.substr(0, comma_pos[0]).c_str() , false);
+    } else if (txn == string("deposit")){
         // Set next app here if needed. Before Transaction triggered. Or you can place them in sa handler.
         // ctx.NextApp(1, vnf::READ);
-        ctx.Transaction(0).Trigger(connId, ctx, "0000:0001", false);
+        ctx.Transaction(0).Trigger(connId, ctx, content.substr(0, comma_pos[0]).c_str(), false);
     } else {
+        std::cout << boost::stacktrace::stacktrace();
+        std::cout << "Invalid txn name: " << txn << std::endl;
         assert(false);
     }
     return;
