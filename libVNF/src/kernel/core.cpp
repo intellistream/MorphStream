@@ -2141,7 +2141,6 @@ Context* Context::Init(void * reqObj, char * packet, int packet_len)
 {
     // Input check
     assert(reqObj != NULL);
-    assert(*(static_cast<int *>(reqObj)) != CONTEXT_MAGIC_HEADER);
 
     // Get the current time in nanoseconds since the epoch
     auto ctx = static_cast<Context *>(reqObj);

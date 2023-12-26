@@ -103,12 +103,6 @@
 #define DEBUG_PRINT_CONTEXT(sig, ctx) \
 	(spdlog::warn("DEBUG at {}: Context {}:\n\tcurrent app[{}].idx[{}] state {} \n\tpacket [{}] of length {} with reqObj {}.", sig, (ctx)->_ts_low_32b(), (ctx)->AppIdx(), (ctx)->TxnIdx(), (ctx)->ReturnValue(), (ctx)->packet() == NULL? "[isNull]" : (ctx)->packet(), (ctx)->packet_len(), reinterpret_cast<uint64_t>(ctx)))
 
-#define ENABLE_ASSERT true
-#define ASSERT(assert_sentence) (if (ENABLE_ASSERT) {assert(assert_sentence)})
-
-#define CONTEXT_MAGIC_HEADER (0x5086fadc)
-// #define REQOBJ_SIZE_TEMP (sizeof(Context) + 1)
-
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
 class Context;
@@ -864,7 +858,6 @@ public:
     void _move_next();
 
 private:
-	int magic_number = CONTEXT_MAGIC_HEADER;
     int ts_low_32b;
     int _AppIdx;
     int _next_AppIdx;
