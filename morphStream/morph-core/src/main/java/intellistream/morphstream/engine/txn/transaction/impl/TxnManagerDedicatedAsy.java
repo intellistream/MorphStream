@@ -220,22 +220,27 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         String[] condition_keys = new String[recordNum];
         int[] condition_fieldIndexes = new int[recordNum];
 
-        for (int i = 3; i < stateAccess.length; i += 4) {
-            String table = stateAccess[i];
-            String key = stateAccess[i + 1];
-            int fieldIndex = Integer.parseInt(stateAccess[i + 2]);
-            condition_tables[(i-3)/4] = table;
-            condition_keys[(i-3)/4] = key;
-            condition_fieldIndexes[(i-3)/4] = fieldIndex;
+        try {
+            for (int i = 3; i < stateAccess.length; i += 4) {
+                String table = stateAccess[i];
+                String key = stateAccess[i + 1];
+                int fieldIndex = Integer.parseInt(stateAccess[i + 2]);
+                condition_tables[(i-3)/4] = table;
+                condition_keys[(i-3)/4] = key;
+                condition_fieldIndexes[(i-3)/4] = fieldIndex;
 
-            key = String.valueOf(Integer.parseInt(key)); //TODO: Refine this
-            TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
-            if (condition_record != null) {
-                condition_records.add(condition_record);
-            } else {
-                if (enable_log) log.info("No record is found:" + key);
-                return false;
+                key = String.valueOf(Integer.parseInt(key)); //TODO: Refine this
+                TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
+                if (condition_record != null) {
+                    condition_records.add(condition_record);
+                } else {
+                    if (enable_log) log.info("No record is found:" + key);
+                    return false;
+                }
             }
+        } catch (Exception e) {
+            log.info("Key not found");
+            throw new NullPointerException();
         }
 
         String writeTable = stateAccess[writeStateIndex];
