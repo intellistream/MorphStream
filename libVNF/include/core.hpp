@@ -103,6 +103,8 @@
 #define DEBUG_PRINT_CONTEXT(sig, ctx) \
 	(spdlog::warn("DEBUG at {}: Context {}:\n\tcurrent app[{}].idx[{}] state {} \n\tpacket [{}] of length {} with reqObj {}.", sig, (ctx)->_ts_low_32b(), (ctx)->AppIdx(), (ctx)->TxnIdx(), (ctx)->ReturnValue(), (ctx)->packet() == NULL? "[isNull]" : (ctx)->packet(), (ctx)->packet_len(), reinterpret_cast<uint64_t>(ctx)))
 
+#define TIMING true
+
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
 class Context;
@@ -873,5 +875,7 @@ private:
     int old_socket;
     vnf::EventType _ret;
 };
+
+uint64_t getDelay(uint64_t);
 
 #endif

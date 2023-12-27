@@ -185,6 +185,7 @@ struct PerCoreState {
     int connCounter;
     int numSends, numRecvs;
     int numPacketsSentToDs, numPacketsRecvFromDs;
+    uint64_t average_delay[4] = {0,0,0,0};
 
     //moved from globals
     string serverProtocol;

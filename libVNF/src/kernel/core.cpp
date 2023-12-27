@@ -391,6 +391,9 @@ void *serverThread(void *args) {
                     //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
                     //             o->packet_record, o->packet_len, 0);
                     
+#ifdef TIMING
+                    perCoreStates[coreId].average_delay[2] = perCoreStates[coreId].average_delay[2] == 0 ? getDelay(ctx->_ts_low_32b()) : int(perCoreStates[coreId].average_delay[2] * 0.99 + getDelay(ctx->_ts_low_32b()) * 0.01);
+#endif
 
                     _disposalBody(connId, *ctx);
 
@@ -399,6 +402,11 @@ void *serverThread(void *args) {
                         perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
                     );
 
+#ifdef TIMING
+                    perCoreStates[coreId].average_delay[3] = perCoreStates[coreId].average_delay[3] == 0 ? getDelay(ctx->_ts_low_32b()) : int(perCoreStates[coreId].average_delay[3] * 0.99 + getDelay(ctx->_ts_low_32b()) * 0.01);
+                    spdlog::warn("Delay(ns): __request {}; __execute_sa_req {}; __handle_done {}; all {}", 
+                        perCoreStates[coreId].average_delay[0], perCoreStates[coreId].average_delay[1], perCoreStates[coreId].average_delay[2], perCoreStates[coreId].average_delay[3]);
+#endif
                     // TODO. How to recover packets here.
                     continue;    
                 }
@@ -1671,6 +1679,13 @@ uint32_t vnf::getIntConnId(vnf::ConnId& connId) {
     return connId.coreId * 10000000 + connId.socketId;
 }
 
+uint64_t getDelay(uint64_t start){
+    auto currentTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+    uint64_t ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime).count();
+    uint64_t delay = static_cast<uint64_t>(ns_count & 0xFFFFFFFF) - start;
+    return delay;
+}
+
 // Entry for Java calling this thread.
 int __VNFThread(int argc, char *argv[]){
 	vnf::startEventLoop();
@@ -1770,7 +1785,7 @@ void DB4NFV::SFC::Add(App& last, App& app){
 }
 
 // The entry for sending txn execution request to txnEngine.
-void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, bool isAbort)
+void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId& connId, uint64_t time_start)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
     int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
@@ -1796,7 +1811,8 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     offset += sizeof(int);
     data[offset++] = ';';
 
-    int isAbort_i = isAbort? 1: 0;
+    // Todo. remove this field.
+    int isAbort_i = 0;
     memcpy(data + offset, &isAbort_i, sizeof(int));
     offset += sizeof(int);
     data[offset] = '\0';
@@ -1812,6 +1828,10 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     // jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
     jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "([B)V");
     assert(methodId != NULL);
+
+#ifdef TIMING
+    perCoreStates[connId.coreId].average_delay[0] = perCoreStates[connId.coreId].average_delay[0] == 0 ? getDelay(time_start) : int(perCoreStates[connId.coreId].average_delay[0] * 0.99 + getDelay(time_start) * 0.01);
+#endif
 
     // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
     env->CallStaticVoidMethod(cls, methodId, msg);
@@ -2003,6 +2023,10 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
 
 	int coreId = COREID(txnReqId);
     auto ctx = perCoreStates[coreId].packetNumberContextMap.at(PACKETID(txnReqId));
+
+#ifdef TIMING
+    perCoreStates[coreId].average_delay[1] = perCoreStates[coreId].average_delay[1] == 0 ? getDelay(ctx->_ts_low_32b()) : int(perCoreStates[coreId].average_delay[1] * 0.99 + getDelay(ctx->_ts_low_32b()) * 0.01);
+#endif
 
     /*
     Value fetched deallocation happens: 
@@ -2301,7 +2325,7 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
 
     JNIEnv * env; 
     GetJniEnv(&env);
-	__request(env, ctx._ts_low_32b(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, isAbort);
+	__request(env, ctx._ts_low_32b(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId, ctx._ts_low_32b());
 }
 
 // Get JVM and jenv related. FIXME. Optimize.
