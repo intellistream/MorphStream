@@ -719,6 +719,7 @@ public:
     int appIndex;
 	App* next = nullptr;
 	App* MoveNext() { return this->next;}
+	std::vector<StateAccess *> SAs;
 };
 
 class StateAccess {

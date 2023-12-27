@@ -19,52 +19,43 @@ using namespace DB4NFV;
 
 // Handler function.
 int src_transfer_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
-    spdlog::warn("[DEBUG] src_transfer_sa_udf triggered");
+    spdlog::debug("[DEBUG] src_transfer_sa_udf triggered");
 	auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
-    if (threadLocal->abortion){
+    // Failure abortion
+    if (threadLocal->abortion || length < 4){
         ctx.Abort();
         return -1;
-    } else {
-        int* srcBalance = ctx.get_value(raw, length, 0);
-        if (*srcBalance > double(threadLocal->amount)) {
-            return *srcBalance - threadLocal->amount; 
-            // ctx.WriteBack(&res, sizeof(double));
-        } else {
-            // Forgot how to dispose abortion.. TODO.
-            ctx.Abort();
-            return -1;
-        }   
     }
+    // Balance insufficient abortion
+    int* srcBalance = ctx.get_value(raw, length, 0);
+    if (*srcBalance < threadLocal->amount) {
+        ctx.Abort();
+        return -1;
+    }
+    // Calculate result.
+    return *srcBalance - threadLocal->amount; 
 };
 
 int dest_transfer_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
-    spdlog::warn("[DEBUG] dest_transfer_sa_udf triggered");
+    spdlog::debug("[DEBUG] dest_transfer_sa_udf triggered");
 	auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
-    if (threadLocal->abortion){
+    if (threadLocal->abortion || length < 4){
         ctx.Abort();
         return -1;
-    } else {
-        int* src_balance = ctx.get_value(raw, length, 0);
-        int* dst_balance = ctx.get_value(raw, length, 1);
-        if (* src_balance >= threadLocal->amount) {
-            return *dst_balance - threadLocal->amount;
-        } else {
-            ctx.Abort();
-            return -1;
-        }   
     }
+    int* dst_balance = ctx.get_value(raw, length, 0);
+    return *dst_balance + threadLocal->amount;
 };
 
 int deposit_sa_udf(vnf::ConnId& connId, Context &ctx, char * raw, int length){
-    spdlog::warn("[DEBUG] deposit_sa_udf triggered");
+    spdlog::debug("[DEBUG] deposit_sa_udf triggered");
 	auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
-    if (threadLocal->abortion){
+    if (threadLocal->abortion || length < 4){
         ctx.Abort();
         return -1;
-    } else {
-        int* srcBalance = ctx.get_value(raw, length, 0);
-        return *srcBalance - threadLocal->amount;
     }
+    int* srcBalance = ctx.get_value(raw, length, 0);
+    return *srcBalance - threadLocal->amount;
 }
 
 void sl_app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
@@ -124,6 +115,15 @@ void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
 auto SLApp = DB4NFV::App{
     {
         Transaction{
+            // "transfer_transaction".
+            {
+                StateAccess{
+                    {0}, {1}, None, 
+                    deposit_sa_udf, nullptr, nullptr, WRITE
+                }
+            }
+        },
+        Transaction{
             // "deposit_transaction",
             {
                 StateAccess{
@@ -136,15 +136,6 @@ auto SLApp = DB4NFV::App{
                     // "dst_transfer_sa",
                     {1}, {1}, None,
                     dest_transfer_sa_udf, nullptr, nullptr, WRITE
-                }
-            }
-        },
-        Transaction{
-            // "transfer_transaction".
-            {
-                StateAccess{
-                    {0}, {1}, None, 
-                    deposit_sa_udf, nullptr, nullptr, WRITE
                 }
             }
         }

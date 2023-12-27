@@ -1956,6 +1956,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
                     sa->appIndex = i;
                     sa->txnIndex = j;
                     sa->saIndex = k;
+                    app->SAs.push_back(sa);
                 }
             }
         }
@@ -2023,7 +2024,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
 
     assert(ctx->AppIdx() != -1);
     // Call actual sa udf.
-	STATE_TYPE res = (*globals.sfc.SFC_chain[ctx->AppIdx()]->Txns[ctx->TxnIdx()].sas[saIdx].txnHandler_)(conn, *ctx, tmp, length);
+	STATE_TYPE res = (*globals.sfc.SFC_chain[ctx->AppIdx()]->SAs[saIdx]->txnHandler_)(conn, *ctx, tmp, length);
 	int abortion = ( ctx->ReturnValue())? 1: 0;
 
     delete tmp;

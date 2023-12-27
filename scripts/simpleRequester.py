@@ -12,7 +12,7 @@ deposit_content = b'deposit\n'
 transfer_content = b'transfer\n'
 
 # Customize the number of connections and packets
-num_connections = 1
+num_connections = 50
 num_packets_per_connection = 100
 
 
