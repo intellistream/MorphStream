@@ -108,7 +108,6 @@ public class InputSource {
 
         List<byte[]> splitByteArrays = splitByteArray(byteArray, fullSeparator);
 
-        byte[] bidByte = splitByteArrays.get(0);
         byte[] reqIDByte = splitByteArrays.get(1);
         byte[] keysByte = splitByteArrays.get(2);
         byte[] flagByte = splitByteArrays.get(3);
@@ -116,24 +115,19 @@ public class InputSource {
 
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         buffer.clear();
-        buffer.put(bidByte);
-        buffer.flip();
-        long ts = buffer.getLong();
-
-        buffer.clear();
         buffer.put(reqIDByte);
         buffer.flip();
         long txnReqID = buffer.getLong();
         assert (txnReqID & 0xfffffff000000000L) == 0 : "Assertion failed: (txnReqId & 0xfffffff000000000) != 0";
+
         List<byte[]> splitKeyByteArrays = splitByteArray(keysByte, keySeparator);
         String[] keys = new String[splitKeyByteArrays.size()];
         for (int i = 0; i < splitKeyByteArrays.size(); i++) {
             keys[i] = new String(splitKeyByteArrays.get(i), StandardCharsets.US_ASCII);
         }
 
-        int flag = ByteBuffer.wrap(flagByte).getInt();
-        int isAbort = ByteBuffer.wrap(isAbortByte).getInt();
-
+        int flag = decodeInt(flagByte, 0);
+        int isAbort = decodeInt(isAbortByte, 0);
         String flagStr = String.valueOf(flag);
         boolean isAbortBool = isAbort != 0;
 
@@ -146,6 +140,14 @@ public class InputSource {
         }
         bid++;
         return txnEvent;
+    }
+
+    private static int decodeInt(byte[] bytes, int offset) {
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            value |= (bytes[offset + i] & 0xFF) << (i * 8);
+        }
+        return value;
     }
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {
