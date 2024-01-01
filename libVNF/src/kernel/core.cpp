@@ -1768,8 +1768,14 @@ void _AppsDisposalError(vnf::ConnId& connId, int reqObjId, void * requestObject,
 	_disposalBody(connId, *ctx);
 }
 
-// TODO. Define the structure for message convey.
-std::string DB4NFV::SFC::NFs(){};
+std::string DB4NFV::SFC::NFs(){
+    std::string json = globals.sfc.toJson().toStyledString();
+    if (globals.config.Debug){
+        std::cout << "[DEBUG] Registered App Definitions:" << std::endl;
+        std::cout << json << std::endl;
+    }
+    return json;
+};
 
 void DB4NFV::SFC::Entry(App& app){
 	if (this->SFC_chain.size() != 0){

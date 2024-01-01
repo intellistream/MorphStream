@@ -111,28 +111,30 @@ void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
 };
 
 auto SLApp = DB4NFV::App{
+    "SLApp",
     {
         Transaction{
-            // "transfer_transaction".
+            "deposit_transaction",
             {
                 StateAccess{
-                    {0}, {1}, None, 
+                    "deposit_sa",
+                    0, 1, None, 
                     deposit_sa_udf, nullptr, nullptr, WRITE
                 }
             }
         },
         Transaction{
-            // "deposit_transaction",
+            "transfer_transaction",
             {
                 StateAccess{
                     // TODO. Add definition of field to write result.
-                    // "src_transfer_sa",
-                    {0}, {1}, None, 
+                    "src_transfer_sa",
+                    0, 1, None, 
                     src_transfer_sa_udf, nullptr, nullptr, WRITE
                 },
                 StateAccess{
-                    // "dst_transfer_sa",
-                    {1}, {1}, None,
+                    "dst_transfer_sa",
+                    1, 1, None,
                     dest_transfer_sa_udf, nullptr, nullptr, WRITE
                 }
             }
@@ -148,9 +150,9 @@ int VNFMain(int argc, char *argv[]){
     std::string path;
     if (argc <= 2){
         // Use defaut.
-        // perror("VNF Config not provided.");
+        perror("VNF Config not provided.");
         // assert(false);
-        path = "/home/kailian/DB4NFV/libVNF/vnf/SL/config.csv";
+        path = "/home/kailian/MorphStream/libVNF/vnf/SL/config.csv";
     } else {
         path = std::string(argv[1]);
     }
@@ -164,6 +166,5 @@ int VNFMain(int argc, char *argv[]){
     // No nextApp
     // SFC.Add(SLApp, SomeNextApp);
 
-    // TODO. Call Json to formalize.
     return 0;
 }

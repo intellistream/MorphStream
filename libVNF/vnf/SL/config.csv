@@ -8,3 +8,4 @@ dataStorePort,9090
 serverIP,127.0.0.1
 serverPort,9090
 reuseMode,1
+debug,true

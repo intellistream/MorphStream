@@ -523,6 +523,7 @@ public:
 	std::string serverIP = "127.0.0.1";						 // Default value
 	int serverPort = 9090;									 // Default value
 	int reuseMode = 0;									 // Default value
+	bool Debug = false; 
 
 	Config() {}
 	Config(std::string path)
@@ -628,6 +629,10 @@ private:
 		{
 			reuseMode = std::stoi(value);
 		}
+		else if (key == "debug")
+		{
+			Debug = value == "true";
+		}
 		else
 		{
 			throw std::runtime_error("Unknown configuration key: " + key);
@@ -696,60 +701,40 @@ enum ConsistencyRequirement {
     None = 0,
 };
 
-class App{
-friend SFC;
-public:
-	App(std::vector<Transaction> txns, 
-        AcceptHandler accept, 
-        ReadHandler read, 
-        ErrorHandler error,
-        int reqObjSize):
-		Txns(txns), 
-        acceptHandler(accept), errorHandler(error), readHandler(read),
-        reqObjSize(reqObjSize)
-	{};
-	
-	const AcceptHandler acceptHandler = nullptr;
-	const ReadHandler   readHandler = nullptr;
-	const ErrorHandler  errorHandler = nullptr;
-
-	// The callbacks router.
-	// int _callBack(int TxnIdx, int SAIdx, void* value, int length, int errCode);
-
-    // Point the request obj
-    void *reqObjClip(void * reqObjClip);
-	int reqObjSize = 0; // Register the size of per-thread user defined structure.
-
-    std::vector<Transaction> Txns;
-
-    int appIndex;
-	App* next = nullptr;
-	App* MoveNext() { return this->next;}
-	std::vector<StateAccess *> SAs;
-};
-
 class StateAccess {
 friend SFC;
 public:
     // What is a state scope?
     StateAccess(
-		const std::vector<int> keys,
-		const std::vector<int> fields,
+		const std::string name,
+		const int key,
+		const int field,
 		// const std::vector<std::string> types,
-                ConsistencyRequirement cr,
-                TxnCallBackHandler txnHandler,
-                TxnCallBackHandler errTxnHandler,
-                PostTxnHandler postHandler,
-                RWType rw)
-        : fields_(fields), keys_(keys), cr_(cr),
+		ConsistencyRequirement cr,
+		TxnCallBackHandler txnHandler,
+		TxnCallBackHandler errTxnHandler,
+		PostTxnHandler postHandler,
+		RWType rw)
+        : field_(field), key_(key), cr_(cr), name_(name),
         // : fields_(fields), types_(types), cr_(cr),
           txnHandler_(txnHandler), rw_(rw), errorTxnHandler_(errTxnHandler),
           postTxnHandler_(postHandler) {}
 
-	const enum RWType rw_;	
+	Json::Value toJson() const {
+		Json::Value json;
+		json["stateName"] = name_;
+		json["type"] = rw_ == 1? "read" : "write";
+		json["fieldTableIndex"] = field_;
+		json["keyIndexInEvent"] = key_;
+		json["consistency_requirement"] =  "";
+		return json;
+	}
 
-    const std::vector<int> &keys_;
-    const std::vector<int> &fields_;
+	const enum RWType rw_;	
+	const std::string name_;	
+
+    const int key_;
+    const int field_;
     const ConsistencyRequirement cr_;
 
 	// The binded transaction handler for this State Access.
@@ -767,11 +752,74 @@ public:
 class Transaction {
 friend SFC;
 public:
-    Transaction(std::vector<StateAccess> sas):sas(sas){}
+    Transaction(
+		const std::string name,
+		std::vector<StateAccess> sas)
+	:sas(sas), name(name){}
 	std::vector<StateAccess> sas = {};	// The State Access event to be used for transaction handlers. Including transaction handlers.
 	const App* app;
+	const std::string name;
 	int txnIndex;
 	void Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const;
+
+	Json::Value toJson() const {
+		Json::Value json;
+		// Contain series of sas.
+		Json::Value txnArray(Json::arrayValue);
+		for (const auto& sa : sas){
+			txnArray.append(sa.toJson());
+		}
+		json["StateAccesses"] = txnArray;
+		return json;
+	}
+};
+
+
+class App{
+friend SFC;
+public:
+	App(std::string name,
+		std::vector<Transaction> txns, 
+        AcceptHandler accept, 
+        ReadHandler read, 
+        ErrorHandler error,
+        int reqObjSize):
+		name(name),
+		Txns(txns), 
+        acceptHandler(accept), errorHandler(error), readHandler(read),
+        reqObjSize(reqObjSize)
+	{};
+
+	Json::Value toJson() const {
+		Json::Value json;
+		// Contain series of transactions.
+		Json::Value txnArray(Json::arrayValue);
+		for (const auto& txn : Txns){
+			txnArray.append(txn.toJson());
+		}
+		json["name"] = name;
+		json["transactions"] = txnArray;
+		return json;
+	}
+	
+	const AcceptHandler acceptHandler = nullptr;
+	const ReadHandler   readHandler = nullptr;
+	const ErrorHandler  errorHandler = nullptr;
+
+	// The callbacks router.
+	// int _callBack(int TxnIdx, int SAIdx, void* value, int length, int errCode);
+
+    // Point the request obj
+    void *reqObjClip(void * reqObjClip);
+	int reqObjSize = 0; // Register the size of per-thread user defined structure.
+
+    std::vector<Transaction> Txns;
+
+    int appIndex;
+	std::string name;
+	App* next = nullptr;
+	App* MoveNext() { return this->next;}
+	std::vector<StateAccess *> SAs;
 };
 
 /**
@@ -790,6 +838,17 @@ public:
 
 	// Report SFC apps to txnEngine.
 	std::string NFs();
+
+	Json::Value toJson() const {
+		Json::Value json;
+		// Contain series of transactions.
+		Json::Value txnArray(Json::arrayValue);
+		for (const auto& app : SFC_chain){
+			txnArray.append(app->toJson());
+		}
+		json["apps"] = txnArray;
+		return json;
+	}
 
     // The Callbacks router for the whole SFC.
     int _callBack(vnf::ConnId& connId, int AppIdx, int TxnIdx, int SAIdx, int reqObjId, void* reqobj, char * packet, int packetlen, void * value, int length, int errCode);

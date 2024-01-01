@@ -80,7 +80,49 @@ public class FastSLClient extends Client {
 
         NativeInterface VNF_JNI = new NativeInterface();
         String[] param = {""};
-        String _ = VNF_JNI.__init_SFC(1, param);
+        String sfc = VNF_JNI.__init_SFC(1, param);
+
+        System.out.println(sfc);
+
+        // Parse. Exampled Json:
+        // {
+        //     "apps" : [
+        //         {
+        //             "name" : "SLApp",
+        //             "transactions" : [
+        //                 {
+        //                 "StateAccesses" : [
+        //                     {
+        //                         "consistency_requirement" : "",
+        //                         "fieldTableIndex" : 1,
+        //                         "keyIndexInEvent" : 0,
+        //                         "stateName" : "deposit_sa",
+        //                         "type" : "write"
+        //                     }
+        //                 ]
+        //                 },
+        //                 {
+        //                 "StateAccesses" : [
+        //                     {
+        //                         "consistency_requirement" : "",
+        //                         "fieldTableIndex" : 1,
+        //                         "keyIndexInEvent" : 0,
+        //                         "stateName" : "src_transfer_sa",
+        //                         "type" : "write"
+        //                     },
+        //                     {
+        //                         "consistency_requirement" : "",
+        //                         "fieldTableIndex" : 1,
+        //                         "keyIndexInEvent" : 1,
+        //                         "stateName" : "dst_transfer_sa",
+        //                         "type" : "write"
+        //                     }
+        //                 ]
+        //                 }
+        //             ]
+        //         }
+        //     ]
+        // }
 
         fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
         fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");

@@ -67,10 +67,10 @@ $(SL_KERNELsl.PASS_DYNAMIC): sl.cpp
 
 $(SL_KERNEL_STATIC): sl.cpp
 	g++ $(CXX_FLAGS) sl.cpp -c
-	g++ sl.o -O${CPP_OPTIMIZE} $(DEBUG) -std=c++11 -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -o $(SL_KERNEL_STATIC)
+	g++ sl.o -O${CPP_OPTIMIZE} $(DEBUG) -std=c++11 -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -ljsoncpp -o $(SL_KERNEL_STATIC)
 
 $(SL_KERNEL_DYNAMIC): sl.cpp
-	g++ sl.cpp -O$(CPP_OPTIMIZE) $(DEBUG) -Wno-pointer-arith -shared -fPIC $(JAVA_INCLUDE) -std=c++11 -lvnf-kernel-dynamic -lpthread -lboost_system -o $(SL_KERNEL_DYNAMIC)
+	g++ sl.cpp -O$(CPP_OPTIMIZE) $(DEBUG) -Wno-pointer-arith -shared -fPIC $(JAVA_INCLUDE) -std=c++11 -lvnf-kernel-dynamic -lpthread -lboost_system -ljsoncpp -o $(SL_KERNEL_DYNAMIC)
 
 clean:
 	rm -f *~ *.o *.log $(SL_KERNEL_STATIC) $(SL_KERNEL_DYNAMIC) $(SL_KERNELBYPASS_STATIC) $(SL_KERNELBYPASS_DYNAMIC)  log_*
