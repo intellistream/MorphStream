@@ -29,12 +29,13 @@ fi
 echo "Using cmake: $CMAKE"
 
 # If you let script make the vm.
-VM_ISO=$TMP_DIR/ubuntu-18.04.1-live-server-amd64.iso
 ISO_URL="https://releases.ubuntu.com/18.04/ubuntu-18.04.6-live-server-amd64.iso"
 VM_NAME="DB4NFV"
 DISK_SIZE=64
 MEMORY_SIZE=8192
-CPU_CORES=4
+CPU_CORES=24
+VM_ISO_DIR=/var/lib/libvirt/images/DB4NFV_TESTER
+VM_ISO=ubuntu-18.04.1-live-server-amd64.iso
 VM_DISK=$TMP_DIR/$VM_NAME.raw
 
 # Command line
@@ -145,41 +146,55 @@ check_system(){
 
 new_vm(){
 	echo "creating new vm.."
-	if [ -f $VM_ISO ]; then
-		wget $ISO_URL -O $VM_ISO
+	apt install -y qemu-kvm libvirt-clients libvirt-daemon-system virtinst
+
+	mkdir -p $VM_ISO_DIR
+
+	if [ -f $VM_ISO_DIR/$VM_ISO ]; then 
+		:
+	else
+		wget $ISO_URL -O $VM_ISO_DIR/$VM_ISO
 	fi
 
 	# Check if the VM is already running
-	running_machine=$(ps -ef | grep "qemu" | grep "\-name $VM_NAME")
+	running_machine=$(virsh list --all | grep $VM_NAME)
 	if [[ -z $running_machine ]]; then
 		:
 	else
-		echo "VM is already running."
+		echo "VM is already created."
 		exit 1
 	fi
 
 
 	qemu-img create -f raw $VM_DISK ${DISK_SIZE}G
-	
+
 	# Start the VM
-	qemu-system-x86_64 -name "$VM_NAME" \
-		-machine type=q35,accel=kvm \
-		-cpu host -smp $CPU_CORES \
-		-m $MEMORY_SIZE \
-		-drive file="$VM_DISK",size=$DISK_SIZE,format=raw \
-		-cdrom "$ISO_PATH" \
-		-nographic \
-		-boot order=d \
-		-vnc :0 -k en-us -vga none \
-		-netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
-		-usb -device usb-tablet \
-	&& echo "create success. use vnc to get in and install." \
+ 	virt-install \
+		  --name "$VM_NAME" \
+		  --memory $MEMORY_SIZE \
+		  --vcpus $CPU_CORES \
+		  --boot uefi \
+		  --disk path="$VM_DISK",format=raw \
+		  --virt-type kvm \
+	          --os-type linux \
+		  --os-variant "ubuntu18.04" \
+		  --network bridge=vmbr0,model=e1000 \
+		  --graphics vnc \
+		  --cdrom "$VM_ISO_DIR/$VM_ISO"  || error_exit	
+		  # --disk path="$VM_DISK",size=$DISK_SIZE \
+	          # --console pty,target_type=serial \
+		  # --extra-args 'console=ttyS0,115200n8 serial'  \
+	
+	echo "create success. use vnc to get in and install." \
+	&& echo "Running VM:" && virsh list --all \
 	&& return 0
 
 	echo "new vm installation failed. exit."  && return 1
 }
 
 setup_normal() {
+	apt-get install -y libjsoncpp-dev
+
 	# Requiring manually installation of spdlog.
 	if [ -d "$HEADER/spdlog" ]; then
 		:
@@ -326,7 +341,7 @@ case $1 in
 		exit 0
 		;;
 	$NEWVM)
-		check_system && echo "Your system already qualified. Use $SCRIPT $RUN to run."
+		new_vm || error_exit
 		exit 0
 		;;
 	$RUN)

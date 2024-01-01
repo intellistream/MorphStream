@@ -85,6 +85,7 @@ struct Globals {
     // DB4NFV globals.
     DB4NFV::SFC sfc;
 	int txnNotifyFd = -1;
+    Config config;
 
     // data store management
     // may have to increase this at high load

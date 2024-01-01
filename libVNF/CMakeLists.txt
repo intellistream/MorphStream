@@ -28,9 +28,9 @@ if (${STACK} STREQUAL KERNEL)
 	# Flags
 	set(CMAKE_CXX_STANDARD 11)
 	if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
-	  set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -Wno-pointer-arith -lnuma -lrt -DLIBVNF_STACK=1 -g")
+	  set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -Wno-pointer-arith -lnuma -lrt -DLIBVNF_STACK=1 -g -ljsoncpp")
 	else ()
-	  set(CMAKE_CXX_FLAGS "-lnuma -lrt -DLIBVNF_STACK=1")
+	  set(CMAKE_CXX_FLAGS "-lnuma -lrt -DLIBVNF_STACK=1 -ljsoncpp")
 	endif()
 
 	# Include
@@ -59,9 +59,9 @@ elseif (${STACK} STREQUAL KERNEL_BYPASS)
   # Flags
   set(CMAKE_CXX_STANDARD 11)
   if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -g")
+    set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -g -ljsoncpp")
   else ()
-    set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2")
+    set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -ljsoncpp")
   endif()
 
   # Include

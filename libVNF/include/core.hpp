@@ -46,6 +46,7 @@
 #include <chrono>
 #include <mutex>
 #include <boost/stacktrace.hpp>
+#include <jsoncpp/json/json.h>
 #include "intellistream_morphstream_util_libVNFFrontend_NativeInterface.h"
 
 #include "datastore/dspackethandler.hpp"
@@ -508,7 +509,9 @@ struct BackendServer
 class Config
 {
 public:
+	// No use.
 	std::string dataLocation = "LOCAL"; // Default value
+	// No use.
 	std::vector<BackendServer> backendServers;
 	int bufferSize = 1024;									 // Default value
 	int dataStoreThreshold = 50;							 // Default value
@@ -517,8 +520,8 @@ public:
 	int dataStoreFileNames = 10;							 // Default value
 	std::string dataStoreIP = "127.0.0.1";					 // Default value
 	int dataStorePort = 8080;								 // Default value
-	std::string serverIP = "0.0.0.0";						 // Default value
-	int serverPort = 8888;									 // Default value
+	std::string serverIP = "127.0.0.1";						 // Default value
+	int serverPort = 9090;									 // Default value
 	int reuseMode = 0;									 // Default value
 
 	Config() {}
@@ -553,6 +556,7 @@ public:
 
 	void readConfigFromCSV(const std::string &csvFilePath)
 	{
+		std::cout << "Loading Config: " << csvFilePath << std::endl;
 		std::ifstream inputFile(csvFilePath);
 		if (!inputFile.is_open())
 		{
@@ -780,9 +784,6 @@ public:
 
 	~SFC(){};
 
-	// Setting cores of this SFC apps.
-	int cores = 1;	
-
 	// Construct SFC topology.
 	void Entry(App& entry);
 	void Add(App& last, App& app);
@@ -819,6 +820,7 @@ int __VNFThread(int argc, char *argv[]);
 
 // User get SFC single instance.
 DB4NFV::SFC& GetSFC();
+void SetConfig(std::string path);
 
 class Context
 {

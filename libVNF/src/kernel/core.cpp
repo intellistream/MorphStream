@@ -1689,6 +1689,7 @@ uint64_t getDelay(uint64_t start){
 // Entry for Java calling this thread.
 int __VNFThread(int argc, char *argv[]){
 	vnf::startEventLoop();
+    return 0;
 }
 
 /*
@@ -1911,6 +1912,8 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
         //     // Other parameters to be added.
         // );
 
+        // TODO. Maybe we can provide command line parameters pass-in.
+
         // Call the __init_SFC function
         int res = VNFMain(argc, argvC);
 
@@ -1919,30 +1922,8 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
             return  env->NewStringUTF(std::string("").c_str());
         }
 
-        // TODO. Recover get from config IP and port from config after fully test.
-        std::string ip = "127.0.0.1";
-        int port = 9090; // Initialize to a default value, or you can set an error value if no valid port is provided.
-        globals.sfc.cores = 3;
-
-        // if (argc != 3)
-        // {
-        // 	std::cerr << "Usage: " << argv[0] << " <IP address> <port>" << std::endl;
-        // 	return -1; // Return an error code
-        // }
-
-        // // Parse port (argv[2])
-        // try
-        // {
-        // 	port = std::stoi(argv[2]);
-        // }
-        // catch (const std::exception &e)
-        // {
-        // 	std::cerr << "Invalid port number: " << e.what() << std::endl;
-        // 	return 1; // Return an error code
-        // }
-
-        vnf::initLibvnf(globals.sfc.cores, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
-        vnf::ConnId serverSocketId = vnf::initServer("", ip, port, "tcp");
+        vnf::initLibvnf(globals.config.coreNumbers, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
+        vnf::ConnId serverSocketId = vnf::initServer("", globals.config.serverIP, globals.config.serverPort, "tcp");
 
 		// Clean up the allocated memory
 		for (jsize i = 0; i < arrayLength; i++)
@@ -2110,6 +2091,10 @@ DB4NFV::SFC& GetSFC(){
     auto &ref =  globals.sfc; 
     return ref;
 };
+
+void SetConfig(std::string path){
+    globals.config = Config(path);
+}
 
 Globals& GetGlobal(){
     return globals;

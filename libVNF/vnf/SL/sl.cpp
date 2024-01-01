@@ -13,8 +13,6 @@ struct BState {
     bool abortion;
 };
 
-Config config("/home/kailian/libVNF/vnf/SL/config.csv");
-
 using namespace DB4NFV;
 
 // Handler function.
@@ -147,6 +145,18 @@ auto SLApp = DB4NFV::App{
 };
 
 int VNFMain(int argc, char *argv[]){
+    std::string path;
+    if (argc <= 2){
+        // Use defaut.
+        // perror("VNF Config not provided.");
+        // assert(false);
+        path = "/home/kailian/DB4NFV/libVNF/vnf/SL/config.csv";
+    } else {
+        path = std::string(argv[1]);
+    }
+    // Parse the first parameter as the path to config.
+    SetConfig(path);
+
     // Get the main SFC to construct.
     auto& SFC = GetSFC();
     SFC.Entry(SLApp);
