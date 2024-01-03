@@ -30,14 +30,25 @@ typedef queue<PendingData> PendingDataQueue;
 
 struct Monitor{
     uint64_t average_latency_in_ns[10] = {0,0,0,0,0,0,0,0,0,0};
-    uint64_t packets_done;
+    uint64_t allocated_packet = 0;
+    uint64_t deallocated_packet = 0;
+    uint64_t packets_done = 0;
 
     inline int packet_waiting(int coreId);
-    inline uint64_t update_latency(int idx, uint64_t time) {time = getDelay(time); average_latency_in_ns[idx] == 0 ? average_latency_in_ns[idx] = time : average_latency_in_ns[idx] = uint64_t(average_latency_in_ns[idx] * 0.99 + average_latency_in_ns[idx] * 0.01); }
+    void update_latency(int idx, uint64_t time) {
+        time = getDelay(time); 
+        if (average_latency_in_ns[idx] == 0){
+            average_latency_in_ns[idx] = time;
+        } else {
+            average_latency_in_ns[idx] = uint64_t(average_latency_in_ns[idx] * 0.99 + time * 0.01); 
+        }
+    }
     inline void packet_done() {packets_done++;}
+    inline void allocate_packet() { allocated_packet++; }
+    inline void deallocate_packet() { deallocated_packet++;}
     inline void report(int coreId) {
-        spdlog::debug(
-            "{},{},{},{},{},{},{},{}",
+        spdlog::info(
+            "{},{},{},{},{},{},{},{},{},{}",
             getNow(),
             coreId,
             average_latency_in_ns[0],
@@ -45,6 +56,8 @@ struct Monitor{
             average_latency_in_ns[2],
             average_latency_in_ns[3],
             packets_done,
+            allocated_packet,
+            deallocated_packet,
             packet_waiting(coreId)
         );
     }

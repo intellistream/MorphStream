@@ -922,6 +922,7 @@ public:
     void _unset_wait_txn_callback();
     // jbyteArray _res_ptr();
     uint32_t _ts_low_32b();
+    uint64_t _full_ts();
     void _move_next();
 
 private:
