@@ -391,8 +391,8 @@ void *serverThread(void *args) {
                     //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
                     //             o->packet_record, o->packet_len, 0);
                     
-#ifdef TIMING
-                    perCoreStates[coreId].average_delay[2] = perCoreStates[coreId].average_delay[2] == 0 ? getDelay(ctx->_ts_low_32b()) : int(perCoreStates[coreId].average_delay[2] * 0.99 + getDelay(ctx->_ts_low_32b()) * 0.01);
+#ifdef DEBUG
+                    perCoreStates[coreId].monitor.update_latency(2, ctx->_ts_low_32b());
 #endif
 
                     _disposalBody(connId, *ctx);
@@ -402,10 +402,10 @@ void *serverThread(void *args) {
                         perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
                     );
 
-#ifdef TIMING
-                    perCoreStates[coreId].average_delay[3] = perCoreStates[coreId].average_delay[3] == 0 ? getDelay(ctx->_ts_low_32b()) : int(perCoreStates[coreId].average_delay[3] * 0.99 + getDelay(ctx->_ts_low_32b()) * 0.01);
-                    spdlog::warn("Delay(ns): __request {}; __execute_sa_req {}; __handle_done {}; all {}", 
-                        perCoreStates[coreId].average_delay[0], perCoreStates[coreId].average_delay[1], perCoreStates[coreId].average_delay[2], perCoreStates[coreId].average_delay[3]);
+#ifdef DEBUG
+                    perCoreStates[coreId].monitor.update_latency(3, ctx->_ts_low_32b());
+                    perCoreStates[coreId].monitor.packet_done();
+                    perCoreStates[coreId].monitor.report(coreId);
 #endif
                     // TODO. How to recover packets here.
                     continue;    
@@ -764,6 +764,20 @@ void sigINTHandler(int signalCode) {
     exit(signalCode);
 }
 
+void *monitorThread(void *args) {
+    struct ServerPThreadArgument argument = *((struct ServerPThreadArgument *) args);
+    int coreId = argument.coreId;
+    pinThreadToCore(coreId);
+    spdlog::info("Monitor thread started on core {}", coreId);
+
+    while(true) {
+        for (int i = 0; i < sizeof(perCoreStates); i+= 1){
+            perCoreStates[i].monitor.report(i);
+            sleep(globals.config.monitorInterval);
+        }
+    }
+}
+
 void vnf::startEventLoop() {
 // void vnf::startEventLoop(int (*init)(vnf::ConnId&) = nullptr) {
     spdlog::info("Event loop is started");
@@ -851,7 +865,7 @@ void vnf::startEventLoop() {
     globals.dataStoreLock.unlock();
 
     auto *servers = new pthread_t[userConfig->MAX_CORES];
-    auto *arguments = new struct ServerPThreadArgument[userConfig->MAX_CORES];
+    auto *arguments = new struct ServerPThreadArgument[userConfig->MAX_CORES + 1];
     for (int ithCore = 0; ithCore < userConfig->MAX_CORES; ithCore++) {
         arguments[ithCore].set(ithCore, globals.serverIp, globals.serverPort, globals.onAcceptByServerCallback,
                                globals.onAcceptByServerDSCallback,
@@ -861,6 +875,14 @@ void vnf::startEventLoop() {
         // todo start client only after all threads have started or it would clear actual sockid mappings
         pthread_create(&servers[ithCore], NULL, serverThread, &arguments[ithCore]);
     }
+
+#if DEBUG
+    arguments[userConfig->MAX_CORES].set(userConfig->MAX_CORES, globals.serverIp, globals.serverPort, globals.onAcceptByServerCallback,
+                               globals.onAcceptByServerDSCallback,
+                               globals.onAcceptByServerReqObjIdExtractor,
+                               globals.onAcceptByServerPBD);
+    pthread_create(&servers[userConfig->MAX_CORES], NULL, monitorThread, &arguments[userConfig->MAX_CORES]);
+#endif
 
     for (int i = 0; i < userConfig->MAX_CORES; i++) {
         pthread_join(servers[i], NULL);
@@ -1679,10 +1701,13 @@ uint32_t vnf::getIntConnId(vnf::ConnId& connId) {
     return connId.coreId * 10000000 + connId.socketId;
 }
 
-uint64_t getDelay(uint64_t start){
+uint64_t getNow(){
     auto currentTime = std::chrono::high_resolution_clock::now().time_since_epoch();
-    uint64_t ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime).count();
-    uint64_t delay = static_cast<uint64_t>(ns_count & 0xFFFFFFFF) - start;
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime).count();
+}
+
+inline uint64_t getDelay(uint64_t start){
+    uint64_t delay = static_cast<uint64_t>(getNow() & 0xFFFFFFFF) - start;
     return delay;
 }
 
@@ -1836,8 +1861,8 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "([B)V");
     assert(methodId != NULL);
 
-#ifdef TIMING
-    perCoreStates[connId.coreId].average_delay[0] = perCoreStates[connId.coreId].average_delay[0] == 0 ? getDelay(time_start) : int(perCoreStates[connId.coreId].average_delay[0] * 0.99 + getDelay(time_start) * 0.01);
+#ifdef DEBUG
+    perCoreStates[connId.coreId].monitor.update_latency(0, time_start);
 #endif
 
     // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
@@ -1872,19 +1897,21 @@ vector<int> pbdSeparator(char* buffer, int bufLen) {
 JNIEXPORT jstring 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1init_1SFC
   (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
-		// Convert the jobjectArray to a char* array
-		char **argvC;
-        jsize arrayLength;
-        if (argv != nullptr){
-		    arrayLength = env->GetArrayLength(argv);
-            argvC = new char *[arrayLength];
-            for (jsize i = 0; i < arrayLength; i++)
-            {
-                jstring string = (jstring)env->GetObjectArrayElement(argv, i);
-                const char *str = env->GetStringUTFChars(string, 0);
-                argvC[i] = strdup(str);
-                env->ReleaseStringUTFChars(string, str);
-            }
+    spdlog::set_level(spdlog::level::debug);
+        // Convert the jobjectArray to a char* array
+    char **argvC;
+    jsize arrayLength;
+    if (argv != nullptr)
+    {
+        arrayLength = env->GetArrayLength(argv);
+        argvC = new char *[arrayLength];
+        for (jsize i = 0; i < arrayLength; i++)
+        {
+            jstring string = (jstring)env->GetObjectArrayElement(argv, i);
+            const char *str = env->GetStringUTFChars(string, 0);
+            argvC[i] = strdup(str);
+            env->ReleaseStringUTFChars(string, str);
+        }
         }  else {
             arrayLength = 0;
         }
@@ -2011,8 +2038,8 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
 	int coreId = COREID(txnReqId);
     auto ctx = perCoreStates[coreId].packetNumberContextMap.at(PACKETID(txnReqId));
 
-#ifdef TIMING
-    perCoreStates[coreId].average_delay[1] = perCoreStates[coreId].average_delay[1] == 0 ? getDelay(ctx->_ts_low_32b()) : int(perCoreStates[coreId].average_delay[1] * 0.99 + getDelay(ctx->_ts_low_32b()) * 0.01);
+#ifdef DEBUG
+    perCoreStates[coreId].monitor.update_latency(1, ctx->_ts_low_32b());
 #endif
 
     /*
@@ -2292,9 +2319,9 @@ void Context::_unset_wait_txn_callback()
 //     return _result;
 // }
 
-int Context::_ts_low_32b()
+uint32_t Context::_ts_low_32b()
 {
-    return ts_low_32b;
+    return static_cast<uint32_t>(ts & 0xFFFFFFFF);
 }
 
 void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const
@@ -2346,4 +2373,8 @@ bool GetJniEnv(JNIEnv **env)
     // // jint rs = (*GetGlobal().__jvm).AttachCurrentThread((void **)&env, NULL);
     // // assert(rs == JNI_OK);
 	// return true;
+}
+
+inline int Monitor::packet_waiting(int coreId){
+    return perCoreStates[coreId].packetNumberContextMap.size();
 }

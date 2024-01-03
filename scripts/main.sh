@@ -28,6 +28,9 @@ else
 fi
 echo "Using cmake: $CMAKE"
 
+# Globals
+DEBUG=true
+
 # If you let script make the vm.
 ISO_URL="https://releases.ubuntu.com/18.04/ubuntu-18.04.6-live-server-amd64.iso"
 VM_NAME="DB4NFV"
@@ -67,13 +70,18 @@ compile_libVNF(){
 	if [ $# -ge 2 ] && [[ $2 == "$KERNEL_STACK" ]]; then
 		rm -dfr "$BUILD_DIR" &> /dev/null || true
 		mkdir "$BUILD_DIR" && cd "$BUILD_DIR"
-		$CMAKE "$LIBVNF_DIR" -DSTACK=KERNEL \
-			-DBACKEND_MORPH=True \
-			-DCMAKE_BUILD_TYPE=Debug \
-			-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
+		if [[ $DEBUG == true ]]; then 
+			$CMAKE "$LIBVNF_DIR" -DSTACK=KERNEL \
+				-DCMAKE_BUILD_TYPE=Debug  \
+				-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
+		else 
+			$CMAKE "$LIBVNF_DIR" -DSTACK=KERNEL \
+				-DCMAKE_BUILD_TYPE=Release \
+				-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
+		fi
 		rm -dfr $HEADER_INSTALL 
 		mkdir $HEADER_INSTALL && cp "$HEADER/core.hpp" "$HEADER_INSTALL/"
-		make install && echo "Done: libVNF built and installed." 
+		make install -j4 && echo "Done: libVNF built and installed." 
 		exit 0
 	elif [ $# -ge 2 ] && [[ $2 == "$KERNEL_BYPASS" ]]; then 
 		local 
@@ -203,7 +211,7 @@ setup_normal() {
 	else
 		cd "$TMP_DIR"
 		git clone https://github.com/gabime/spdlog.git
-		cd spdlog && $CMAKE . && make -j
+		cd spdlog && $CMAKE . && make -j4
 		# apt spdlog version is too old.
 		if [[ -f include/spdlog/spdlog.h ]]; then
 			cp -r include/spdlog "$HEADER/"
@@ -239,7 +247,7 @@ compile_example_vnf() {
 	echo "Compiling Example VNF: $VNF_PATH"
 	cd "$VNF_PATH"
 	make clean
-	make kernel-dynamic JAVA_HOME="$JAVA_HOME" || error_exit
+	make kernel-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG	 || error_exit
 	# echo "Compiling Done"
 }
 
@@ -269,7 +277,7 @@ setup_kernel_bypass_stack(){
 
 	apt-get install -y $DEPENDENCY
 
-	rm -dfr $TMP_DIR && mkdir $TMP_DIR && cd $TMP_DIR 
+	# rm -dfr $TMP_DIR && mkdir $TMP_DIR && cd $TMP_DIR 
 
 	# TODO.
 	if [[ -f automake_1.16.1-4ubuntu6_all.deb ]]; then 
@@ -359,6 +367,9 @@ case $1 in
 	$COMPILE)
 		echo "starting compilation.."
 		if [ $# -ge 2 ] && [[ $2 == $KENREL_BYPASS ]]; then
+			if [ $# -ge 2 ] && [[ $2 == "--RELEASE" ]]; then
+				DEBUG=false
+			fi 
 			check_system || error_exit
 			IS_KENREL_BYPASS=true
 			setup_kernel_bypass_stack

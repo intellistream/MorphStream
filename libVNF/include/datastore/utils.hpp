@@ -48,7 +48,6 @@ using namespace std;
 typedef std::chrono::high_resolution_clock CLOCK;
 typedef std::chrono::microseconds MICROSECONDS;
 
-#define DEBUG 0
 #define TRACE(x) if (DEBUG) { x }
 
 const int MAX_UE_COUNT = 10000;

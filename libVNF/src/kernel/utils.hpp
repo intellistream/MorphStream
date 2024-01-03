@@ -28,6 +28,28 @@ struct alignas(16) PendingData {
 
 typedef queue<PendingData> PendingDataQueue;
 
+struct Monitor{
+    uint64_t average_latency_in_ns[10] = {0,0,0,0,0,0,0,0,0,0};
+    uint64_t packets_done;
+
+    inline int packet_waiting(int coreId);
+    inline uint64_t update_latency(int idx, uint64_t time) {time = getDelay(time); average_latency_in_ns[idx] == 0 ? average_latency_in_ns[idx] = time : average_latency_in_ns[idx] = uint64_t(average_latency_in_ns[idx] * 0.99 + average_latency_in_ns[idx] * 0.01); }
+    inline void packet_done() {packets_done++;}
+    inline void report(int coreId) {
+        spdlog::debug(
+            "{},{},{},{},{},{},{},{}",
+            getNow(),
+            coreId,
+            average_latency_in_ns[0],
+            average_latency_in_ns[1],
+            average_latency_in_ns[2],
+            average_latency_in_ns[3],
+            packets_done,
+            packet_waiting(coreId)
+        );
+    }
+};
+
 struct ServerPThreadArgument {
     int coreId;
     string ip;
@@ -186,7 +208,7 @@ struct PerCoreState {
     int connCounter;
     int numSends, numRecvs;
     int numPacketsSentToDs, numPacketsRecvFromDs;
-    uint64_t average_delay[4] = {0,0,0,0};
+    Monitor monitor;
 
     //moved from globals
     string serverProtocol;

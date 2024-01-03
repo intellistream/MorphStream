@@ -104,8 +104,6 @@
 #define DEBUG_PRINT_CONTEXT(sig, ctx) \
 	(spdlog::warn("DEBUG at {}: Context {}:\n\tcurrent app[{}].idx[{}] state {} \n\tpacket [{}] of length {} with reqObj {}.", sig, (ctx)->_ts_low_32b(), (ctx)->AppIdx(), (ctx)->TxnIdx(), (ctx)->ReturnValue(), (ctx)->packet() == NULL? "[isNull]" : (ctx)->packet(), (ctx)->packet_len(), reinterpret_cast<uint64_t>(ctx)))
 
-#define TIMING true
-
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
 class Context;
@@ -524,6 +522,7 @@ public:
 	int serverPort = 9090;									 // Default value
 	int reuseMode = 0;									 // Default value
 	bool Debug = false; 
+	int monitorInterval = 1;	 // Interval to report status.
 
 	Config() {}
 	Config(std::string path)
@@ -548,6 +547,7 @@ public:
 			std::cout << "Server IP: " << serverIP << std::endl;
 			std::cout << "Server Port: " << serverPort << std::endl;
 			std::cout << "Reusing Port: " << reuseMode << std::endl;
+			std::cout << "Report metrics interval: " << monitorInterval << std::endl;
 		}
 		catch (const std::exception &e)
 		{
@@ -628,6 +628,10 @@ private:
 		else if (key == "reuseMode")
 		{
 			reuseMode = std::stoi(value);
+		}
+		else if (key == "monitorInterval")
+		{
+			monitorInterval = std::stoi(value);
 		}
 		else if (key == "debug")
 		{
@@ -905,8 +909,7 @@ public:
     void _reset_appIdx();
     void _set_time_now(){ 
 		auto currentTime = std::chrono::high_resolution_clock::now().time_since_epoch();
-		uint64_t ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime).count();
-    	ts_low_32b = static_cast<uint32_t>(ns_count & 0xFFFFFFFF);
+		ts = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime).count();
 	}
     void _set_txn_idx(int txnIdx);
     void _set_status(vnf::EventType status);
@@ -918,11 +921,11 @@ public:
     void _set_wait_txn_callback();
     void _unset_wait_txn_callback();
     // jbyteArray _res_ptr();
-    int _ts_low_32b();
+    uint32_t _ts_low_32b();
     void _move_next();
 
 private:
-    int ts_low_32b;
+    uint64_t ts;
     int _AppIdx;
     int _next_AppIdx;
     int _TxnIdx;
@@ -937,6 +940,7 @@ private:
     vnf::EventType _ret;
 };
 
-uint64_t getDelay(uint64_t);
+inline uint64_t getDelay(uint64_t);
+inline uint64_t getNow();
 
 #endif
