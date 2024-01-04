@@ -8,19 +8,23 @@
 # Stages: Setup, Compile, Run.
 
 # DIRS
-SCRIPT_DIR=$(pwd)
-BUILD_DIR=$SCRIPT_DIR/build
-TMP_DIR=$SCRIPT_DIR/tmp
-LIBVNF_DIR=$SCRIPT_DIR/libVNF
-MORPH_DIR=$SCRIPT_DIR/morphStream
+PROJ_DIR=$(pwd)
+BUILD_DIR=$PROJ_DIR/build
+TMP_DIR=$PROJ_DIR/tmp
+LIBVNF_DIR=$PROJ_DIR/libVNF
+SCRIPTS_DIR=$PROJ_DIR/scripts
+MORPH_DIR=$PROJ_DIR/morphStream
+RESULT_DIR=$PROJ_DIR/measurement
 
 PROJ_DIR=$MORPH_DIR/morph-core/src/main/java
 INTERFACE_FILE=$PROJ_DIR/intellistream/morphstream/util/libVNFFrontend/NativeInterface.java
 HEADER=$LIBVNF_DIR/include
 HEADER_INSTALL=/usr/local/include/libvnf/
 
+
 # Executable
 CMAKE=$TMP_DIR/cmake/bin/cmake
+JAR=$MORPH_DIR/morph-clients/morph-clients.jar
 if [ -x "$CMAKE" ]; then
 	:
 else
@@ -51,6 +55,8 @@ COMPILE='--compile'
 KERNEL_BYPASS="--KENREL_BYPASS" 
 KERNEL_STACK="--KERNEL_STACK"
 MORPH="--MORPH_STREAM"
+TEST="--TEST"
+PLOT="--PLOT"
 
 # Compile Example VNF options
 EXAMPLE="--EXAMPLE_VNF"
@@ -94,6 +100,34 @@ compile_jni_header(){
 	# TODO. Copy header file to dir.
 	javac -cp .:"$PROJ_DIR" -h "$HEADER" "$INTERFACE_FILE"
 	echo "JNI Header generated at $HEADER"
+}
+
+run_and_test_with_graph_output(){
+	apt-get install -y tmux python3-pip libjpeg-dev zlib1g-dev | grep -V 'is already the newest version'
+
+	if [ -d "$RESULT_DIR" ]; then 
+		:
+	else 
+		mkdir "$RESULT_DIR"
+	fi
+
+	( /usr/bin/java -jar "$JAR" ) | { 
+		grep this_is_a_report | awk '{ print $4 }' > "$RESULT_DIR/raw_record.csv"
+	}
+
+	echo "Result record sample:"
+	head -n 10 "$RESULT_DIR/raw_record.csv"
+
+	plot || error_exit
+}
+
+plot(){
+	# Draw graph.
+	echo "Generating graph."
+	pip3 install pandas matplotlib seaborn | grep -v 'already satisfied'
+	python3 "$SCRIPTS_DIR/graph.py" "$RESULT_DIR/raw_record.csv" "$RESULT_DIR"
+
+	echo "Graph Generated."
 }
 
 compile_morphStream(){
@@ -275,7 +309,7 @@ setup_kernel_bypass_stack(){
 		exit 1
 	fi
 
-	apt-get install -y $DEPENDENCY
+	apt-get install -y "$DEPENDENCY"
 
 	# rm -dfr $TMP_DIR && mkdir $TMP_DIR && cd $TMP_DIR 
 
@@ -350,6 +384,14 @@ case $1 in
 		;;
 	$NEWVM)
 		new_vm || error_exit
+		exit 0
+		;;
+	$TEST)
+		run_and_test_with_graph_output || error_exit
+		exit 0
+		;;
+	$PLOT)
+		plot || error_exit
 		exit 0
 		;;
 	$RUN)

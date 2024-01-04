@@ -772,8 +772,8 @@ void *monitorThread(void *args) {
     while(true) {
         for (int i = 0; i < sizeof(perCoreStates); i+= 1){
             perCoreStates[i].monitor.report(i);
-            sleep(globals.config.monitorInterval);
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(globals.config.monitorInterval));
     }
 }
 
@@ -1897,7 +1897,10 @@ vector<int> pbdSeparator(char* buffer, int bufLen) {
 JNIEXPORT jstring 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1init_1SFC
   (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
+#if DEBUG
+    perCoreStates[0].monitor.report_header();
     spdlog::set_level(spdlog::level::info);
+#endif
         // Convert the jobjectArray to a char* array
     char **argvC;
     jsize arrayLength;
