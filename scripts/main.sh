@@ -24,7 +24,7 @@ HEADER_INSTALL=/usr/local/include/libvnf/
 
 # Executable
 CMAKE=$TMP_DIR/cmake/bin/cmake
-JAR=$MORPH_DIR/morph-clients/morph-clients.jar
+JAR=$MORPH_DIR/morph-clients/morph-clients-0.1.jar
 if [ -x "$CMAKE" ]; then
 	:
 else
@@ -110,6 +110,12 @@ run_and_test_with_graph_output(){
 	else 
 		mkdir "$RESULT_DIR"
 	fi
+	
+	if [ -f "$JAR" ]; then
+		:
+	else 
+		compile_morphStream || error_exit
+	fi
 
 	( /usr/bin/java -jar "$JAR" ) | { 
 		grep this_is_a_report | awk '{ print $4 }' > "$RESULT_DIR/raw_record.csv"
@@ -132,7 +138,6 @@ plot(){
 
 compile_morphStream(){
 	compile_jni_header
-	find "$MORPH_DIR" -name "*jar" -print | xargs rm && rm -dfr ~/.m2/repository/intellistream/
 	# find "$MORPH_DIR" -name 'target' -type d -print | xargs sudo rm -dfr
 	# dest=("common" "core" "web" "clients")
 
@@ -142,10 +147,13 @@ compile_morphStream(){
 	# 	sudo mvn clean install
 	# 	cd ..
 	# done
+	mv "$JAR" "$JAR.bak"
 
-	cd "$MORPH_DIR" && mvn install && cd -
+	cd "$MORPH_DIR" && mvn clean install \
+		&& cd morph-clients \
+		&& mvn clean install
 
-	# TODO. Copy header file to dir.
+	ls target/morph-clients-0.1.jar
 }
 
 run(){
