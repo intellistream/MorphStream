@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import static intellistream.morphstream.common.io.Rdma.Memory.RdmaBuffer.directBufferConstructor;
-
 public class CircularBufferText extends TestCase {
     public CircularBufferText(String testName) {
         super(testName);

@@ -30,6 +30,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private HashMap<String, FunctionDescription> FunctionDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
     private ByteBuffer msgBuffer;
+    private ByteBuffer canRead;
     public FunctionExecutor(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
         this.operatorID = operatorID;
@@ -78,16 +79,16 @@ public class FunctionExecutor extends AbstractSpoutCombo {
         }
     }
     private byte[] getMsg() throws IOException {
-        if (!msgBuffer.hasRemaining()) {
-            ByteBuffer address = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().canRead();
-            int length = address.getInt();
+        if (msgBuffer == null || !msgBuffer.hasRemaining()) {
+            canRead = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().canRead();
+            int length = canRead.getInt();
             if (length == 0) {
                 return null;
             } else {
                 List<Integer> lengthQueue = new ArrayList<>();
                 lengthQueue.add(length);
-                while(address.hasRemaining()) {
-                    lengthQueue.add(address.getInt());
+                while(canRead.hasRemaining()) {
+                    lengthQueue.add(canRead.getInt());
                 }
                 long myOffset = 0;
                 int myLength = lengthQueue.get(this.threadId);

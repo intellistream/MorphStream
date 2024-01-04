@@ -58,7 +58,6 @@ public class MessageBatch {
     public ByteBuffer buffer() {
         ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(encoded_length));
         try {
-            bout.writeShort((short) msgs.size());
             Deque<Integer> length = new ArrayDeque<>();
             for (int i = 0; i < totalThreads; i++) {
                 int totalLength = 0;

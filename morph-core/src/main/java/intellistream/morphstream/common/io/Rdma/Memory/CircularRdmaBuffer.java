@@ -10,8 +10,8 @@ public class CircularRdmaBuffer {
     private final RdmaBuffer buffer;
     private final long length;
     private final int totalThreads;
-
     private long readOffset;
+    private ByteBuffer canRead;
     public CircularRdmaBuffer(IbvPd ibvPd, int length, int totalThreads) throws Exception {
         this.length = length;
         this.buffer = new RdmaBuffer(ibvPd, length);
@@ -19,12 +19,12 @@ public class CircularRdmaBuffer {
         this.totalThreads = totalThreads;
     }
     public ByteBuffer canRead() throws IOException {
-        ByteBuffer byteBuffer = this.buffer.getByteBuffer(readOffset, 4 * totalThreads);
-        int length = byteBuffer.getInt();
+        canRead = this.buffer.getByteBuffer(readOffset, 4 * totalThreads);
+        int length = canRead.getInt();
         readOffset = readOffset + length;
         if (length != 0) {
-           while (byteBuffer.hasRemaining()) {
-               readOffset = readOffset + byteBuffer.getInt();
+           while (canRead.hasRemaining()) {
+               readOffset = readOffset + canRead.getInt();
            }
            readOffset = readOffset + 4L * totalThreads;
         }

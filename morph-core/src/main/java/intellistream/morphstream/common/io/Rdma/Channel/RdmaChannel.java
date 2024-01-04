@@ -629,8 +629,7 @@ public class RdmaChannel {
                     boolean wcSuccess = ibvWCs[i].getStatus() == IbvWC.IbvWcStatus.IBV_WC_SUCCESS.ordinal();
                     if (!wcSuccess && !isError()) {
                         setRdmaChannelState(RdmaChannelState.ERROR);
-                        LOG.error("Completion with error: " +
-                                IbvWC.IbvWcStatus.values()[ibvWCs[i].getStatus()].name());
+                        LOG.error("Completion with error: " + IbvWC.IbvWcStatus.values()[ibvWCs[i].getStatus()].name());
                     }
 
                     if (ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_SEND.getOpcode() ||
