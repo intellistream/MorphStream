@@ -9,4 +9,4 @@ serverIP,127.0.0.1
 serverPort,9090
 reuseMode,1
 debug,true
-monitorInterval,50
+monitorInterval,200
