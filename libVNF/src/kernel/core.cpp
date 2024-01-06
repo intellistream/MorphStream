@@ -392,7 +392,7 @@ void *serverThread(void *args) {
                     //             o->packet_record, o->packet_len, 0);
                     
 #ifdef DEBUG
-                    perCoreStates[coreId].monitor.update_latency(2, ctx->_ts_low_32b());
+                    perCoreStates[coreId].monitor.update_latency(3, ctx->_full_ts());
 #endif
 
                     _disposalBody(connId, *ctx);
@@ -403,9 +403,7 @@ void *serverThread(void *args) {
                     );
 
 #ifdef DEBUG
-                    perCoreStates[coreId].monitor.update_latency(3, ctx->_ts_low_32b());
                     perCoreStates[coreId].monitor.packet_done();
-                    perCoreStates[coreId].monitor.report(coreId);
 #endif
                     // TODO. How to recover packets here.
                     continue;    
@@ -565,6 +563,7 @@ void *serverThread(void *args) {
                     /* allocate heap and put current packet copy there for user to use */
                     assert(perCoreStates[coreId].packetsMemPoolManager.empty() == false);
                     void *packet = perCoreStates[coreId].packetsMemPoolManager.malloc();
+                    perCoreStates[connId.coreId].monitor.allocate_packet();
                     assert(packet != NULL);
                     string currentPacket = prependedBuffer.substr((uint) packetStart, (uint) packetLength);
                     memcpy(packet, currentPacket.c_str(), (size_t) (packetLength));
@@ -773,8 +772,8 @@ void *monitorThread(void *args) {
     while(true) {
         for (int i = 0; i < sizeof(perCoreStates); i+= 1){
             perCoreStates[i].monitor.report(i);
-            sleep(globals.config.monitorInterval);
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(globals.config.monitorInterval));
     }
 }
 
@@ -1707,7 +1706,7 @@ uint64_t getNow(){
 }
 
 inline uint64_t getDelay(uint64_t start){
-    uint64_t delay = static_cast<uint64_t>(getNow() & 0xFFFFFFFF) - start;
+    uint64_t delay = getNow() - start;
     return delay;
 }
 
@@ -1763,6 +1762,7 @@ void _disposalBody(vnf::ConnId& connId, Context & ctx){
     }
     // Free reqObj. And reqObj ptr is just context ptr.
     perCoreStates[connId.coreId].myFreeReqObj(1, static_cast<void *>(&ctx));
+    perCoreStates[connId.coreId].monitor.deallocate_packet();
 
     spdlog::debug("Packet Handled done. ");
     return;
@@ -1817,7 +1817,7 @@ void DB4NFV::SFC::Add(App& last, App& app){
 }
 
 // The entry for sending txn execution request to txnEngine.
-void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId& connId, uint64_t time_start)
+void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId& connId)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
     int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
@@ -1862,7 +1862,7 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     assert(methodId != NULL);
 
 #ifdef DEBUG
-    perCoreStates[connId.coreId].monitor.update_latency(0, time_start);
+    perCoreStates[connId.coreId].monitor.update_latency(0, ts);
 #endif
 
     // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
@@ -1897,7 +1897,10 @@ vector<int> pbdSeparator(char* buffer, int bufLen) {
 JNIEXPORT jstring 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1init_1SFC
   (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
+#if DEBUG
+    perCoreStates[0].monitor.report_header();
     spdlog::set_level(spdlog::level::info);
+#endif
         // Convert the jobjectArray to a char* array
     char **argvC;
     jsize arrayLength;
@@ -2039,7 +2042,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     auto ctx = perCoreStates[coreId].packetNumberContextMap.at(PACKETID(txnReqId));
 
 #ifdef DEBUG
-    perCoreStates[coreId].monitor.update_latency(1, ctx->_ts_low_32b());
+    perCoreStates[coreId].monitor.update_latency(1, ctx->_full_ts());
 #endif
 
     /*
@@ -2077,6 +2080,10 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
 	env->SetByteArrayRegion(_result, static_cast<jsize>(0), static_cast<jsize>(sizeof(int)), reinterpret_cast<jbyte *>(&abortion));
     // Set result.
     env->SetByteArrayRegion(_result, static_cast<jsize>(sizeof(int)), static_cast<jsize>(STATE_TYPE_SIZE), reinterpret_cast<jbyte *>(&res));
+
+#ifdef DEBUG
+                    perCoreStates[coreId].monitor.update_latency(2, ctx->_full_ts());
+#endif
 
     // How to release write back value? We don't need to release. They are managed.
     return _result;
@@ -2324,6 +2331,11 @@ uint32_t Context::_ts_low_32b()
     return static_cast<uint32_t>(ts & 0xFFFFFFFF);
 }
 
+uint64_t Context::_full_ts()
+{
+    return ts;
+}
+
 void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const
 { 
     // Reset when transaction handle done.
@@ -2343,7 +2355,7 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
 
     JNIEnv * env; 
     GetJniEnv(&env);
-	__request(env, ctx._ts_low_32b(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId, ctx._ts_low_32b());
+	__request(env, ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId);
 }
 
 // Get JVM and jenv related. FIXME. Optimize.
