@@ -1897,7 +1897,7 @@ vector<int> pbdSeparator(char* buffer, int bufLen) {
 JNIEXPORT jstring 
 JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1init_1SFC
   (JNIEnv *env , jobject obj, jint argc, jobjectArray argv){
-    spdlog::set_level(spdlog::level::debug);
+    spdlog::set_level(spdlog::level::info);
         // Convert the jobjectArray to a char* array
     char **argvC;
     jsize arrayLength;

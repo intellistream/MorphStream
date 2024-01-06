@@ -36,7 +36,7 @@ struct Monitor{
     inline uint64_t update_latency(int idx, uint64_t time) {time = getDelay(time); average_latency_in_ns[idx] == 0 ? average_latency_in_ns[idx] = time : average_latency_in_ns[idx] = uint64_t(average_latency_in_ns[idx] * 0.99 + average_latency_in_ns[idx] * 0.01); }
     inline void packet_done() {packets_done++;}
     inline void report(int coreId) {
-        spdlog::debug(
+        spdlog::info(
             "{},{},{},{},{},{},{},{}",
             getNow(),
             coreId,
