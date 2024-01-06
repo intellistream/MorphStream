@@ -1,6 +1,6 @@
 bufferSize,128
 dataStoreThreshold,131072
-coreNumbers,10
+coreNumbers,5
 dataStoreSocketPath,/home/kailian/libVNF/vnf/tmp/
 dataStoreFileNames,1
 dataStoreIP,127.0.0.1

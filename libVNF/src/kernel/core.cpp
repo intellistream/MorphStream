@@ -301,6 +301,9 @@ void *serverThread(void *args) {
                         }
                         break;
                     }
+#ifdef DEBUG
+                    perCoreStates[coreId].monitor.conn_accepted();
+#endif
                     if(globals.serverProtocol == "sctp"){
                         struct sctp_initmsg s_initmsg;
                         memset(&s_initmsg, 0, sizeof (s_initmsg));
@@ -770,7 +773,7 @@ void *monitorThread(void *args) {
     spdlog::info("Monitor thread started on core {}", coreId);
 
     while(true) {
-        for (int i = 0; i < sizeof(perCoreStates); i+= 1){
+        for (int i = 0; i < globals.config.coreNumbers; i+= 1){
             perCoreStates[i].monitor.report(i);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(globals.config.monitorInterval));

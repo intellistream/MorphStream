@@ -31,6 +31,7 @@ typedef queue<PendingData> PendingDataQueue;
 struct Monitor{
     uint64_t average_latency_in_ns[10] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t allocated_packet = 0;
+    uint64_t conn_num = 0;
     uint64_t deallocated_packet = 0;
     uint64_t packets_done = 0;
 
@@ -46,16 +47,18 @@ struct Monitor{
     inline void packet_done() {packets_done++;}
     inline void allocate_packet() { allocated_packet++; }
     inline void deallocate_packet() { deallocated_packet++;}
+    inline void conn_accepted() { conn_num++;}
     inline void report_header() {
         spdlog::info(
-            "this_is_a_report,ts,CoreId,L0,L1,L2,L3,num_pkts_done,num_alloc_pkts,num_deallocated_pkts,num_wip_packets"
+            "this_is_a_report,ts,CoreId,ConnNum,L0,L1,L2,L3,num_pkts_done,num_alloc_pkts,num_deallocated_pkts,num_wip_packets"
         );
     }
     inline void report(int coreId) {
         spdlog::info(
-            "this_is_a_report,{},{},{},{},{},{},{},{},{},{}",
+            "this_is_a_report,{},{},{},{},{},{},{},{},{},{},{}",
             getNow(),
             coreId,
+            conn_num,
             average_latency_in_ns[0],
             average_latency_in_ns[1],
             average_latency_in_ns[2],
