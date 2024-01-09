@@ -101,7 +101,7 @@ public class RdmaWorkerManager implements Serializable {
             rdmaBuffer.getByteBuffer().put(byteBuffer);
 
             long remoteAddress = regionToken.getAddress();
-            int rkey = regionToken.getRemoteKey();
+            int rkey = regionToken.getLocalKey();
             int sizeInBytes = regionToken.getSizeInBytes();
 
             rdmaBuffer.getByteBuffer().flip();

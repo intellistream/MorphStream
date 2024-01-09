@@ -119,7 +119,7 @@ public class MorphStreamEnv {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
                 configuration().put("WorkloadConfig",stringBuilder.toString()); //For each workload, how many TD/LD/PD
             }
             inputSource().initialize(configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("clientNum"));

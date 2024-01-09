@@ -216,7 +216,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
     public String eventRatio = "50,50";
     @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
-    public String ratioOfMultiPartitionTransactionsForEvents = "0,0";
+    public String ratioOfMultiPartitionTransactionsForEvents = "50,50";
     @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
     public String stateAccessSkewnessForEvents = "0,0";
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
@@ -246,9 +246,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--driverPort"}, description = "morphstream driver port")
     public int driverPort = 5570;
     @Parameter(names = {"--workerHosts"}, description = "morphstream worker hosts")
-    public String workerHosts = "localhost,localhost";
+    public String workerHosts = "localhost,localhost,localhost";
     @Parameter(names = {"--workerPorts"}, description = "morphstream worker ports")
-    public String workerPorts = "5540,5550";
+    public String workerPorts = "5540,5550,5580";
     @Parameter(names = {"--CircularBufferCapacity"}, description = "CircularBufferCapacity")
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--BatchMessageCapacity"}, description = "BatchMessageCapacity")

@@ -1,36 +1,98 @@
 package client;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.zeromq.SocketType;
+import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import worker.MorphStreamWorkerTest;
+import org.zeromq.ZMsg;
 
-public class ClientTest extends TestCase {
-    public ClientTest(String testName) {
-        super(testName);
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class ClientTest extends Thread {
+    private int ClientId;
+    private boolean isRunning = true;
+    private static final Logger LOG = LoggerFactory.getLogger(ClientTest.class);
+    private final Map<String, ZMQ.Socket> sockets = new HashMap<>();
+    protected final ZContext zContext = new ZContext();
+    protected BlockingQueue<TransactionalEvent> inputQueue;
+    protected int clientId;
+    protected String clientIdentity;
+    protected ZMQ.Poller poller;
+    protected CountDownLatch latch;
+    protected int msgCount = 0;
+    private String driverHost;
+    private int driverPort;
+    public ClientTest(int clientId) {
+        this.ClientId = clientId;
     }
-
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite() {
-        return new TestSuite(MorphStreamWorkerTest.class);
+    public ZMQ.Socket getSocket(String address) {
+        return sockets.getOrDefault(address, null);
     }
-
-    /**
-     * Rigourous Test :-)
-     */
-    public void testApp() {
-        assertTrue(true);
-        try (ZMQ.Context context = ZMQ.context(1);
-             ZMQ.Socket socket = context.socket(ZMQ.REQ)) {
-            socket.connect("tcp://localhost:5555");
-            for (int i = 0; i < 10; i++) {
-                byte[] request = String.valueOf(i).getBytes();
-                socket.send(request, 0);
-                System.out.println("Send：" + i);
+    public void connectFrontend(String address, int workerPort) {
+        ZMQ.Socket socket = zContext.createSocket(SocketType.DEALER);
+        clientIdentity = String.format("%04X-%04X", ThreadLocalRandom.current().nextInt(), ThreadLocalRandom.current().nextInt());
+        socket.setIdentity(clientIdentity.getBytes(ZMQ.CHARSET));
+        socket.connect("tcp://" + address + ":" + workerPort);
+        sockets.put(address, socket);
+        poller = zContext.createPoller(1);
+        poller.register(socket, ZMQ.Poller.POLLIN);
+    }
+    public void initialize(int clientId, CountDownLatch latch) throws IOException {
+        this.clientId = clientId;
+        LOG.info("Client " + clientId + " is initialized.");
+        this.latch = latch;
+    }
+    public void asyncInvokeFunction(String workerName, String function) {
+        getSocket(workerName).send(function.getBytes());
+        //LOG.info("Send: " + function);
+    }
+    public void asyncReceiveFunctionOutput(String workerName) {
+        for (int centitick = 0; centitick < 100; centitick++) {
+            poller.poll(0);
+            if (poller.pollin(0)) {
+                ZMsg msg = ZMsg.recvMsg(getSocket(workerName));
+                LOG.info("Receive: " + msg.popString());
+                msgCount ++;
+                msg.destroy();
             }
         }
     }
+
+    @Override
+    public void run() {
+        latch.countDown();
+        LOG.info("Client " + clientId + " is running.");
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        this.inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(clientId);
+        driverHost = "localhost";
+        driverPort = 5557;
+        connectFrontend(driverHost, driverPort);
+        while (!Thread.currentThread().isInterrupted() && isRunning) {
+            if (!inputQueue.isEmpty()) {
+                asyncInvokeFunction("localhost", inputQueue.poll().toString());
+            }
+            //asyncReceiveFunctionOutput("localhost");
+        }
+        isRunning = false;
+    }
+    public void stopRunning(){
+        while (isRunning) {
+            this.interrupt();
+        }
+        zContext.close();
+    }
+
 }

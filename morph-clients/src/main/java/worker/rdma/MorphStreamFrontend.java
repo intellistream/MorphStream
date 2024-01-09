@@ -1,6 +1,9 @@
 package worker.rdma;
 
 import intellistream.morphstream.api.input.FunctionMessage;
+import intellistream.morphstream.api.input.InputSource;
+import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Memory.CircularRdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaDriverManager;
@@ -19,23 +22,24 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MorphStreamFrontend extends Thread{
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamFrontend.class);
     private int threadId;
-    private int totalThread;
     private ZMQ.Socket frontend;// Frontend socket talks to Driver over TCP
     private RdmaDriverManager rdmaDriverManager;
     private List<Integer> workIdList = new ArrayList<>();
-    private Random random = new Random();
-    private int shuffleType = 0;
-    private int currentId = 0;
     protected int sendCount = 0;
     protected int receiveCount = 0;
-    private HashMap<Integer, ByteBuffer> workerIdToResultBufferMap = new HashMap<>();
-    public MorphStreamFrontend(int threadId, ZContext zContext, RdmaDriverManager rdmaDriverManager) {
+    private ByteBuffer tempCanRead;//the temp buffer to decide whether the result buffer can read
+    private HashMap<Integer, ByteBuffer> workerIdToResultBufferMap = new HashMap<>();//the map to store the result buffer that can read
+    private ConcurrentHashMap<Integer, CircularRdmaBuffer> workerIdToCircularRdmaBufferMap = new ConcurrentHashMap<>();//the map to store all result buffer
+    private Statistic statistic;
+    private String tempInput;
+    private TransactionalEvent tempEvent;
+    public MorphStreamFrontend(int threadId, ZContext zContext, RdmaDriverManager rdmaDriverManager, Statistic statistic) {
         this.frontend = zContext.createSocket(SocketType.DEALER);
         frontend.connect("inproc://backend");
         this.rdmaDriverManager = rdmaDriverManager;
+        workerIdToCircularRdmaBufferMap = rdmaDriverManager.getRdmaBufferManager().getResultBufferMap();
+        this.statistic = statistic;
         String[] workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
-        this.shuffleType = MorphStreamEnv.get().configuration().getInt("shuffleType", 0);
-        this.totalThread = MorphStreamEnv.get().configuration().getInt("frontendNum");
         this.threadId = threadId;
         for (int i = 0; i < workerHosts.length; i++) {
             workIdList.add(i);
@@ -53,18 +57,19 @@ public class MorphStreamFrontend extends Thread{
             System.out.println(result);
         }
     }
-    public void invokeFunctionToWorker(int workId, ZMsg msg) throws Exception {
-        String input = msg.getLast().toString();
-        rdmaDriverManager.send(workId, new FunctionMessage(input));
-        sendCount++;
+    public void invokeFunctionToWorker(int workId) throws Exception {
+        rdmaDriverManager.send(workId, new FunctionMessage(tempInput));
+        sendCount ++;
     }
 
     public void run(){
-        while (!Thread.currentThread().interrupted()) {
+        while (!interrupted()) {
             ZMsg msg = ZMsg.recvMsg(frontend, false);
             if (msg != null) {
                 try {
-                    invokeFunctionToWorker(getWorkId(this.shuffleType), msg);
+                    tempInput = msg.getLast().toString();
+                    tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
+                    invokeFunctionToWorker(getWorkId(tempEvent.getAllKeys()));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -76,51 +81,28 @@ public class MorphStreamFrontend extends Thread{
             }
         }
     }
-    private int getWorkId(int shuffleType) {
-        switch (shuffleType) {
-            case 0://Sort
-                return getNextWorkIdSort();
-            case 1://Random
-                return getNextWorkIdRandom();
-            case 2://Optimized
-                return getNextWorkIdOptimized();
-            default:
-               throw new RuntimeException("Wrong shuffle type!");
-        }
-    }
-    private int getNextWorkIdSort() {
-        if (currentId == workIdList.size()) {
-            currentId = 0;
-        }
-        return workIdList.get(currentId++);
-    }
-    private int getNextWorkIdRandom() {
-       return random.nextInt(workIdList.size());
-    }
-    private int getNextWorkIdOptimized() {
-        //TODO: Implement optimized shuffle
-        return 0;
+    private int getWorkId(List<String> keys) {
+        return this.statistic.add(keys);
     }
     private ByteBuffer getResult() throws IOException {
         if (hasRemaining() == -1) {
-            ConcurrentHashMap<Integer, CircularRdmaBuffer> workerIdToCircularRdmaBufferMap = rdmaDriverManager.getRdmaBufferManager().getResultBufferMap();
             for (int i = 0; i < workerIdToCircularRdmaBufferMap.size(); i++) {
-               ByteBuffer address = workerIdToCircularRdmaBufferMap.get(i).canRead();
-               int length = address.getInt();
-               if (length != 0) {
-                   List<Integer> lengthQueue = new ArrayList<>();
-                   lengthQueue.add(length);
-                   while(address.hasRemaining()) {
-                       lengthQueue.add(address.getInt());
-                   }
-                   long myOffset = 0;
-                   int myLength = lengthQueue.get(this.threadId);
-                   for (int j = 0; j < this.threadId; j++) {
-                       myOffset += lengthQueue.get(i);
-                   }
-                   ByteBuffer byteBuffer = workerIdToCircularRdmaBufferMap.get(i).read(myOffset, myLength);
-                   workerIdToResultBufferMap.put(i, byteBuffer);
-               }
+                tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead();
+                int length = tempCanRead.getInt();
+                if (length != 0) {
+                    List<Integer> lengthQueue = new ArrayList<>();
+                    lengthQueue.add(length);
+                    while(tempCanRead.hasRemaining()) {
+                        lengthQueue.add(tempCanRead.getInt());
+                    }
+                    long myOffset = 0;
+                    int myLength = lengthQueue.get(this.threadId);
+                    for (int j = 0; j < this.threadId; j++) {
+                        myOffset += lengthQueue.get(i);
+                    }
+                    ByteBuffer byteBuffer = workerIdToCircularRdmaBufferMap.get(i).read(myOffset, myLength);
+                    workerIdToResultBufferMap.put(i, byteBuffer);
+                }
             }
             if (hasRemaining() == -1)
                 return null;
@@ -129,7 +111,7 @@ public class MorphStreamFrontend extends Thread{
     }
     private int hasRemaining() {
         for (int i = 0; i < workerIdToResultBufferMap.size(); i++) {
-            if (workerIdToResultBufferMap.get(i).hasRemaining()) {
+            if (workerIdToResultBufferMap.get(i) != null && workerIdToResultBufferMap.get(i).hasRemaining()) {
                 return i;
             }
         }

@@ -69,8 +69,7 @@ public class RdmaChannel {
     private final AtomicInteger rdmaChannelState = new AtomicInteger(RdmaChannelState.IDLE.ordinal());
     private void setRdmaChannelState(RdmaChannelState newRdmaChannelState) {
         // Allow to change the channel state only if not in ERROR
-        rdmaChannelState.updateAndGet(state ->
-                state != RdmaChannelState.ERROR.ordinal() ? newRdmaChannelState.ordinal() : state);
+        rdmaChannelState.updateAndGet(state -> state != RdmaChannelState.ERROR.ordinal() ? newRdmaChannelState.ordinal() : state);
     }
     private final RdmaChannelConf conf;
     RdmaChannel(
@@ -147,8 +146,7 @@ public class RdmaChannel {
         }
 
         // ncqe must be greater than 1
-        cq = ibvContext.createCQ(compChannel,
-                (sendDepth + recvDepth) > 0 ? sendDepth + recvDepth : 1, cpuVector);
+        cq = ibvContext.createCQ(compChannel, (sendDepth + recvDepth) > 0 ? sendDepth + recvDepth : 1, cpuVector);
         if (cq == null) {
             throw new IOException("createCQ() failed");
         }
@@ -493,8 +491,7 @@ public class RdmaChannel {
      * @param rKey
      * @throws IOException
      */
-    public void rdmaWriteInQueue(RdmaCompletionListener listener, long localAddress, int localLength,
-                                 int lKey, long remoteAddress, int rKey) throws IOException {
+    public void rdmaWriteInQueue(RdmaCompletionListener listener, long localAddress, int localLength, int lKey, long remoteAddress, int rKey) throws IOException {
         LinkedList<IbvSendWR> writeWRList = new LinkedList<>();
 
         IbvSge writeSge = new IbvSge();
@@ -525,8 +522,7 @@ public class RdmaChannel {
         }
     }
 
-    public void rdmaSendInQueue(RdmaCompletionListener listener, long[] localAddresses,
-                                int[] sizes,  int[] lKeys) throws IOException {
+    public void rdmaSendInQueue(RdmaCompletionListener listener, long[] localAddresses, int[] sizes,  int[] lKeys) throws IOException {
         LinkedList<IbvSendWR> sendWRList = new LinkedList<>();
         for (int i = 0; i < localAddresses.length; i++) {
             IbvSge sendSge = new IbvSge();

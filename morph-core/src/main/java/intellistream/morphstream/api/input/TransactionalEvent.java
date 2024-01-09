@@ -2,6 +2,7 @@ package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.engine.txn.TxnEvent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -51,7 +52,13 @@ public class TransactionalEvent extends TxnEvent {
     public String getKey(String tableName, int keyIndex) {
         return this.keyMap.get(tableName).get(keyIndex);
     }
-
+    public List<String> getAllKeys(){
+        List<String> keys = new ArrayList<>();
+        for (String tableName : keyMap.keySet()) {
+            keys.addAll(keyMap.get(tableName));
+        }
+        return keys;
+    }
     public HashMap<String, String> getValueTypeMap() {
         return this.valueTypeMap;
     }

@@ -330,7 +330,7 @@ public class RdmaNode {
         rdmaChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buf, Integer IMM) {
-                LOG.info("Successfully receive request!");
+                LOG.info("Successfully receive region token!");
                 countDownLatch.countDown();
             }
 
@@ -338,7 +338,7 @@ public class RdmaNode {
             public void onFailure(Throwable exception) {
 
             }
-        }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(),rdmaBuffer.getLkey());
+        }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey());
 
         countDownLatch.await();
         int sizeInBytes = byteBuffer.getInt();

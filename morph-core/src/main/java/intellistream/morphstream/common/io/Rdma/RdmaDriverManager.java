@@ -41,7 +41,7 @@ public class RdmaDriverManager {
         workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
         driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
-        rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, conf.rdmaChannelConf.getRdmaChannelType());
+        rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR);
         rdmaBufferManager = rdmaNode.getRdmaBufferManager();
         workerLatch = MorphStreamEnv.get().workerLatch();
         //PreAllocate CircularRdmaBuffer to receive results from workers
@@ -83,18 +83,18 @@ public class RdmaDriverManager {
             if (workerMessageBatchMap.get(workId).isEmpty()) {
                 return;
             }
-            RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
-            RegionToken regionToken = workerRegionTokenMap.get(workId);
             MessageBatch messageBatch = workerMessageBatchMap.get(workId);
             ByteBuffer byteBuffer = messageBatch.buffer();
             RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
             rdmaBuffer.getByteBuffer().put(byteBuffer);
 
+            RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
+            RegionToken regionToken = workerRegionTokenMap.get(workId);
+
             long remoteAddress = regionToken.getAddress();
-            int rkey = regionToken.getRemoteKey();
+            int rkey = regionToken.getLocalKey();
             int sizeInBytes = regionToken.getSizeInBytes();
 
-            rdmaBuffer.getByteBuffer().flip();
             rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
                 @Override
                 public void onSuccess(ByteBuffer buffer, Integer imm) {
@@ -102,6 +102,7 @@ public class RdmaDriverManager {
                         rdmaBuffer.getByteBuffer().clear();
                         rdmaBufferManager.put(rdmaBuffer);
                         regionToken.setAddress(remoteAddress + byteBuffer.capacity());
+                        LOG.info("Driver sends batch to worker " + workId);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -116,7 +117,7 @@ public class RdmaDriverManager {
                         throw new RuntimeException(e);
                     }
                 }
-            }, rdmaBuffer.getAddress(), sizeInBytes, rdmaBuffer.getLkey(), remoteAddress, rkey);
+            }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         }
     }
     public RdmaBufferManager getRdmaBufferManager() {

@@ -42,7 +42,7 @@ public class FileDataGenerator {
     private ArrayList<String> eventList = new ArrayList<>();//event list
     private String[] eventTypes;//event list
     private int eventID = 0;
-    private HashMap<String, HashMap<String,FastZipfGenerator>> zipfGeneratorHashMap= new HashMap<>();//event -> key -> zipf generator
+    private HashMap<String, HashMap<String, FastZipfGenerator>> zipfGeneratorHashMap= new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, HashMap<String, List<FastZipfGenerator>>> partitionZipfGeneratorHashMap = new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, Double> eventAbortMap = new HashMap<>();//event -> AbortRatio
     private HashMap<String, Integer> eventMultiPartitionMap = new HashMap<>();//event -> MultiPartitionRatio
@@ -108,7 +108,7 @@ public class FileDataGenerator {
             HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();//tableNames -> zipf generator
             HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();//tableNames -> Lists of partition zipf generator
             for (String tableName: eventKeyMap.get(eventType).keySet()) {
-                zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, 0,123456789));
+                zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, 0,random.nextInt()));
                 List<FastZipfGenerator> zipfGenerators = new ArrayList<>();
                 for (int i = 0; i < totalPartition; i++) {
                     zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName)/ totalPartition, (double) stateAssessSkewMap.get(eventType) / 100, i * intervalMaps.get(tableName),123456789));
@@ -162,7 +162,7 @@ public class FileDataGenerator {
     private HashMap<String, List<String>> generateKey(String eventType) {//tableName -> List of keys
         HashMap<String, List<String>> keyMap = new HashMap<>();
         HashMap<String, Integer> keysForTable = this.eventKeyMap.get(eventType);
-        for (Map.Entry<String, Integer> entry : keysForTable.entrySet()) {
+        for (Map.Entry<String, Integer> entry : keysForTable.entrySet()) {//TableName -> keyNumber
             List<String> keys = new ArrayList<>();
             int key = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
             keys.add(String.valueOf(key));

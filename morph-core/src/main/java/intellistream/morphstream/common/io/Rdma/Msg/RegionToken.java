@@ -6,7 +6,7 @@ package intellistream.morphstream.common.io.Rdma.Msg;
 public class RegionToken {
     private int sizeInBytes;
     private long address;
-    private int localKey;
+    private int localKey;//Local keys can be passed around to enable accessing this memory from remote nodes.
     private int remoteKey;
     public RegionToken(int sizeInBytes, long address, int localKey, int remoteKey) {
         this.sizeInBytes = sizeInBytes;
