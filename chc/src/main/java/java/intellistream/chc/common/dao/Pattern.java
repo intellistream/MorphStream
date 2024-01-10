@@ -1,11 +1,14 @@
 package java.intellistream.chc.common.dao;
 
+import lombok.Data;
+
 /**
  * There exists four types of access patterns in the CHC system.
  */
+@Data
 public class Pattern {
-    public final StateType stateType;
-    public final AccessType accessType;
+    private final StateType stateType;
+    private final AccessType accessType;
 
     public Pattern(StateType stateType, AccessType accessType) {
         this.stateType = stateType;

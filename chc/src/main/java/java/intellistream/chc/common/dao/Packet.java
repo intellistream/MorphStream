@@ -7,8 +7,11 @@ import lombok.Data;
  */
 @Data
 public class Packet {
-    public final String src;
-    public final String dst;
-    public final String protocol;
-    public final String payload;
+    private final String src;
+    private final String dst;
+    private final String protocol;
+    private final String payload;
+
+    // Other fields
+    private final Pattern pattern;
 }
