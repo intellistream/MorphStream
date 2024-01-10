@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import {Job} from "../../model/Job";
+import {Job} from "../../dto/Job";
 import {HttpClient} from "@angular/common/http";
 
 @Injectable({

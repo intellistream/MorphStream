@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {OverviewService} from "./overview.service";
 import {FormBuilder, FormGroup} from "@angular/forms";
-import {Job} from "../../model/Job";
+import {Job} from "../../dto/Job";
 
 @Component({
   selector: 'app-home',

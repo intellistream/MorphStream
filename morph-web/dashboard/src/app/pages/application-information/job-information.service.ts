@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import {Observable} from "rxjs";
-import {Job} from "../../model/Job";
+import {Job} from "../../dto/Job";
 import {HttpClient} from "@angular/common/http";
-import {Batch} from "../../model/Batch";
+import {Batch} from "../../dto/Batch";
 
 @Injectable({
   providedIn: 'root'

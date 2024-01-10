@@ -16,16 +16,13 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { OverviewComponent } from "./pages/overview/overview.component";
 import { HeaderComponent } from "./common/layout/header/header.component";
 import { FooterComponent } from "./common/layout/footer/footer.component";
-import { ApplicationCardComponent } from "./snippets/application-card/application-card.component";
 import { NzGridModule } from "ng-zorro-antd/grid";
-import { ScrollWrapperComponent } from "./snippets/scroll-wrapper/scroll-wrapper.component";
 import { NzButtonModule } from "ng-zorro-antd/button";
 import { JobInformationComponent } from "./pages/application-information/job-information.component";
 import { NzBreadCrumbModule } from "ng-zorro-antd/breadcrumb";
 import { NzProgressModule } from "ng-zorro-antd/progress";
 import { NzCardModule } from "ng-zorro-antd/card";
 import { NzModalModule } from "ng-zorro-antd/modal";
-import { FinishedStatisticsBoardComponent } from "./snippets/finished-statistics-board/finished-statistics-board.component";
 import { SubmitNewJobComponent } from "./pages/submit-new-job/submit-new-job.component";
 import { NzTabsModule } from "ng-zorro-antd/tabs";
 import { NzDescriptionsModule } from "ng-zorro-antd/descriptions";
@@ -61,10 +58,7 @@ registerLocaleData(en);
     OverviewComponent,
     HeaderComponent,
     FooterComponent,
-    ApplicationCardComponent,
-    ScrollWrapperComponent,
     JobInformationComponent,
-    FinishedStatisticsBoardComponent,
     SubmitNewJobComponent,
     CodeEditorComponent
   ],

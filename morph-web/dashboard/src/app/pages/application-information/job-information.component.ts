@@ -1,7 +1,7 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 
 import {JobInformationService} from "./job-information.service";
-import {Job} from "../../model/Job";
+import {Job} from "../../dto/Job";
 import {ActivatedRoute} from "@angular/router";
 
 import * as d3 from 'd3';
@@ -11,7 +11,7 @@ import {
   NzGraphDataDef,
   NzGraphZoomDirective,
 } from "ng-zorro-antd/graph";
-import {Batch} from "../../model/Batch";
+import {Batch} from "../../dto/Batch";
 import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
 import {NzMessageService} from "ng-zorro-antd/message";
 
