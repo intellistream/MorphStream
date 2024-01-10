@@ -87,7 +87,7 @@ public class MorphStreamFrontend extends Thread{
     private ByteBuffer getResult() throws IOException {
         if (hasRemaining() == -1) {
             for (int i = 0; i < workerIdToCircularRdmaBufferMap.size(); i++) {
-                tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead();
+                tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead(this.threadId);
                 int length = tempCanRead.getInt();
                 if (length != 0) {
                     List<Integer> lengthQueue = new ArrayList<>();

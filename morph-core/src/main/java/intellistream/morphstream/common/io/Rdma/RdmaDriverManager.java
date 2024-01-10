@@ -93,7 +93,6 @@ public class RdmaDriverManager {
 
             long remoteAddress = regionToken.getAddress();
             int rkey = regionToken.getLocalKey();
-            int sizeInBytes = regionToken.getSizeInBytes();
 
             rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
                 @Override

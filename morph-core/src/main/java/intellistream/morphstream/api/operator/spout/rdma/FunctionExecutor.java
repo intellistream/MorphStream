@@ -80,7 +80,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     }
     private byte[] getMsg() throws IOException {
         if (msgBuffer == null || !msgBuffer.hasRemaining()) {
-            canRead = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().canRead();
+            canRead = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().canRead(this.threadId);
             int length = canRead.getInt();
             if (length == 0) {
                 return null;
