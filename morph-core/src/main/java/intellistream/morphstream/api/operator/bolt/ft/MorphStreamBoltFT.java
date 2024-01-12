@@ -83,9 +83,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
-        RuntimeMonitor.get().PREPARE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_EXECUTE(in);
-        RuntimeMonitor.get().ACC_PREPARE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_TXN_PROCESS(_bid);
     }
 
@@ -98,12 +96,10 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
-        RuntimeMonitor.get().PRE_EXE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = (TransactionalEvent) input_event;
             Transaction_Request_Construct(event, txnContext);
-            RuntimeMonitor.get().ACC_PRE_EXE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         }
     }
 
@@ -195,33 +191,22 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             {
                 transactionManager.start_evaluate(this.getOperatorID(), currentBatchID, numEvents, thread_Id, 0);
                 if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
-                    BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                     this.db.asyncSnapshot(in.getMarker().getSnapshotId(), this.thread_Id, this.ftManager);
-                    MeasureTools.END_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                 } else if (Objects.equals(in.getMarker().getMessage(), "commit") || Objects.equals(in.getMarker().getMessage(), "commit_early")) {
-                    MeasureTools.BEGIN_LOGGING_TIME_MEASURE(this.thread_Id);
                     this.db.asyncCommit(in.getMarker().getSnapshotId(), this.thread_Id, this.loggingManager);
-                    MeasureTools.END_LOGGING_TIME_MEASURE(this.thread_Id);
                 } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot") || Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
-                    MeasureTools.BEGIN_LOGGING_TIME_MEASURE(this.thread_Id);
                     this.db.asyncCommit(in.getMarker().getSnapshotId(), this.thread_Id, this.loggingManager);
-                    MeasureTools.END_LOGGING_TIME_MEASURE(this.thread_Id);
-                    BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                     this.db.asyncSnapshot(in.getMarker().getSnapshotId(), this.thread_Id, this.ftManager);
-                    MeasureTools.END_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                 }
             }
             if (Objects.equals(in.getMarker().getMessage(), "commit_early") || Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
                 this.loggingManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new LoggingResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
             }
             { // post-processing
-                RuntimeMonitor.get().POST_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
                 Transaction_Post_Process();
-                RuntimeMonitor.get().POST_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
             }
             if (enable_latency_measurement) {
                 isNewBatch = true;
-                RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
                 latencyStat.clear();
             }
             if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
@@ -236,7 +221,6 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             }
             eventQueue.clear();
             eventStateAccessesMap.clear();
-            RuntimeMonitor.get().END_TOTAL_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
             currentBatchID += 1;
             if (isCombo) {
                 sink.execute(in);

@@ -31,8 +31,7 @@ public class RegionToken {
         return address;
     }
 
-    public void
-    setAddress(long address) {
+    public void setAddress(long address) {
         this.address = address;
     }
 

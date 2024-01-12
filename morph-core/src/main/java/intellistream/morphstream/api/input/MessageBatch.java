@@ -73,10 +73,13 @@ public class MessageBatch {
                 bout.writeInt(msg.getEncodeLength());
                 bout.write(msg.message());
             }
-            bout.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return bout.buffer();
+    }
+    public void clear() {
+        msgs.clear();
+        encoded_length = totalThreads * 4;//INT
     }
 }

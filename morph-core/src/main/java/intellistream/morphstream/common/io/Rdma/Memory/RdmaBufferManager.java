@@ -3,6 +3,7 @@ package intellistream.morphstream.common.io.Rdma.Memory;
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Conf.RdmaChannelConf;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.ExecutorsServiceContext;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,12 +13,15 @@ import java.util.concurrent.ExecutorService;
 
 public class RdmaBufferManager {
     private static final Logger LOG = LoggerFactory.getLogger(RdmaBufferManager.class);
+    @Getter
     private IbvPd pd;
     private static final int MIN_BLOCK_SIZE = 16 * 1024;
     private final int minimumAllocationSize;
     private long maxCacheSize;
+    @Getter
     private CircularRdmaBuffer circularRdmaBuffer;//Receive Events for worker and Receive Results for driver
-    private ConcurrentHashMap<Integer, CircularRdmaBuffer> resultBufferMap = new ConcurrentHashMap<>();//workerId -> CircularRdmaBuffer
+    @Getter
+    private final ConcurrentHashMap<Integer, CircularRdmaBuffer> resultBufferMap = new ConcurrentHashMap<>();//workerId -> CircularRdmaBuffer
     private final ConcurrentHashMap<Integer, AllocatorStack> allocStackMap = new ConcurrentHashMap<>();//length -> bufferStack
     private static final ExecutorService executorService = ExecutorsServiceContext.getInstance();
     public RdmaBufferManager(IbvPd pd, RdmaChannelConf conf) throws IOException {
@@ -72,13 +76,7 @@ public class RdmaBufferManager {
     public void put(RdmaBuffer buf) {
 
     }
-    public IbvPd getPd() { return this.pd; }
-    public CircularRdmaBuffer getCircularRdmaBuffer() {
-        return circularRdmaBuffer;
-    }
-    public ConcurrentHashMap<Integer, CircularRdmaBuffer> getResultBufferMap() {
-        return resultBufferMap;
-    }
+
     public CircularRdmaBuffer getResultBuffer(int workerId) {
         return resultBufferMap.get(workerId);
     }

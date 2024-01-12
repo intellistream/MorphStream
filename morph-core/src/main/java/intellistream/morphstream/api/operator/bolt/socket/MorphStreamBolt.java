@@ -63,9 +63,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
-        RuntimeMonitor.get().PREPARE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_EXECUTE(in);
-        RuntimeMonitor.get().ACC_PREPARE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_TXN_PROCESS(_bid);
     }
 
@@ -78,12 +76,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
-        RuntimeMonitor.get().PRE_EXE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = input_event;
             Transaction_Request_Construct(event, txnContext);
-            RuntimeMonitor.get().ACC_PRE_EXE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         }
     }
 
@@ -154,7 +150,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     sink.execute(new Tuple(this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, msgs._1(), udfResultReflect)));
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                System.out.println(e);
                 throw new RuntimeException("Client class instantiation failed");
             } catch (NoSuchMethodException e) {
                 throw new RuntimeException("Client post UDF invocation failed");
@@ -176,18 +171,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 transactionManager.start_evaluate(this.getOperatorID(), currentBatchID, numEvents, thread_Id, 0);
             }
             { // post-processing
-                RuntimeMonitor.get().POST_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
                 Transaction_Post_Process();
-                RuntimeMonitor.get().POST_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
             }
             if (enable_latency_measurement) {
                 isNewBatch = true;
-                RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
                 latencyStat.clear();
             }
             eventQueue.clear();
             eventStateAccessesMap.clear();
-            RuntimeMonitor.get().END_TOTAL_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
             currentBatchID += 1;
         } else {
             if (enable_latency_measurement) {

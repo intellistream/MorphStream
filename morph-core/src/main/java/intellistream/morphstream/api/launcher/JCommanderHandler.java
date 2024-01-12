@@ -215,11 +215,11 @@ public class JCommanderHandler {
     public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
     public String eventRatio = "50,50";
-    @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
+    @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")//1000
     public String ratioOfMultiPartitionTransactionsForEvents = "50,50";
-    @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
+    @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")// 100
     public String stateAccessSkewnessForEvents = "0,0";
-    @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
+    @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")//1000
     public String abortRatioForEvents = "0,0";
 
     //Cluster configuration
@@ -253,7 +253,7 @@ public class JCommanderHandler {
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--BatchMessageCapacity"}, description = "BatchMessageCapacity")
     public int BatchMessageCapacity = 1000;
-    @Parameter(names = {"--shuffleType"}, description = "shuffleType: Sort (0), Random (1), Optimized (2)")
+    @Parameter(names = {"--shuffleType"}, description = "shuffleType: Random (0), Sort (1), Static Partition(2), Optimized (3)")
     public int shuffleType = 0;
 
     /**

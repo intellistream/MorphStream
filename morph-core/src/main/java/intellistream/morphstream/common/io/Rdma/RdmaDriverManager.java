@@ -85,8 +85,15 @@ public class RdmaDriverManager {
             }
             MessageBatch messageBatch = workerMessageBatchMap.get(workId);
             ByteBuffer byteBuffer = messageBatch.buffer();
+            byteBuffer.flip();
+            messageBatch.clear();
+
             RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
-            rdmaBuffer.getByteBuffer().put(byteBuffer);
+            ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
+            dataBuffer.put(byteBuffer);
+            dataBuffer.flip();
+            System.out.println(dataBuffer.getInt());
+            dataBuffer.flip();
 
             RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
             RegionToken regionToken = workerRegionTokenMap.get(workId);

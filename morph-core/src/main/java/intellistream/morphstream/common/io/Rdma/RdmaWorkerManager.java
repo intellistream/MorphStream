@@ -102,7 +102,6 @@ public class RdmaWorkerManager implements Serializable {
 
             long remoteAddress = regionToken.getAddress();
             int rkey = regionToken.getLocalKey();
-            int sizeInBytes = regionToken.getSizeInBytes();
 
             rdmaBuffer.getByteBuffer().flip();
             rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
@@ -124,7 +123,7 @@ public class RdmaWorkerManager implements Serializable {
                         throw new RuntimeException(e);
                     }
                 }
-            }, rdmaBuffer.getAddress(), sizeInBytes, rdmaBuffer.getLkey(), remoteAddress, rkey);
+            }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         }
     }
 }

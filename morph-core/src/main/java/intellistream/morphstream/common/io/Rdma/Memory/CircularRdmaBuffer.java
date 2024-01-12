@@ -2,6 +2,7 @@ package intellistream.morphstream.common.io.Rdma.Memory;
 
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
+import scala.Tuple2;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -22,17 +23,19 @@ public class CircularRdmaBuffer {
         }
         this.totalThreads = totalThreads;
     }
-    public ByteBuffer canRead(int threadId) throws IOException {
+    public Tuple2<Long, ByteBuffer> canRead(int threadId) throws IOException {
+        long baseOffset = this.readOffset[threadId];
         canRead[threadId] = this.buffer.getByteBuffer(readOffset[threadId], 4 * totalThreads);
         int length = canRead[threadId].getInt();
         if (length != 0) {
-           while (canRead[threadId].hasRemaining()) {
-               readOffset[threadId] = readOffset[threadId] + canRead[threadId].getInt();
-           }
+            readOffset[threadId] = readOffset[threadId] + length;
+            while (canRead[threadId].hasRemaining()) {
+                readOffset[threadId] = readOffset[threadId] + canRead[threadId].getInt();
+            }
             readOffset[threadId] = readOffset[threadId] + 4L * totalThreads;
         }
         canRead[threadId].flip();
-        return canRead[threadId];
+        return new Tuple2<>(baseOffset,canRead[threadId]);
     }
     public ByteBuffer read(long address, int length) throws IOException {
         return this.buffer.getByteBuffer(address, length);

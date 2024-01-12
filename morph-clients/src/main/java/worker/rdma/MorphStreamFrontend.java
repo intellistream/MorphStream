@@ -13,6 +13,7 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
+import scala.Tuple2;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,7 +28,7 @@ public class MorphStreamFrontend extends Thread{
     private List<Integer> workIdList = new ArrayList<>();
     protected int sendCount = 0;
     protected int receiveCount = 0;
-    private ByteBuffer tempCanRead;//the temp buffer to decide whether the result buffer can read
+    private Tuple2<Long, ByteBuffer> tempCanRead;//the temp buffer to decide whether the result buffer can read
     private HashMap<Integer, ByteBuffer> workerIdToResultBufferMap = new HashMap<>();//the map to store the result buffer that can read
     private ConcurrentHashMap<Integer, CircularRdmaBuffer> workerIdToCircularRdmaBufferMap = new ConcurrentHashMap<>();//the map to store all result buffer
     private Statistic statistic;
@@ -88,14 +89,14 @@ public class MorphStreamFrontend extends Thread{
         if (hasRemaining() == -1) {
             for (int i = 0; i < workerIdToCircularRdmaBufferMap.size(); i++) {
                 tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead(this.threadId);
-                int length = tempCanRead.getInt();
+                int length = tempCanRead._2.getInt();
                 if (length != 0) {
                     List<Integer> lengthQueue = new ArrayList<>();
                     lengthQueue.add(length);
-                    while(tempCanRead.hasRemaining()) {
-                        lengthQueue.add(tempCanRead.getInt());
+                    while(tempCanRead._2.hasRemaining()) {
+                        lengthQueue.add(tempCanRead._2.getInt());
                     }
-                    long myOffset = 0;
+                    long myOffset = 4L * threadId + tempCanRead._1();
                     int myLength = lengthQueue.get(this.threadId);
                     for (int j = 0; j < this.threadId; j++) {
                         myOffset += lengthQueue.get(i);

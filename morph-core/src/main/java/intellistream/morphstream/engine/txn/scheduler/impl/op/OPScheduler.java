@@ -110,7 +110,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             for (MetaTypes.DependencyType type : dependencyTypes) {
                 for (Operation child : operation.getChildren(type)) {
                     TPGEdge edge = new TPGEdge(operationID, child.stateAccess.getOperationID(), type.toString());
-                    RuntimeMonitor.get().UPDATE_TPG_EDGE(operation.stateAccess.getOperatorID(), batchID, node, edge);
                 }
             }
         }
@@ -254,7 +253,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             String LDParentOperationID = String.valueOf(headerOperation.stateAccess.getOperationID());
             TPGNode node = new TPGNode(operationID, set_op.accessType.toString(), set_op.table_name, set_op.d_record.record_.GetPrimaryKey());
             TPGEdge edge = new TPGEdge(LDParentOperationID, operationID, MetaTypes.DependencyType.LD.toString());
-            RuntimeMonitor.get().UPDATE_TPG_EDGE(set_op.stateAccess.getOperatorID(), batchID, node, edge);
 
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
             set_op.setTxnOpId(txnOpId++);

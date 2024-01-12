@@ -15,6 +15,7 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple2;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -30,7 +31,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private HashMap<String, FunctionDescription> FunctionDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
     private ByteBuffer msgBuffer;
-    private ByteBuffer canRead;
+    private Tuple2<Long, ByteBuffer> canRead;
     public FunctionExecutor(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
         this.operatorID = operatorID;
@@ -81,16 +82,16 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private byte[] getMsg() throws IOException {
         if (msgBuffer == null || !msgBuffer.hasRemaining()) {
             canRead = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().canRead(this.threadId);
-            int length = canRead.getInt();
+            int length = canRead._2().getInt();
             if (length == 0) {
                 return null;
             } else {
                 List<Integer> lengthQueue = new ArrayList<>();
                 lengthQueue.add(length);
-                while(canRead.hasRemaining()) {
-                    lengthQueue.add(canRead.getInt());
+                while(canRead._2().hasRemaining()) {
+                    lengthQueue.add(canRead._2().getInt());
                 }
-                long myOffset = 0;
+                long myOffset = 4L * tthread + canRead._1();
                 int myLength = lengthQueue.get(this.threadId);
                 for (int i = 0; i < this.threadId; i++) {
                     myOffset += lengthQueue.get(i);
@@ -100,6 +101,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
         }
         int length1 = msgBuffer.getInt();
         byte[] bytes1 = new byte[length1];
+        msgBuffer.get(bytes1);
         return bytes1;
     }
 }

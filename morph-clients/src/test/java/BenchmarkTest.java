@@ -26,7 +26,7 @@ public class BenchmarkTest {
                 threads.add(t);
                 t.start();
             }
-            sleep(12000);
+            sleep(205000);
             driverTest.stopDriver();
             for (int threadNum = 0; threadNum < clientNum; threadNum++) {
                 threads.get(threadNum).stopRunning();

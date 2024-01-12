@@ -353,9 +353,7 @@ public class RdmaChannel {
             } else {
                 if (!isWarnedOnSendOverSubscription) {
                     isWarnedOnSendOverSubscription = true;
-                    LOG.warn(this + " oversubscription detected. RDMA" +
-                            " send queue depth is too small. To improve performance, please set" +
-                            " spark.shuffle.rdma.sendQueueDepth to a higher value (current depth: " + sendDepth);
+                    LOG.warn(this + " oversubscription detected. RDMA" + " send queue depth is too small. To improve performance, please set" + "rdma.sendQueueDepth to a higher value (current depth: " + sendDepth);
                 }
                 sendWrQueue.add(pendingSend);
 

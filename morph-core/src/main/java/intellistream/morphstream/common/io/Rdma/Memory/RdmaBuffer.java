@@ -7,6 +7,7 @@ import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
 import intellistream.morphstream.common.io.Unsafe.Platform;
 import intellistream.morphstream.common.io.Unsafe.memory.MemoryBlock;
 import intellistream.morphstream.common.io.Unsafe.memory.UnsafeMemoryAllocator;
+import lombok.Getter;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -24,7 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RdmaBuffer {
     private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaBuffer.class);
     private IbvMr ibvMr;//Memory Region
+    @Getter
     private final long address;
+    @Getter
     private final int length;
     private final MemoryBlock block;
     private AtomicInteger refCount;
@@ -81,13 +84,6 @@ public class RdmaBuffer {
             unregister();
             unsafeAlloc.free(block);
         }
-    }
-    public long getAddress() {
-        return address;
-    }
-
-    public int getLength() {
-        return length;
     }
 
     public int getLkey() {return ibvMr.getLkey();}

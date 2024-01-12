@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input.statistic;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.util.CompactHashMap.HashmapUtils;
 
 import java.util.*;
 
@@ -62,11 +63,11 @@ public class Statistic {
     }
     private void getVotes(List<String> keys){
         switch (shuffleType) {
-            case 0://Sort
-                getVotesSort(keys);
-                break;
-            case 1://Random
+            case 0://Random
                 getVotesRandom(keys);
+                break;
+            case 1://Sort
+                getVotesSort(keys);
                 break;
             case 2://Partition
                 getVotesPartition(keys);
@@ -126,23 +127,18 @@ public class Statistic {
     }
     private void getVotesOptimized(List<String> keys) {
         for (String key : keys) {
-            int targetWorkerId = 0;
-            int min = Integer.MAX_VALUE;
+            HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
+            HashMap<Integer, Integer> totalKeysToWorkerIdMap = new HashMap<>();
             for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
-                int totalEvents = inputStatistic.totalEvents;
-                if (totalEvents < min) {
-                    min = totalEvents;
-                    targetWorkerId = inputStatistic.workerId;
-                }
+                totalEventsToWorkerIdMap.put(inputStatistic.workerId, inputStatistic.totalEvents);
+                totalKeysToWorkerIdMap.put(inputStatistic.workerId, inputStatistic.getNumber(key));
             }
-            int max = 0;
-            for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
-                int number = inputStatistic.getNumber(key);
-                if (number > max) {
-                    max = number;
-                    targetWorkerId = inputStatistic.workerId;
-                }
-            }
+
+            HashMap<Integer, Double> totalEventsToScoreMap = Utils.assignLowScores(totalEventsToWorkerIdMap);//small get high score
+            HashMap<Integer, Double> totalKeysToScoreMap = Utils.assignHighScores(totalKeysToWorkerIdMap);//big get high score
+
+            int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0.5, 0.5);
+
             if (!this.ownershipTable.containsKey(key))
                 this.ownershipTable.put(key, targetWorkerId);
             this.tempVotes.add(targetWorkerId);

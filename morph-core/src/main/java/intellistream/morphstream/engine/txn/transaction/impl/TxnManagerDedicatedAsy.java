@@ -134,7 +134,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (threadId == 0) {
             scheduler = schedulerPool.get(schedulerType);
             log.info("Current Scheduler is " + schedulerType + " markId: " + markId);
-            RuntimeMonitor.get().UPDATE_SCHEDULER(operatorID, batchID, schedulerType);
         }
     }
     @Override
