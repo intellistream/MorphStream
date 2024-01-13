@@ -61,6 +61,32 @@ public class Database {
     }
 
     /**
+     * Transfer the exclusive state from one instance to another
+     * @param fromVertexId original vertex id
+     * @param fromInstanceId original instance id
+     * @param fromObjKey original object key
+     * @param toVertexId to vertex id
+     * @param toInstanceId to instance id
+     * @param toObjKey to object key
+     */
+    public void transferExclusiveState(int fromVertexId, int fromInstanceId, int fromObjKey, int toVertexId, int toInstanceId, int toObjKey) {
+        this.putExclusiveState(toVertexId, toInstanceId, toObjKey, this.findExclusiveState(fromVertexId, fromInstanceId, fromObjKey));
+        this.removeExclusiveState(fromVertexId, fromInstanceId, fromObjKey);
+    }
+
+    /**
+     * Transfer the shared state from one vertex to another
+     * @param fromVertexId original vertex id
+     * @param fromObjKey original object key
+     * @param toVertexId to vertex id
+     * @param toObjKey to object key
+     */
+    public void transferExclusiveState(int fromVertexId, int fromObjKey, int toVertexId, int toObjKey) {
+        this.putSharedState(toVertexId, toObjKey, this.findSharedState(fromVertexId, fromObjKey));
+        this.removeSharedState(fromVertexId, fromObjKey);
+    }
+
+    /**
      * Remove the shared state from the database
      * @param vertexId vertex id
      * @param objKey object key

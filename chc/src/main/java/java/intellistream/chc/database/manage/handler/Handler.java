@@ -1,14 +1,14 @@
 package java.intellistream.chc.database.manage.handler;
 
-import java.intellistream.chc.common.dao.Packet;
+import java.intellistream.chc.common.dao.Request;
 
 /**
  * Abstract handler
  */
 public abstract class Handler implements Runnable {
-    public final Packet packet;
+    public final Request request;
 
-    public Handler(Packet packet) {
-        this.packet = packet;
+    public Handler(Request request) {
+        this.request = request;
     }
 }
