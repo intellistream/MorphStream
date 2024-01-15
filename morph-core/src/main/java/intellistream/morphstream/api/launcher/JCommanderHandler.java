@@ -251,8 +251,10 @@ public class JCommanderHandler {
     public String workerPorts = "5540,5550,5580";
     @Parameter(names = {"--CircularBufferCapacity"}, description = "CircularBufferCapacity")
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
-    @Parameter(names = {"--sendMessageCapacity"}, description = "sendMessageCapacity")
+    @Parameter(names = {"--sendMessagePerFrontend"}, description = "sendMessagePerFrontend")
     public int sendMessagePerFrontend = 1000;
+    @Parameter(names = {"--returnResultPerWorker"}, description = "returnResultPerWorker")
+    public int returnResultPerWorker = 1000;
     @Parameter(names = {"--totalBatch"}, description = "total send batch to process")
     public int totalBatch = 5;
     @Parameter(names = {"--shuffleType"}, description = "shuffleType: Random (0), Sort (1), Static Partition(2), Optimized (3)")
@@ -342,6 +344,7 @@ public class JCommanderHandler {
         config.put("CircularBufferCapacity", CircularBufferCapacity);
         config.put("sendMessagePerFrontend", sendMessagePerFrontend);
         config.put("maxMessageCapacity", sendMessagePerFrontend * frontendNum);
+        config.put("returnResultPerWorker", returnResultPerWorker);
         config.put("totalBatch", totalBatch);
         config.put("shuffleType", shuffleType);
 

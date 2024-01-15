@@ -18,6 +18,7 @@ function ResetParameters() {
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 1000 \* tthread \* workerNum / frontendNum`
     totalBatch=10
+    returnResultPerWorker=`expr 10000 \* $frontendNum`
     shuffleType=0
     #Database Configurations
     numberItemsForTables="8000,8000"
