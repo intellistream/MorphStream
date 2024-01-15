@@ -16,7 +16,8 @@ function ResetParameters() {
     workerHosts="10.10.10.1,10.10.10.2"
     workerPorts="5540,5550"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    BatchMessageCapacity=1000
+    sendMessagePerFrontend=`expr 1000 \* tthread \* workerNum / frontendNum`
+    totalBatch=10
     shuffleType=0
     #Database Configurations
     numberItemsForTables="8000,8000"
@@ -40,8 +41,8 @@ function ResetParameters() {
     isDynamic=1
     workloadType="default,unchanging,unchanging,unchanging"
     shiftRate=1
-    checkpointInterval=10000
-    totalEvents=`expr $checkpointInterval \* $tthread \* $shiftRate \* $workerNum`
+    checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
+    totalEvents=`expr $checkpointInterval \* $shiftRate \* 4`
     #System Configurations
     schedulerPool="OG_NS_A"
     scheduler="OG_NS_A"
@@ -65,7 +66,8 @@ function runApplication() {
       --workerHosts $workerHosts \
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
-      --BatchMessageCapacity $BatchMessageCapacity \
+      --sendMessagePerFrontend $sendMessagePerFrontend \
+      --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \
@@ -109,7 +111,8 @@ function runApplication() {
       --workerHosts $workerHosts \
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
-      --BatchMessageCapacity $BatchMessageCapacity \
+      --sendMessagePerFrontend $sendMessagePerFrontend \
+      --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \

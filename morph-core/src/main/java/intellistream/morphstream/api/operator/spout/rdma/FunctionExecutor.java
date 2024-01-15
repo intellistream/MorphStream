@@ -67,7 +67,6 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                 generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, InputSource.inputFromByteToTxnEvent(msg), System.nanoTime());
                 tuple = new Tuple(this.taskId, context, generalMsg);
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-                counter ++;
                 if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                     if (model_switch(counter)) {
                         marker = new Tuple(this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, counter, myiteration, "punctuation"));
@@ -97,6 +96,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                     myOffset += lengthQueue.get(i);
                 }
                 msgBuffer = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().read(myOffset, myLength);
+                counter ++;
             }
         }
         int length1 = msgBuffer.getInt();

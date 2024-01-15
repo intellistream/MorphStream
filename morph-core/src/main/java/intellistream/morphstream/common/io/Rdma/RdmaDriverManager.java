@@ -10,12 +10,14 @@ import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
 import intellistream.morphstream.common.io.Rdma.Memory.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Memory.RdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
@@ -29,11 +31,13 @@ public class RdmaDriverManager {
     private final int driverPort;
     private final Configuration conf;
     private final CountDownLatch workerLatch;
+    @Getter
     private final RdmaBufferManager rdmaBufferManager;
     private ConcurrentHashMap<Integer, RdmaChannel> workerRdmaChannelMap = new ConcurrentHashMap<>();//workerId -> RdmaChannel
     private ConcurrentHashMap<Integer, RegionToken> workerRegionTokenMap = new ConcurrentHashMap<>();//workerId -> RegionToken
     @Getter
     private ConcurrentHashMap<Integer, MessageBatch> workerMessageBatchMap = new ConcurrentHashMap<>();//workerId -> MessageBatch
+    private ConcurrentHashMap<Integer, Integer> frontendTotalMessageCountMap = new ConcurrentHashMap<>();//frontendId -> total message count
     public RdmaDriverManager(boolean isDriver, Configuration conf) throws Exception {
         this.isDriver = isDriver;
         this.conf = conf;
@@ -46,6 +50,11 @@ public class RdmaDriverManager {
         workerLatch = MorphStreamEnv.get().workerLatch();
         //PreAllocate CircularRdmaBuffer to receive results from workers
         rdmaBufferManager.perAllocateResultBuffer(MorphStreamEnv.get().configuration().getInt("workerNum"), MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"));
+        //Message count to decide whether to send the batched messages
+        SOURCE_CONTROL.getInstance().config(MorphStreamEnv.get().configuration().getInt("frontendNum"), MorphStreamEnv.get().configuration().getInt("sendMessagePerFrontend"));
+        for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("frontendNum"); i++) {
+            frontendTotalMessageCountMap.put(i, 0);
+        }
         //Wait for workers to connect
         rdmaNode.bindConnectCompleteListener(new RdmaConnectionListener() {
             @Override
@@ -59,7 +68,7 @@ public class RdmaDriverManager {
                         RegionToken regionToken = rdmaNode.getRemoteRegionToken(rdmaChannel);
                         workerRdmaChannelMap.put(i, rdmaChannel);
                         workerRegionTokenMap.put(i, regionToken);
-                        workerMessageBatchMap.put(i, new MessageBatch(MorphStreamEnv.get().configuration().getInt("BatchMessageCapacity"), MorphStreamEnv.get().configuration().getInt("tthread")));
+                        workerMessageBatchMap.put(i, new MessageBatch(MorphStreamEnv.get().configuration().getInt("maxMessageCapacity"), MorphStreamEnv.get().configuration().getInt("tthread")));
                     }
                 }
                 workerLatch.countDown();
@@ -70,17 +79,20 @@ public class RdmaDriverManager {
             }
         });
     }
-    public void send(int workId, FunctionMessage functionMessage) throws Exception {
+    public void send(int frontendId, int workId, FunctionMessage functionMessage) throws Exception {
         synchronized (workerMessageBatchMap.get(workId).getWriteLock()) {
             workerMessageBatchMap.get(workId).add(functionMessage);
-            if (workerMessageBatchMap.get(workId).isFull()) {
-                sendBatch(workId);
-            }
+            frontendTotalMessageCountMap.put(frontendId, frontendTotalMessageCountMap.get(frontendId) + 1);
+        }
+        if (frontendTotalMessageCountMap.get(frontendId) >= SOURCE_CONTROL.getInstance().getMessagePerFrontend()) {
+            SOURCE_CONTROL.getInstance().startSendBarrier();
+            sendBatch(frontendId);
+            SOURCE_CONTROL.getInstance().endSendBarrier();
         }
     }
     public void sendBatch(int workId) throws Exception {
         synchronized (workerMessageBatchMap.get(workId).getWriteLock()) {
-            if (workerMessageBatchMap.get(workId).isEmpty()) {
+            if (workerMessageBatchMap.get(workId) == null || workerMessageBatchMap.get(workId).isEmpty()) {
                 return;
             }
             MessageBatch messageBatch = workerMessageBatchMap.get(workId);
@@ -91,8 +103,6 @@ public class RdmaDriverManager {
             RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
             ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
             dataBuffer.put(byteBuffer);
-            dataBuffer.flip();
-            System.out.println(dataBuffer.getInt());
             dataBuffer.flip();
 
             RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
@@ -125,8 +135,5 @@ public class RdmaDriverManager {
                 }
             }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         }
-    }
-    public RdmaBufferManager getRdmaBufferManager() {
-        return rdmaBufferManager;
     }
 }

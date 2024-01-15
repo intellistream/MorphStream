@@ -59,7 +59,7 @@ public class MorphStreamFrontend extends Thread{
         }
     }
     public void invokeFunctionToWorker(int workId) throws Exception {
-        rdmaDriverManager.send(workId, new FunctionMessage(tempInput));
+        rdmaDriverManager.send(this.threadId, workId, new FunctionMessage(tempInput));
         sendCount ++;
     }
 

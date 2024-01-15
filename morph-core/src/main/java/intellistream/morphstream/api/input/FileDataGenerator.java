@@ -4,6 +4,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.util.AppConfig;
 import intellistream.morphstream.util.FastZipfGenerator;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,7 @@ public class FileDataGenerator {
     private HashMap<String, Double> eventAbortMap = new HashMap<>();//event -> AbortRatio
     private HashMap<String, Integer> eventMultiPartitionMap = new HashMap<>();//event -> MultiPartitionRatio
     private String[] phaseType;//Phase Type for dynamic workload
+    @Getter
     protected List<String> tranToDecisionConf = new ArrayList<>();
     private int phase;
     private static ArrayList<TransactionalEvent> inputEvents;
@@ -299,12 +301,8 @@ public class FileDataGenerator {
             stringBuilder.append("1,");
         }
 
-        stringBuilder.append(eventID + MorphStreamEnv.get().configuration().getInt("checkpoint")*MorphStreamEnv.get().configuration().getInt("tthread"));
+        stringBuilder.append(eventID + MorphStreamEnv.get().configuration().getInt("checkpoint") * MorphStreamEnv.get().configuration().getInt("tthread"));
         this.tranToDecisionConf.add(stringBuilder.toString());
-    }
-
-    public List<String> getTranToDecisionConf() {
-        return tranToDecisionConf;
     }
 
     public void generateTPGProperties() {

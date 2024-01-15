@@ -47,7 +47,7 @@ public class RdmaWorkerManager implements Serializable {
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
         rdmaNode = new RdmaNode(workerHosts[managerId],  Integer.parseInt(workerPorts[managerId]), conf.rdmaChannelConf, conf.rdmaChannelConf.getRdmaChannelType());
         rdmaBufferManager = rdmaNode.getRdmaBufferManager();
-        messageBatch = new MessageBatch(MorphStreamEnv.get().configuration().getInt("BatchMessageCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"));
+        messageBatch = new MessageBatch(MorphStreamEnv.get().configuration().getInt("sendBatchMessageCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"));
         //Connect to driver
         driverRdmaChannel = rdmaNode.getRdmaChannel(new InetSocketAddress(driverHost, driverPort), true, conf.rdmaChannelConf.getRdmaChannelType());
         //Receive region token from driver

@@ -251,8 +251,10 @@ public class JCommanderHandler {
     public String workerPorts = "5540,5550,5580";
     @Parameter(names = {"--CircularBufferCapacity"}, description = "CircularBufferCapacity")
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
-    @Parameter(names = {"--BatchMessageCapacity"}, description = "BatchMessageCapacity")
-    public int BatchMessageCapacity = 1000;
+    @Parameter(names = {"--sendMessageCapacity"}, description = "sendMessageCapacity")
+    public int sendMessagePerFrontend = 1000;
+    @Parameter(names = {"--totalBatch"}, description = "total send batch to process")
+    public int totalBatch = 5;
     @Parameter(names = {"--shuffleType"}, description = "shuffleType: Random (0), Sort (1), Static Partition(2), Optimized (3)")
     public int shuffleType = 0;
 
@@ -338,7 +340,9 @@ public class JCommanderHandler {
             config.put("morphstream.socket.workerHosts", workerHosts);
         }
         config.put("CircularBufferCapacity", CircularBufferCapacity);
-        config.put("BatchMessageCapacity", BatchMessageCapacity);
+        config.put("sendMessagePerFrontend", sendMessagePerFrontend);
+        config.put("maxMessageCapacity", sendMessagePerFrontend * frontendNum);
+        config.put("totalBatch", totalBatch);
         config.put("shuffleType", shuffleType);
 
 

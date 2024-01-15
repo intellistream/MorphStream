@@ -41,7 +41,7 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        punctuation_interval = config.getInt("checkpoint");
+        punctuation_interval = config.getInt("totalBatch");
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
         ccOption = config.getInt("CCOption", 0);
