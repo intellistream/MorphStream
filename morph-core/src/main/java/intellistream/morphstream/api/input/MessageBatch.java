@@ -19,7 +19,7 @@ public class MessageBatch {
     public MessageBatch(int buffer_size, int totalThreads) {
         this.buffer_size = buffer_size;
         msgs = new ArrayList<>();
-        encoded_length = 2 + 4 + totalThreads * 4 + 2;//START_FLAG(Short) + TotalLength(Int) + MessageBlockLength(Int) * totalThreads + EndFlag(Short)
+        encoded_length = 0;
         this.totalThreads = totalThreads;
     }
     public void add(FunctionMessage msg) {
@@ -58,7 +58,7 @@ public class MessageBatch {
         return writeLock;
     }
     public ByteBuffer buffer() {
-        ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(encoded_length));
+        ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(2 + 4 + totalThreads * 4 + encoded_length + 2));//START_FLAG(Short) + TotalLength(Int) + MessageBlockLength(Int) * totalThreads + EndFlag(Short)
         try {
             bout.writeShort(SOURCE_CONTROL.START_FLAG);//START_FLAG(Short)
             bout.writeInt(encoded_length);//TotalLength(Int)
@@ -85,6 +85,6 @@ public class MessageBatch {
     }
     public void clear() {
         msgs.clear();
-        encoded_length = totalThreads * 4 + 4 + 2;//TotalLength(Int) + MessageBlockLength(Int) * totalThreads + EndFlag(Short)
+        encoded_length = 0;
     }
 }
