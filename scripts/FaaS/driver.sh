@@ -2,10 +2,10 @@
 source ../dir.sh || exit
 function ResetParameters() {
     #Cluster Configurations
-    isDriver=0
+    isDriver=1
     workerId=0
     workerNum=1
-    tthread=5
+    tthread=4
     clientNum=4
     frontendNum=4
     clientClassName="client.BankingSystemClient"
@@ -14,18 +14,17 @@ function ResetParameters() {
     driverHost="10.10.10.1"
     driverPort=5570
     workerHosts="10.10.10.2"
-    workerPorts="5550"
+    workerPorts="5540"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 1000 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=10
+    sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`
+    totalBatch=5
     returnResultPerWorker=`expr 10000 \* $frontendNum`
-    shuffleType=0
+    shuffleType=3
     #Database Configurations
     numberItemsForTables="8000,8000"
     NUM_ITEMS=8000
     tableNames="accounts,bookEntries"
     keyDataTypesForTables="String,String"
-
     valueDataTypesForTables="double,double"
     valueNamesForTables="balance,balance"
     #Input Configurations
@@ -46,9 +45,9 @@ function ResetParameters() {
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
     #System Configurations
-    schedulerPool="OG_NS_A"
-    scheduler="OG_NS_A"
-    defaultScheduler="OG_NS_A"
+    schedulerPool="OP_NS_A"
+    scheduler="OP_NS_A"
+    defaultScheduler="OP_NS_A"
     CCOption=3 #TSTREAM
     complexity=0
 }
