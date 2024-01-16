@@ -42,6 +42,8 @@ public class SignalService extends AbstractService {
      * @return true if the job is submitted successfully, false otherwise
      */
     public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code) {
+        System.out.println(code);
+        // TODO: analyze code and generate job
         WebServer.createJobInfoJSON(jobName);
         if (startNow) {
             try {

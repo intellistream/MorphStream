@@ -10,10 +10,15 @@
       </nz-breadcrumb-item>
     </nz-breadcrumb>
     <div id="code-container">
-      <!--      <ngx-codemirror id="codemirror"-->
-      <!--        [(ngModel)]="code"-->
-      <!--        [options]="codemirrorOptions">-->
-      <!--      </ngx-codemirror>-->
+<!--      <ngx-codemirror id="codemirror"-->
+<!--                      [(ngModel)]="code"-->
+<!--                      [options]="{-->
+<!--                      lineNumbers: true,-->
+<!--                      theme: 'material',-->
+<!--                      mode: 'text/x-java',-->
+<!--            }">-->
+<!--      </ngx-codemirror>-->
+
       <nz-code-editor class="editor" [ngModel]="code" [nzEditorOption]="{ language: 'java' }"></nz-code-editor>
     </div>
     <nz-row nzJustify="start">
@@ -47,7 +52,7 @@
         <nz-col nzSpan="24">
           <nz-form-item>
             <nz-form-label nzSpan="6" nzRequired>new job</nz-form-label>
-            <nz-form-control nzSpan="18">
+            <nz-form-control nzSpan="18" nzErrorTip="input the job name!">
               <input nz-input [(ngModel)]="job" placeholder="Job" formControlName="job" style="width: 100%">
             </nz-form-control>
           </nz-form-item>

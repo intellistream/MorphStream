@@ -18,7 +18,7 @@ import { HeaderComponent } from "./common/layout/header/header.component";
 import { FooterComponent } from "./common/layout/footer/footer.component";
 import { NzGridModule } from "ng-zorro-antd/grid";
 import { NzButtonModule } from "ng-zorro-antd/button";
-import { JobInformationComponent } from "./pages/application-information/job-information.component";
+import { JobInformationComponent } from "./pages/job-information/job-information.component";
 import { NzBreadCrumbModule } from "ng-zorro-antd/breadcrumb";
 import { NzProgressModule } from "ng-zorro-antd/progress";
 import { NzCardModule } from "ng-zorro-antd/card";

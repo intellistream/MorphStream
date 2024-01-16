@@ -13,15 +13,17 @@ import {NzMessageService} from "ng-zorro-antd/message";
 export class CodeEditorComponent implements AfterViewInit{
   job = '';
   parallelism = 4;
-
   code = `import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor'`;
   isSubmittingNewJob = false;
-
   submitForm: FormGroup<{
     job: FormControl<string>;
     parallelism: FormControl<number>;
     startNow: FormControl<boolean>;
   }>;
+
+
+  ngAfterViewInit(): void {
+  }
 
   constructor(private fb: NonNullableFormBuilder, private codeEditorService: CodeEditorService, private message: NzMessageService) {
     this.submitForm = this.fb.group({
@@ -29,9 +31,6 @@ export class CodeEditorComponent implements AfterViewInit{
       parallelism: [4, [Validators.required]],
       startNow: [false, [Validators.required]]
     });
-  }
-
-  ngAfterViewInit(): void {
   }
 
   submitNewJob() {

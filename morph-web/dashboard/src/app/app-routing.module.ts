@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import {OverviewComponent} from "./pages/overview/overview.component";
-import {JobInformationComponent} from "./pages/application-information/job-information.component";
+import {JobInformationComponent} from "./pages/job-information/job-information.component";
 import {SubmitNewJobComponent} from "./pages/submit-new-job/submit-new-job.component";
 import {CodeEditorComponent} from "./pages/code-editor/code-editor.component";
 
