@@ -5,6 +5,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.rdma.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.api.operator.sink.rdma.ApplicationSink;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutCombo;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -81,22 +82,20 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private byte[] getMsg() throws IOException {
         if (msgBuffer == null || !msgBuffer.hasRemaining()) {
             canRead = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().canRead(this.threadId);
-            int length = canRead._2().getInt();
-            if (length == 0) {
-                return null;
-            } else {
+            if (canRead._1() != 0) {
                 List<Integer> lengthQueue = new ArrayList<>();
-                lengthQueue.add(length);
                 while(canRead._2().hasRemaining()) {
                     lengthQueue.add(canRead._2().getInt());
                 }
-                long myOffset = 4L * tthread + canRead._1();
+                long myOffset = canRead._1();
                 int myLength = lengthQueue.get(this.threadId);
                 for (int i = 0; i < this.threadId; i++) {
                     myOffset += lengthQueue.get(i);
                 }
                 msgBuffer = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().read(myOffset, myLength);
                 counter ++;
+            } else {
+                return null;
             }
         }
         int length1 = msgBuffer.getInt();

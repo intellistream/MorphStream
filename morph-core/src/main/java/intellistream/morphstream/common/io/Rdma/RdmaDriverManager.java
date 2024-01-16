@@ -91,49 +91,53 @@ public class RdmaDriverManager {
         }
     }
     public void sendBatch(int workId) throws Exception {
-        synchronized (workerMessageBatchMap.get(workId).getWriteLock()) {
-            if (workerMessageBatchMap.get(workId) == null || workerMessageBatchMap.get(workId).isEmpty()) {
-                return;
-            }
-            MessageBatch messageBatch = workerMessageBatchMap.get(workId);
-            ByteBuffer byteBuffer = messageBatch.buffer();
-            byteBuffer.flip();
-            messageBatch.clear();
-
-            RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
-            ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
-            dataBuffer.put(byteBuffer);
-            dataBuffer.flip();
-
-            RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
-            RegionToken regionToken = workerRegionTokenMap.get(workId);
-
-            long remoteAddress = regionToken.getAddress();
-            int rkey = regionToken.getLocalKey();
-
-            rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
-                @Override
-                public void onSuccess(ByteBuffer buffer, Integer imm) {
-                    try {
-                        rdmaBuffer.getByteBuffer().clear();
-                        rdmaBufferManager.put(rdmaBuffer);
-                        regionToken.setAddress(remoteAddress + byteBuffer.capacity());
-                        LOG.info("Driver sends batch to worker " + workId);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable exception) {
-                    try {
-                        rdmaBuffer.getByteBuffer().clear();
-                        rdmaBufferManager.put(rdmaBuffer);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
+        if (workerMessageBatchMap.get(workId) == null || workerMessageBatchMap.get(workId).isEmpty()) {
+            frontendTotalMessageCountMap.put(workId, 0);
+            return;
         }
+        LOG.info("Driver sends " + workerMessageBatchMap.get(workId).size() + " to worker " + workId);
+        MessageBatch messageBatch = workerMessageBatchMap.get(workId);
+        ByteBuffer byteBuffer = messageBatch.buffer();
+        byteBuffer.flip();
+        messageBatch.clear();
+
+        RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
+        ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
+        dataBuffer.put(byteBuffer);
+        dataBuffer.flip();
+
+        RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
+        RegionToken regionToken = workerRegionTokenMap.get(workId);
+
+        long remoteAddress = regionToken.getAddress();
+        int rkey = regionToken.getLocalKey();
+        CountDownLatch latch = new CountDownLatch(1);
+        rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                try {
+                    rdmaBuffer.getByteBuffer().clear();
+                    rdmaBufferManager.put(rdmaBuffer);
+                    regionToken.setAddress(remoteAddress + byteBuffer.capacity());
+                    frontendTotalMessageCountMap.put(workId, 0);
+                    latch.countDown();
+                    LOG.info("Driver sends batch to worker " + workId);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                try {
+                    rdmaBuffer.getByteBuffer().clear();
+                    rdmaBufferManager.put(rdmaBuffer);
+                    latch.countDown();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
+        latch.await();
     }
 }

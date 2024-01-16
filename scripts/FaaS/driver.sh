@@ -2,21 +2,21 @@
 source ../dir.sh || exit
 function ResetParameters() {
     #Cluster Configurations
-    isDriver=1
+    isDriver=0
     workerId=0
-    workerNum=2
-    tthread=10
+    workerNum=1
+    tthread=5
     clientNum=4
     frontendNum=4
     clientClassName="client.BankingSystemClient"
     #Network Configurations
     isRDMA=1
-    driverHost="10.10.10.3"
+    driverHost="10.10.10.1"
     driverPort=5570
-    workerHosts="10.10.10.1,10.10.10.2"
-    workerPorts="5540,5550"
+    workerHosts="10.10.10.2"
+    workerPorts="5550"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 1000 \* tthread \* workerNum / frontendNum`
+    sendMessagePerFrontend=`expr 1000 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=10
     returnResultPerWorker=`expr 10000 \* $frontendNum`
     shuffleType=0
@@ -25,6 +25,7 @@ function ResetParameters() {
     NUM_ITEMS=8000
     tableNames="accounts,bookEntries"
     keyDataTypesForTables="String,String"
+
     valueDataTypesForTables="double,double"
     valueNamesForTables="balance,balance"
     #Input Configurations
@@ -43,7 +44,7 @@ function ResetParameters() {
     workloadType="default,unchanging,unchanging,unchanging"
     shiftRate=1
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
-    totalEvents=`expr $checkpointInterval \* $shiftRate \* 4`
+    totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
     #System Configurations
     schedulerPool="OG_NS_A"
     scheduler="OG_NS_A"
@@ -68,6 +69,7 @@ function runApplication() {
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
+      --returnResultPerWorker $returnResultPerWorker \
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --numberItemsForTables $numberItemsForTables \
@@ -113,6 +115,7 @@ function runApplication() {
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
+      --returnResultPerWorker $returnResultPerWorker \
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --numberItemsForTables $numberItemsForTables \
