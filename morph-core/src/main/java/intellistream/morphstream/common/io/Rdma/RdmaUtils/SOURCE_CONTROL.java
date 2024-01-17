@@ -9,26 +9,47 @@ public class SOURCE_CONTROL {
     private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
     public static short START_FLAG = 0x6FFF;
     public static short END_FLAG = 0x7FFF;
-    private CyclicBarrier startBarrier;
-    private CyclicBarrier endBarrier;
+    private CyclicBarrier driverStartBarrier;
+    private CyclicBarrier driverEndBarrier;
+    private CyclicBarrier workerStartBarrier;
+    private CyclicBarrier workerEndBarrier;
     @Getter
     private int messagePerFrontend;
-    public void config(int number_frontends, int messagePerFrontend) {
-        startBarrier = new CyclicBarrier(number_frontends);
-        endBarrier = new CyclicBarrier(number_frontends);
+    @Getter
+    private int resultPerExecutor;
+    public void config(int number_frontends, int messagePerFrontend, int number_executor, int resultPerExecutor) {
+        driverStartBarrier = new CyclicBarrier(number_frontends);
+        driverEndBarrier = new CyclicBarrier(number_frontends);
+        workerStartBarrier = new CyclicBarrier(number_executor);
+        workerEndBarrier = new CyclicBarrier(number_executor);
         this.messagePerFrontend = messagePerFrontend;
+        this.resultPerExecutor = resultPerExecutor;
     }
 
-    public void startSendBarrier() {
+    public void driverStartSendMessageBarrier() {
         try {
-            startBarrier.await();
+            driverStartBarrier.await();
         } catch (InterruptedException | BrokenBarrierException e) {
             throw new RuntimeException(e);
         }
     }
-    public void endSendBarrier() {
+    public void driverEndSendMessageBarrier() {
         try {
-            endBarrier.await();
+            driverEndBarrier.await();
+        } catch (InterruptedException | BrokenBarrierException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public void workerStartSendResultBarrier() {
+        try {
+            workerStartBarrier.await();
+        } catch (InterruptedException | BrokenBarrierException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public void workerEndSendResultBarrier() {
+        try {
+            workerEndBarrier.await();
         } catch (InterruptedException | BrokenBarrierException e) {
             throw new RuntimeException(e);
         }

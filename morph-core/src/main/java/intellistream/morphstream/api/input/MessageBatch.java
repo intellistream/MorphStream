@@ -58,7 +58,8 @@ public class MessageBatch {
         return writeLock;
     }
     public ByteBuffer buffer() {
-        ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(2 + 4 + totalThreads * 4 + encoded_length + 2));//START_FLAG(Short) + TotalLength(Int) + MessageBlockLength(Int) * totalThreads + EndFlag(Short)
+        //START_FLAG(Short) + TotalLength(Int) + MessageBlockLength(Int) * totalThreads + EndFlag(Short)
+        ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(2 + 4 + totalThreads * 4 + encoded_length + 2));
         try {
             bout.writeShort(SOURCE_CONTROL.START_FLAG);//START_FLAG(Short)
             bout.writeInt(encoded_length);//TotalLength(Int)

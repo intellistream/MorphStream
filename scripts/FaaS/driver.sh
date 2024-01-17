@@ -18,7 +18,7 @@ function ResetParameters() {
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=5
-    returnResultPerWorker=`expr 10000 \* $frontendNum`
+    returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
     numberItemsForTables="8000,8000"
@@ -68,7 +68,7 @@ function runApplication() {
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
-      --returnResultPerWorker $returnResultPerWorker \
+      --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --numberItemsForTables $numberItemsForTables \
@@ -114,7 +114,7 @@ function runApplication() {
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
-      --returnResultPerWorker $returnResultPerWorker \
+      --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --numberItemsForTables $numberItemsForTables \

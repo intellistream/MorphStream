@@ -47,6 +47,16 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final SynchronizedDescriptiveStatistics latencyStat = new SynchronizedDescriptiveStatistics(); //latency statistics of current batch
     private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
+    public static final Client clientObj;
+    static {
+        try {
+            Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+            clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException |
+                 IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public MorphStreamBolt(String id, HashMap<String, FunctionDescription> txnDescriptionMap, int fid) {
         super(id, LOG, fid);
@@ -134,12 +144,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             Result udfResultReflect = null;
             try {
                 //Invoke client defined post-processing UDF using Reflection
-                Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-                if (Client.class.isAssignableFrom(clientClass)) {
-                    Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                    HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                    udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
-                }
+                HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
+                udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
                 if (enable_latency_measurement) {
                     latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
                 }
@@ -150,11 +156,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     assert udfResultReflect != null;
                     sink.execute(new Tuple(this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect)));
                 }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                System.out.println(e);
-                throw new RuntimeException("Client class instantiation failed");
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException("Client post UDF invocation failed");
             } catch (InterruptedException e) {
                 throw new RuntimeException("Output emission interrupted");
             } catch (BrokenBarrierException | IOException | DatabaseException e) {

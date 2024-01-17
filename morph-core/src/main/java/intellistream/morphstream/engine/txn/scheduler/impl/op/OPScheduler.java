@@ -31,6 +31,7 @@ import communication.dao.TPGNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -43,6 +44,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
     public LoggingManager loggingManager; // Used by fault tolerance
     public int isLogging;// Used by fault tolerance
+    public static final Client clientObj;
+    static {
+        try {
+            Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+            clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException |
+                 IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private MetaTypes.DependencyType[] dependencyTypes = new MetaTypes.DependencyType[]{MetaTypes.DependencyType.FD, MetaTypes.DependencyType.TD, MetaTypes.DependencyType.LD};
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
@@ -128,16 +139,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         //UDF updates operation.udfResult, which is the value to be written to writeRecord
         boolean udfSuccess = false;
-        try {
-            Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-            if (Client.class.isAssignableFrom(clientClass)) {
-                Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                udfSuccess = clientObj.transactionUDF(operation.stateAccess);
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-             InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        udfSuccess = clientObj.transactionUDF(operation.stateAccess);
 
         if (udfSuccess) {
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE
