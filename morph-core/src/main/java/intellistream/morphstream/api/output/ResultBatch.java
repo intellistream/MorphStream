@@ -35,6 +35,7 @@ public class ResultBatch {
         results.get(senderThreadId).add(msg);
         encoded_Lengths.put(senderThreadId, encoded_Lengths.get(senderThreadId) + msgEncodeLength(msg));
         functionExecutorTotalResultCountMap.put(senderThreadId, functionExecutorTotalResultCountMap.get(senderThreadId) + 1);
+        System.out.println("ThreadId " + senderThreadId + " total result count " + functionExecutorTotalResultCountMap.get(senderThreadId));
     }
     private int msgEncodeLength(FunctionMessage workerMessage) {
         if (workerMessage == null) return 0;

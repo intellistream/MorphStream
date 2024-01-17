@@ -38,11 +38,8 @@ public class CircularRdmaBuffer {
                 baseOffset = readOffset[threadId] + 6 + 4L * totalThreads;//Message Start
                 canRead[threadId] = this.buffer.getByteBuffer(readOffset[threadId] + 6, 4 * totalThreads);
                 readOffset[threadId] = readOffset[threadId] + 2L + 4L + 4L * totalThreads + totalLength + 2L;
-            } else {
-                LOG.info("This buffer is not complete!");
             }
         }
-        canRead[threadId].flip();
         return new Tuple2<>(baseOffset, canRead[threadId]);
     }
     public ByteBuffer read(long address, int length) throws IOException {

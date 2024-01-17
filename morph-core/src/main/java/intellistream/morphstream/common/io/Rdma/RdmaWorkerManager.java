@@ -92,7 +92,8 @@ public class RdmaWorkerManager implements Serializable {
         this.resultBatch.add(senderThreadId, functionMessage);
         if (this.resultBatch.getTotalResultCount(senderThreadId) >= SOURCE_CONTROL.getInstance().getResultPerExecutor()) {
             SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
-            sendBatch();
+            if (senderThreadId == 0)
+                sendBatch();
             SOURCE_CONTROL.getInstance().workerEndSendResultBarrier();
         }
     }
@@ -117,7 +118,7 @@ public class RdmaWorkerManager implements Serializable {
                 try {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
-                    regionToken.setAddress(remoteAddress + buffer.capacity());
+                    regionToken.setAddress(remoteAddress + byteBuffer.capacity());
                     resultBatch.clear();
                     latch.countDown();
                     LOG.info("Worker " + managerId + " sends results" + " to driver.");

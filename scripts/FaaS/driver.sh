@@ -45,9 +45,9 @@ function ResetParameters() {
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
     #System Configurations
-    schedulerPool="OP_NS_A"
-    scheduler="OP_NS_A"
-    defaultScheduler="OP_NS_A"
+    schedulerPool="OP_BFS_A"
+    scheduler="OP_BFS_A"
+    defaultScheduler="OP_BFS_A"
     CCOption=3 #TSTREAM
     complexity=0
 }

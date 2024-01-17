@@ -89,20 +89,19 @@ public class MorphStreamFrontend extends Thread{
         if (hasRemaining() == -1) {
             for (int i = 0; i < workerIdToCircularRdmaBufferMap.size(); i++) {
                 tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead(this.threadId);
-                int length = tempCanRead._2.getInt();
-                if (length != 0) {
+                if (tempCanRead._1() != 0L) {
                     List<Integer> lengthQueue = new ArrayList<>();
-                    lengthQueue.add(length);
                     while(tempCanRead._2.hasRemaining()) {
                         lengthQueue.add(tempCanRead._2.getInt());
                     }
-                    long myOffset = 4L * threadId + tempCanRead._1();
+                    long myOffset = tempCanRead._1();
                     int myLength = lengthQueue.get(this.threadId);
                     for (int j = 0; j < this.threadId; j++) {
                         myOffset += lengthQueue.get(i);
                     }
                     ByteBuffer byteBuffer = workerIdToCircularRdmaBufferMap.get(i).read(myOffset, myLength);
                     workerIdToResultBufferMap.put(i, byteBuffer);
+                    LOG.info("ThreadId : " + threadId + " receive result from worker: " + i);
                 }
             }
             if (hasRemaining() == -1)

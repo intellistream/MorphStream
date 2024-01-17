@@ -45,6 +45,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         sink = new ApplicationSink("sink", 0);
+        sink.prepare(conf, context, collector);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
                 bolt = new MorphStreamBolt(operatorID, FunctionDescriptionHashMap, 0, this.sink);
