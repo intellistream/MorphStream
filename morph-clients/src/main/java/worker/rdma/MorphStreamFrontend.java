@@ -22,12 +22,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MorphStreamFrontend extends Thread{
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamFrontend.class);
+      private boolean isRunning = true;
     private int threadId;
     private ZMQ.Socket frontend;// Frontend socket talks to Driver over TCP
     private RdmaDriverManager rdmaDriverManager;
     private List<Integer> workIdList = new ArrayList<>();
     protected int sendCount = 0;
     protected int receiveCount = 0;
+    private int totalEventToReceive = 0;
     private Tuple2<Long, ByteBuffer> tempCanRead;//the temp buffer to decide whether the result buffer can read
     private HashMap<Integer, ByteBuffer> workerIdToResultBufferMap = new HashMap<>();//the map to store the result buffer that can read
     private ConcurrentHashMap<Integer, CircularRdmaBuffer> workerIdToCircularRdmaBufferMap = new ConcurrentHashMap<>();//the map to store all result buffer
@@ -36,6 +38,7 @@ public class MorphStreamFrontend extends Thread{
     private TransactionalEvent tempEvent;
     public MorphStreamFrontend(int threadId, ZContext zContext, RdmaDriverManager rdmaDriverManager, Statistic statistic) {
         this.frontend = zContext.createSocket(SocketType.DEALER);
+        this.totalEventToReceive = MorphStreamEnv.get().configuration().getInt("totalEvents") / MorphStreamEnv.get().configuration().getInt("frontendNum");
         frontend.connect("inproc://backend");
         this.rdmaDriverManager = rdmaDriverManager;
         workerIdToCircularRdmaBufferMap = rdmaDriverManager.getRdmaBufferManager().getResultBufferMap();
@@ -49,13 +52,14 @@ public class MorphStreamFrontend extends Thread{
 
     public void asyncReceiveFunctionOutput() throws IOException {
         ByteBuffer results = getResult();
-        if (getResult() != null && results.hasRemaining()) {
+        if (results != null && results.hasRemaining()) {
             int length = results.getInt();
             byte[] bytes = new byte[length];
             results.get(bytes);
-            String result = new String(bytes);
             receiveCount ++;
-            System.out.println(result);
+            if (receiveCount == totalEventToReceive) {
+                isRunning = false;
+            }
         }
     }
     public void invokeFunctionToWorker(int workId) throws Exception {
@@ -64,7 +68,7 @@ public class MorphStreamFrontend extends Thread{
     }
 
     public void run(){
-        while (!interrupted()) {
+        while (!interrupted() && isRunning) {
             ZMsg msg = ZMsg.recvMsg(frontend, false);
             if (msg != null) {
                 try {
@@ -81,6 +85,7 @@ public class MorphStreamFrontend extends Thread{
                 throw new RuntimeException(e);
             }
         }
+        LOG.info("ThreadId : " + threadId + " sendCount: " + sendCount + " receiveCount: " + receiveCount);
     }
     private int getWorkId(List<String> keys) {
         return this.statistic.add(keys);
@@ -91,17 +96,17 @@ public class MorphStreamFrontend extends Thread{
                 tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead(this.threadId);
                 if (tempCanRead._1() != 0L) {
                     List<Integer> lengthQueue = new ArrayList<>();
-                    while(tempCanRead._2.hasRemaining()) {
-                        lengthQueue.add(tempCanRead._2.getInt());
+                    while(tempCanRead._2().hasRemaining()) {
+                        lengthQueue.add(tempCanRead._2().getInt());
                     }
                     long myOffset = tempCanRead._1();
                     int myLength = lengthQueue.get(this.threadId);
                     for (int j = 0; j < this.threadId; j++) {
-                        myOffset += lengthQueue.get(i);
+                        myOffset += lengthQueue.get(j);
                     }
                     ByteBuffer byteBuffer = workerIdToCircularRdmaBufferMap.get(i).read(myOffset, myLength);
                     workerIdToResultBufferMap.put(i, byteBuffer);
-                    LOG.info("ThreadId : " + threadId + " receive result from worker: " + i);
+                    LOG.info("ThreadId : " + threadId + " receive results from worker: " + i);
                 }
             }
             if (hasRemaining() == -1)

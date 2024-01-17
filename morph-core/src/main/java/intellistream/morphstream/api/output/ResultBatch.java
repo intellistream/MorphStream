@@ -17,7 +17,7 @@ public class ResultBatch {
     private final int totalSize;
     private final ConcurrentHashMap<Integer, List<FunctionMessage>> results = new ConcurrentHashMap<>();//threadId -> List<FunctionMessage>
     private final ConcurrentHashMap<Integer, Integer> encoded_Lengths = new ConcurrentHashMap<>();//threadId -> encoded_length
-    private ConcurrentHashMap<Integer, Integer> functionExecutorTotalResultCountMap = new ConcurrentHashMap<>();//functionExecutorId -> total result count
+    private final ConcurrentHashMap<Integer, Integer> functionExecutorTotalResultCountMap = new ConcurrentHashMap<>();//functionExecutorId -> total result count
     // START_FLAG(Short) + TotalLength(Int) +  MessageBlockLength(Int) * totalThreads + msg.length(Int) + msg + msg.length(Int) + msg... + EndFlag(Short)
     public ResultBatch(int totalSize, int receiverThreads, int senderThreads) {
         this.receiverThreads = receiverThreads;
@@ -35,7 +35,6 @@ public class ResultBatch {
         results.get(senderThreadId).add(msg);
         encoded_Lengths.put(senderThreadId, encoded_Lengths.get(senderThreadId) + msgEncodeLength(msg));
         functionExecutorTotalResultCountMap.put(senderThreadId, functionExecutorTotalResultCountMap.get(senderThreadId) + 1);
-        System.out.println("ThreadId " + senderThreadId + " total result count " + functionExecutorTotalResultCountMap.get(senderThreadId));
     }
     private int msgEncodeLength(FunctionMessage workerMessage) {
         if (workerMessage == null) return 0;
@@ -51,7 +50,7 @@ public class ResultBatch {
         for (int i = 0; i < sendThreads; i++) {
             totalEncodedLength += encoded_Lengths.get(i);
         }
-        for (int i = 0; i < receiverThreads; i++) {
+        for (int i = 0; i < sendThreads; i++) {
             totalMessage.addAll(results.get(i));
         }
         //START_FLAG(Short) + TotalLength(Int) + MessageBlockLength(Int) * totalThreads + EndFlag(Short)
@@ -62,7 +61,7 @@ public class ResultBatch {
             Deque<Integer> length = new ArrayDeque<>();
             for (int i = 0; i < receiverThreads; i++) {
                 int totalLength = 0;
-                for (int j = i * totalSize / receiverThreads; j < (i + 1) * totalSize / receiverThreads; j++) {
+                for (int j = i * totalSize / receiverThreads; j < (i + 1) * totalSize / receiverThreads; j ++) {
                     totalLength += totalMessage.get(j).getEncodeLength() + 4;
                 }
                 length.add(totalLength);
