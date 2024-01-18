@@ -1,6 +1,7 @@
-package intellistream.morphstream.common.io.Rdma.Memory;
+package intellistream.morphstream.common.io.Rdma.Memory.Buffer;
 
 import com.ibm.disni.verbs.IbvPd;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedDeque;

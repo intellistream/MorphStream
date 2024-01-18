@@ -251,6 +251,8 @@ public class JCommanderHandler {
     public String workerPorts = "5540,5550,5580";
     @Parameter(names = {"--CircularBufferCapacity"}, description = "CircularBufferCapacity")
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
+    @Parameter(names = {"--TableBufferCapacity"}, description = "TableBufferCapacity")
+    public int TableBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--sendMessagePerFrontend"}, description = "sendMessagePerFrontend")
     public int sendMessagePerFrontend = 1000;
     @Parameter(names = {"--returnResultPerExecutor"}, description = "returnResultPerExecutor")
@@ -342,6 +344,7 @@ public class JCommanderHandler {
             config.put("morphstream.socket.workerHosts", workerHosts);
         }
         config.put("CircularBufferCapacity", CircularBufferCapacity);
+        config.put("TableBufferCapacity", TableBufferCapacity);
         config.put("sendMessagePerFrontend", sendMessagePerFrontend);
         config.put("maxMessageCapacity", sendMessagePerFrontend * frontendNum);
         config.put("returnResultPerExecutor", returnResultPerExecutor);

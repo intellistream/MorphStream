@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.output;
 
 import intellistream.morphstream.api.input.FunctionMessage;
-import intellistream.morphstream.common.io.Rdma.Memory.ByteBufferBackedOutputStream;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.ByteBufferBackedOutputStream;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 
 import java.nio.ByteBuffer;

@@ -7,9 +7,11 @@ import intellistream.morphstream.common.io.Rdma.Channel.RdmaChannel;
 import intellistream.morphstream.common.io.Rdma.Channel.RdmaNode;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaCompletionListener;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
-import intellistream.morphstream.common.io.Rdma.Memory.RdmaBuffer;
-import intellistream.morphstream.common.io.Rdma.Memory.RdmaBufferManager;
+import intellistream.morphstream.common.io.Rdma.Memory.Manager.DriverRdmaBufferManager;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
+import intellistream.morphstream.common.io.Rdma.Msg.DWRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
+import intellistream.morphstream.common.io.Rdma.Msg.WDRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import lombok.Getter;
@@ -31,9 +33,9 @@ public class RdmaDriverManager {
     private final Configuration conf;
     private final CountDownLatch workerLatch;
     @Getter
-    private final RdmaBufferManager rdmaBufferManager;
+    private final DriverRdmaBufferManager rdmaBufferManager;
     private ConcurrentHashMap<Integer, RdmaChannel> workerRdmaChannelMap = new ConcurrentHashMap<>();//workerId -> RdmaChannel
-    private ConcurrentHashMap<Integer, RegionToken> workerRegionTokenMap = new ConcurrentHashMap<>();//workerId -> RegionToken
+    private ConcurrentHashMap<Integer, WDRegionTokenGroup> workerRegionTokenMap = new ConcurrentHashMap<>();//workerId -> RegionToken
     @Getter
     private ConcurrentHashMap<Integer, MessageBatch> workerMessageBatchMap = new ConcurrentHashMap<>();//workerId -> MessageBatch
     private ConcurrentHashMap<Integer, Integer> frontendTotalMessageCountMap = new ConcurrentHashMap<>();//frontendId -> total message count
@@ -44,8 +46,8 @@ public class RdmaDriverManager {
         workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
         driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
-        rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR);
-        rdmaBufferManager = rdmaNode.getRdmaBufferManager();
+        rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, isDriver);
+        rdmaBufferManager = (DriverRdmaBufferManager) rdmaNode.getRdmaBufferManager();
         workerLatch = MorphStreamEnv.get().workerLatch();
         //PreAllocate CircularRdmaBuffer to receive results from workers
         rdmaBufferManager.perAllocateResultBuffer(MorphStreamEnv.get().configuration().getInt("workerNum"), MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"));
@@ -62,11 +64,14 @@ public class RdmaDriverManager {
                 for (int i = 0; i < workerHosts.length; i++) {
                     if (workerHosts[i].equals(inetSocketAddress.getHostName())) {
                         //Send region token to worker
-                        rdmaNode.sendRegionTokenToRemote(rdmaChannel, rdmaBufferManager.getResultBuffer(i).createRegionToken(), inetSocketAddress.getHostName());
+                        DWRegionTokenGroup dwRegionTokenGroup = new DWRegionTokenGroup();
+                        dwRegionTokenGroup.addRegionToken(rdmaBufferManager.getResultBuffer(i).createRegionToken());
+                        rdmaNode.sendRegionTokenToRemote(rdmaChannel, dwRegionTokenGroup.getRegionTokens(), inetSocketAddress.getHostName());
                         //Receive region token from worker
-                        RegionToken regionToken = rdmaNode.getRemoteRegionToken(rdmaChannel);
+                        WDRegionTokenGroup wdRegionTokenGroup = new WDRegionTokenGroup();
+                        wdRegionTokenGroup.addRegionTokens(rdmaNode.getRemoteRegionToken(rdmaChannel));
                         workerRdmaChannelMap.put(i, rdmaChannel);
-                        workerRegionTokenMap.put(i, regionToken);
+                        workerRegionTokenMap.put(i, wdRegionTokenGroup);
                         workerMessageBatchMap.put(i, new MessageBatch(MorphStreamEnv.get().configuration().getInt("maxMessageCapacity"), MorphStreamEnv.get().configuration().getInt("tthread")));
                     }
                 }
@@ -105,7 +110,7 @@ public class RdmaDriverManager {
         dataBuffer.flip();
 
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
-        RegionToken regionToken = workerRegionTokenMap.get(workId);
+        RegionToken regionToken = workerRegionTokenMap.get(workId).getCircularMessageToken();
 
         long remoteAddress = regionToken.getAddress();
         int rkey = regionToken.getLocalKey();

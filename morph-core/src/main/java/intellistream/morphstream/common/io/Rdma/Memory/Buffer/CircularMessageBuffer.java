@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Rdma.Memory;
+package intellistream.morphstream.common.io.Rdma.Memory.Buffer;
 
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
@@ -9,14 +9,14 @@ import scala.Tuple2;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class CircularRdmaBuffer {
-    private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(CircularRdmaBuffer.class);
+public class CircularMessageBuffer {
+    private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(CircularMessageBuffer.class);
     private final RdmaBuffer buffer;
     private final long length;
     private final int totalThreads;
     private long[] readOffset;
     private ByteBuffer[] canRead;
-    public CircularRdmaBuffer(IbvPd ibvPd, int length, int totalThreads) throws Exception {
+    public CircularMessageBuffer(IbvPd ibvPd, int length, int totalThreads) throws Exception {
         this.length = length;
         this.buffer = new RdmaBuffer(ibvPd, length);
         this.readOffset = new long[totalThreads];

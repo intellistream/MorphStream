@@ -5,7 +5,7 @@ import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.common.io.Rdma.Memory.CircularRdmaBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.CircularMessageBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaDriverManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,7 @@ public class MorphStreamFrontend extends Thread{
     private int totalEventToReceive = 0;
     private Tuple2<Long, ByteBuffer> tempCanRead;//the temp buffer to decide whether the result buffer can read
     private HashMap<Integer, ByteBuffer> workerIdToResultBufferMap = new HashMap<>();//the map to store the result buffer that can read
-    private ConcurrentHashMap<Integer, CircularRdmaBuffer> workerIdToCircularRdmaBufferMap = new ConcurrentHashMap<>();//the map to store all result buffer
+    private ConcurrentHashMap<Integer, CircularMessageBuffer> workerIdToCircularRdmaBufferMap = new ConcurrentHashMap<>();//the map to store all result buffer
     private Statistic statistic;
     private String tempInput;
     private TransactionalEvent tempEvent;

@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Rdma.Memory;
+package intellistream.morphstream.common.io.Rdma.Memory.Buffer;
 
 import java.io.IOException;
 import java.io.OutputStream;

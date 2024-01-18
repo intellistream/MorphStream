@@ -4,8 +4,10 @@ import com.ibm.disni.verbs.*;
 import intellistream.morphstream.common.io.Rdma.Conf.RdmaChannelConf;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaCompletionListener;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
-import intellistream.morphstream.common.io.Rdma.Memory.RdmaBuffer;
-import intellistream.morphstream.common.io.Rdma.Memory.RdmaBufferManager;
+import intellistream.morphstream.common.io.Rdma.Memory.Manager.DriverRdmaBufferManager;
+import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Manager.RdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.ExecutorsServiceContext;
 import org.slf4j.Logger;
@@ -17,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +45,7 @@ public class RdmaNode {
     private RdmaChannel.RdmaChannelType rdmaChannelType;
     private String hostName;//本地主机名
 
-    public RdmaNode(String hostName, int port, final RdmaChannelConf conf, RdmaChannel.RdmaChannelType rdmaChannelType) throws Exception {
+    public RdmaNode(String hostName, int port, final RdmaChannelConf conf, RdmaChannel.RdmaChannelType rdmaChannelType, boolean isDriver) throws Exception {
         this.conf = conf;
         this.rdmaChannelType = rdmaChannelType;
         this.hostName = hostName;
@@ -80,7 +83,11 @@ public class RdmaNode {
             if (ibvPd == null) {
                 throw new IOException("Failed to create PD");
             }
-            this.rdmaBufferManager = new RdmaBufferManager(ibvPd, conf);
+            if (isDriver) {
+                this.rdmaBufferManager = new DriverRdmaBufferManager(ibvPd, conf);
+            } else {
+                this.rdmaBufferManager = new WorkerRdmaBufferManager(ibvPd, conf);
+            }
         } catch (IOException e) {
             LOG.error("Failed in RdmaNode constructor");
             stop();
@@ -297,13 +304,16 @@ public class RdmaNode {
 
         return rdmaChannel;
     }
-    public void sendRegionTokenToRemote(RdmaChannel rdmaChannel, RegionToken regionToken, String hostName) throws Exception {
+    public void sendRegionTokenToRemote(RdmaChannel rdmaChannel, List<RegionToken> regionTokens, String hostName) throws Exception {
         RdmaBuffer rdmaSend = rdmaBufferManager.get(1024);
         ByteBuffer sendBuffer = rdmaSend.getByteBuffer();
-        sendBuffer.putInt(regionToken.getSizeInBytes());
-        sendBuffer.putLong(regionToken.getAddress());
-        sendBuffer.putInt(regionToken.getLocalKey());
-        sendBuffer.putInt(regionToken.getRemoteKey());
+        sendBuffer.putInt(regionTokens.size());
+        for (RegionToken regionToken : regionTokens) {
+            sendBuffer.putInt(regionToken.getSizeInBytes());
+            sendBuffer.putLong(regionToken.getAddress());
+            sendBuffer.putInt(regionToken.getLocalKey());
+            sendBuffer.putInt(regionToken.getRemoteKey());
+        }
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         rdmaChannel.rdmaSendInQueue(new RdmaCompletionListener() {
@@ -322,7 +332,7 @@ public class RdmaNode {
         countDownLatch.await();
     }
 
-    public RegionToken getRemoteRegionToken(RdmaChannel rdmaChannel) throws Exception {
+    public List<RegionToken> getRemoteRegionToken(RdmaChannel rdmaChannel) throws Exception {
         RdmaBuffer rdmaBuffer = rdmaBufferManager.get(1024);
         ByteBuffer byteBuffer = rdmaBuffer.getByteBuffer();
 
@@ -341,11 +351,16 @@ public class RdmaNode {
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey());
 
         countDownLatch.await();
-        int sizeInBytes = byteBuffer.getInt();
-        long address = byteBuffer.getLong();
-        int localKey = byteBuffer.getInt();
-        int remoteKey = byteBuffer.getInt();
-        return new RegionToken(sizeInBytes,address,localKey,remoteKey);
+        List<RegionToken> regionTokens = new ArrayList<>();
+        int size = byteBuffer.getInt();
+        for (int i = 0; i < size; i++) {
+            int sizeInBytes = byteBuffer.getInt();
+            long address = byteBuffer.getLong();
+            int localKey = byteBuffer.getInt();
+            int remoteKey = byteBuffer.getInt();
+            regionTokens.add(new RegionToken(sizeInBytes, address, localKey, remoteKey));
+        }
+        return regionTokens;
     }
     public void stop() throws Exception {
         // Spawn simultaneous disconnect tasks to speed up tear-down

@@ -1,10 +1,9 @@
 package intellistream.morphstream.api.input;
 
-import intellistream.morphstream.common.io.Rdma.Memory.ByteBufferBackedOutputStream;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.ByteBufferBackedOutputStream;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;

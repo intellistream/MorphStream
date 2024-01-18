@@ -2,8 +2,8 @@ package intellistream.morphstream.common.io.Rdma.Channel;
 import com.ibm.disni.verbs.*;
 import intellistream.morphstream.common.io.Rdma.Conf.RdmaChannelConf;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaCompletionListener;
-import intellistream.morphstream.common.io.Rdma.Memory.RdmaBuffer;
-import intellistream.morphstream.common.io.Rdma.Memory.RdmaBufferManager;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Manager.RdmaBufferManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

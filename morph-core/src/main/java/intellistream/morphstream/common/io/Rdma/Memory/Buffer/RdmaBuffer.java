@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Rdma.Memory;
+package intellistream.morphstream.common.io.Rdma.Memory.Buffer;
 
 import com.ibm.disni.verbs.IbvMr;
 import com.ibm.disni.verbs.IbvPd;
@@ -42,7 +42,7 @@ public class RdmaBuffer {
             throw new RuntimeException("java.nio.DirectByteBuffer class not found");
         }
     }
-    RdmaBuffer(IbvPd ibvPd, int length) throws Exception{
+    public RdmaBuffer(IbvPd ibvPd, int length) throws Exception{
         block = unsafeAlloc.allocate((long)length);
         address = block.getBaseOffset();
         this.length = length;
@@ -79,7 +79,7 @@ public class RdmaBuffer {
     public void clean() {
         Platform.setMemory(address, (byte)0, length);
     }
-    void free() {
+    public void free() {
         if (refCount.decrementAndGet() == 0) {
             unregister();
             unsafeAlloc.free(block);

@@ -16,6 +16,7 @@ function ResetParameters() {
     workerHosts="10.10.10.2"
     workerPorts="5540"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
+    TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=5
     returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
@@ -67,6 +68,7 @@ function runApplication() {
       --workerHosts $workerHosts \
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
+      --TableBufferCapacity $TableBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
       --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \
@@ -113,6 +115,7 @@ function runApplication() {
       --workerHosts $workerHosts \
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
+      --TableBufferCapacity $TableBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
       --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \

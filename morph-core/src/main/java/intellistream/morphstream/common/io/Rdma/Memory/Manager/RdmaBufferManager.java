@@ -1,7 +1,9 @@
-package intellistream.morphstream.common.io.Rdma.Memory;
+package intellistream.morphstream.common.io.Rdma.Memory.Manager;
 
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Conf.RdmaChannelConf;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.AllocatorStack;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.ExecutorsServiceContext;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -11,36 +13,20 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-public class RdmaBufferManager {
-    private static final Logger LOG = LoggerFactory.getLogger(RdmaBufferManager.class);
+public abstract class RdmaBufferManager {
+    protected static final Logger LOG = LoggerFactory.getLogger(RdmaBufferManager.class);
     @Getter
-    private IbvPd pd;
-    private static final int MIN_BLOCK_SIZE = 16 * 1024;
-    private final int minimumAllocationSize;
-    private long maxCacheSize;
+    protected IbvPd pd;
+    protected static final int MIN_BLOCK_SIZE = 16 * 1024;
+    protected final int minimumAllocationSize;
+    protected long maxCacheSize;
     @Getter
-    private CircularRdmaBuffer circularRdmaBuffer;//Receive Events for worker and Receive Results for driver
-    @Getter
-    private final ConcurrentHashMap<Integer, CircularRdmaBuffer> resultBufferMap = new ConcurrentHashMap<>();//workerId -> CircularRdmaBuffer
-    private final ConcurrentHashMap<Integer, AllocatorStack> allocStackMap = new ConcurrentHashMap<>();//length -> bufferStack
-    private static final ExecutorService executorService = ExecutorsServiceContext.getInstance();
+    protected final ConcurrentHashMap<Integer, AllocatorStack> allocStackMap = new ConcurrentHashMap<>();//length -> bufferStack
+    protected static final ExecutorService executorService = ExecutorsServiceContext.getInstance();
     public RdmaBufferManager(IbvPd pd, RdmaChannelConf conf) throws IOException {
         this.pd = pd;
         this.minimumAllocationSize = Math.min(1024, MIN_BLOCK_SIZE);
         this.maxCacheSize = conf.maxBufferAllocationSize();
-    }
-    public void perAllocateCircularRdmaBuffer(int length, int totalThreads) throws Exception {
-        if (circularRdmaBuffer == null) {
-            circularRdmaBuffer = new CircularRdmaBuffer(getPd(), length, totalThreads);
-        }
-    }
-    public void perAllocateResultBuffer(int totalWorkers, int length, int totalThreads) throws Exception {
-        for (int i = 0; i < totalWorkers; i++) {
-            if (resultBufferMap.get(i) == null) {
-                resultBufferMap.put(i, new CircularRdmaBuffer(getPd(), length, totalThreads));
-            }
-        }
-        LOG.info("Pre allocated {} buffers of size {} KB for each worker", totalWorkers, (length / 1024));
     }
 
     public RdmaBuffer getDirect(int length) throws Exception {
@@ -52,6 +38,9 @@ public class RdmaBufferManager {
             length = minimumAllocationSize;
         }
         return getOrCreateAllocatorStack(length).get();
+    }
+    public void put(RdmaBuffer rdmaBuffer) {
+
     }
     private AllocatorStack getOrCreateAllocatorStack(int length) {
         AllocatorStack allocatorStack = allocStackMap.get(length);
@@ -72,13 +61,6 @@ public class RdmaBufferManager {
         } else {
             getOrCreateAllocatorStack(buffSize).preallocate(buffCount);
         }
-    }
-    public void put(RdmaBuffer buf) {
-
-    }
-
-    public CircularRdmaBuffer getResultBuffer(int workerId) {
-        return resultBufferMap.get(workerId);
     }
     public void stop() {
         LOG.info("Rdma buffers allocation statistics:");

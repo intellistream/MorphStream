@@ -98,13 +98,13 @@ public class Utils {
     public static void main(String[] args) {
         // 示例数据
         HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
-        totalEventsToWorkerIdMap.put(3, 1);//1.0  //1.0
-        totalEventsToWorkerIdMap.put(1, 1);//1.4 //0.5
-        totalEventsToWorkerIdMap.put(2, 0);//2.0 //0.0
+        totalEventsToWorkerIdMap.put(3, 1);//2.0  //0.0
+        totalEventsToWorkerIdMap.put(1, 1);//2.0 //0.5
+        totalEventsToWorkerIdMap.put(2, 0);//1.0 //1.0
 
 
         // 调用排序方法
-        Map<Integer, Double> sortedKeysAndValues = assignHighScores(totalEventsToWorkerIdMap);
+        Map<Integer, Double> sortedKeysAndValues = assignLowScores(totalEventsToWorkerIdMap);
 
         // 打印排序后的键和分值
         for (Map.Entry<Integer, Double> entry : sortedKeysAndValues.entrySet()) {
