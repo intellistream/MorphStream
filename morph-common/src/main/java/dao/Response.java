@@ -1,4 +1,4 @@
-package communication.dao;
+package dao;
 
 import lombok.Data;
 import lombok.ToString;

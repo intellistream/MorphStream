@@ -1,6 +1,6 @@
 package runtimeweb.service;
 
-import communication.dao.Job;
+import dao.Job;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -13,6 +13,7 @@ import java.util.List;
 public class JobInfoService extends AbstractService {
     /**
      * Get all job infos
+     *
      * @return a list of job infos
      */
     public List<Job> findAllJobInfos() {
@@ -23,7 +24,7 @@ public class JobInfoService extends AbstractService {
             FilenameFilter jsonFilter = (dir, name) -> name.endsWith(".json");
             File[] jsonFiles = directory.listFiles(jsonFilter);
             if (jsonFiles != null) {
-                for (File jsonFile: jsonFiles) {
+                for (File jsonFile : jsonFiles) {
                     Job job;
                     try {
                         job = objectMapper.readValue(jsonFile, Job.class);
@@ -33,13 +34,13 @@ public class JobInfoService extends AbstractService {
                     }
                 }
             }
-
         }
         return jobs;
     }
 
     /**
      * Get a job info by job id
+     *
      * @param jobId job id
      * @return a job info
      */

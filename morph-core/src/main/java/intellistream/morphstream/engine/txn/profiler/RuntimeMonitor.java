@@ -3,7 +3,7 @@ package intellistream.morphstream.engine.txn.profiler;
 
 import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import communication.dao.*;
+import dao.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;

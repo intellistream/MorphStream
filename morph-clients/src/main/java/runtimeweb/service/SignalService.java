@@ -1,10 +1,9 @@
 package runtimeweb.service;
 
 import cli.SLClient;
-import cli.WebServer;
 import intellistream.morphstream.api.input.InputSource;
-import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.springframework.stereotype.Service;
+import taskmanager.initializer.JobInitializer;
 
 @Service
 public class SignalService extends AbstractService {
@@ -14,7 +13,8 @@ public class SignalService extends AbstractService {
      * @return true if the job is started successfully, false otherwise
      */
     public Boolean onStartSignal(String jobId) {
-        WebServer.createJobInfoJSON("StreamLedger");
+        JobInitializer.initialize(jobId); // initialize the job
+        // TODO: start job based on job id
         try {
             SLClient.startJob(new String[]{}); // start the job
         } catch (Exception e) {
@@ -44,7 +44,7 @@ public class SignalService extends AbstractService {
     public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code) {
         System.out.println(code);
         // TODO: analyze code and generate job
-        WebServer.createJobInfoJSON(jobName);
+        JobInitializer.initialize("3"); // initialize the job
         if (startNow) {
             try {
                 SLClient.startJob(new String[]{}); // start the job

@@ -1,7 +1,6 @@
 package runtimeweb.controller;
 
-
-import communication.dao.Job;
+import dao.Job;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -18,6 +17,7 @@ import java.util.List;
 @CrossOrigin
 public class JobInfoController {
     private final JobInfoService jobInfoService;
+
     public JobInfoController(JobInfoService jobInfoService) {
         this.jobInfoService = jobInfoService;
     }

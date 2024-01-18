@@ -1,4 +1,8 @@
-package runtimeweb.util;
+package taskmanager.analyzer;
+
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.TypeDeclaration;
 
 import javax.tools.*;
 import java.io.*;
@@ -111,11 +115,26 @@ public class CodeAnalyzer {
         }
     }
 
-
+    /**
+     * Extract class name from code
+     * @param code code
+     * @return class name
+     */
+    public static String extractClassName(String code) {
+        CompilationUnit cu = StaticJavaParser.parse(code);
+        for (TypeDeclaration<?> type: cu.getTypes()) {
+            if (type.isClassOrInterfaceDeclaration()) {
+                if (type.isPublic()) {
+                    return type.getNameAsString();
+                }
+            }
+        }
+        return null;
+    }
     // For testing purpose
-//    public static void main(String[] args) throws Exception {
-//        String code = "public class Main { public static void main(String[] args) { System.out.println(\"Hello, World\"); }}";
-//        compile(code, "Main");
-//        execute("Main");
-//    }
+    public static void main(String[] args) throws Exception {
+        String code = "public class Main { public static void main(String[] args) { System.out.println(\"Hello, World\"); }}";
+        compile(code, extractClassName(code));
+        execute(extractClassName(code));
+    }
 }

@@ -1,6 +1,6 @@
 package runtimeweb.controller;
 
-import communication.dao.Batch;
+import dao.Batch;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;

@@ -5,7 +5,7 @@ import {OverallTimeBreakdown} from "./OverallTimeBreakdown";
 export interface Job {
   jobId: string;
   name: string;
-  nthreads: string;
+  nthreads: number;
   cpu: string;
   ram: string;
   startTime: string;

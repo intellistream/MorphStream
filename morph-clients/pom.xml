@@ -64,6 +64,11 @@
             <version>2.7.17</version>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.25.8</version>
+        </dependency>
     </dependencies>
 
     <build>

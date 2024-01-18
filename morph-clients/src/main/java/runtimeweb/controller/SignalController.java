@@ -1,7 +1,6 @@
 package runtimeweb.controller;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import communication.dao.JobSubmit;
+import dao.JobSubmit;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;

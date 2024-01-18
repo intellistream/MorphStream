@@ -1,6 +1,6 @@
 package runtimeweb.service;
 
-import communication.dao.Batch;
+import dao.Batch;
 import org.springframework.stereotype.Service;
 
 import java.io.File;

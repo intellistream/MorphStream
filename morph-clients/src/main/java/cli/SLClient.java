@@ -9,6 +9,7 @@ import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import taskmanager.initializer.JobInitializer;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -151,7 +152,7 @@ public class SLClient extends Client {
     }
 
     public static void main(String[] args) throws Exception {
-        WebServer.createJobInfoJSON("StreamLedger");
+        JobInitializer.initialize("3");
         startJob(args);
     }
 }
