@@ -62,6 +62,7 @@ public class RdmaDriverManager {
         SOURCE_CONTROL.getInstance().config(MorphStreamEnv.get().configuration().getInt("frontendNum"), MorphStreamEnv.get().configuration().getInt("sendMessagePerFrontend"), MorphStreamEnv.get().configuration().getInt("tthread"), MorphStreamEnv.get().configuration().getInt("returnResultPerExecutor"));
         for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("frontendNum"); i++) {
             frontendTotalMessageCountMap.put(i, 0);
+            frontendTotalBatchCountMap.put(i, 0);
         }
         //Wait for workers to connect
         rdmaNode.bindConnectCompleteListener(new RdmaConnectionListener() {
