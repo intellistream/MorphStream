@@ -8,6 +8,7 @@ import intellistream.morphstream.common.io.Rdma.Channel.RdmaNode;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaCompletionListener;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.CircularMessageBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.TableBuffer;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Msg.DWRegionTokenGroup;
@@ -54,7 +55,7 @@ public class RdmaWorkerManager implements Serializable {
         rdmaBufferManager = (WorkerRdmaBufferManager) rdmaNode.getRdmaBufferManager();
         //PreAllocate message buffer
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
-        rdmaBufferManager.perAllocateTableBuffer(MorphStreamEnv.get().configuration().getInt("TableBufferCapacity"));
+        rdmaBufferManager.perAllocateTableBuffer(MorphStreamEnv.get().configuration().getInt("TableBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         resultBatch = new ResultBatch(MorphStreamEnv.get().configuration().getInt("maxResultsCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"), this.totalFunctionExecutors);
         //Result count to decide whether to send the batched results
         SOURCE_CONTROL.getInstance().config(MorphStreamEnv.get().configuration().getInt("frontendNum"), MorphStreamEnv.get().configuration().getInt("sendMessagePerFrontend"), this.totalFunctionExecutors, MorphStreamEnv.get().configuration().getInt("returnResultPerExecutor"));
@@ -96,6 +97,7 @@ public class RdmaWorkerManager implements Serializable {
     public CircularMessageBuffer getCircularRdmaBuffer() {
         return rdmaBufferManager.getCircularMessageBuffer();
     }
+    public TableBuffer getTableBuffer() { return rdmaBufferManager.getTableBuffer();}
 
     public void send(int senderThreadId, FunctionMessage functionMessage) throws Exception {
         this.resultBatch.add(senderThreadId, functionMessage);

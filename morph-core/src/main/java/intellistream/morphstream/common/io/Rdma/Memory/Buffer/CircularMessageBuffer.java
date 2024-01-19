@@ -32,7 +32,7 @@ public class CircularMessageBuffer {
         short start_flag = canRead[threadId].getShort();
         if (start_flag == SOURCE_CONTROL.START_FLAG) {
             int totalLength = canRead[threadId].getInt();
-            canRead[threadId] = this.buffer.getByteBuffer(readOffset[threadId] + 6 + 4L * totalThreads + totalLength, totalLength);
+            canRead[threadId] = this.buffer.getByteBuffer(readOffset[threadId] + 6 + 4L * totalThreads + totalLength, 2);
             short end_flag = canRead[threadId].getShort();
             if (end_flag == SOURCE_CONTROL.END_FLAG) {
                 baseOffset = readOffset[threadId] + 6 + 4L * totalThreads;//Message Start
@@ -40,7 +40,11 @@ public class CircularMessageBuffer {
                 readOffset[threadId] = readOffset[threadId] + 2L + 4L + 4L * totalThreads + totalLength + 2L;
             }
         }
-        return new Tuple2<>(baseOffset, canRead[threadId]);
+        if (baseOffset == 0) {
+            return null;
+        } else {
+            return new Tuple2<>(baseOffset, canRead[threadId]);
+        }
     }
     public ByteBuffer read(long address, int length) throws IOException {
         return this.buffer.getByteBuffer(address, length);

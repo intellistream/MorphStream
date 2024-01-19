@@ -94,7 +94,7 @@ public class MorphStreamFrontend extends Thread{
         if (hasRemaining() == -1) {
             for (int i = 0; i < workerIdToCircularRdmaBufferMap.size(); i++) {
                 tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead(this.threadId);
-                if (tempCanRead._1() != 0L) {
+                if (tempCanRead != null) {
                     List<Integer> lengthQueue = new ArrayList<>();
                     while(tempCanRead._2().hasRemaining()) {
                         lengthQueue.add(tempCanRead._2().getInt());
@@ -106,7 +106,7 @@ public class MorphStreamFrontend extends Thread{
                     }
                     ByteBuffer byteBuffer = workerIdToCircularRdmaBufferMap.get(i).read(myOffset, myLength);
                     workerIdToResultBufferMap.put(i, byteBuffer);
-                    LOG.info("ThreadId : " + threadId + " receive results from worker: " + i);
+                    LOG.info("ThreadId : " + threadId + " receive results from worker " + i);
                 }
             }
             if (hasRemaining() == -1)

@@ -23,9 +23,9 @@ public class WorkerRdmaBufferManager extends RdmaBufferManager {
             circularMessageBuffer = new CircularMessageBuffer(getPd(), length, totalThreads);
         }
     }
-    public void perAllocateTableBuffer(int length) throws Exception {
+    public void perAllocateTableBuffer(int length, int totalThreads) throws Exception {
         if (tableBuffer == null) {
-            tableBuffer = new TableBuffer(getPd(), length);
+            tableBuffer = new TableBuffer(getPd(), length, totalThreads);
         }
     }
 }

@@ -4,17 +4,17 @@ function ResetParameters() {
     #Cluster Configurations
     isDriver=1
     workerId=0
-    workerNum=1
+    workerNum=2
     tthread=4
     clientNum=4
     frontendNum=4
     clientClassName="client.BankingSystemClient"
     #Network Configurations
     isRDMA=1
-    driverHost="10.10.10.1"
+    driverHost="10.10.10.3"
     driverPort=5570
-    workerHosts="10.10.10.2"
-    workerPorts="5540"
+    workerHosts="10.10.10.1,10.10.10.2"
+    workerPorts="5550,5540"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`

@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.input.statistic;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.util.CompactHashMap.HashmapUtils;
 
 import java.util.*;
 

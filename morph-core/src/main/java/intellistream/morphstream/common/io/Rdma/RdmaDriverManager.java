@@ -2,6 +2,8 @@ package intellistream.morphstream.common.io.Rdma;
 
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.input.MessageBatch;
+import intellistream.morphstream.api.input.statistic.OwnershipTable;
+import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Channel.RdmaChannel;
 import intellistream.morphstream.common.io.Rdma.Channel.RdmaNode;
@@ -26,6 +28,8 @@ public class RdmaDriverManager {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaDriverManager.class);
     private final RdmaNode rdmaNode;
     private final boolean isDriver;
+    private final Statistic statistic;
+    private final int punctuation_interval;
     private final String[] workerHosts;
     private final String[] workerPorts;
     private final String driverHost;
@@ -39,9 +43,12 @@ public class RdmaDriverManager {
     @Getter
     private ConcurrentHashMap<Integer, MessageBatch> workerMessageBatchMap = new ConcurrentHashMap<>();//workerId -> MessageBatch
     private ConcurrentHashMap<Integer, Integer> frontendTotalMessageCountMap = new ConcurrentHashMap<>();//frontendId -> total message count
-    public RdmaDriverManager(boolean isDriver, Configuration conf) throws Exception {
+    private ConcurrentHashMap<Integer, Integer> frontendTotalBatchCountMap = new ConcurrentHashMap<>();//frontendId -> total batch count
+    public RdmaDriverManager(boolean isDriver, Configuration conf, Statistic statistic) throws Exception {
         this.isDriver = isDriver;
         this.conf = conf;
+        this.statistic = statistic;
+        this.punctuation_interval = MorphStreamEnv.get().configuration().getInt("totalBatch");
         workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
         workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
         driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
@@ -91,10 +98,13 @@ public class RdmaDriverManager {
         if (frontendTotalMessageCountMap.get(frontendId) >= SOURCE_CONTROL.getInstance().getMessagePerFrontend()) {
             SOURCE_CONTROL.getInstance().driverStartSendMessageBarrier();
             sendBatch(frontendId);
+            frontendTotalBatchCountMap.put(frontendId, frontendTotalBatchCountMap.get(frontendId) + 1);
+            if (model_switch(frontendId))
+                sendOwnershipTable(frontendId);
             SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
         }
     }
-    public void sendBatch(int workId) throws Exception {
+    private void sendBatch(int workId) throws Exception {
         if (workerMessageBatchMap.get(workId) == null || workerMessageBatchMap.get(workId).isEmpty()) {
             frontendTotalMessageCountMap.put(workId, 0);
             return;
@@ -125,7 +135,7 @@ public class RdmaDriverManager {
                     frontendTotalMessageCountMap.put(workId, 0);
                     messageBatch.clear();
                     latch.countDown();
-                    LOG.info("Driver sends " + totalMessageCount + " to worker " + workId);
+                    LOG.info("Driver sends " + totalMessageCount + " functions to worker " + workId);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -143,5 +153,55 @@ public class RdmaDriverManager {
             }
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         latch.await();
+    }
+    private void sendOwnershipTable(int workId) throws Exception {
+        if (workerRdmaChannelMap.get(workId) == null) {
+            return;
+        }
+        OwnershipTable ownershipTable = this.statistic.getOwnershipTable();
+        ByteBuffer bytebuffer = ownershipTable.buffer();
+        bytebuffer.flip();
+
+        RdmaBuffer rdmaBuffer = rdmaBufferManager.get(bytebuffer.capacity());
+        ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
+        dataBuffer.put(bytebuffer);
+        dataBuffer.flip();
+
+        RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
+        RegionToken regionToken = workerRegionTokenMap.get(workId).getTableToken();
+
+        long remoteAddress = regionToken.getAddress();
+        int rkey = regionToken.getLocalKey();
+        CountDownLatch latch = new CountDownLatch(1);
+        rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                try {
+                    rdmaBuffer.getByteBuffer().clear();
+                    rdmaBufferManager.put(rdmaBuffer);
+                    regionToken.setAddress(remoteAddress + bytebuffer.capacity());
+                    ownershipTable.clear();
+                    latch.countDown();
+                    LOG.info("Driver sends ownership table to worker " + workId);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                try {
+                    rdmaBuffer.getByteBuffer().clear();
+                    rdmaBufferManager.put(rdmaBuffer);
+                    latch.countDown();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
+        latch.await();
+    }
+    private boolean model_switch(int frontend_Id) {
+        return frontendTotalBatchCountMap.get(frontend_Id) % punctuation_interval == 0;
     }
 }
