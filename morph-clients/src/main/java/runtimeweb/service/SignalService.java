@@ -1,9 +1,9 @@
 package runtimeweb.service;
 
-import cli.SLClient;
+import client.impl.SLClient;
 import intellistream.morphstream.api.input.InputSource;
 import org.springframework.stereotype.Service;
-import taskmanager.initializer.JobInitializer;
+import client.jobmanage.initializer.JobInitializer;
 
 @Service
 public class SignalService extends AbstractService {
@@ -42,9 +42,12 @@ public class SignalService extends AbstractService {
      * @return true if the job is submitted successfully, false otherwise
      */
     public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code) {
-        System.out.println(code);
+//        System.out.println(code);
         // TODO: analyze code and generate job
-        JobInitializer.initialize("3"); // initialize the job
+        boolean initialized = JobInitializer.initialize(jobName); // initialize the job
+        if (!initialized) {
+            return false;
+        }
         if (startNow) {
             try {
                 SLClient.startJob(new String[]{}); // start the job
@@ -52,8 +55,7 @@ public class SignalService extends AbstractService {
             } catch (Exception e) {
                 return false;
             }
-        } else {
-            return true;
         }
+        return true;
     }
 }

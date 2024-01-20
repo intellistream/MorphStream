@@ -1,4 +1,4 @@
-package taskmanager.analyzer;
+package client.jobmanage.analyzer;
 
 
 import java.io.File;

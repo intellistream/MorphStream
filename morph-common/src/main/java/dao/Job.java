@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -34,4 +35,27 @@ public class Job {
     private List<Operator> operators;
     private OverallTimeBreakdown overallTimeBreakdown;
     private SchedulerTimeBreakdown schedulerTimeBreakdown;
+
+    public Job(int JobId, String name) {
+        this.jobId = JobId;
+        this.name = name;
+        this.nThreads = 0;
+        this.cpu = "NA";
+        this.ram = "NA";
+        this.startTime = "NA";
+        this.duration = "NA";
+        this.isRunning = false;
+        this.nEvents = 0;
+        this.minProcessTime = 0;
+        this.maxProcessTime = 0;
+        this.meanProcessTime = 0;
+        this.latency = 0;
+        this.throughput = 0;
+        this.nCore = 0;
+        this.periodicalThroughput = new ArrayList<>();
+        this.periodicalLatency = new ArrayList<>();
+        this.operators = new ArrayList<>();
+        this.overallTimeBreakdown = new OverallTimeBreakdown(0, 0, 0, 0);
+        this.schedulerTimeBreakdown = new SchedulerTimeBreakdown(0, 0, 0, 0, 0);
+    }
 }

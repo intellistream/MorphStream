@@ -1,5 +1,6 @@
-package taskmanager.analyzer;
+package client.jobmanage.analyzer;
 
+import client.Configuration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.TypeDeclaration;
@@ -19,8 +20,6 @@ import java.util.Collections;
  * CodeAnalyzer provides compiling and executing APIs for JAVA code
  */
 public class CodeAnalyzer {
-    private static final String CLASS_OUTPUT_DIR = "./output";  // TODO: change to the Job dir
-
     /**
      * Compile the code from String
      *
@@ -94,7 +93,7 @@ public class CodeAnalyzer {
 
         @Override
         public JavaFileObject getJavaFileForOutput(Location location, String className, StringFileObject.Kind kind, FileObject sibling) {
-            return new CompiledFileObject(className, CLASS_OUTPUT_DIR, kind);
+            return new CompiledFileObject(className, Configuration.JOB_COMPILE_PATH, kind);
         }
     }
 
@@ -104,7 +103,7 @@ public class CodeAnalyzer {
      * @param className class name to be executed
      */
     private static void execute(String className) throws MalformedURLException, ClassNotFoundException {
-        URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{new File(CLASS_OUTPUT_DIR).toURI().toURL()}); // ClassLoader used to load the compiled class file
+        URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{new File(Configuration.JOB_COMPILE_PATH).toURI().toURL()}); // ClassLoader used to load the compiled class file
         Class<?> cls = Class.forName(className, true, classLoader);
         try {
             Method main = cls.getMethod("main", String[].class);
@@ -131,7 +130,8 @@ public class CodeAnalyzer {
         }
         return null;
     }
-    // For testing purpose
+
+//     For testing purpose
     public static void main(String[] args) throws Exception {
         String code = "public class Main { public static void main(String[] args) { System.out.println(\"Hello, World\"); }}";
         compile(code, extractClassName(code));

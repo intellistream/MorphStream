@@ -1,5 +1,6 @@
-package cli;
+package client.impl;
 
+import client.CliFrontend;
 import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;

@@ -1,5 +1,6 @@
-package cli;
+package client.impl;
 
+import client.CliFrontend;
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
@@ -7,9 +8,9 @@ import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
+import client.jobmanage.initializer.JobInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import taskmanager.initializer.JobInitializer;
 
 import java.util.HashMap;
 import java.util.Objects;
