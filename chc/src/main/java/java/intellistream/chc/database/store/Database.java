@@ -1,5 +1,6 @@
 package java.intellistream.chc.database.store;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Database
  */
 public class Database {
-    private final ConcurrentHashMap<Key, Object> store;
+    private final ConcurrentHashMap<Key, Record> store;
 
     public Database() {
         this.store = new ConcurrentHashMap<>();
@@ -20,9 +21,9 @@ public class Database {
      * @param objKey object key
      * @return shared state object
      */
-    public Object findSharedState(int vertexId, int objKey) {
+    public int findSharedState(int vertexId, int objKey) {
         Key key = new Key(vertexId, null, objKey, StateType.SHARED);
-        return this.get(key);
+        return this.get(key).getValue();
     }
 
     /**
@@ -32,9 +33,9 @@ public class Database {
      * @param objKey object key
      * @return exclusive state object
      */
-    public Object findExclusiveState(int vertexId, int instanceId, int objKey) {
+    public int findExclusiveState(int vertexId, int instanceId, int objKey) {
         Key key = new Key(vertexId, instanceId, objKey, StateType.EXCLUSIVE);
-        return this.get(key);
+        return this.get(key).getValue();
     }
 
     /**
@@ -43,9 +44,9 @@ public class Database {
      * @param objKey object key
      * @param value shared state object
      */
-    public void putSharedState(int vertexId, int objKey, Object value) {
+    public void putSharedState(int vertexId, int objKey, int value) {
         Key key = new Key(vertexId, null, objKey, StateType.SHARED);
-        this.put(key, value);
+        this.put(key, new Record(value, Thread.currentThread().getId()));
     }
 
     /**
@@ -55,9 +56,9 @@ public class Database {
      * @param objKey object key
      * @param value exclusive state object
      */
-    public void putExclusiveState(int vertexId, int instanceId, int objKey, Object value) {
+    public void putExclusiveState(int vertexId, int instanceId, int objKey, int value) {
         Key key = new Key(vertexId, instanceId, objKey, StateType.EXCLUSIVE);
-        this.put(key, value);
+        this.put(key, new Record(value, Thread.currentThread().getId()));
     }
 
     /**
@@ -130,11 +131,40 @@ public class Database {
         return this.containsKey(key);
     }
 
-    private void put(Key key, Object value) {
-        this.store.put(key, value);
+    /**
+     * Get the thread id of the thread executing an exclusive state
+     * @param vertexId vertex id
+     * @param instanceId instance id
+     * @param objKey object key
+     * @return thread id
+     */
+    public long getExecuteThreadId(int vertexId, int instanceId, int objKey) {
+        Key key = new Key(vertexId, instanceId, objKey, StateType.EXCLUSIVE);
+        if (this.get(key) == null) {
+            return -1;  // the state is not in the database
+        }
+        return this.get(key).getThreadId();
     }
 
-    private Object get(Key key) {
+    /**
+     * Get the thread id of the thread executing a shared state
+     * @param vertexId vertex id
+     * @param objKey object key
+     * @return thread id
+     */
+    public long getExecuteThreadId(int vertexId, int objKey) {
+        Key key = new Key(vertexId, null, objKey, StateType.SHARED);
+        if (this.get(key) == null) {
+            return -1;  // the state is not in the database
+        }
+        return this.get(key).getThreadId();
+    }
+
+    private void put(Key key, Record record) {
+        this.store.put(key, record);
+    }
+
+    private Record get(Key key) {
         return this.store.get(key);
     }
 
@@ -150,18 +180,22 @@ public class Database {
      * Key of the object in the database
      */
     @Data
+    @AllArgsConstructor
     private static class Key {
         public final Integer vertexId;
         public final Integer instanceId;
         public final Integer objKey;
         public final StateType stateType;
+    }
 
-        public Key(Integer vertexId, Integer instanceId, Integer objKey, StateType stateType) {
-            this.vertexId = vertexId;
-            this.instanceId = instanceId;
-            this.objKey = objKey;
-            this.stateType = stateType;
-        }
+    /**
+     * Record in the database
+     */
+    @Data
+    @AllArgsConstructor
+    public static class Record {
+        private int value;
+        private long threadId;
     }
 
     /**

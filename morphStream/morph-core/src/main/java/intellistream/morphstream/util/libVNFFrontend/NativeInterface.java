@@ -21,12 +21,6 @@ public class NativeInterface {
     // Native method declaration for __handle_done
     public static native int __txn_finished(long txnID); //TODO: This should be txnID (or packet ID)
 
-    // update cache instruction (callback) -> update cache
-    public static native int __update_cache(int objKey, byte[] value);
-
-    // access state (READ: value; WRITE: success or not)
-    public static native byte[] __access_state(int vertexId, int instanceId, int objKey, boolean isSharedState);
-
     // Load the native library when the class is initialized
     static {
         System.load("/home/shuhao/DB4NFV/tmp/SL-kernel-dynamic.so");
