@@ -1,6 +1,6 @@
-package client.jobmanage.initializer;
+package client.jobmanage.util.initialize;
 
-import client.Configuration;
+import client.jobmanage.util.Util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.Job;
 import org.slf4j.Logger;
@@ -15,10 +15,10 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 /**
- * JobInitializer is used to initialize a new job
+ * JobInitializeUtil is used to initialize a new job
  */
-public class JobInitializer {
-    private static final Logger log = LoggerFactory.getLogger(JobInitializer.class);
+public class JobInitializeUtil {
+    private static final Logger log = LoggerFactory.getLogger(JobInitializeUtil.class);
 
     /**
      * Initialize a new job
@@ -28,21 +28,14 @@ public class JobInitializer {
      */
     public static boolean initialize(String jobName) {
         // create jobInfo directory if not exists
-        File directory = new File(String.format("%s", Configuration.JOB_INFO_PATH));
-        if (!directory.exists()) {
-            if (directory.mkdirs()) {
-                log.info("Directory is created!");
-            } else {
-                log.info("Failed to create directory!");
-                return false;
-            }
+        if (!Util.validateDirectory(Util.jobInfoDirectory) || Util.validateDirectory(Util.jobCompileDirectory)) {
+            return false;
         }
 
         int jobId = generateJobId();
-        jobName = jobName.trim().replace(" ", "_");
 
         // create job JSON file if not exists
-        String jobFileName = String.format("%s/%s.json", directory, jobId + "_" + jobName);
+        String jobFileName = String.format("%s/%s.json", Util.jobInfoDirectory, jobId);
         Path jobFile = Paths.get(jobFileName);
         if (Files.exists(jobFile)) {
             log.error("Job JSON file already exists.");
@@ -51,31 +44,16 @@ public class JobInitializer {
             try {
                 Files.createFile(jobFile);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.error("Error in creating Job JSON file: " + e.getMessage());
             }
         }
 
-        // create jobCompile directory if not exists
-        File jobInfoDirectory = new File(String.format("%s/%s", Configuration.JOB_INFO_PATH, jobId + "_" + jobName));
-        if (!jobInfoDirectory.exists()) {
-            if (jobInfoDirectory.mkdirs()) {
-                log.info("Directory is created!");
-            } else {
-                log.info("Failed to create directory!");
-                return false;
-            }
-        }
+        File jobInfoFolder = new File(String.format("%s/%s", Util.jobInfoDirectory, jobId));
+        Util.validateDirectory(jobInfoFolder);
 
         // create jobCompile directory if not exists
-        File jobCompileDirectory = new File(String.format("%s/%s", Configuration.JOB_COMPILE_PATH, jobId + "_" + jobName));
-        if (!jobCompileDirectory.exists()) {
-            if (jobCompileDirectory.mkdirs()) {
-                log.info("Directory is created!");
-            } else {
-                log.info("Failed to create directory!");
-                return false;
-            }
-        }
+        File jobCompileFolder = new File(String.format("%s/%s", Util.jobCompileDirectory, jobId));
+        Util.validateDirectory(jobCompileFolder);
 
         // create jobInfo json file for new job
         Job job = new Job(jobId, jobName);
@@ -85,7 +63,7 @@ public class JobInitializer {
             objectMapper.writeValue(new File(jobFileName), job);
             log.info("Job JSON file created successfully.");
         } catch (IOException e) {
-            throw new RuntimeException("Error in creating Job JSON file: " + e.getMessage());
+            log.error("Error in creating Job JSON file: " + e.getMessage());
         }
         return true;
     }
@@ -96,13 +74,12 @@ public class JobInitializer {
      * @return job id
      */
     private static int generateJobId() {
-        File jobInfoDirectory = new File(Configuration.JOB_INFO_PATH);
-        if (!jobInfoDirectory.exists() || jobInfoDirectory.listFiles() == null) {
+        if (!Util.jobInfoDirectory.exists() || Util.jobInfoDirectory.listFiles() == null) {
             return 0;   // job id starts from 0
         }
 
         ArrayList<Integer> existingJobIds = new ArrayList<>();
-        for (File file : Objects.requireNonNull(jobInfoDirectory.listFiles())) {
+        for (File file : Objects.requireNonNull(Util.jobInfoDirectory.listFiles())) {
             String fileName = file.getName();
             if (fileName.endsWith(".json")) {
                 fileName = fileName.replace(".json", "");

@@ -1,4 +1,4 @@
-package client.jobmanage.analyzer;
+package client.jobmanage.util.analyze;
 
 import client.Configuration;
 import com.github.javaparser.StaticJavaParser;
@@ -17,12 +17,11 @@ import java.nio.file.Files;
 import java.util.Collections;
 
 /**
- * CodeAnalyzer provides compiling and executing APIs for JAVA code
+ * CodeAnalyzeUtil provides compiling and executing APIs for JAVA code
  */
-public class CodeAnalyzer {
+public class CodeAnalyzeUtil {
     /**
-     * Compile the code from String
-     *
+     * Compile the code from String to class file
      * @param code      code
      * @param className class name
      */
@@ -99,7 +98,6 @@ public class CodeAnalyzer {
 
     /**
      * Execute the compiled class file
-     *
      * @param className class name to be executed
      */
     private static void execute(String className) throws MalformedURLException, ClassNotFoundException {
@@ -121,7 +119,7 @@ public class CodeAnalyzer {
      */
     public static String extractClassName(String code) {
         CompilationUnit cu = StaticJavaParser.parse(code);
-        for (TypeDeclaration<?> type: cu.getTypes()) {
+        for (TypeDeclaration<?> type : cu.getTypes()) {
             if (type.isClassOrInterfaceDeclaration()) {
                 if (type.isPublic()) {
                     return type.getNameAsString();
@@ -131,10 +129,10 @@ public class CodeAnalyzer {
         return null;
     }
 
-//     For testing purpose
-    public static void main(String[] args) throws Exception {
-        String code = "public class Main { public static void main(String[] args) { System.out.println(\"Hello, World\"); }}";
-        compile(code, extractClassName(code));
-        execute(extractClassName(code));
-    }
+    //     For testing purpose
+//    public static void main(String[] args) throws Exception {
+//        String code = "public class Main { public static void main(String[] args) { System.out.println(\"Hello, World\"); }}";
+//        compile(code, extractClassName(code));
+//        execute(extractClassName(code));
+//    }
 }

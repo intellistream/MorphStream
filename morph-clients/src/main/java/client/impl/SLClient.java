@@ -8,7 +8,7 @@ import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
-import client.jobmanage.initializer.JobInitializer;
+import client.jobmanage.util.initialize.JobInitializeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,7 +153,7 @@ public class SLClient extends Client {
     }
 
     public static void main(String[] args) throws Exception {
-        JobInitializer.initialize("3");
+        JobInitializeUtil.initialize("3");
         startJob(args);
     }
 }

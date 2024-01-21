@@ -1,4 +1,4 @@
-package client.jobmanage.analyzer;
+package client.jobmanage.util.analyze;
 
 
 import java.io.File;
@@ -15,10 +15,10 @@ import java.util.jar.Manifest;
  * JarAnalyzer is used to analyze Jar File uploaded to the server
  *
  */
-public class JarAnalyzer {
+public class JarAnalyzeUtil {
     String PATH;
 
-    public JarAnalyzer(String path) {
+    public JarAnalyzeUtil(String path) {
         this.PATH = path;
     }
 
