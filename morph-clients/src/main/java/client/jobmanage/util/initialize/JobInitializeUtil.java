@@ -28,7 +28,7 @@ public class JobInitializeUtil {
      */
     public static boolean initialize(String jobName) {
         // create jobInfo directory if not exists
-        if (!Util.validateDirectory(Util.jobInfoDirectory) || Util.validateDirectory(Util.jobCompileDirectory)) {
+        if (!Util.validateAndMakeDirectory(Util.jobInfoDirectory) || Util.validateAndMakeDirectory(Util.jobCompileDirectory)) {
             return false;
         }
 
@@ -49,11 +49,11 @@ public class JobInitializeUtil {
         }
 
         File jobInfoFolder = new File(String.format("%s/%s", Util.jobInfoDirectory, jobId));
-        Util.validateDirectory(jobInfoFolder);
+        Util.validateAndMakeDirectory(jobInfoFolder);
 
         // create jobCompile directory if not exists
         File jobCompileFolder = new File(String.format("%s/%s", Util.jobCompileDirectory, jobId));
-        Util.validateDirectory(jobCompileFolder);
+        Util.validateAndMakeDirectory(jobCompileFolder);
 
         // create jobInfo json file for new job
         Job job = new Job(jobId, jobName);

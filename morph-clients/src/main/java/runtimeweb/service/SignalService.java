@@ -1,6 +1,7 @@
 package runtimeweb.service;
 
 import client.impl.SLClient;
+import client.jobmanage.util.initialize.JobPrepareUtil;
 import intellistream.morphstream.api.input.InputSource;
 import org.springframework.stereotype.Service;
 import client.jobmanage.util.initialize.JobInitializeUtil;
@@ -13,7 +14,8 @@ public class SignalService {
      * @return true if the job is started successfully, false otherwise
      */
     public Boolean onStartSignal(String jobId) {
-        JobInitializeUtil.initialize(jobId); // initialize the job
+//        JobInitializeUtil.initialize(jobId); // initialize the job
+        JobPrepareUtil.prepare(jobId); // prepare the job
         // TODO: start job based on job id
         try {
             SLClient.startJob(new String[]{}); // start the job

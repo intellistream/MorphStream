@@ -27,7 +27,7 @@ public class JobInfoSeekUtil {
     public static List<Job> getAllJobs() {
         List<Job> jobs = new ArrayList<>();
 
-        if (Util.validateDirectory(Util.jobInfoDirectory)) {
+        if (Util.validateAndMakeDirectory(Util.jobInfoDirectory)) {
             // read all json files in the directory
             FilenameFilter jsonFilter = (dir, name) -> name.endsWith(".json");
             File[] jsonFiles = Util.jobInfoDirectory.listFiles(jsonFilter);
@@ -52,7 +52,7 @@ public class JobInfoSeekUtil {
      * @return a job object
      */
     public static Job getJobById(String jobId) {
-        if (Util.validateDirectory(Util.jobInfoDirectory)) {
+        if (Util.validateAndMakeDirectory(Util.jobInfoDirectory)) {
             FilenameFilter jsonFilter = (dir, name) -> name.equals(jobId + ".json");
             File[] jsonFiles = Util.jobInfoDirectory.listFiles(jsonFilter);
             if (jsonFiles != null && jsonFiles.length == 1) {
@@ -76,7 +76,7 @@ public class JobInfoSeekUtil {
     public static List<Batch> getAllBatches(String jobId, String operatorId) {
         List<Batch> batches = new ArrayList<>();
         File directory = new File(String.format("%s/%s/%s", Util.jobInfoDirectory, jobId, operatorId));
-        if (Util.validateDirectory(directory)) {
+        if (Util.validateAndMakeDirectory(directory)) {
             FilenameFilter jsonFilter = (dir, name) -> name.endsWith(".json");
             File[] jsonFiles = directory.listFiles(jsonFilter);
             if (jsonFiles != null) {
@@ -103,7 +103,7 @@ public class JobInfoSeekUtil {
      */
     public static Batch getBatchById(String jobId, String operatorId, String batchId) {
         File directory = new File(String.format("%s/%s/%s", Util.jobInfoDirectory, jobId, operatorId));
-        if (Util.validateDirectory(directory)) {
+        if (Util.validateAndMakeDirectory(directory)) {
             FilenameFilter jsonFilter = (dir, name) -> name.equals(batchId + ".json");
             File[] jsonFiles = directory.listFiles(jsonFilter);
 

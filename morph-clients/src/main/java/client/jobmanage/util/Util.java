@@ -18,7 +18,7 @@ public class Util {
      * @param directory the directory to be validated
      * @return true if the directory is valid, false otherwise
      */
-    public static boolean validateDirectory(File directory) {
+    public static boolean validateAndMakeDirectory(File directory) {
         if (directory.exists() && directory.isDirectory()) {
             return true;
         } else {
