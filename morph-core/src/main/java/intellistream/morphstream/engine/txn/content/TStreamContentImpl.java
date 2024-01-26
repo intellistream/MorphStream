@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.content;
 
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +11,7 @@ public class TStreamContentImpl extends TStreamContent {
     private final long pwid = Long.MAX_VALUE;//previous watermark id.
 
     @Override
-    public SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(FunctionContext context, CommonMetaTypes.AccessType accessType) {
         return readValues(context.getBID(), -1, false);
     }
 

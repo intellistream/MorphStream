@@ -10,7 +10,7 @@ import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes.Depend
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes.OperationStateType;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +57,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     //For read/write
     public <Context extends OPSchedulerContext> Operation(
-            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            String pKey, Context context, String table_name, FunctionContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
@@ -87,7 +87,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     //For window read/write
     public <Context extends OPSchedulerContext> Operation(
-            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            String pKey, Context context, String table_name, FunctionContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             HashMap<String, TableRecord> read_records, WindowDescriptor windowContext, StateAccess stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, windowContext, pKey);
@@ -117,7 +117,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     //For non-deterministic read/write
     public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
-                                                          String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+                                                          String pKey, Context context, String table_name, FunctionContext txn_context, long bid,
                                                           CommonMetaTypes.AccessType accessType, TableRecord record,
                                                           HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);

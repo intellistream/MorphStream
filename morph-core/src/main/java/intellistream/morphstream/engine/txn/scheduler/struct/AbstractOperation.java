@@ -9,7 +9,7 @@ import intellistream.morphstream.engine.txn.durability.struct.Logging.LoggingEnt
 import intellistream.morphstream.engine.txn.durability.struct.Logging.NativeCommandLog;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.HashMap;
 
@@ -23,7 +23,7 @@ public abstract class AbstractOperation {
 
     //required by READ_WRITE_and Condition.
     public final String table_name;
-    public final TxnContext txn_context;
+    public final FunctionContext txn_context;
     public final CommonMetaTypes.AccessType accessType;
     public final TableRecord d_record;
     public final long bid;
@@ -37,7 +37,7 @@ public abstract class AbstractOperation {
     public WindowDescriptor windowContext;
 
     public AbstractOperation(String table_name, StateAccess stateAccess, HashMap<String, TableRecord> condition_records,
-                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, WindowDescriptor windowContext, String pKey) {
+                             FunctionContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, WindowDescriptor windowContext, String pKey) {
         this.table_name = table_name;
         this.stateAccess = stateAccess;
         this.condition_records = condition_records;

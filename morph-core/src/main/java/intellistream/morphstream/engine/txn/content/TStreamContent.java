@@ -3,7 +3,7 @@ package intellistream.morphstream.engine.txn.content;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,12 +48,12 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public boolean TryWriteLock(OrderLock lock, TxnContext txn_context) {
+    public boolean TryWriteLock(OrderLock lock, FunctionContext txn_context) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean TryReadLock(OrderLock lock, TxnContext txn_context) {
+    public boolean TryReadLock(OrderLock lock, FunctionContext txn_context) {
         throw new UnsupportedOperationException();
     }
 

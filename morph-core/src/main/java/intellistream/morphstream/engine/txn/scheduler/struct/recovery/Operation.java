@@ -6,7 +6,7 @@ import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,7 +23,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public MetaTypes.OperationStateType operationState = MetaTypes.OperationStateType.BLOCKED;
 
     public <Context extends RSContext> Operation(
-            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            String pKey, Context context, String table_name, FunctionContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);

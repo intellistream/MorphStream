@@ -9,7 +9,7 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.engine.txn.transaction.impl.TxnManagerDedicatedLocked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
+    public boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException, InterruptedException {
         record.is_visible_ = false;
         TableRecord tb_record = new TableRecord(record, (int) this.thread_count_);
@@ -61,7 +61,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
+    protected boolean lock_aheadCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
         if (accessType == READ_ONLY) {
             //The following makes sure the lock_ratio is added in event sequence as in ACEP.
@@ -86,7 +86,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
+    public boolean SelectKeyRecord_noLockCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
         if (accessType == READ_ONLY) {
             TxnAccess.Access access = access_list_.NewAccess();
@@ -123,7 +123,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
+    protected boolean SelectRecordCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
         if (accessType == READ_ONLY) {
             //The following makes sure the lock_ratio is added in event sequence as in ACEP.
@@ -172,7 +172,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
+    public boolean CommitTransaction(FunctionContext txn_context, int batchID) {
 //		long curr_epoch = Epoch.GetEpoch();
         long commit_ts = txn_context.getBID();//This makes the execution appears to execute at one atomic time unit. //GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
         for (int i = 0; i < access_list_.access_count_; ++i) {

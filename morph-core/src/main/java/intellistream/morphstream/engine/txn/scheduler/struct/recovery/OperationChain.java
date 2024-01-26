@@ -1,10 +1,13 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.recovery;
 
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.MyList;
+import lombok.Getter;
 
 public class OperationChain implements Comparable<OperationChain> {
     public final MyList<Operation> operations;
+    @Getter
     private final String tableName;
+    @Getter
     private final String primaryKey;
     public int level = 0;
 
@@ -20,14 +23,6 @@ public class OperationChain implements Comparable<OperationChain> {
             return 0;
         else
             return -1;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public String getPrimaryKey() {
-        return primaryKey;
     }
 
     public void addOperation(Operation operation) {

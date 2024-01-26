@@ -4,12 +4,12 @@ import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.HashMap;
 
 public class Request {
-    public final TxnContext txn_context;
+    public final FunctionContext txn_context;
     public final CommonMetaTypes.AccessType accessType;
     public final String table_name;
     public final String write_key;
@@ -25,14 +25,14 @@ public class Request {
     }
 
     //READY ONLY
-    public Request(TxnContext txn_context,
+    public Request(FunctionContext txn_context,
                    CommonMetaTypes.AccessType accessType,
                    String table_name, StateAccess stateAccess) {
         this(txn_context, null, accessType, table_name, null, null, null, null, null, stateAccess);
     }
 
     //no column id
-    public Request(TxnContext txn_context,
+    public Request(FunctionContext txn_context,
                    CommonMetaTypes.AccessType accessType,
                    String table_name,
                    String write_key,
@@ -45,7 +45,7 @@ public class Request {
     }
 
     //no condition, no ref.
-    public Request(TxnContext txn_context,
+    public Request(FunctionContext txn_context,
                    CommonMetaTypes.AccessType accessType,
                    String table_name,
                    String write_key,
@@ -54,7 +54,7 @@ public class Request {
         this(txn_context, null, accessType, table_name, write_key, d_record, null, null, null, stateAccess);
     }
 
-    public Request(TxnContext txn_context,
+    public Request(FunctionContext txn_context,
                    BaseTable[] baseTable,
                    CommonMetaTypes.AccessType accessType,
                    String table_name,

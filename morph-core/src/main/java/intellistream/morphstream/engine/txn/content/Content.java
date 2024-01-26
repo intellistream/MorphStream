@@ -4,7 +4,7 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.List;
 
@@ -24,9 +24,9 @@ public interface Content {
     /**
      * new API for ordering guarantee
      */
-    boolean TryWriteLock(OrderLock lock, TxnContext txn_context) throws InterruptedException;
+    boolean TryWriteLock(OrderLock lock, FunctionContext txn_context) throws InterruptedException;
 
-    boolean TryReadLock(OrderLock lock, TxnContext txn_context) throws InterruptedException;
+    boolean TryReadLock(OrderLock lock, FunctionContext txn_context) throws InterruptedException;
 
     boolean AcquireReadLock();
 
@@ -45,7 +45,7 @@ public interface Content {
     long GetLWM();
 
     //	LWMContentImpl.XLockQueue GetXLockQueue();
-    SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType);
+    SchemaRecord ReadAccess(FunctionContext context, CommonMetaTypes.AccessType accessType);
 
     //Used to checkpoint the schema record
     SchemaRecord ReadAccess(long snapshotId, boolean clean);

@@ -4,7 +4,7 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.RWLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,13 +23,13 @@ public class LockContentImpl extends LockContent {
 
     //used by non-blocking lock_ratio.
     @Override
-    public boolean TryWriteLock(OrderLock orderLock, TxnContext txn_context) throws InterruptedException {
+    public boolean TryWriteLock(OrderLock orderLock, FunctionContext txn_context) throws InterruptedException {
         return orderLock.blocking_wait(txn_context.getBID()) &&
                 lock_.TryWriteLock();
     }
 
     @Override
-    public boolean TryReadLock(OrderLock orderLock, TxnContext txn_context) throws InterruptedException {
+    public boolean TryReadLock(OrderLock orderLock, FunctionContext txn_context) throws InterruptedException {
         return orderLock.blocking_wait(txn_context.getBID()) &&
                 lock_.TryReadLock();
     }

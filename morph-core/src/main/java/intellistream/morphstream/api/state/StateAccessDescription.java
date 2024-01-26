@@ -1,14 +1,21 @@
 package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
+import lombok.Getter;
 
 import java.io.Serializable;
 import java.util.*;
 
 public class StateAccessDescription implements Serializable {
+    @Getter
     private final String name;
+    @Getter
     private final AccessType accessType;
+    @Getter
     private final List<StateObjectDescription> stateObjDescList;
+    @Getter
+    private final List<String> fatherNames;
+    @Getter
     private final List<String> valueNames;//Condition refers to values that are not commonly-shared among events, but used in txn-UDF
 
     public StateAccessDescription(String name, AccessType type) {
@@ -16,29 +23,17 @@ public class StateAccessDescription implements Serializable {
         accessType = type;
         stateObjDescList = new ArrayList<>();
         valueNames = new ArrayList<>();
+        fatherNames = new ArrayList<>();
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, String keyName, String valueName, int keyIndex) {
+    public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, String keyName, int keyIndex) {
         stateObjDescList.add(new StateObjectDescription(stateObjName, type, tableName, keyName, keyIndex));
-    }
-
-    public List<StateObjectDescription> getStateObjDescList() {
-        return stateObjDescList;
     }
 
     public void addValueName(String name) {
         valueNames.add(name);
     }
-
-    public List<String> getValueNames() {
-        return valueNames;
-    }
-
-    public AccessType getAccessType() {
-        return accessType;
+    public void addFatherName(String name) {
+        fatherNames.add(name);
     }
 }

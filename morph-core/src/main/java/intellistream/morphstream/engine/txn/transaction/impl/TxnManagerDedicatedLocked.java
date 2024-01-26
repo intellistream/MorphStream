@@ -11,7 +11,7 @@ import intellistream.morphstream.engine.txn.scheduler.context.og.OGSchedulerCont
 import intellistream.morphstream.engine.txn.storage.*;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,10 +94,10 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         throw new UnsupportedOperationException();
     }
 
-    public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
+    public abstract boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
     @Override
-    public boolean SelectKeyRecord(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException, InterruptedException {
+    public boolean SelectKeyRecord(FunctionContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);//index look up.
         MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -112,7 +112,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
-    public boolean lock_ahead(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException {
+    public boolean lock_ahead(FunctionContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException {
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);
         if (t_record != null) {
             boolean rt = lock_aheadCC(txn_context, table_name, t_record, record_, access_type);
@@ -124,7 +124,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
-    public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException {
+    public boolean SelectKeyRecord_noLock(FunctionContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException {
         MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);
         MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -147,7 +147,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
      * @return
      * @throws DatabaseException
      */
-    public boolean SelectRecords(TxnContext txn_context, String table_name, int idx_id, String secondary_key, SchemaRecords records_, CommonMetaTypes.AccessType access_type, LinkedList<Long> gap) throws DatabaseException, InterruptedException {
+    public boolean SelectRecords(FunctionContext txn_context, String table_name, int idx_id, String secondary_key, SchemaRecords records_, CommonMetaTypes.AccessType access_type, LinkedList<Long> gap) throws DatabaseException, InterruptedException {
         storageManager_.getTable(table_name).SelectRecords(idx_id, secondary_key, t_records_);
         SelectRecordsCC(txn_context, table_name, t_records_, records_, access_type, gap);
         t_records_.Clear();
@@ -162,7 +162,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
      * @param access_type
      * @return
      */
-    protected boolean SelectRecordsCC(TxnContext txn_context, String table_name, TableRecords t_records, SchemaRecords records_, CommonMetaTypes.AccessType access_type, LinkedList<Long> gap) throws InterruptedException {
+    protected boolean SelectRecordsCC(FunctionContext txn_context, String table_name, TableRecords t_records, SchemaRecords records_, CommonMetaTypes.AccessType access_type, LinkedList<Long> gap) throws InterruptedException {
         for (int i = 0; i < t_records.curr_size_; ++i) {
             SchemaRecordRef record_ref = new SchemaRecordRef();
             if (!SelectRecordCC(txn_context, table_name, t_records.records_[i], record_ref, access_type)) {
@@ -174,26 +174,26 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         return true;
     }
 
-    protected abstract boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType access_type) throws InterruptedException;
+    protected abstract boolean SelectRecordCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType access_type) throws InterruptedException;
 
-    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
+    public boolean SelectKeyRecord_noLockCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
-    protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType access_type) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void BeginTransaction(TxnContext txn_context) {
+    protected boolean lock_aheadCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType access_type) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public abstract boolean CommitTransaction(TxnContext txn_context, int batchID);
+    public void BeginTransaction(FunctionContext txn_context) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
-    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) {
+    public abstract boolean CommitTransaction(FunctionContext txn_context, int batchID);
+
+    @Override
+    public boolean submitStateAccess(StateAccess stateAccess, FunctionContext functionContext) {
         throw new UnsupportedOperationException();
     }
 

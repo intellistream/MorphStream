@@ -9,7 +9,7 @@ import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.LinkedList;
 import java.util.concurrent.BrokenBarrierException;
@@ -22,27 +22,27 @@ public interface ITxnManager {
     OrderLock getOrderLock();//shared.
 
     PartitionedOrderLock.LOCK getOrderLock(int p_id);//partitioned. Global ordering can not be partitioned.
-    boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException;
+    boolean submitStateAccess(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException;
 
     //used by speculative T-Stream.
 //    boolean Specu_ReadRecord(TxnContext txn_context, String microTable, String key, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws DatabaseException;
     void start_evaluate(String operatorID, int batchID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException;
 
-    boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
+    boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
-    boolean SelectKeyRecord(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException;
+    boolean SelectKeyRecord(FunctionContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException;
 
-    boolean lock_ahead(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
+    boolean lock_ahead(FunctionContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
 
-    boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
+    boolean SelectKeyRecord_noLock(FunctionContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
 
     boolean lock_all(SpinLock[] spinLocks) throws DatabaseException;
 
     boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException;
 
-    void BeginTransaction(TxnContext txnContext);
+    void BeginTransaction(FunctionContext functionContext);
 
-    boolean CommitTransaction(TxnContext txn_context, int batchID);
+    boolean CommitTransaction(FunctionContext txn_context, int batchID);
 
     SchedulerContext getSchedulerContext();
 
@@ -62,7 +62,8 @@ public interface ITxnManager {
         OP_DFS,
         OP_DFS_A,
         TStream, // original TStream
-        Recovery
+        Recovery,
+        DScheduler
     }
 
 }

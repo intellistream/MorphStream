@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.operator.bolt.rdma;
 
 import intellistream.morphstream.api.Client;
-import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
@@ -15,14 +14,11 @@ import intellistream.morphstream.engine.stream.components.operators.api.sink.Abs
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zeromq.ZMsg;
-import scala.Tuple2;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -83,23 +79,23 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     protected void PRE_EXECUTE(Tuple in) {
         input_event = (TransactionalEvent) in.getValue(0);
         _bid = input_event.getBid();
-        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
+        txn_context[0] = new FunctionContext(thread_Id, _bid);
     }
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = input_event;
-            Transaction_Request_Construct(event, txnContext);
+            Transaction_Request_Construct(event, txn_context[0]);
         }
     }
 
-    protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void Transaction_Request_Construct(TransactionalEvent event, FunctionContext functionContext) throws DatabaseException {
         FunctionDescription functionDescription = txnDescriptionMap.get(event.getFlag());
+        functionContext.setTransactionCombo(functionDescription.getTransactionCombo());
         //Initialize state access map for each event
         eventStateAccessesMap.put(event.getBid(), new HashMap<>());
-        transactionManager.BeginTransaction(txnContext);
+        transactionManager.BeginTransaction(functionContext);
 
         int stateAccessIndex = 0; // index of state access in the txn, used to generate StateAccessID (OperationID)
         //Each event triggers multiple state accesses
@@ -132,10 +128,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             }
 
             eventStateAccessesMap.get(event.getBid()).put(stateAccessName, stateAccess);
-            transactionManager.submitStateAccess(stateAccess, txnContext);
+            transactionManager.submitStateAccess(stateAccess, functionContext);
         }
 
-        transactionManager.CommitTransaction(txnContext, currentBatchID);
+        transactionManager.CommitTransaction(functionContext, currentBatchID);
         eventQueue.add(event);
     }
 

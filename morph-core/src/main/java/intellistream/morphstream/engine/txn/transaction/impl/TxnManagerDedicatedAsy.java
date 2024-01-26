@@ -8,9 +8,9 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
-import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
+import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.og.OGNSAContext;
 import intellistream.morphstream.engine.txn.scheduler.context.og.OGNSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.og.OGSAContext;
@@ -26,7 +26,7 @@ import intellistream.morphstream.engine.txn.storage.*;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,8 +52,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 //    public final Stage stage; //Each stateful operator has its own Stage, encapsulating a scheduler and a SOURCE_CONTROL.
 
     public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType) {
-//    public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType, Stage stage) {
-//        this.stage = stage;
         this.storageManager_ = storageManager;
         this.thisComponentId = thisComponentId;
         thread_count_ = thread_count;
@@ -76,7 +74,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             this.setSchedulerContext(thisTaskId, thread_count, "Recovery", recoveryScheduler);
             context = contexts.get("Recovery");
         }
-//        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
 
     public void setSchedulerContext(int thisTaskId, int thread_count, String schedulerType, IScheduler scheduler) {
@@ -114,6 +111,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 break;
             case Recovery:
                 schedulerContext = new RSContext(thisTaskId);
+                break;
+            case DScheduler:
+                schedulerContext = new DSContext(thisTaskId);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
@@ -160,27 +160,27 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean submitStateAccess(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
         MetaTypes.AccessType accessType = stateAccess.getAccessType();
         if (accessType == MetaTypes.AccessType.READ) {
-            return Asy_ReadRecord(stateAccess, txnContext);
+            return Asy_ReadRecord(stateAccess, functionContext);
         } else if (accessType == MetaTypes.AccessType.WRITE) {
-            return Asy_WriteRecord(stateAccess, txnContext);
+            return Asy_WriteRecord(stateAccess, functionContext);
         } else if (accessType == MetaTypes.AccessType.WINDOW_READ) {
-            return Asy_WindowReadRecord(stateAccess, txnContext);
+            return Asy_WindowReadRecord(stateAccess, functionContext);
         } else if (accessType == MetaTypes.AccessType.WINDOW_WRITE) {
-            return Asy_WindowWriteRecord(stateAccess, txnContext);
+            return Asy_WindowWriteRecord(stateAccess, functionContext);
         } else if (accessType == MetaTypes.AccessType.NON_DETER_READ) {
-            return Asy_NonDeterReadRecord(stateAccess, txnContext);
+            return Asy_NonDeterReadRecord(stateAccess, functionContext);
         } else if (accessType == MetaTypes.AccessType.NON_DETER_WRITE) {
-            return Asy_NonDeterWriteRecord(stateAccess, txnContext);
+            return Asy_NonDeterWriteRecord(stateAccess, functionContext);
         } else {
             throw new UnsupportedOperationException("Unsupported access type: " + accessType);
         }
     }
 
     //If read only, set src key and table to read key, and add this single read access into readRecords.
-    public boolean Asy_ReadRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_ReadRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         if (stateObjects.size() != 1) {
@@ -198,12 +198,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         if (readRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+                return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, srcTable,
                         srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+                return scheduler.SubmitRequest(context, new Request(functionContext, accessType, srcTable,
                         srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             }
         } else {
@@ -212,7 +212,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_WriteRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_WriteRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
@@ -243,12 +243,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         if (writeRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, writeTable,
                         writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                return scheduler.SubmitRequest(context, new Request(functionContext, accessType, writeTable,
                         writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             }
         } else {
@@ -257,7 +257,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_WindowReadRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_WindowReadRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_READ;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         if (stateObjects.size() != 1) {
@@ -275,12 +275,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         if (readRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+                return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, srcTable,
                         srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+                return scheduler.SubmitRequest(context, new Request(functionContext, accessType, srcTable,
                         srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             }
         } else {
@@ -289,7 +289,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_WindowWriteRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_WindowWriteRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_WRITE;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
@@ -314,12 +314,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         if (writeRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, writeTable,
                         writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                return scheduler.SubmitRequest(context, new Request(functionContext, accessType, writeTable,
                         writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             }
         } else {
@@ -328,7 +328,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_NonDeterReadRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_NonDeterReadRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_READ;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         if (stateObjects.size() != 1) {
@@ -347,12 +347,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         if (readRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
+                return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, baseTables, accessType, srcTable,
                         srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
+                return scheduler.SubmitRequest(context, new Request(functionContext, baseTables, accessType, srcTable,
                         srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             }
         } else {
@@ -361,7 +361,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_NonDeterWriteRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_NonDeterWriteRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_WRITE;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
@@ -388,12 +388,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         if (writeRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
+                return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, baseTables, accessType, writeTable,
                         writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
+                return scheduler.SubmitRequest(context, new Request(functionContext, baseTables, accessType, writeTable,
                         writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             }
         } else {
@@ -403,18 +403,16 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
 
-    public void BeginTransaction(TxnContext txn_context) {
+    public void BeginTransaction(FunctionContext txn_context) {
         if (enableGroup) {
             schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitBegin(context);
-            //TODO: Replace with the following code for stage
-//            stage.getScheduler().TxnSubmitBegin(context);
         } else {
             scheduler.TxnSubmitBegin(context);
         }
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
+    public boolean CommitTransaction(FunctionContext txn_context, int batchID) {
         if (enableGroup) {
             schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitFinished(context, batchID);
             //TODO: Replace with the following code for stage
@@ -432,17 +430,17 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     //Below are not used by Asy Txn Manager.
     @Override
-    public boolean SelectKeyRecord(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
+    public boolean SelectKeyRecord(FunctionContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean lock_ahead(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
+    public boolean lock_ahead(FunctionContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
+    public boolean SelectKeyRecord_noLock(FunctionContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 

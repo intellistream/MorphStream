@@ -3,6 +3,7 @@ package intellistream.morphstream.engine.txn.transaction;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.scheduler.collector.Collector;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
+import intellistream.morphstream.engine.txn.scheduler.impl.ds.DSSchedule;
 import intellistream.morphstream.engine.txn.scheduler.impl.og.nonstructured.OGNSAScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.og.nonstructured.OGNSScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.og.nonstructured.TStreamScheduler;
@@ -138,6 +139,8 @@ public abstract class TxnManager implements ITxnManager {
                 return new OPDFSAScheduler<>(threadCount, numberOfStates);
             case "TStream": // original TStream also uses Non-structured exploration strategy
                 return new TStreamScheduler(threadCount, numberOfStates);
+            case "DScheduler"://Distributed scheduler
+                return new DSSchedule(threadCount, numberOfStates);
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }

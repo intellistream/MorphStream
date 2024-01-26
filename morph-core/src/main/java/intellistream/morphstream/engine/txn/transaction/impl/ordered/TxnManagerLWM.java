@@ -8,7 +8,7 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.engine.txn.transaction.impl.TxnManagerDedicatedLocked;
 
 import java.util.LinkedList;
@@ -32,7 +32,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
+    public boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException, InterruptedException {
 //		BEGIN_PHASE_MEASURE(thread_id_, INSERT_PHASE);
         record.is_visible_ = false;
@@ -63,7 +63,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
      * @param txn_context
      * @param accessType
      */
-    private void InsertLock(TableRecord t_record, TxnContext txn_context, CommonMetaTypes.AccessType accessType) {
+    private void InsertLock(TableRecord t_record, FunctionContext txn_context, CommonMetaTypes.AccessType accessType) {
         switch (accessType) {
             case READ_ONLY:
 //				while (!t_record.content_.AcquireReadLock()) {
@@ -84,13 +84,13 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
 
     //The following makes sure the lock_ratio is added in event sequence as in ACEP.
     @Override
-    protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
+    protected boolean lock_aheadCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         InsertLock(t_record, txn_context, accessType);
         return true;
     }
 
     @Override
-    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
+    public boolean SelectKeyRecord_noLockCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         if (accessType == READ_ONLY) {
             SchemaRecord local_record = t_record.content_.ReadAccess(txn_context, accessType);// return the correct version.
             TxnAccess.Access access = access_list_.NewAccess();
@@ -117,7 +117,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
+    protected boolean SelectRecordCC(FunctionContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         //Different from locking scheme, LWM returns only local copy... The actual install happens later at commit stage.
         if (accessType == READ_ONLY) {
             //The following makes sure the lock_ratio is added in event sequence
@@ -148,7 +148,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txn_context, int batchID) {
+    public boolean CommitTransaction(FunctionContext txn_context, int batchID) {
         boolean is_success = true;
         long certify_count = 0;// count number of certify locks.
 

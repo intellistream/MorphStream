@@ -4,13 +4,13 @@ import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.L
 import intellistream.morphstream.engine.txn.scheduler.Request;
 
 public interface IScheduler<Context> {
-    void INITIALIZE(Context threadId);
+    void INITIALIZE(Context context);
 
-    void PROCESS(Context threadId, long mark_ID, int batchID);
+    void PROCESS(Context context, long mark_ID, int batchID);
 
     void EXPLORE(Context context);
 
-    boolean FINISHED(Context threadId);
+    boolean FINISHED(Context context);
 
     void RESET(Context context);
 

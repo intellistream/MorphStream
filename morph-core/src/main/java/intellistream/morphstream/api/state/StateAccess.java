@@ -2,18 +2,30 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 public class StateAccess {
+    @Getter
     private final String operationID; //bid + stateAccessIndex
+    @Getter
     private final String operatorID; //name of app that a txn belongs to
+    @Getter
     private final String txnName; //name of txn that a stateAccess belongs to
+    @Getter
     private final String stateAccessName;
+    @Getter
+    private final List<String> fatherStateAccessNames;
+    @Setter
     private String writeRecordName;
+    @Getter
     private final MetaTypes.AccessType accessType;
     private final HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
+    @Getter
     private final HashMap<String, Object> valueMap; //Store all values required during txn-UDF, including WRITE value
     public Object udfResult;
     private boolean isAborted;
@@ -23,34 +35,11 @@ public class StateAccess {
         this.operatorID = operatorID;
         this.txnName = txnName;
         stateAccessName = description.getName();
+        fatherStateAccessNames = description.getFatherNames();
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();
         valueMap = new HashMap<>();
         isAborted = false;
-    }
-
-    public String getOperationID() {
-        return operationID;
-    }
-
-    public String getOperatorID() {
-        return operatorID;
-    }
-
-    public String getTxnName() {
-        return txnName;
-    }
-
-    public String getStateAccessName() {
-        return stateAccessName;
-    }
-
-    public MetaTypes.AccessType getAccessType() {
-        return accessType;
-    }
-
-    public void setWriteRecordName(String writeRecordName) {
-        this.writeRecordName = writeRecordName;
     }
 
     public void setUpdatedStateObject(SchemaRecord updatedWriteRecord) {
@@ -78,9 +67,6 @@ public class StateAccess {
         return valueMap.get(valueName);
     }
 
-    public HashMap<String, Object> getValueMap() {
-        return valueMap;
-    }
     public void setAborted() {
         isAborted = true;
     }

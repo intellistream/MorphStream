@@ -4,7 +4,7 @@ import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.RWLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.List;
 import java.util.TreeMap;
@@ -63,12 +63,12 @@ public abstract class LWMContent implements Content {
     }
 
     @Override
-    public boolean TryWriteLock(OrderLock lock, TxnContext txn_context) {
+    public boolean TryWriteLock(OrderLock lock, FunctionContext txn_context) {
         return false;
     }
 
     @Override
-    public boolean TryReadLock(OrderLock lock, TxnContext txn_context) {
+    public boolean TryReadLock(OrderLock lock, FunctionContext txn_context) {
         return false;
     }
 

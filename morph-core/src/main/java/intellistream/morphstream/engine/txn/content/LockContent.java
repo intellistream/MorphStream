@@ -3,7 +3,7 @@ package intellistream.morphstream.engine.txn.content;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public abstract class LockContent implements Content {
 //	}
 //
     @Override
-    public SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(FunctionContext context, CommonMetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
 

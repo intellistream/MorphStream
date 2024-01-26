@@ -4,7 +4,7 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public abstract class SStoreContent implements Content {
 //	}
 //
     @Override
-    public SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(FunctionContext context, CommonMetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
 
@@ -103,12 +103,12 @@ public abstract class SStoreContent implements Content {
     }
 
     @Override
-    public boolean TryWriteLock(OrderLock lock, TxnContext txn_context) {
+    public boolean TryWriteLock(OrderLock lock, FunctionContext txn_context) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean TryReadLock(OrderLock lock, TxnContext txn_context) {
+    public boolean TryReadLock(OrderLock lock, FunctionContext txn_context) {
         throw new UnsupportedOperationException();
     }
 

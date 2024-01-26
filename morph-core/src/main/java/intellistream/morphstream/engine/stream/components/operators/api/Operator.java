@@ -10,10 +10,8 @@ import intellistream.morphstream.engine.stream.execution.runtime.collector.Outpu
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.OutputFieldsDeclarer;
 import intellistream.morphstream.engine.txn.db.Database;
-import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
-import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.util.OsUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -36,7 +34,7 @@ public abstract class Operator implements IOperator {
     public boolean scalable = true;
     public TopologyContext context;
     public transient Database db;//this is only used if the bolt is transactional bolt. DB is shared by all operators.
-    public transient TxnContext[] txn_context = new TxnContext[CONTROL.combo_bid_size];
+    public transient FunctionContext[] txn_context = new FunctionContext[CONTROL.combo_bid_size];
     public int fid = -1;//if fid is -1 it means it does not participate
     public OrderLock lock;//used for lock_ratio-based ordering constraint.
     public String configPrefix = BaseConstants.BASE_PREFIX;

@@ -9,10 +9,7 @@ import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 public class BankingSystemClient extends Client {
@@ -107,25 +104,28 @@ public class BankingSystemClient extends Client {
     @Override
     public void defineFunction() {
         //Define transfer function
-        FunctionDescription transferDescriptor = new FunctionDescription();
+        FunctionDescription transferDescriptor = new FunctionDescription("Transfer");
         //Define transfer's 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
-        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
+        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
         srcTransfer.addValueName("transferAmount");
         //Define transfer's 2nd state accesses
         StateAccessDescription destTransfer = new StateAccessDescription("destTransfer", AccessType.WRITE);
-        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
-        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", "accountValue", 1);
+        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", 0);
+        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", 1);
         destTransfer.addValueName("transferAmount");
         //Add state accesses to transaction
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
         transferDescriptor.addStateAccess("destTransfer", destTransfer);
+        destTransfer.addFatherName("srcTransfer");
+        transferDescriptor.comboFunctionsIntoTransaction(Arrays.asList("srcTransfer", "destTransfer"));
         this.txnDescriptions.put("transfer", transferDescriptor);
 
+
         //Define deposit transaction
-        FunctionDescription depositDescriptor = new FunctionDescription();
+        FunctionDescription depositDescriptor = new FunctionDescription("Deposit");
         StateAccessDescription deposit = new StateAccessDescription("deposit", AccessType.WRITE);
-        deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
+        deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
         deposit.addValueName("depositAmount");
         depositDescriptor.addStateAccess("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);

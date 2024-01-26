@@ -8,7 +8,7 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
+    public boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
 //		BEGIN_PHASE_MEASURE(thread_id_, INSERT_PHASE);
         record.is_visible_ = false;
         TableRecord tb_record = new TableRecord(record, (int) this.thread_count_);
@@ -55,7 +55,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean CommitTransaction(TxnContext txnContext, int batchID) {
+    public boolean CommitTransaction(FunctionContext functionContext, int batchID) {
         // release locks.
         for (int i = 0; i < access_list_.access_count_; ++i) {
             TxnAccess.Access access_ptr = access_list_.GetAccess(i);
@@ -106,7 +106,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord
+    protected boolean SelectRecordCC(FunctionContext txn_context, String table_name, TableRecord
             t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_); //return the table record for modifying in the application layer.
         if (accessType == CommonMetaTypes.AccessType.READ_ONLY) {

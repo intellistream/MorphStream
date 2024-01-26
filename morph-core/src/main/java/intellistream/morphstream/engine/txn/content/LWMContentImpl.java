@@ -4,7 +4,7 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.content.common.ContentCommon;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +82,7 @@ public class LWMContentImpl extends LWMContent {
     }
 
     @Override
-    public SchemaRecord ReadAccess(TxnContext txn_context, CommonMetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(FunctionContext txn_context, CommonMetaTypes.AccessType accessType) {
         int retry_count = 0;
         long bid = txn_context.getBID();
         switch (accessType) {
