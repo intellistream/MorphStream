@@ -88,13 +88,13 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
         msg = (ZMsg) in.getValue(0);
         input_event = InputSource.inputFromStringToTxnEvent(msg.getFirst().toString());
         _bid = input_event.getBid();
-        txn_context[0] = new FunctionContext(thread_Id, this.fid, _bid);
+        txn_context[0] = new FunctionContext(thread_Id, _bid);
     }
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            FunctionContext functionContext = new FunctionContext(thread_Id, this.fid, i);
+            FunctionContext functionContext = new FunctionContext(thread_Id, i);
             TransactionalEvent event = (TransactionalEvent) input_event;
             Transaction_Request_Construct(event, functionContext);
         }

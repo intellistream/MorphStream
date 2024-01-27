@@ -98,9 +98,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     @Override
     public boolean SelectKeyRecord(FunctionContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException, InterruptedException {
-        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);//index look up.
-        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
         if (t_record != null) {
             boolean rt = SelectRecordCC(txn_context, table_name, t_record, record_, access_type);
             assert !rt || record_.getRecord() != null;
@@ -125,9 +123,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     @Override
     public boolean SelectKeyRecord_noLock(FunctionContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, CommonMetaTypes.AccessType access_type) throws DatabaseException {
-        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);
-        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
         if (t_record != null) {
             boolean rt = SelectKeyRecord_noLockCC(txn_context, table_name, t_record, record_, access_type);
             return rt;

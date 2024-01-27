@@ -8,6 +8,8 @@ import java.util.List;
 
 public class FunctionContext {
     public final int thread_Id;
+    public long[] partition_bid;
+    public boolean is_retry_;
     @Getter
     private final long BID;
     @Getter @Setter
