@@ -2,7 +2,6 @@ package intellistream.morphstream.engine.db.storage.table;
 
 import intellistream.morphstream.engine.db.storage.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.datatype.*;
-import intellistream.morphstream.engine.txn.storage.datatype.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

@@ -8,6 +8,7 @@ import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.db.storage.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
+import static intellistream.morphstream.engine.db.storage.datatype.DataBox.Types.*;
 
 public class DatabaseInitializer {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseInitializer.class);
@@ -26,6 +29,7 @@ public class DatabaseInitializer {
     private final HashMap<String, String[]> fieldNamesMap = new HashMap<>();//table name to field names
     private final HashMap<String, RecordSchema> schemas = new HashMap<>();//table name to schema
     private int totalThreads;
+    @Getter
     private final HashMap<String, Integer> numItemMaps = new HashMap<>();//table name to number of items
     public void creates_Table() {
         configure_db();
@@ -225,9 +229,7 @@ public class DatabaseInitializer {
     private int get_pid(int partition_interval, int key) {
         return (int) Math.floor(key / (double) partition_interval);//NUM_ITEMS / tthread;
     }
-    public HashMap<String, Integer> getNumItemMaps() {
-        return numItemMaps;
-    }
+
     public void setSpinlock_(int i, SpinLock spinlock_) {
         this.spinlock[i] = spinlock_;
     }
