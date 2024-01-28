@@ -1,9 +1,9 @@
 package intellistream.morphstream.engine.txn.index;
 
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.TableRecords;
-import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
-import intellistream.morphstream.engine.txn.storage.table.RowID;
+import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.TableRecords;
+import intellistream.morphstream.engine.db.storage.datatype.IntDataBox;
+import intellistream.morphstream.engine.db.storage.table.RowID;
 
 import java.util.Iterator;
 

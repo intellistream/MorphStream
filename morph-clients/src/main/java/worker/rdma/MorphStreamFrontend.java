@@ -5,7 +5,7 @@ import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.CircularMessageBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CircularMessageBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaDriverManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

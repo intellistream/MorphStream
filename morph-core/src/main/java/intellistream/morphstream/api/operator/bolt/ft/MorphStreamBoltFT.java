@@ -15,7 +15,7 @@ import intellistream.morphstream.engine.stream.components.operators.api.sink.Abs
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingResult.LoggingResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;

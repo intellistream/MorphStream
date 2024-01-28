@@ -2,8 +2,8 @@ package intellistream.morphstream.engine.txn.scheduler;
 
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.table.BaseTable;
+import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.HashMap;

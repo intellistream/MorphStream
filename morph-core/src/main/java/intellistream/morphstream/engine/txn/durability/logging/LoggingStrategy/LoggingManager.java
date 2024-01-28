@@ -4,7 +4,7 @@ import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
 import intellistream.morphstream.engine.txn.durability.recovery.histroyviews.HistoryViews;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LoggingEntry;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 
 import java.io.IOException;
 import java.util.HashMap;

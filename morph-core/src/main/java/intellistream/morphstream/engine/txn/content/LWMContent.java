@@ -2,8 +2,8 @@ package intellistream.morphstream.engine.txn.content;
 
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.RWLock;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.List;

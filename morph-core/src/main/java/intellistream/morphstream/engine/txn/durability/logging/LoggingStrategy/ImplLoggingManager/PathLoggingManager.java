@@ -16,7 +16,7 @@ import intellistream.morphstream.engine.txn.durability.recovery.histroyviews.His
 import intellistream.morphstream.engine.txn.durability.snapshot.LoggingOptions;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.HistoryLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LoggingEntry;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import java.util.concurrent.ConcurrentHashMap;
 import intellistream.morphstream.util.OsUtils;

@@ -13,9 +13,9 @@ import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.S
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotStrategy.SnapshotStrategy;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotStream.ImplSnapshotStreamFactory.NIOSnapshotStreamFactory;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.table.BaseTable;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.table.BaseTable;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import intellistream.morphstream.util.Deserialize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

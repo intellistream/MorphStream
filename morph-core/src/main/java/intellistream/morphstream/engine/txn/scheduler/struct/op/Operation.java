@@ -8,8 +8,8 @@ import intellistream.morphstream.engine.txn.scheduler.signal.op.OnParentUpdatedS
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes.DependencyType;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes.OperationStateType;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.table.BaseTable;
+import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

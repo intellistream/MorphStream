@@ -1,31 +1,29 @@
 package intellistream.morphstream.engine.db;
 
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import intellistream.morphstream.engine.txn.storage.EventManager;
-import intellistream.morphstream.engine.txn.storage.StorageManager;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.EventManager;
+import intellistream.morphstream.engine.db.storage.StorageManager;
+import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 public abstract class Database {
     public int numTransactions = 0;//current number of activate transactions
-    StorageManager storageManager;
-    EventManager eventManager;
-    LoggingManager loggingManager;
+    @Getter
+    public StorageManager storageManager;
+    @Getter
+    public EventManager eventManager;
+    @Getter
+    public LoggingManager loggingManager;
 
-    public EventManager getEventManager() {
-        return eventManager;
-    }
-
-    public LoggingManager getLoggingManager() {
-        return loggingManager;
-    }
-//	public transient TxnParam param;
+    //	public transient TxnParam param;
 
     /**
      * Close this database.
@@ -54,10 +52,6 @@ public abstract class Database {
     }
 
     public abstract void InsertRecord(String table, TableRecord record, int partition_id) throws DatabaseException;
-
-    public StorageManager getStorageManager() {
-        return storageManager;
-    }
 
     /**
      * Used to implement fault tolerance

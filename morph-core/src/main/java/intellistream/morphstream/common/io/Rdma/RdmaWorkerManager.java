@@ -7,13 +7,14 @@ import intellistream.morphstream.common.io.Rdma.Channel.RdmaChannel;
 import intellistream.morphstream.common.io.Rdma.Channel.RdmaNode;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaCompletionListener;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.CircularMessageBuffer;
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.TableBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CircularMessageBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.TableBuffer;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Msg.DWRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
 import intellistream.morphstream.common.io.Rdma.Msg.WDRegionTokenGroup;
+import intellistream.morphstream.common.io.Rdma.Msg.WWRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 
@@ -40,7 +41,7 @@ public class RdmaWorkerManager implements Serializable {
     private DWRegionTokenGroup dwRegionTokenGroup = new DWRegionTokenGroup();// Driver's region token
     private ResultBatch resultBatch;// Results
     private ConcurrentHashMap<Integer, RdmaChannel> workerRdmaChannelMap = new ConcurrentHashMap<>();//workerId -> RdmaChannel
-    private ConcurrentHashMap<Integer, RegionToken> workerRegionTokenMap = new ConcurrentHashMap<>();//workerId -> RegionToken
+    private ConcurrentHashMap<Integer, WWRegionTokenGroup> workerRegionTokenMap = new ConcurrentHashMap<>();//workerId -> RegionToken
 
     public RdmaWorkerManager(boolean isDriver, Configuration conf) throws Exception {
         this.isDriver = isDriver;
@@ -56,6 +57,7 @@ public class RdmaWorkerManager implements Serializable {
         //PreAllocate message buffer
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         rdmaBufferManager.perAllocateTableBuffer(MorphStreamEnv.get().configuration().getInt("TableBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
+        rdmaBufferManager.perAllocateCacheBuffer(MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"),MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(","));
         resultBatch = new ResultBatch(MorphStreamEnv.get().configuration().getInt("maxResultsCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"), this.totalFunctionExecutors);
         //Result count to decide whether to send the batched results
         SOURCE_CONTROL.getInstance().config(MorphStreamEnv.get().configuration().getInt("frontendNum"), MorphStreamEnv.get().configuration().getInt("sendMessagePerFrontend"), this.totalFunctionExecutors, MorphStreamEnv.get().configuration().getInt("returnResultPerExecutor"));
@@ -73,13 +75,21 @@ public class RdmaWorkerManager implements Serializable {
         //Wait for other workers to connect
         rdmaNode.bindConnectCompleteListener(new RdmaConnectionListener() {
             @Override
-            public void onSuccess(InetSocketAddress inetSocketAddress, RdmaChannel rdmaChannel) {
-                LOG.info("Worker accepts " + inetSocketAddress.toString());
+            public void onSuccess(InetSocketAddress inetSocketAddress, RdmaChannel rdmaChannel) throws Exception {
                 for (int i = 0; i < workerHosts.length; i++) {
                     if (workerHosts[i].equals(inetSocketAddress.getHostName()) && Integer.parseInt(workerPorts[i]) == inetSocketAddress.getPort()) {
                         workerRdmaChannelMap.put(i, rdmaChannel);
+                        //Send region token to target workers
+                        WWRegionTokenGroup wwRegionTokenGroup = new WWRegionTokenGroup();
+                        wwRegionTokenGroup.addRegionTokens(rdmaBufferManager.getCacheBuffer().createRegionTokens());
+                        rdmaNode.sendRegionTokenToRemote(rdmaChannel, wwRegionTokenGroup.getRegionTokens(), inetSocketAddress.getHostName());
+
+                        //Receive region token from target workers
+                        workerRegionTokenMap.put(i, new WWRegionTokenGroup());
+                        workerRegionTokenMap.get(i).addRegionTokens(rdmaNode.getRemoteRegionToken(rdmaChannel));
                     }
                 }
+                LOG.info("Worker accepts " + inetSocketAddress.toString());
             }
             @Override
             public void onFailure(Throwable exception) {
@@ -91,6 +101,13 @@ public class RdmaWorkerManager implements Serializable {
         for (int i = managerId + 1; i < workerHosts.length; i++) {
             if (i != managerId) {
                 workerRdmaChannelMap.put(i, rdmaNode.getRdmaChannel(new InetSocketAddress(workerHosts[i], Integer.parseInt(workerPorts[i])), true, conf.rdmaChannelConf.getRdmaChannelType()));
+                workerRegionTokenMap.put(i, new WWRegionTokenGroup());
+                workerRegionTokenMap.get(i).addRegionTokens(rdmaNode.getRemoteRegionToken(workerRdmaChannelMap.get(i)));
+
+                //Send region token to target workers
+                WWRegionTokenGroup wwRegionTokenGroup = new WWRegionTokenGroup();
+                wwRegionTokenGroup.addRegionTokens(rdmaBufferManager.getCacheBuffer().createRegionTokens());
+                rdmaNode.sendRegionTokenToRemote(workerRdmaChannelMap.get(i), wwRegionTokenGroup.getRegionTokens(), workerHosts[i]);
             }
         }
     }

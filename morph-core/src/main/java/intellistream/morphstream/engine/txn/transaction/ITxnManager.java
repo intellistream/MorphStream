@@ -2,13 +2,13 @@ package intellistream.morphstream.engine.txn.transaction;
 
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.LinkedList;

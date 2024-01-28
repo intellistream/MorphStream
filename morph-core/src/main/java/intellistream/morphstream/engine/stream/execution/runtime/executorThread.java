@@ -4,7 +4,7 @@ import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.TopologyComponent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionNode;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

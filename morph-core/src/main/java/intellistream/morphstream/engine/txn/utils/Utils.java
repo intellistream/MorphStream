@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.utils;
 
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 
 import java.util.LinkedList;
 import java.util.List;

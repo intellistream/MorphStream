@@ -12,7 +12,7 @@ import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private ByteBuffer msgBuffer;
     private Tuple2<Long, ByteBuffer> canRead;
     private ByteBuffer ownershipTableBuffer;
-    private OwnershipTable ownershipTable = new OwnershipTable();
+    private final OwnershipTable ownershipTable = new OwnershipTable();
     public FunctionExecutor(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
         this.operatorID = operatorID;

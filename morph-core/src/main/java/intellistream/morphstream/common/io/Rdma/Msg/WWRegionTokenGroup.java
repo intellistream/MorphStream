@@ -1,8 +1,11 @@
 package intellistream.morphstream.common.io.Rdma.Msg;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 public class WWRegionTokenGroup {
     private final List<RegionToken> regionTokens;
     public WWRegionTokenGroup() {
@@ -16,11 +19,5 @@ public class WWRegionTokenGroup {
     }
     public int size() {
         return regionTokens.size();
-    }
-    public RegionToken getCircularMessageToken() {
-        return regionTokens.get(0);
-    }
-    public RegionToken getTableToken() {
-        return regionTokens.get(1);
     }
 }

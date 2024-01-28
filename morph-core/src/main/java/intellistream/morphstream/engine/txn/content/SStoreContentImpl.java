@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.content;
 
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.stream.execution.runtime.tuple.impl;
 
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
-import intellistream.morphstream.engine.txn.storage.datatype.TimestampType;
+import intellistream.morphstream.engine.db.storage.datatype.TimestampType;
 
 import java.util.Collection;
 

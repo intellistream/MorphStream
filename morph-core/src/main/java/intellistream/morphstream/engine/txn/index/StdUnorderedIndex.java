@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.index;
 
-import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.TableRecord;
 
 import java.util.HashMap;
 import java.util.Iterator;

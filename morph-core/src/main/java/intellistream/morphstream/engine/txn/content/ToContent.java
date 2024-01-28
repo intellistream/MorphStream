@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.content;
 
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 public abstract class ToContent implements Content {

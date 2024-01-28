@@ -2,11 +2,11 @@ package intellistream.morphstream.engine.txn.transaction.impl;
 
 import intellistream.morphstream.engine.txn.content.Content;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
-import intellistream.morphstream.engine.db.DatabaseException;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
-import intellistream.morphstream.engine.txn.storage.StorageManager;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.db.storage.StorageManager;
+import intellistream.morphstream.engine.db.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.joda.time.DateTime;

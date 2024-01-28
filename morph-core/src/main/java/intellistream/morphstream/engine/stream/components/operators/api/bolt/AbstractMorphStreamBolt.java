@@ -6,7 +6,7 @@ import intellistream.morphstream.engine.stream.components.context.TopologyContex
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;

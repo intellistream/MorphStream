@@ -13,7 +13,7 @@ import intellistream.morphstream.engine.stream.components.operators.api.spout.Ab
 import intellistream.morphstream.engine.stream.optimization.OptimizationManager;
 import intellistream.morphstream.engine.stream.topology.TopologyBuilder;
 import intellistream.morphstream.engine.stream.topology.TopologySubmitter;
-import intellistream.morphstream.engine.db.CavaliaDatabase;
+import intellistream.morphstream.engine.db.impl.CavaliaDatabase;
 import intellistream.morphstream.engine.db.Database;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;

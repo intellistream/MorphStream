@@ -6,8 +6,8 @@ import intellistream.morphstream.engine.txn.scheduler.context.og.OGSchedulerCont
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.table.BaseTable;
+import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.ArrayDeque;

@@ -1,12 +1,12 @@
 package intellistream.morphstream.engine.txn.operator;
 
-import intellistream.morphstream.engine.db.DatabaseException;
-import intellistream.morphstream.engine.db.SimpleDatabase;
-import intellistream.morphstream.engine.txn.storage.MarkerRecord;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
-import intellistream.morphstream.engine.txn.storage.table.stats.TableStats;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.impl.SimpleDatabase;
+import intellistream.morphstream.engine.db.storage.MarkerRecord;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.datatype.DataBox;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.table.stats.TableStats;
 
 import java.util.HashMap;
 import java.util.Iterator;

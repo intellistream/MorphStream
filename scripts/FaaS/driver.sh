@@ -17,6 +17,7 @@ function ResetParameters() {
     workerPorts="5550,5540"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
+    CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=5
     returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
@@ -46,9 +47,9 @@ function ResetParameters() {
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
     #System Configurations
-    schedulerPool="OP_BFS_A"
-    scheduler="OP_BFS_A"
-    defaultScheduler="OP_BFS_A"
+    schedulerPool="DScheduler"
+    scheduler="DScheduler"
+    defaultScheduler="DScheduler"
     CCOption=3 #TSTREAM
     complexity=0
 }
@@ -69,6 +70,7 @@ function runApplication() {
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
+      --CacheBufferCapacity $CacheBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
       --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \
@@ -116,6 +118,7 @@ function runApplication() {
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
+      --CacheBufferCapacity $CacheBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
       --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \

@@ -3,7 +3,7 @@ package intellistream.morphstream.engine.stream.components.operators.api.bolt;
 import intellistream.morphstream.engine.stream.components.operators.api.Operator;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.JumboTuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import org.slf4j.Logger;
 
 import java.io.IOException;

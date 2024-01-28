@@ -6,7 +6,7 @@ import intellistream.morphstream.api.operator.bolt.ft.MorphStreamBoltFT;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutComboFT;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

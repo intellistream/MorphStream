@@ -244,6 +244,8 @@ public class JCommanderHandler {
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--TableBufferCapacity"}, description = "TableBufferCapacity")
     public int TableBufferCapacity = 1024 * 1024 * 1024;
+    @Parameter(names = {"--CacheBufferCapacity"}, description = "CacheBufferCapacity")
+    public int CacheBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--sendMessagePerFrontend"}, description = "sendMessagePerFrontend")
     public int sendMessagePerFrontend = 1000;
     @Parameter(names = {"--returnResultPerExecutor"}, description = "returnResultPerExecutor")
@@ -336,6 +338,7 @@ public class JCommanderHandler {
         }
         config.put("CircularBufferCapacity", CircularBufferCapacity);
         config.put("TableBufferCapacity", TableBufferCapacity);
+        config.put("CacheBufferCapacity", CacheBufferCapacity);
         config.put("sendMessagePerFrontend", sendMessagePerFrontend);
         config.put("maxMessageCapacity", sendMessagePerFrontend * frontendNum);
         config.put("returnResultPerExecutor", returnResultPerExecutor);

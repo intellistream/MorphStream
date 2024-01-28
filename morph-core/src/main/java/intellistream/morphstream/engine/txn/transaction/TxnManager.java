@@ -18,7 +18,7 @@ import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPBFSSc
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSAScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
-import intellistream.morphstream.engine.txn.storage.StorageManager;
+import intellistream.morphstream.engine.db.storage.StorageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.utils;
 
-import intellistream.morphstream.engine.txn.storage.table.stats.Histogram;
-import intellistream.morphstream.engine.txn.storage.table.stats.ObjectHistogram;
+import intellistream.morphstream.engine.db.storage.table.stats.Histogram;
+import intellistream.morphstream.engine.db.storage.table.stats.ObjectHistogram;
 
 import java.util.*;
 

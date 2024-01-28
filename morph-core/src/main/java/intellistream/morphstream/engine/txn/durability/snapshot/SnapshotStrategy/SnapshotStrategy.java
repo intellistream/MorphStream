@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.durability.snapshot.SnapshotStrateg
 
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResources.SnapshotResources;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 
 import java.io.IOException;
 

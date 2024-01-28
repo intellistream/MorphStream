@@ -2,12 +2,12 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.storage.datatype.*;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.datatype.*;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-
-import static intellistream.morphstream.engine.txn.storage.datatype.DataBox.Types.*;
 
 public class DatabaseInitializer {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseInitializer.class);

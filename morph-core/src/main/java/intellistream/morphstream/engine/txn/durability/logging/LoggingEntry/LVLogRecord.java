@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.durability.logging.LoggingEntry;
 
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LVCLog;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.TableRecord;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 

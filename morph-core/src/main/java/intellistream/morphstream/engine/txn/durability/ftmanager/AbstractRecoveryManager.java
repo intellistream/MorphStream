@@ -1,8 +1,8 @@
 package intellistream.morphstream.engine.txn.durability.ftmanager;
 
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
-import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.datatype.DataBox;
+import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;

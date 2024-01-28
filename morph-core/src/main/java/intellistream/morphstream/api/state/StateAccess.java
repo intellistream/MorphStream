@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.utils.MetaTypes;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.SchemaRecord;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -3,7 +3,7 @@ package intellistream.morphstream.api.operator.bolt;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractSStoreBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.db.DatabaseException;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

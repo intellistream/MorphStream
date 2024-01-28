@@ -2,17 +2,13 @@ package intellistream.morphstream.common.io.Rdma.Memory.Manager;
 
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Conf.RdmaChannelConf;
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.AllocatorStack;
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.CircularMessageBuffer;
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.ExecutorsServiceContext;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CircularMessageBuffer;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 
 @Getter
 public class DriverRdmaBufferManager extends RdmaBufferManager {
