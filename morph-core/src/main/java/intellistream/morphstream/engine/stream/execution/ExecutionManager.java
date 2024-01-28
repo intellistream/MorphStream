@@ -10,7 +10,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.boltThread;
 import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
 import intellistream.morphstream.engine.stream.execution.runtime.spoutThread;
 import intellistream.morphstream.engine.stream.optimization.OptimizationManager;
-import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.db.Database;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.ftmanager.ImplFTManager.*;
 import intellistream.morphstream.engine.txn.stage.Stage;

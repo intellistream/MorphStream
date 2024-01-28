@@ -78,10 +78,12 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             oc.setDsContext(context);
             context.addTasks(oc);
         }
+        LOG.info("Finish initialize: " + context.thisThreadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
     @Override
     public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
+        LOG.info("Start evaluation: " + context.thisThreadId);
         INITIALIZE(context);
         do {
             EXPLORE(context);

@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.storage.table;
 
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * `numRecords`: number of records currently contained in this table
  */
 public abstract class BaseTable implements ITable {
-    public static final String FILENAME_PREFIX = "intellistream/morphstream/engine/txn/db";
+    public static final String FILENAME_PREFIX = "intellistream/morphstream/engine/db";
     final AtomicInteger numRecords = new AtomicInteger();
     final int secondary_count_;
     private final RecordSchema schema;

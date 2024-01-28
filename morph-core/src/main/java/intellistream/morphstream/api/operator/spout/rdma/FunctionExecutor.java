@@ -12,7 +12,7 @@ import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +75,6 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                     if (model_switch(counter) && !msgBuffer.hasRemaining()) {
                         marker = new Tuple(this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, counter, myiteration, "punctuation"));
                         getOwnershipTable();
-                        ownershipTable.display();
                         bolt.execute(marker);
                     }
                 }

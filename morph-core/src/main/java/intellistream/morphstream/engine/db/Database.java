@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.txn.db;
+package intellistream.morphstream.engine.db;
 
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;

@@ -2,7 +2,7 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;

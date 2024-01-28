@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.transaction.impl;
 
 import intellistream.morphstream.engine.txn.content.Content;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.storage.StorageManager;

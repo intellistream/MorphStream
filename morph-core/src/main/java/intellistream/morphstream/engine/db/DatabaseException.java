@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.txn.db;
+package intellistream.morphstream.engine.db;
 
 public class DatabaseException extends Exception {
     private static final long serialVersionUID = -5696965345839589596L;

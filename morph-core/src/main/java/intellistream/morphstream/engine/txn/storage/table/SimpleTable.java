@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.storage.table;
 
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
 import intellistream.morphstream.engine.txn.storage.store.Store;
@@ -24,7 +24,7 @@ import java.util.NoSuchElementException;
  * `numRecords`: number of records currently contained in this table
  */
 public class SimpleTable {
-    public static final String FILENAME_PREFIX = "intellistream/morphstream/engine/txn/db";
+    public static final String FILENAME_PREFIX = "intellistream/morphstream/engine/db";
     private final RecordSchema schema;
     private final Store store;
     private final TableStats stats;

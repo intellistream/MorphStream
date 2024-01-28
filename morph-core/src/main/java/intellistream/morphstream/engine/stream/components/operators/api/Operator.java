@@ -9,7 +9,7 @@ import intellistream.morphstream.engine.stream.execution.ExecutionNode;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.OutputFieldsDeclarer;
-import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.db.Database;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.util.OsUtils;

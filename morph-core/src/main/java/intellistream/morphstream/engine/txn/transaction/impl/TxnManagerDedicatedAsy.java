@@ -4,7 +4,7 @@ import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;

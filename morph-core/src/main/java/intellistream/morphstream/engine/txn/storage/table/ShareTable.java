@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.storage.table;
 
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.index.BaseUnorderedIndex;
 import intellistream.morphstream.engine.txn.index.HashTableIndex;
 import intellistream.morphstream.engine.txn.index.StdUnorderedIndex;

@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.transaction;
 
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.db.Database;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.util.FastZipfGenerator;

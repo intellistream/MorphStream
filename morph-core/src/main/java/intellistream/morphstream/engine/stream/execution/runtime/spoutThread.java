@@ -5,7 +5,7 @@ import intellistream.morphstream.engine.stream.components.context.TopologyContex
 import intellistream.morphstream.engine.stream.components.operators.executor.BasicSpoutBatchExecutor;
 import intellistream.morphstream.engine.stream.execution.ExecutionNode;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

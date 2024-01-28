@@ -5,7 +5,7 @@ import intellistream.morphstream.engine.stream.components.operators.api.bolt.Abs
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.JumboTuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 
 import java.io.IOException;
 import java.util.Map;

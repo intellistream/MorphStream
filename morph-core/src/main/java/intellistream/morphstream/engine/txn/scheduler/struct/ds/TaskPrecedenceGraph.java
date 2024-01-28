@@ -71,7 +71,7 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
                 }
             }
             //Add to operation chain
-            getOC(tableName, entry.getKey()).addOperation(entry.getValue());
+            getOC(tableName, entry.getValue().pKey).addOperation(entry.getValue());
         }
     }
     public void setupDependencies(Context context) {

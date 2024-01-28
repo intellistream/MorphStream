@@ -67,8 +67,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
                 oc.deleteOperation(this);//TODO: add rollback state
                 notifyChildren();
                 return;
-            } else if (brother.operationType == MetaTypes.OperationStateType.EXECUTED) {
-                allExecuted++;
+            } else if (brother.operationType == MetaTypes.OperationStateType.EXECUTED || brother.operationType == MetaTypes.OperationStateType.COMMITTED) {
+                allExecuted ++;
             }
         }
         if (allExecuted == brothers.size()) {

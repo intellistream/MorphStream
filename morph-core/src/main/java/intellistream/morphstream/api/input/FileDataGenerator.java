@@ -177,7 +177,9 @@ public class FileDataGenerator {
                 }
             } else {
                 for (int i = 1; i < entry.getValue(); i++) {
-                    keys.add(String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition).next()));
+                    int anotherKey = partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition).next();
+                    while (anotherKey == key) anotherKey = partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition).next();
+                    keys.add(String.valueOf(anotherKey));
                 }
             }
             keyMap.put(entry.getKey(), keys);

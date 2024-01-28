@@ -11,7 +11,7 @@ import intellistream.morphstream.engine.stream.components.operators.api.bolt.Abs
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;

@@ -3,10 +3,9 @@ package intellistream.morphstream.api.operator.sink.rdma;
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
-import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

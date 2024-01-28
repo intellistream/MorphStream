@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.operator;
 
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
 import intellistream.morphstream.engine.txn.storage.table.stats.TableStats;

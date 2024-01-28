@@ -32,6 +32,7 @@ public class OperationChain implements Comparable<OperationChain> {
                 prevOperation = curOperation;
             } else {
                 curOperation.updateDependencies(prevOperation.brothers);
+                prevOperation = curOperation;
             }
         }
     }

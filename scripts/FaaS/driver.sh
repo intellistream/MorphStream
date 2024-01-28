@@ -22,19 +22,19 @@ function ResetParameters() {
     returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
-    numberItemsForTables="8000,8000"
+    numberItemsForTables="8000"
     NUM_ITEMS=8000
-    tableNames="accounts,bookEntries"
-    keyDataTypesForTables="String,String"
-    valueDataTypesForTables="double,double"
-    valueNamesForTables="balance,balance"
+    tableNames="accounts"
+    keyDataTypesForTables="String"
+    valueDataTypesForTables="double"
+    valueNamesForTables="balance"
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
     eventTypes="transfer;deposit"
-    tableNameForEvents="accounts,bookEntries;accounts,bookEntries"
-    keyNumberForEvents="2,2;1,1"
-    valueNameForEvents="transferAmount,transferAmount;depositAmount,depositAmount"
+    tableNameForEvents="accounts;accounts"
+    keyNumberForEvents="2;1"
+    valueNameForEvents="transferAmount;depositAmount"
     eventRatio="50,50"
     ratioOfMultiPartitionTransactionsForEvents="0,0"
     stateAccessSkewnessForEvents="0,0"

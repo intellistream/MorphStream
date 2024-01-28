@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.txn.db;
+package intellistream.morphstream.engine.db;
 
 /**
  * The LockManager provides a basic locking implementation that ensures that only one transaction runs at a time.

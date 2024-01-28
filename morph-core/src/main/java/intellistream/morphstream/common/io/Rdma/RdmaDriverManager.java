@@ -100,8 +100,11 @@ public class RdmaDriverManager {
             SOURCE_CONTROL.getInstance().driverStartSendMessageBarrier();
             sendBatch(frontendId);
             frontendTotalBatchCountMap.put(frontendId, frontendTotalBatchCountMap.get(frontendId) + 1);
-            if (model_switch(frontendId))
+            if (model_switch(frontendId)) {
                 sendOwnershipTable(frontendId);
+                SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
+
+            }
             SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
         }
     }
@@ -181,7 +184,6 @@ public class RdmaDriverManager {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
                     regionToken.setAddress(remoteAddress + bytebuffer.capacity());
-                    ownershipTable.clear();
                     latch.countDown();
                     LOG.info("Driver sends ownership table to worker " + workId);
                 } catch (IOException e) {

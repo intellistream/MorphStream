@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.storage;
 
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.db.DatabaseException;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotOptions;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.CONTROL;
+import lombok.Getter;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -13,6 +14,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 
 /**
@@ -22,8 +24,10 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class InputSource {
     private static final InputSource ourInstance = new InputSource();
+    @Getter
     private InputSourceType inputSourceType; //from file or streaming
 //    private static int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
+    @Getter
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
     private final ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
@@ -108,11 +112,12 @@ public class InputSource {
         int bid = Integer.parseInt(inputArray[0]);
         String [] keyMapPairs = inputArray[1].split(",");
         for (String pair : keyMapPairs) {
-            List<String> keys = new ArrayList<>();
             String[] keyMapPair = pair.split(":");
-            for (int j = 1; j < keyMapPair.length; j++) {
-                keys.add(keyMapPair[j]);
-            }
+            List<String> keys = new ArrayList<>(Arrays.asList(keyMapPair).subList(1, keyMapPair.length));
+            Set<String> duplicates = keys.stream()
+                    .filter(i -> Collections.frequency(keys, i) > 1)
+                    .collect(Collectors.toSet());
+            System.out.println("Duplicate elements found: " + duplicates);
             keyMap.put(keyMapPair[0], keys);
         }
         String [] valueMapPairs = inputArray[2].split(",");
@@ -141,11 +146,4 @@ public class InputSource {
         return inputFromStringToTxnEvent(string);
     }
 
-    public String getStaticFilePath() {
-        return this.staticFilePath;
-    }
-
-    public InputSourceType getInputSourceType() {
-        return inputSourceType;
-    }
 }

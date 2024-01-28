@@ -5,7 +5,7 @@ import intellistream.morphstream.engine.stream.components.exception.UnhandledCas
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.ExecutionManager;
 import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
-import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.db.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
