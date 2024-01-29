@@ -2,7 +2,7 @@
 source ../dir.sh || exit
 function ResetParameters() {
     #Cluster Configurations
-    isDriver=1
+    isDriver=0
     workerId=0
     workerNum=2
     tthread=4
