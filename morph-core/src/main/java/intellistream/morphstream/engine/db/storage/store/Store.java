@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.db.storage.store;
 
 import intellistream.morphstream.engine.db.storage.table.RowID;
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 
 import java.util.HashMap;
 import java.util.Iterator;

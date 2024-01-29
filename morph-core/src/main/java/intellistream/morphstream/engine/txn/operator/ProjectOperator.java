@@ -1,8 +1,8 @@
 package intellistream.morphstream.engine.txn.operator;
 
 import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.db.storage.MarkerRecord;
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.MarkerRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 import intellistream.morphstream.engine.db.storage.datatype.FloatDataBox;
 import intellistream.morphstream.engine.db.storage.datatype.IntDataBox;

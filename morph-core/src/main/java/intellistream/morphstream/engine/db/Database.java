@@ -5,22 +5,17 @@ import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import intellistream.morphstream.engine.db.storage.EventManager;
-import intellistream.morphstream.engine.db.storage.StorageManager;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+@Getter
 public abstract class Database {
-    public int numTransactions = 0;//current number of activate transactions
-    @Getter
     public StorageManager storageManager;
-    @Getter
-    public EventManager eventManager;
-    @Getter
     public LoggingManager loggingManager;
 
     //	public transient TxnParam param;

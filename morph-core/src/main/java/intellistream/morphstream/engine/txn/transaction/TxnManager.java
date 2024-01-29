@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction;
 
+import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.scheduler.collector.Collector;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
@@ -18,7 +19,7 @@ import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPBFSSc
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSAScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
-import intellistream.morphstream.engine.db.storage.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.StorageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +103,13 @@ public abstract class TxnManager implements ITxnManager {
             scheduler = recoveryScheduler;
         }
     }
+    public static void initDScheduler(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager) {
+        scheduler = new DSSchedule(totalThreads, numItems, rdmaWorkerManager);
+        scheduler.initTPG(0);
+        if (loggingManager != null) {
+            scheduler.setLoggingManager(loggingManager);
+        }
+    }
 
     /**
      * create Scheduler by flag
@@ -139,8 +147,6 @@ public abstract class TxnManager implements ITxnManager {
                 return new OPDFSAScheduler<>(threadCount, numberOfStates);
             case "TStream": // original TStream also uses Non-structured exploration strategy
                 return new TStreamScheduler(threadCount, numberOfStates);
-            case "DScheduler"://Distributed scheduler
-                return new DSSchedule(threadCount, numberOfStates);
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }

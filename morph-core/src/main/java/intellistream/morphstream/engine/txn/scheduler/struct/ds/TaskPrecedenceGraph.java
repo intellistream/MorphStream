@@ -74,6 +74,12 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
             getOC(tableName, entry.getValue().pKey).addOperation(entry.getValue());
         }
     }
+    public void setupRemoteOperations(List<Operation> operations) {
+        for (Operation operation : operations) {
+            String tableName = operation.table_name;
+            getOC(tableName, operation.pKey).addOperation(operation);
+        }
+    }
     public void setupDependencies(Context context) {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             if (!oc.operations.isEmpty()) {

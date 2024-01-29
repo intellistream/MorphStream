@@ -1,8 +1,8 @@
 package intellistream.morphstream.engine.db.storage.table;
 
 import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 import intellistream.morphstream.engine.db.storage.table.stats.TableStats;
 

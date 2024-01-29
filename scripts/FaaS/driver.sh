@@ -18,11 +18,13 @@ function ResetParameters() {
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
+    RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=5
     returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
+    isRemoteDB=1
     numberItemsForTables="8000"
     NUM_ITEMS=8000
     tableNames="accounts"
@@ -71,10 +73,12 @@ function runApplication() {
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
       --CacheBufferCapacity $CacheBufferCapacity \
+      --RemoteOperationBufferCapacity $RemoteOperationBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
       --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
+      --isRemoteDB $isRemoteDB \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \
       --tableNames $tableNames \
@@ -119,10 +123,12 @@ function runApplication() {
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
       --CacheBufferCapacity $CacheBufferCapacity \
+      --RemoteOperationBufferCapacity $RemoteOperationBufferCapacity \
       --sendMessagePerFrontend $sendMessagePerFrontend \
       --returnResultPerExecutor $returnResultPerExecutor \
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
+      --isRemoteDB $isRemoteDB \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \
       --tableNames $tableNames \

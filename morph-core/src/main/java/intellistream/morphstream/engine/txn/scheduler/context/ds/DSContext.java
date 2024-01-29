@@ -1,16 +1,27 @@
 package intellistream.morphstream.engine.txn.scheduler.context.ds;
 
+import intellistream.morphstream.api.input.statistic.OwnershipTable;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.OperationChain;
+import scala.Tuple2;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 public class DSContext implements SchedulerContext {
     public int thisThreadId;
+    public ByteBuffer ownershipTableBuffer;
+    private final int totalWorker;
+    private final List<Integer> receivedWorker = new ArrayList<>();
+    private Tuple2<Long, ByteBuffer> tempCanRead;//the temp buffer to decide whether the remote operations can read
+    private ByteBuffer remoteOperationBuffer;
+    public final OwnershipTable ownershipTable = new OwnershipTable();
+    private final List<Operation> remoteOperations = new ArrayList<>();
     public ArrayDeque<Request> requests;//functions in one DAG
     public final transient HashMap<String, Operation> tempOperationMap = new HashMap<>();//temp map for operations to set up dependencies
     private final Deque<OperationChain> allocatedTasks = new ArrayDeque<>();
@@ -20,6 +31,7 @@ public class DSContext implements SchedulerContext {
     public DSContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;
         this.requests = new ArrayDeque<>();
+        this.totalWorker = MorphStreamEnv.get().configuration().getInt("workerNum");
     }
     public void push(Request request) {
         requests.push(request);
@@ -51,5 +63,42 @@ public class DSContext implements SchedulerContext {
         scheduledOperations = 0;
         totalOperations = 0;
         ready_oc = null;
+        remoteOperations.clear();
+        receivedWorker.clear();
+    }
+    public List<Operation> receiveRemoteOperations(RdmaWorkerManager rdmaWorkerManager) {
+        while (receivedWorker.size() != totalWorker) {
+            for (int i = 0; i < totalWorker; i++) {
+                try {
+                    if (receivedWorker.contains(i)) {
+                        continue;
+                    }
+                    tempCanRead = rdmaWorkerManager.getRemoteOperationsBuffer(i).canRead(this.thisThreadId);
+                    if (tempCanRead != null) {
+                        List<Integer> lengthQueue = new ArrayList<>();
+                        while(tempCanRead._2().hasRemaining()) {
+                            lengthQueue.add(tempCanRead._2().getInt());
+                        }
+                        long myOffset = tempCanRead._1();
+                        int myLength = lengthQueue.get(this.thisThreadId);
+                        for (int j = 0; j < this.thisThreadId; j++) {
+                            myOffset += lengthQueue.get(j);
+                        }
+                        remoteOperationBuffer = rdmaWorkerManager.getRemoteOperationsBuffer(i).read(myOffset, myLength);
+                        while (remoteOperationBuffer.hasRemaining()) {
+                            int operationSize = remoteOperationBuffer.getInt();
+                            byte[] bytes = new byte[operationSize];
+                            remoteOperationBuffer.get(bytes);
+                            String[] operationInfo = new String(bytes).split(",");
+                            this.remoteOperations.add(new Operation(operationInfo[1], operationInfo[2], Long.parseLong(operationInfo[0]), true));
+                        }
+                        receivedWorker.add(i);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return remoteOperations;
     }
 }

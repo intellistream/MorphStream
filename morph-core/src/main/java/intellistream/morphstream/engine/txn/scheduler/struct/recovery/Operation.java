@@ -5,7 +5,7 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.HashMap;

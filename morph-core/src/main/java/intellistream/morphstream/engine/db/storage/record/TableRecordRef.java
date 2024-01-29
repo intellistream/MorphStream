@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.db.storage;
+package intellistream.morphstream.engine.db.storage.record;
 
 import java.util.concurrent.RejectedExecutionException;
 

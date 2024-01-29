@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.db.storage;
+package intellistream.morphstream.engine.db.storage.record;
 
 public class SchemaRecords {
     final int max_size_;

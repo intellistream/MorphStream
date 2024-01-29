@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.db.storage;
+package intellistream.morphstream.engine.db.storage.record;
 
 import intellistream.morphstream.engine.db.storage.table.RowID;
 import intellistream.morphstream.engine.txn.content.*;

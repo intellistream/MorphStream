@@ -3,9 +3,10 @@ package intellistream.morphstream.engine.txn.transaction.impl;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes;
-import intellistream.morphstream.engine.db.storage.SchemaRecordRef;
-import intellistream.morphstream.engine.db.storage.StorageManager;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecordRef;
+import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
@@ -46,8 +47,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     protected final String thisComponentId;
     public HashMap<String, SchedulerContext> contexts;
     public SchedulerContext context;
-
-    protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(CommonMetaTypes.kMaxAccessNum);
     protected boolean is_first_access_;
     protected int thread_count_;
     protected int dalta;
@@ -455,8 +454,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
-
-
+    @Override
+    public boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException {
+        return false;
+    }
     public int getGroupId(int thisTaskId) {
         int groupId = thisTaskId / dalta;
         return groupId;

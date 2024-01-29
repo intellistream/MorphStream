@@ -1,8 +1,8 @@
 package intellistream.morphstream.engine.txn.transaction.context;
 
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType;
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 
 import java.util.Arrays;
 import java.util.Comparator;

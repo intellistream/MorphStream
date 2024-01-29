@@ -33,8 +33,6 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private Configuration conf = MorphStreamEnv.get().configuration();
     private ByteBuffer msgBuffer;
     private Tuple2<Long, ByteBuffer> canRead;
-    private ByteBuffer ownershipTableBuffer;
-    private final OwnershipTable ownershipTable = new OwnershipTable();
     public FunctionExecutor(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
         this.operatorID = operatorID;
@@ -74,7 +72,6 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                 if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                     if (model_switch(counter) && !msgBuffer.hasRemaining()) {
                         marker = new Tuple(this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, counter, myiteration, "punctuation"));
-                        getOwnershipTable();
                         bolt.execute(marker);
                     }
                 }
@@ -107,19 +104,5 @@ public class FunctionExecutor extends AbstractSpoutCombo {
         byte[] bytes1 = new byte[length1];
         msgBuffer.get(bytes1);
         return bytes1;
-    }
-    private void getOwnershipTable() throws IOException {
-        while (ownershipTableBuffer == null) {
-            ownershipTableBuffer = MorphStreamEnv.get().rdmaWorkerManager().getTableBuffer().getOwnershipTable(this.threadId);
-        }
-        int length = ownershipTableBuffer.getInt();
-        for (int i = 0; i < length; i++) {
-            int keyLength = ownershipTableBuffer.getInt();
-            byte[] keyBytes = new byte[keyLength];
-            ownershipTableBuffer.get(keyBytes);
-            String key = new String(keyBytes);
-            int value = ownershipTableBuffer.getInt();
-            ownershipTable.put(key, value);
-        }
     }
 }

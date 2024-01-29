@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.db.storage.datatype;
 
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 
 import java.util.HashSet;
 import java.util.List;

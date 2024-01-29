@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.stream.execution;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.configuration.Constants;
@@ -126,7 +127,11 @@ public class ExecutionManager {
                 } else if (conf.getBoolean("isGroup")) {
                     TxnManager.initSchedulersByGroupForMultipleWorkload(conf.getString("SchedulersForGroup"), totalThread, numberOfStates);
                 } else {
-                    TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates);
+                    if (conf.getBoolean("isRdma")) {
+                        TxnManager.initDScheduler(totalThread, numberOfStates, MorphStreamEnv.get().rdmaWorkerManager());
+                    } else {
+                        TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates);
+                    }
                 }
                 if (conf.getBoolean("isRecovery")) {
                     TxnManager.initRecoveryScheduler(conf.getInt("FTOption"), totalThread, numberOfStates);

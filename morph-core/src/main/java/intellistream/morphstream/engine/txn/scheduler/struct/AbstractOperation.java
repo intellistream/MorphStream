@@ -8,7 +8,7 @@ import intellistream.morphstream.engine.txn.durability.struct.Logging.LVCLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LoggingEntry;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.NativeCommandLog;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 
 import java.util.HashMap;
@@ -20,6 +20,7 @@ import static intellistream.morphstream.util.FaultToleranceConstants.*;
  * TODO: clean ``state" and ``reference".
  */
 public abstract class AbstractOperation {
+    public boolean isRemote;
 
     //required by READ_WRITE_and Condition.
     public final String table_name;

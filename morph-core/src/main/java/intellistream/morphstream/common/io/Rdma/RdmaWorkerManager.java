@@ -17,11 +17,14 @@ import intellistream.morphstream.common.io.Rdma.Msg.WDRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.Msg.WWRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.scheduler.struct.ds.RemoteOperationBatch;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
@@ -30,6 +33,7 @@ public class RdmaWorkerManager implements Serializable {
     private final RdmaNode rdmaNode;
     private final int totalFunctionExecutors;
     private final boolean isDriver;
+    @Getter
     private final int managerId;
     private final String[] workerHosts;
     private final String[] workerPorts;
@@ -39,7 +43,8 @@ public class RdmaWorkerManager implements Serializable {
     private final WorkerRdmaBufferManager rdmaBufferManager;
     private RdmaChannel driverRdmaChannel;
     private DWRegionTokenGroup dwRegionTokenGroup = new DWRegionTokenGroup();// Driver's region token
-    private ResultBatch resultBatch;// Results
+    private ResultBatch resultBatch;// Results, send to driver
+    private ConcurrentHashMap<Integer, RemoteOperationBatch> remoteOperationBatchMap = new ConcurrentHashMap<>(); //Remote operations, send to workers
     private ConcurrentHashMap<Integer, RdmaChannel> workerRdmaChannelMap = new ConcurrentHashMap<>();//workerId -> RdmaChannel
     private ConcurrentHashMap<Integer, WWRegionTokenGroup> workerRegionTokenMap = new ConcurrentHashMap<>();//workerId -> RegionToken
 
@@ -58,7 +63,11 @@ public class RdmaWorkerManager implements Serializable {
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         rdmaBufferManager.perAllocateTableBuffer(MorphStreamEnv.get().configuration().getInt("TableBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         rdmaBufferManager.perAllocateCacheBuffer(MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"),MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(","));
+        rdmaBufferManager.perAllocateRemoteOperationBuffer(MorphStreamEnv.get().configuration().getInt("workerNum"), MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         resultBatch = new ResultBatch(MorphStreamEnv.get().configuration().getInt("maxResultsCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"), this.totalFunctionExecutors);
+        for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("workerNum"); i++) {
+            remoteOperationBatchMap.put(i, new RemoteOperationBatch(MorphStreamEnv.get().configuration().getInt("tthread"), this.totalFunctionExecutors));
+        }
         //Result count to decide whether to send the batched results
         SOURCE_CONTROL.getInstance().config(MorphStreamEnv.get().configuration().getInt("frontendNum"), MorphStreamEnv.get().configuration().getInt("sendMessagePerFrontend"), this.totalFunctionExecutors, MorphStreamEnv.get().configuration().getInt("returnResultPerExecutor"));
 
@@ -81,7 +90,9 @@ public class RdmaWorkerManager implements Serializable {
                         workerRdmaChannelMap.put(i, rdmaChannel);
                         //Send region token to target workers
                         WWRegionTokenGroup wwRegionTokenGroup = new WWRegionTokenGroup();
-                        wwRegionTokenGroup.addRegionTokens(rdmaBufferManager.getCacheBuffer().createRegionTokens());
+                        List<RegionToken> regionTokens = rdmaBufferManager.getCacheBuffer().createRegionTokens();
+                        regionTokens.add(rdmaBufferManager.getRemoteOperationBuffer(i).createRegionToken());
+                        wwRegionTokenGroup.addRegionTokens(regionTokens);
                         rdmaNode.sendRegionTokenToRemote(rdmaChannel, wwRegionTokenGroup.getRegionTokens(), inetSocketAddress.getHostName());
 
                         //Receive region token from target workers
@@ -106,7 +117,9 @@ public class RdmaWorkerManager implements Serializable {
 
                 //Send region token to target workers
                 WWRegionTokenGroup wwRegionTokenGroup = new WWRegionTokenGroup();
-                wwRegionTokenGroup.addRegionTokens(rdmaBufferManager.getCacheBuffer().createRegionTokens());
+                List<RegionToken> regionTokens = rdmaBufferManager.getCacheBuffer().createRegionTokens();
+                regionTokens.add(rdmaBufferManager.getRemoteOperationBuffer(i).createRegionToken());
+                wwRegionTokenGroup.addRegionTokens(regionTokens);
                 rdmaNode.sendRegionTokenToRemote(workerRdmaChannelMap.get(i), wwRegionTokenGroup.getRegionTokens(), workerHosts[i]);
             }
         }
@@ -115,17 +128,20 @@ public class RdmaWorkerManager implements Serializable {
         return rdmaBufferManager.getCircularMessageBuffer();
     }
     public TableBuffer getTableBuffer() { return rdmaBufferManager.getTableBuffer();}
+    public CircularMessageBuffer getRemoteOperationsBuffer(int i) {
+        return rdmaBufferManager.getRemoteOperationBuffer(i);
+    }
 
-    public void send(int senderThreadId, FunctionMessage functionMessage) throws Exception {
+    public void sendResults(int senderThreadId, FunctionMessage functionMessage) throws Exception {
         this.resultBatch.add(senderThreadId, functionMessage);
         if (this.resultBatch.getTotalResultCount(senderThreadId) >= SOURCE_CONTROL.getInstance().getResultPerExecutor()) {
             SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
             if (senderThreadId == 0)
-                sendBatch();
+                sendResultBatch();
             SOURCE_CONTROL.getInstance().workerEndSendResultBarrier();
         }
     }
-    public void sendBatch() throws Exception {
+    public void sendResultBatch() throws Exception {
         ByteBuffer byteBuffer = this.resultBatch.buffer();
         byteBuffer.flip();
 
@@ -165,5 +181,50 @@ public class RdmaWorkerManager implements Serializable {
             }
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         latch.await();
+    }
+    public void sendRemoteOperations(int senderThreadId, int receiverThreadId, FunctionMessage functionMessage) {
+        this.remoteOperationBatchMap.get(receiverThreadId).addMessage(senderThreadId, functionMessage);
+    }
+    public void sendRemoteOperationBatch(int senderId) throws Exception {
+        if (this.remoteOperationBatchMap.get(senderId) == null) return;
+        RemoteOperationBatch remoteOperationBatch = this.remoteOperationBatchMap.get(senderId);
+        ByteBuffer byteBuffer = remoteOperationBatch.buffer();
+        byteBuffer.flip();
+
+        RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
+        ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
+        dataBuffer.put(byteBuffer);
+        dataBuffer.flip();
+
+        RdmaChannel rdmaChannel = workerRdmaChannelMap.get(senderId);
+        RegionToken regionToken = workerRegionTokenMap.get(senderId).getRemoteOperationToken();
+
+        long remoteAddress = regionToken.getAddress();
+        int rkey = regionToken.getLocalKey();
+        CountDownLatch latch = new CountDownLatch(1);
+        rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                try {
+                    rdmaBuffer.getByteBuffer().clear();
+                    rdmaBufferManager.put(rdmaBuffer);
+                    regionToken.setAddress(remoteAddress + byteBuffer.capacity());
+                    remoteOperationBatch.clear();
+                    latch.countDown();
+                    LOG.info("Worker " + managerId + " sends remote operations" + " to worker " + senderId);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            @Override
+            public void onFailure(Throwable exception) {
+                try {
+                    rdmaBuffer.getByteBuffer().clear();
+                    rdmaBufferManager.put(rdmaBuffer);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
     }
 }

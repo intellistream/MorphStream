@@ -20,4 +20,7 @@ public class WWRegionTokenGroup {
     public int size() {
         return regionTokens.size();
     }
+    public RegionToken getRemoteOperationToken() {
+        return regionTokens.get(regionTokens.size() - 1);
+    }
 }

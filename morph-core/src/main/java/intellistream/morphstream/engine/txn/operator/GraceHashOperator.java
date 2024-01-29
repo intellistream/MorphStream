@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.operator;
 
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.db.impl.SimpleDatabase;
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 
 import java.util.*;

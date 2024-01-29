@@ -5,7 +5,7 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import lombok.Getter;
 
@@ -23,9 +23,10 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public int txnOpId = 0;
     public MetaTypes.OperationStateType operationType = MetaTypes.OperationStateType.BLOCKED;
 
-    public Operation() {
-        super(null, null, null, null, null, null, 0, null, null);
-        this.pKey = null;
+    public Operation(String tableName, String pKey, long bid, boolean isRemote) {
+        super(tableName, null, null, null, null, null, bid, null, pKey);
+        this.pKey = pKey;
+        this.isRemote = isRemote;
     }
 
     public <Context extends DSContext> Operation(String pKey, Context context, String table_name, FunctionContext txn_context, long bid,
@@ -33,6 +34,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
                                                  HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
         super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
         this.pKey = pKey;
+        this.isRemote = false;
     }
     public void addBrother(Operation brother) {
         this.brothers.add(brother);
@@ -101,5 +103,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             return this.d_record.getID() - operation.d_record.getID();
         } else
             return Long.compare(this.bid, operation.bid);
+    }
+    public String getOperationRef() {
+        return this.bid + ":" + this.table_name + ":" + this.pKey;
     }
 }

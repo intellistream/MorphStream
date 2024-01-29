@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.db.storage;
+package intellistream.morphstream.engine.db.storage.record;
 
 /**
  * A hack ref to SchemaRecord, simulating C++ pointer.

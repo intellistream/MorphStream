@@ -153,6 +153,8 @@ public class JCommanderHandler {
     /**
      * Database configurations
      */
+    @Parameter(names = {"--isRemoteDB"}, description = "isRemoteDB.")
+    public int isRemoteDB = 0;// 0: local, 1: remote
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 8000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
@@ -246,6 +248,8 @@ public class JCommanderHandler {
     public int TableBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--CacheBufferCapacity"}, description = "CacheBufferCapacity")
     public int CacheBufferCapacity = 1024 * 1024 * 1024;
+    @Parameter(names = {"--RemoteOperationBufferCapacity"}, description = "RemoteOperationBufferCapacity")
+    public int RemoteOperationBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--sendMessagePerFrontend"}, description = "sendMessagePerFrontend")
     public int sendMessagePerFrontend = 1000;
     @Parameter(names = {"--returnResultPerExecutor"}, description = "returnResultPerExecutor")
@@ -339,6 +343,7 @@ public class JCommanderHandler {
         config.put("CircularBufferCapacity", CircularBufferCapacity);
         config.put("TableBufferCapacity", TableBufferCapacity);
         config.put("CacheBufferCapacity", CacheBufferCapacity);
+        config.put("RemoteOperationBufferCapacity", RemoteOperationBufferCapacity);
         config.put("sendMessagePerFrontend", sendMessagePerFrontend);
         config.put("maxMessageCapacity", sendMessagePerFrontend * frontendNum);
         config.put("returnResultPerExecutor", returnResultPerExecutor);
@@ -446,6 +451,11 @@ public class JCommanderHandler {
         }
 
         /* Database configurations */
+        if (isRemoteDB == 0) {
+            config.put("isRemoteDB", false);
+        } else {
+            config.put("isRemoteDB", true);
+        }
         config.put("NUM_ITEMS", NUM_ITEMS);
         config.put("loadDBThreadNum", tthread);
         config.put("tableNames", tableNames);

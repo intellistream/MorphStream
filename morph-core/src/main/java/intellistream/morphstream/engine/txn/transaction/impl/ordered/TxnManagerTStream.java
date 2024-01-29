@@ -1,19 +1,12 @@
 package intellistream.morphstream.engine.txn.transaction.impl.ordered;
 
-import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
-import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
-import intellistream.morphstream.engine.db.storage.StorageManager;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.impl.StorageManager;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
-import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
-import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.engine.txn.transaction.impl.TxnManagerDedicatedAsy;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
 import java.util.concurrent.BrokenBarrierException;
 
 public class TxnManagerTStream extends TxnManagerDedicatedAsy {
@@ -21,31 +14,6 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
 
     public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw, String schedulerType) {
         super(storageManager, thisComponentId, thisTaskId, thread_countw, numberOfStates, schedulerType);
-    }
-//    public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw, String schedulerType, Stage stage) {
-//        super(storageManager, thisComponentId, thisTaskId, thread_countw, numberOfStates, schedulerType, stage);
-//    }
-
-    @Override
-    public boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
-        record.is_visible_ = false;
-        TableRecord tb_record = new TableRecord(record, this.thread_count_);
-        if (storageManager_.getTable(table_name).InsertRecord(tb_record)) {//maybe we can also skip this for testing purpose.
-            if (!tb_record.content_.TryWriteLock()) {
-                return false;
-            } else {
-            }
-            record.is_visible_ = true;
-            TxnAccess.Access access = access_list_.NewAccess();
-            access.access_type_ = CommonMetaTypes.AccessType.INSERT_ONLY;
-            access.access_record_ = tb_record;
-            access.local_record_ = null;
-            access.table_id_ = table_name;
-            access.timestamp_ = 0;
-            return true;
-        } else {
-            return true;
-        }
     }
 
     /**

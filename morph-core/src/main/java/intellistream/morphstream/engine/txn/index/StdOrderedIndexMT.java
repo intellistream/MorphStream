@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.index;
 
 import intellistream.morphstream.engine.txn.lock.RWLock;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 
 /**
  * MultiThread (MT) version.

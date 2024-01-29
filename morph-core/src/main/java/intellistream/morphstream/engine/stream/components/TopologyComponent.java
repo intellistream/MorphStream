@@ -5,6 +5,8 @@ import intellistream.morphstream.engine.stream.components.grouping.Grouping;
 import intellistream.morphstream.engine.stream.components.operators.executor.IExecutor;
 import intellistream.morphstream.engine.stream.execution.ExecutionNode;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.*;
@@ -24,7 +26,9 @@ public abstract class TopologyComponent implements Serializable {
      * One can emit multiple output_streams with different output data (and/or different fields).
      * < StreamID, Streaminfo >
      */
+    @Getter
     final HashMap<String, streaminfo> output_streams;
+    @Getter
     private final String id;
     private final IExecutor op; //this is the operator structure passed in from user application.
     /**
@@ -34,15 +38,15 @@ public abstract class TopologyComponent implements Serializable {
      */
     private final HashMap<String, HashMap<String, Grouping>> grouping_to_downstream;
     public boolean toCompress = true;
+    @Setter
+    @Getter
     private int numTasks;
     // public final String parentID;//TODO: change this partition parent limitation.
     //TODO: Currently keep two lists for faster access purpose. Replace it by using global reference in future release.
     private ArrayList<ExecutionNode> executor;//executor of this operator is initiated after Brisk.execution graph is created.
     private ArrayList<Integer> executorID;//executor of this operator is initiated after Brisk.execution graph is created.
 
-    TopologyComponent(HashMap<String, streaminfo> output_streams, String id, char type, IExecutor op, int numTasks,
-                      //String parentID,
-                      ArrayList<String> input_streams, Grouping... groups) {
+    TopologyComponent(HashMap<String, streaminfo> output_streams, String id, char type, IExecutor op, int numTasks, ArrayList<String> input_streams, Grouping... groups) {
         this.id = id;
         this.type = type;
         this.op = op;
@@ -59,14 +63,6 @@ public abstract class TopologyComponent implements Serializable {
     void clean() {
         executor = new ArrayList<>();
         executorID = new ArrayList<>();
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public HashMap<String, streaminfo> getOutput_streams() {
-        return output_streams;
     }
 
     public Grouping getGrouping_to_downstream(String downOp, String streamId) {
@@ -127,14 +123,6 @@ public abstract class TopologyComponent implements Serializable {
     public abstract HashMap<String, Map<TopologyComponent, Grouping>> getParents();
 
     public abstract boolean isLeafNode();
-
-    public int getNumTasks() {
-        return numTasks;
-    }
-
-    public void setNumTasks(int numTasks) {
-        this.numTasks = numTasks;
-    }
 
     public int getFID() {
         return op.getStage();

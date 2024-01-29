@@ -7,6 +7,7 @@ import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.db.impl.RemoteDatabase;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpout;
@@ -94,12 +95,16 @@ public class MorphStreamEnv {
         }
     }
     public void DatabaseInitialize() {
-        this.database = new CavaliaDatabase(configuration);
-        this.databaseInitializer.creates_Table();
-        if (configuration.getBoolean("partition", false)) {
-            for (int i = 0; i < configuration.getInt("tthread", 4); i++)
-                databaseInitializer.setSpinlock_(i, new SpinLock());
-            PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
+        if (configuration().getBoolean("isRemoteDB", false)) {
+            this.database = new RemoteDatabase();
+        } else {
+            this.database = new CavaliaDatabase(configuration);
+            this.databaseInitializer.creates_Table();
+            if (configuration.getBoolean("partition", false)) {
+                for (int i = 0; i < configuration.getInt("tthread", 4); i++)
+                    databaseInitializer.setSpinlock_(i, new SpinLock());
+                PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
+            }
         }
     }
     public void InputSourceInitialize() throws IOException {

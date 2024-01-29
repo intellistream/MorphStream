@@ -19,7 +19,7 @@ import intellistream.morphstream.engine.txn.durability.snapshot.LoggingOptions;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LVCLog;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.LoggingEntry;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.BaseTable;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;

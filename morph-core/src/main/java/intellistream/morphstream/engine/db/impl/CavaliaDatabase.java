@@ -10,9 +10,8 @@ import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.I
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import intellistream.morphstream.engine.db.storage.EventManager;
-import intellistream.morphstream.engine.db.storage.StorageManager;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 public class CavaliaDatabase extends Database {
     public CavaliaDatabase(Configuration configuration) {
         storageManager = new StorageManager(configuration);
-        eventManager = new EventManager();
         switch (configuration.getInt("FTOption")) {
             case 0:
             case 1:

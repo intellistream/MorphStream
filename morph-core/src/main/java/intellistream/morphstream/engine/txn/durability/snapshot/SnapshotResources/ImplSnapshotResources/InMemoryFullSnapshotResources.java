@@ -7,7 +7,7 @@ import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotOptions;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResources.SnapshotResources;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResources.StateMetaInfoSnapshot;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotStrategy.ImplSnapshotStrategy.InMemorySnapshotStrategy;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.BaseTable;
 import intellistream.morphstream.util.FaultToleranceConstants;
 import intellistream.morphstream.util.Serialize;

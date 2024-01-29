@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.db.storage.table;
 
-import intellistream.morphstream.engine.db.storage.TableRecord;
-import intellistream.morphstream.engine.db.storage.TableRecords;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecords;
 
 import java.io.Closeable;
 

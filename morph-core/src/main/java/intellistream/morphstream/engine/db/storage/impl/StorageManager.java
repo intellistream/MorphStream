@@ -1,7 +1,8 @@
-package intellistream.morphstream.engine.db.storage;
+package intellistream.morphstream.engine.db.storage.impl;
 
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.BaseTable;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import intellistream.morphstream.engine.db.storage.table.ShareTable;
@@ -57,43 +58,6 @@ public class StorageManager {
         }
         tables.put(tableName, new ShareTable(s, tableName, true, partition_num, num_items));//here we decide which table to use.
         table_count++;
-    }
-
-    /**
-     * TODO: to be implemented.
-     * Create a new table in this database with an index on each of the given column names.
-     * NOTE: YOU CAN NOT DELETE/UPDATE FROM THIS TABLE IF YOU CHOOSE TO BUILD INDICES!!
-     *
-     * @param s            the table schema
-     * @param tableName    the name of the table
-     * @param indexColumns the list of unique columnNames on the maintain an index on
-     * @throws DatabaseException
-     */
-    public synchronized void createTableWithIndices(RecordSchema s, String tableName, List<String> indexColumns, int partition_num, int num_items) throws DatabaseException {
-        if (tables.containsKey(tableName)) {
-            throw new DatabaseException("SimpleTable name already exists");
-        }
-        List<String> schemaColNames = s.getFieldNames();
-        List<DataBox> schemaColType = s.getFieldTypes();
-        HashSet<String> seenColNames = new HashSet<>();
-        List<Integer> schemaColIndex = new ArrayList<>();
-        for (String col : indexColumns) {
-            if (!schemaColNames.contains(col)) {
-                throw new DatabaseException("Column desired for index does not exist");
-            }
-            if (seenColNames.contains(col)) {
-                throw new DatabaseException("Column desired for index has been duplicated");
-            }
-            seenColNames.add(col);
-            schemaColIndex.add(schemaColNames.indexOf(col));
-        }
-        tables.put(tableName, new ShareTable(s, tableName, true, partition_num, num_items));
-        for (int i : schemaColIndex) {
-            String colName = schemaColNames.get(i);
-            DataBox colType = schemaColType.get(i);
-            String indexName = tableName + "," + colName;
-            //this.indexLookup.put(indexName, new BtreeIndex(colType, indexName, this.fileDir));
-        }
     }
 
     /**

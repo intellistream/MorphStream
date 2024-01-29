@@ -1,7 +1,9 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.ds;
 
 import intellistream.morphstream.api.Client;
+import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.scheduler.Request;
@@ -11,12 +13,13 @@ import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.OperationChain;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.TaskPrecedenceGraph;
-import intellistream.morphstream.engine.db.storage.SchemaRecord;
-import intellistream.morphstream.engine.db.storage.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
@@ -25,6 +28,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public final int delta;
     public final int totalThreads;
     public final TaskPrecedenceGraph<Context> tpg;
+    public final RdmaWorkerManager rdmaWorkerManager;
     public static final Client clientObj;
     static {
         try {
@@ -35,7 +39,8 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             throw new RuntimeException(e);
         }
     }
-    public DSSchedule(int totalThreads, int numItems) {
+    public DSSchedule(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager) {
+        this.rdmaWorkerManager = rdmaWorkerManager;
         this.totalThreads = totalThreads;
         this.delta = numItems / totalThreads;
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, numItems);
@@ -73,13 +78,31 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     }
     @Override
     public void INITIALIZE(Context context) {
-        tpg.setupDependencies(context);
-        for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
-            oc.setDsContext(context);
-            context.addTasks(oc);
+        try {
+            //Get ownership table from driver
+            getOwnershipTable(context);
+            //Send remote operations to remote workers
+            for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
+                int remoteWorkerId = context.ownershipTable.get(oc.getPrimaryKey());
+                if (remoteWorkerId != rdmaWorkerManager.getManagerId()) {
+                    for (Operation op : oc.operations) {
+                        this.rdmaWorkerManager.sendRemoteOperations(context.thisThreadId, remoteWorkerId, new FunctionMessage(op.getOperationRef()));
+                    }
+                }
+            }
+            //Receive remote operations from remote workers
+            tpg.setupRemoteOperations(context.receiveRemoteOperations(rdmaWorkerManager));
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            tpg.setupDependencies(context);
+            for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
+                oc.setDsContext(context);
+                context.addTasks(oc);
+            }
+            LOG.info("Finish initialize: " + context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        LOG.info("Finish initialize: " + context.thisThreadId);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
     @Override
     public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
@@ -132,6 +155,10 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
         context.reset();
     }
     private void execute(Operation operation, long mark_ID) {
+        if (operation.isRemote) {
+            LOG.info("Remote operation: " + operation);
+            return;
+        }
         AppConfig.randomDelay();//To quantify the overhead of user-defined function
         //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
         for (Map.Entry<String, TableRecord> entry : operation.condition_records.entrySet()) {
@@ -163,6 +190,20 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             operation.stateAccess.setAborted();
             operation.operationType = MetaTypes.OperationStateType.ABORTED;
             operation.notifyChildren();
+        }
+    }
+    private void getOwnershipTable(Context context) throws IOException {
+        while (context.ownershipTableBuffer == null) {
+            context.ownershipTableBuffer = this.rdmaWorkerManager.getTableBuffer().getOwnershipTable(context.thisThreadId);
+        }
+        int length = context.ownershipTableBuffer.getInt();
+        for (int i = 0; i < length; i++) {
+            int keyLength = context.ownershipTableBuffer.getInt();
+            byte[] keyBytes = new byte[keyLength];
+            context.ownershipTableBuffer.get(keyBytes);
+            String key = new String(keyBytes);
+            int value = context.ownershipTableBuffer.getInt();
+            context.ownershipTable.put(key, value);
         }
     }
 

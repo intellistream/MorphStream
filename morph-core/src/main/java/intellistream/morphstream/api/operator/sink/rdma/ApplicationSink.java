@@ -23,7 +23,7 @@ public class ApplicationSink extends AbstractSink {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
         Result result = (Result) in.getValue(0);
         try {
-            MorphStreamEnv.get().rdmaWorkerManager().send(this.thread_Id, new FunctionMessage(result.toString()));
+            MorphStreamEnv.get().rdmaWorkerManager().sendResults(this.thread_Id, new FunctionMessage(result.toString()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

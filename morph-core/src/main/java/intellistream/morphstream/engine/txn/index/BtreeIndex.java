@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.index;
 
-import intellistream.morphstream.engine.db.storage.TableRecord;
-import intellistream.morphstream.engine.db.storage.TableRecords;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
+import intellistream.morphstream.engine.db.storage.record.TableRecords;
 import intellistream.morphstream.engine.db.storage.datatype.IntDataBox;
 import intellistream.morphstream.engine.db.storage.table.RowID;
 
