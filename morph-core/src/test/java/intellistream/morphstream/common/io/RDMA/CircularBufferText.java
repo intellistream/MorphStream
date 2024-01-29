@@ -77,6 +77,51 @@ public class CircularBufferText extends TestCase {
             thread.start();
         }
     }
+    public void testA() {
+        UnsafeMemoryAllocator unsafeAlloc = new UnsafeMemoryAllocator();
+        MemoryBlock memoryBlock = unsafeAlloc.allocate(1024 * 1024);
+        ByteBuffer writebyteBuffer = null;
+        try {
+            writebyteBuffer = (ByteBuffer) directBufferConstructor.newInstance(memoryBlock.getBaseOffset(), 1024 * 1024);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        String[] strings = "string1, string2, string3, string4, string5, string6, string7, string8, string9, string10".split(",");
+        for (String string : strings) {
+            byte[] bytes1 = string.getBytes(StandardCharsets.UTF_8);
+            writebyteBuffer.putInt(bytes1.length);
+            writebyteBuffer.put(bytes1);
+        }
+        writebyteBuffer.flip();
+
+        ByteBuffer readByteBuffer = null;
+        try {
+            readByteBuffer = (ByteBuffer) directBufferConstructor.newInstance(memoryBlock.getBaseOffset(), 1024 * 1024);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        for (int i = 0; i < strings.length; i++) {
+            int length = readByteBuffer.getInt();
+            byte[] bytes1 = new byte[length];
+            readByteBuffer.get(bytes1);
+            System.out.println(new String(bytes1, StandardCharsets.UTF_8));
+        }
+        readByteBuffer.clear();
+        int[] its;
+        its = new int[10];
+        for (int i = 0; i < its.length; i++) {
+            its[i] = i;
+        }
+        for (int it : its) {
+            readByteBuffer.putInt(it);
+        }
+
+        for (int i = 0; i < its.length; i++) {
+            System.out.println(writebyteBuffer.getInt());
+        }
+
+
+    }
 
     static class ReaderThread implements Runnable {
         public int index;
