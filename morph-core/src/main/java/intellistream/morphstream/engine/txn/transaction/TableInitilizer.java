@@ -97,14 +97,6 @@ public abstract class TableInitilizer {
 
     public abstract boolean Generate() throws IOException;
 
-    public void prepare_input_events(int total_events) throws IOException {
-        db.getEventManager().ini(total_events);
-        //try to read from file or use user-defined generator for data preparation
-        Generate();
-        Load();
-        db.getEventManager().clear();
-    }
-
     protected abstract void Load() throws IOException;
 
     public abstract void store(String file_path) throws IOException;
