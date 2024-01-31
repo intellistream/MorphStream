@@ -117,7 +117,9 @@ public class InputSource {
             Set<String> duplicates = keys.stream()
                     .filter(i -> Collections.frequency(keys, i) > 1)
                     .collect(Collectors.toSet());
-            System.out.println("Duplicate elements found: " + duplicates);
+            if (!duplicates.isEmpty()) {
+                System.out.println("Duplicate elements found: " + duplicates);
+            }
             keyMap.put(keyMapPair[0], keys);
         }
         String [] valueMapPairs = inputArray[2].split(",");

@@ -3,6 +3,8 @@ package intellistream.morphstream.engine.txn.scheduler.struct.ds;
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.ByteBufferBackedOutputStream;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
@@ -16,6 +18,8 @@ public class RemoteOperationBatch {
     private final int senderThreads;
     private final ConcurrentHashMap<Integer, List<FunctionMessage>> messageMap;//sender threadId -> message list
     private final ConcurrentHashMap<Integer, Integer> encoded_Lengths = new ConcurrentHashMap<>();//threadId -> encoded_length
+    @Getter @Setter
+    private int totalMessagesSize = 0;
     public RemoteOperationBatch(int receiverThreads, int senderThreads) {
         this.receiverThreads = receiverThreads;
         this.senderThreads = senderThreads;
@@ -44,18 +48,23 @@ public class RemoteOperationBatch {
             totalEncodedLength += encoded_Lengths.get(i);
             totalMessages.addAll(messageMap.get(i));
         }
+        totalMessagesSize = totalMessages.size();
         //START_FLAG(Short) + TotalLength(Int) + MessageBlockLength(Int) * totalThreads + EndFlag(Short)
         ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(2 + 4 + receiverThreads * 4 + totalEncodedLength + 2));
         try {
             bout.writeShort(SOURCE_CONTROL.START_FLAG);
             bout.writeInt(totalEncodedLength);
             Deque<Integer> length = new ArrayDeque<>();
+            int taskPerThread = totalMessages.size() / receiverThreads;
+            int extraTasks = totalMessages.size() % receiverThreads;
+            int currentTask = 0;
             for (int i = 0; i < receiverThreads; i++) {
                 int totalLength = 0;
-                for (int j = i * totalMessages.size() / receiverThreads; j < (i + 1) * totalMessages.size() / receiverThreads; j ++) {
+                for (int j = currentTask; j < currentTask + taskPerThread + (i < extraTasks ? 1 : 0); j++) {
                     totalLength += totalMessages.get(j).getEncodeLength() + 4;
                 }
                 length.add(totalLength);
+                currentTask += taskPerThread + (i < extraTasks ? 1 : 0);
             }
             while (!length.isEmpty()) { //MessageBlockLength(Int) * totalThreads
                 bout.writeInt(length.poll());

@@ -38,7 +38,7 @@ function ResetParameters() {
     tableNameForEvents="accounts;accounts"
     keyNumberForEvents="2;1"
     valueNameForEvents="transferAmount;depositAmount"
-    eventRatio="50,50"
+    eventRatio="5,95"
     ratioOfMultiPartitionTransactionsForEvents="0,0"
     stateAccessSkewnessForEvents="0,0"
     abortRatioForEvents="0,0"

@@ -90,6 +90,8 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     }
                 }
             }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            this.rdmaWorkerManager.sendRemoteOperationBatch(context.thisThreadId);
             //Receive remote operations from remote workers
             tpg.setupRemoteOperations(context.receiveRemoteOperations(rdmaWorkerManager));
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -100,7 +102,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             }
             LOG.info("Finish initialize: " + context.thisThreadId);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -156,7 +158,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     }
     private void execute(Operation operation, long mark_ID) {
         if (operation.isRemote) {
-            LOG.info("Remote operation: " + operation);
+            operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             return;
         }
         AppConfig.randomDelay();//To quantify the overhead of user-defined function
@@ -205,6 +207,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             int value = context.ownershipTableBuffer.getInt();
             context.ownershipTable.put(key, value);
         }
+        LOG.info("Get ownership table");
     }
 
     @Override

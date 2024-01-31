@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Used to send function message(in byte) to the worker.
@@ -27,5 +28,12 @@ public class FunctionMessage {
 
     public int getEncodeLength() {
         return _message.length;
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        FunctionMessage that = (FunctionMessage) obj;
+        return Arrays.equals(_message, that._message);
     }
 }

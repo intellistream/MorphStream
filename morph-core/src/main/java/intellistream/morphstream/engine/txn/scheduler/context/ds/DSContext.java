@@ -7,6 +7,7 @@ import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.OperationChain;
+import org.apache.log4j.Logger;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 public class DSContext implements SchedulerContext {
+    private final static Logger LOG = Logger.getLogger(DSContext.class);
     public int thisThreadId;
     public ByteBuffer ownershipTableBuffer;
     private final int totalWorker;
@@ -73,6 +75,10 @@ public class DSContext implements SchedulerContext {
                     if (receivedWorker.contains(i)) {
                         continue;
                     }
+                    if (i == rdmaWorkerManager.getManagerId()) {
+                        receivedWorker.add(i);
+                        continue;
+                    }
                     tempCanRead = rdmaWorkerManager.getRemoteOperationsBuffer(i).canRead(this.thisThreadId);
                     if (tempCanRead != null) {
                         List<Integer> lengthQueue = new ArrayList<>();
@@ -85,14 +91,17 @@ public class DSContext implements SchedulerContext {
                             myOffset += lengthQueue.get(j);
                         }
                         remoteOperationBuffer = rdmaWorkerManager.getRemoteOperationsBuffer(i).read(myOffset, myLength);
+                        int operationNum = 0;
                         while (remoteOperationBuffer.hasRemaining()) {
                             int operationSize = remoteOperationBuffer.getInt();
                             byte[] bytes = new byte[operationSize];
                             remoteOperationBuffer.get(bytes);
-                            String[] operationInfo = new String(bytes).split(",");
-                            this.remoteOperations.add(new Operation(operationInfo[1], operationInfo[2], Long.parseLong(operationInfo[0]), true));
+                            String[] operationInfo = new String(bytes).split(":");//bid, table, pk
+                            remoteOperations.add(new Operation(operationInfo[1], operationInfo[2], Long.parseLong(operationInfo[0]), true));
+                            operationNum ++;
                         }
                         receivedWorker.add(i);
+                        LOG.info(String.format("Thread(%d) receive remote %d operations from worker(%d) ",this.thisThreadId, operationNum, i));
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e);

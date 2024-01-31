@@ -127,7 +127,7 @@ public class ExecutionManager {
                 } else if (conf.getBoolean("isGroup")) {
                     TxnManager.initSchedulersByGroupForMultipleWorkload(conf.getString("SchedulersForGroup"), totalThread, numberOfStates);
                 } else {
-                    if (conf.getBoolean("isRdma")) {
+                    if (conf.getBoolean("isRDMA")) {
                         TxnManager.initDScheduler(totalThread, numberOfStates, MorphStreamEnv.get().rdmaWorkerManager());
                     } else {
                         TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates);

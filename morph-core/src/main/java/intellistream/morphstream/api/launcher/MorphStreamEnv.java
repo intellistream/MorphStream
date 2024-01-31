@@ -91,6 +91,7 @@ public class MorphStreamEnv {
             this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));
             InputSourceInitialize();
         } else {
+            this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));
             DatabaseInitialize();
         }
     }

@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 public class Operation extends AbstractOperation implements Comparable<Operation> {
     public final String pKey;
+    public int addTimes = 0;
     public List<Operation> brothers = new ArrayList<>();
     public List<Operation> children = new ArrayList<>();
     public AtomicInteger fatherCount = new AtomicInteger(0);//We only need to count the number of fathers (lds) and invokes (pds), tds count can be ensured by skipList
@@ -96,12 +97,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
     @Override
     public int compareTo(Operation operation) {
-        if (this.bid == (operation.bid)) {
-            if (this.d_record.getID() - operation.d_record.getID() == 0) {
-                return this.getTxnOpId() - operation.getTxnOpId();
-            }
-            return this.d_record.getID() - operation.d_record.getID();
-        } else
+//        if (this.bid == (operation.bid)) {
+//            if (this.d_record.getID() - operation.d_record.getID() == 0) {
+//                return this.getTxnOpId() - operation.getTxnOpId();
+//            }
+//            return this.d_record.getID() - operation.d_record.getID();
+//        } else
             return Long.compare(this.bid, operation.bid);
     }
     public String getOperationRef() {

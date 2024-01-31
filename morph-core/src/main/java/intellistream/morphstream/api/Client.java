@@ -87,7 +87,7 @@ public abstract class Client extends Thread {
             if (!inputQueue.isEmpty()) {
                 asyncInvokeFunction("localhost", inputQueue.poll().toString());
             }
-            asyncReceiveFunctionOutput("localhost");
+            //asyncReceiveFunctionOutput("localhost");
         }
     }
 }

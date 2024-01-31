@@ -19,7 +19,10 @@ public class OperationChain implements Comparable<OperationChain> {
         operations = new MyList<>(tableName, primaryKey);
     }
     public void addOperation(Operation operation) {
-        operations.add(operation);
+        boolean isadd = operations.add(operation);
+        if (!isadd) {
+            System.out.println("add operation failed");
+        }
     }
     public void deleteOperation(Operation operation) {
         operations.remove(operation);

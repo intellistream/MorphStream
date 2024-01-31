@@ -1,6 +1,8 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.engine.txn.TxnEvent;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,7 +17,10 @@ import java.util.List;
 public class TransactionalEvent extends TxnEvent {
     private HashMap<String, List<String>> keyMap; //<TableName, keys> assume key must be string, including sourceKey, targetKey, and conditionKey
     private HashMap<String, Object> valueMap; //<valueName, value>
+    @Getter
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
+    @Getter
+    @Setter
     private String flag; //E.g., "Deposit" or "Transfer"
     private boolean isAbort = false;
 
@@ -41,10 +46,6 @@ public class TransactionalEvent extends TxnEvent {
         this.bid = bid;
     }
 
-    public void setFlag(String flag) {
-        this.flag = flag;
-    }
-
     public Object getValue(String valueName) {
         return this.valueMap.get(valueName);
     }
@@ -58,13 +59,6 @@ public class TransactionalEvent extends TxnEvent {
             keys.addAll(keyMap.get(tableName));
         }
         return keys;
-    }
-    public HashMap<String, String> getValueTypeMap() {
-        return this.valueTypeMap;
-    }
-
-    public String getFlag() {
-        return this.flag;
     }
 
     @Override

@@ -103,7 +103,6 @@ public class RdmaDriverManager {
             if (model_switch(frontendId)) {
                 sendOwnershipTable(frontendId);
                 SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
-
             }
             SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
         }
