@@ -91,7 +91,7 @@ elseif (${STACK} STREQUAL KERNEL_BYPASS)
 
   	# Library
   	add_library(vnf-kernelbypass-dynamic SHARED ${SOURCES} ${HEADERS})
-  	add_library(vnf-kernelbypass-static STATIC ${SOURCES} ${HEADERS})
+	# add_library(vnf-kernelbypass-static STATIC ${SOURCES} ${HEADERS})
 
   	# Install
   	# install(TARGETS vnf-kernelbypass-dynamic vnf-kernelbypass-static DESTINATION ${LIBRARY_INSTALL_DIR})
@@ -175,13 +175,14 @@ if (${BACKEND_MORPH})
 	endif()
 
 	# Declair dependency for the main library. Choose to build to /lib.
-	add_custom_target(jni_headers_generation ALL
-		COMMAND ${Java_JAVAC_EXECUTABLE} -cp ${JAVA_SOURCE_DIR} -h ${JNI_HEADERS_DIR} ${JAVA_JNI_INTERFACE}
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		COMMENT "Generating JNI headers"
-	)
+	# add_custom_target(jni_headers_generation ALL
+	#	COMMAND ${Java_JAVAC_EXECUTABLE} -cp ${JAVA_SOURCE_DIR} -h ${JNI_HEADERS_DIR} ${JAVA_JNI_INTERFACE}
+	#	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	# 	COMMENT "Generating JNI headers"
+	# )
 
-	add_dependencies(${STACK_TARGET} jni_headers_generation)
+	# add_dependencies(${STACK_TARGET} jni_headers_generation)
 
 	include_directories(${JNI_HEADERS_DIR})
+	message(STATUS "Use JNI header in: ${JNI_HEADERS_DIR}")
 endif()

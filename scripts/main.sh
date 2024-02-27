@@ -300,8 +300,12 @@ compile_example_vnf() {
 	echo "Compiling Example VNF: $VNF_PATH"
 	cd "$VNF_PATH"
 	make clean
-	make kernel-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG	 || error_exit
-	# echo "Compiling Done"
+	if [[ $IS_KENREL_BYPASS ]]; then 
+		 echo "unfinished." && exit 1
+		 make kernel_bypass-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
+	else
+		 make kernel-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
+	fi
 }
 
 # TODO.
@@ -452,14 +456,21 @@ case $1 in
 			check_system || error_exit
 			IS_KENREL_BYPASS=true
 			setup_kernel_bypass_stack
+			if [ $# -ge 3 ] && [[ $3 == $EXAMPLE ]]; then
+				compile_example_vnf || error_exit
+				rm "$TMP_DIR/$(basename "$VNF_PATH")-kernel_bypass-dynamic.so" &>/dev/null || true
+				mv "$VNF_PATH/kernel_bypass-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel_bypass-dynamic.so"
+				exit 0
+			fi
 		elif [ $# -ge 2 ] && [[ $2 == $KERNEL_STACK ]]; then
 			IS_KENREL_BYPASS=false
 			setup_kernel_stack
-		elif [ $# -ge 2 ] && [[ $2 == $EXAMPLE ]]; then
-			compile_example_vnf || error_exit
-			rm "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so" &>/dev/null || true
-			mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
-			exit 0
+			if [ $# -ge 3 ] && [[ $3 == $EXAMPLE ]]; then
+				compile_example_vnf || error_exit
+				rm "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so" &>/dev/null || true
+				mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
+				exit 0
+			fi
 		elif [ $# -ge 2 ] && [[ $2 == "$MORPH" ]]; then
 			compile_morphStream
 			exit 1

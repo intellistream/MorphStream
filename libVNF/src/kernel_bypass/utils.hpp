@@ -75,7 +75,7 @@ struct Monitor
             packet_waiting(coreId));
     }
 
-}
+};
 struct ServerPThreadArgument
 {
     int coreId;
