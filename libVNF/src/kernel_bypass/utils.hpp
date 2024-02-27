@@ -147,7 +147,7 @@ struct Globals
     int dsSize;
 
     // locks
-    mutex epollArrayLock, dataStoreLock, listenLock;
+    mutex epollArrayLock, dataStoreLock, listenLock, mctxLock;
 
     Globals() : listeningSocketFd(-1),
                 onAcceptByServerCallback(),
@@ -240,7 +240,6 @@ struct PerCoreState
     string serverProtocol;
     unordered_map<int, string> socketProtocolMap;
 
-    int epollFd;
     mctx_t mctxFd;
     unordered_map<int, PendingDataQueue> socketIdPendingDataQueueMap;
 
