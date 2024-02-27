@@ -20,6 +20,20 @@ PerCoreState *perCoreStates;
 */
 Globals globals;
 
+int pinThreadToCore(int core_id)
+{
+    int numCores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (core_id < 0 || core_id >= numCores)
+        return -1;
+
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
+
+    pthread_t currentThread = pthread_self();
+    return pthread_setaffinity_np(currentThread, sizeof(cpu_set_t), &cpuset);
+}
+
 UserConfig *userConfig = nullptr;
 
 int vnf::initLibvnf(int maxCores, int bufferSize, string dataStoreIPOrPath, vector<int> dataStorePortsOrFile, int dataStoreThreshold,
@@ -107,7 +121,7 @@ int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocat
     address.sin_addr.s_addr = inet_addr(remoteIP.c_str());
     address.sin_port = htons(remotePort);
 
-    int ret = mtcp_connect(mctx, socketId, (struct sockaddr *)&address, sizeof(struct sockaddr_in));
+    ret = mtcp_connect(mctx, socketId, (struct sockaddr *)&address, sizeof(struct sockaddr_in));
     perCoreStates[coreId].dsSocketProtocol = globals.serverProtocol;
     if (ret < 0 && errno != EINPROGRESS)
     {
@@ -215,7 +229,7 @@ int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocat
         struct mtcp_epoll_event ev1;
         // TODO. set mode.
         ev.events = MTCP_EPOLLIN | MTCP_EPOLLET;
-        ev1.data.fd = perCoreStates[coreId].txnSocket;
+        ev1.data.sockid = perCoreStates[coreId].txnSocket;
 
         if (mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_ADD, perCoreStates[coreId].txnSocket, &ev1) == -1)
         {
@@ -239,7 +253,6 @@ int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocat
             if (_useRemoteDataStore == REMOTE || _useRemoteDataStore == UDS)
             {
                 // Load balancing through different ports.
-                _useRemoteDataStore = false;
                 if (coreId == 0)
                 {
                     perCoreStates[coreId].dsSocketId1 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[0], _useRemoteDataStore);
