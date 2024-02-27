@@ -11,6 +11,11 @@
 PROJ_DIR=$(pwd)
 BUILD_DIR=$PROJ_DIR/build
 TMP_DIR=$PROJ_DIR/tmp
+if [ -d $TMP_DIR ]; then 
+	:
+else 
+	mkdir $TMP_DIR
+fi
 LIBVNF_DIR=$PROJ_DIR/libVNF
 SCRIPTS_DIR=$PROJ_DIR/scripts
 MORPH_DIR=$PROJ_DIR/morphStream
@@ -52,7 +57,7 @@ RUN='--run'
 HELP='--help'
 COMPILE_JNI='--compile_jni'
 COMPILE='--compile'
-KERNEL_BYPASS="--KENREL_BYPASS" 
+KERNEL_BYPASS="--KERNEL_BYPASS" 
 KERNEL_STACK="--KERNEL_STACK"
 MORPH="--MORPH_STREAM"
 TEST="--TEST"
@@ -67,11 +72,6 @@ USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable 
 compile_libVNF(){
 	# TODO. check if includes has been there.
 	# TODO. If needs kernel_bypass. remind to use kernel_bypass
-	if [ -d $TMP ]; then 
-		:
-	else 
-		mkdir $TMP
-	fi
 
 	if [ $# -ge 2 ] && [[ $2 == "$KERNEL_STACK" ]]; then
 		rm -dfr "$BUILD_DIR" &> /dev/null || true
@@ -242,6 +242,11 @@ new_vm(){
 	echo "new vm installation failed. exit."  && return 1
 }
 
+install_java(){
+	echo "installing java 8.."
+	apt-get install openjdk-8-jdk -y
+}
+
 setup_normal() {
 	apt-get install -y libjsoncpp-dev
 
@@ -268,10 +273,16 @@ setup_normal() {
 		:
 	else
 		echo "java not installed."
+		java_install=$(ynSelect "Install openjdk-8 now? [y/n]")
+		if [[ $java_install == 0 ]]; then
+			install_java
+		else
+			exit 0
+		fi
 		exit 1
 	fi
 
-	# Check and install JAVA
+	# Check JAVA
 	if [[ -z $(echo $JAVA_HOME) ]]; then
 		export JAVA_HOME=$(java -XshowSettings:properties -version 2>&1 | grep java.home | awk '{print $3}')
 	fi
@@ -300,6 +311,8 @@ setup_kernel_stack(){
 
 # TODO.
 setup_kernel_bypass_stack(){
+	cd $TMP_DIR
+
 	setup_normal || error_exit
 	# Setup gcc and use gcc version	
 	GCC_VERSION=$(gcc --version | head -n 1 | awk '{print $4}')
@@ -308,7 +321,7 @@ setup_kernel_bypass_stack(){
 	build-essential \
 	gcc-7 \
 	g++-7 \
-	dpdk-kmods-dkms \
+	dpdk-igb-uio-dkms \
 	libsctp-dev libboost-all-dev"
 
 	if [[ $GCC_VERSION != "7.5.0" ]]; then 
@@ -317,7 +330,7 @@ setup_kernel_bypass_stack(){
 		exit 1
 	fi
 
-	apt-get install -y "$DEPENDENCY"
+	apt-get install -y $DEPENDENCY
 
 	# rm -dfr $TMP_DIR && mkdir $TMP_DIR && cd $TMP_DIR 
 
@@ -335,7 +348,12 @@ setup_kernel_bypass_stack(){
 		:
 	else
 		wget https://github.com/Kitware/CMake/releases/download/v3.12.0/cmake-3.12.0-Linux-x86_64.sh
-		./cmake-3.12.0-Linux-x86_64.sh 
+		chmod 700 ./cmake-3.12.0-Linux-x86_64.sh 
+		cat >> ./cmake-3.12.0-Linux-x86_64.sh  << EOF
+y
+y
+EOF
+		mv ./cmake-3.12.0-Linux-x86_64 cmake
 	fi
 
 	if [[ -f $CMAKE ]]; then
@@ -347,25 +365,36 @@ setup_kernel_bypass_stack(){
 
 	echo "building mTCP.."
 
-	git clone https://github.com/mtcp-stack/mtcp/ && cd mtcp \
-		&& git submodule init \
-		&& git submodule update 
 
-	export RTE_TARGET=x86_64-native-linuxapp-clang
+	if [[ -d mtcp ]]; then 
+		:
+	else 
+		git clone https://github.com/mtcp-stack/mtcp/ || true 
+
+	fi
+
+	cd mtcp \
+		&& GIT_SSL_NO_VERIFY=1 git submodule init \
+		&& GIT_SSL_NO_VERIFY=1 git submodule update 
+
+	export RTE_TARGET=x86_64-native-linuxapp-gcc
 	export RTE_SDK=$(pwd)/dpdk
 
-	ln -s /usr/lib/python3 /usr/lib/python
+	ln -s /usr/lib/python3 /usr/lib/python &>/dev/null || true
+
 	# Shall be mannually operated.
 	./setup_mtcp_dpdk_env.sh dpdk
-	# cat > ./setup_mtcp_dpdk_env.sh dpdk << EOF
-	# 15
-	# 18
-	# 22 64
-	# 24
-	# 35
-	# EOF
+	# cat >> "./setup_mtcp_dpdk_env.sh dpdk" << EOF
+# 15
+# 18
+# 22 
+# 64
+# 24
+# 35
+# y
+# EOF
 
-	cd .. && ./configure --with-dpdk-lib="$RTE_SDK/$RTE_TARGET"
+	./configure --with-dpdk-lib="$RTE_SDK/$RTE_TARGET"
 	make
 
 	if [[ -f include/mtcp_api.h ]]; then 
@@ -376,7 +405,7 @@ setup_kernel_bypass_stack(){
 
 # Entry route.
 if [ $# == 0 ] ; then
-    echo "$USAGE"
+    echo -e "$USAGE"
     exit 1;
 fi
 
@@ -416,7 +445,7 @@ case $1 in
 		;;
 	$COMPILE)
 		echo "starting compilation.."
-		if [ $# -ge 2 ] && [[ $2 == $KENREL_BYPASS ]]; then
+		if [ $# -ge 2 ] && [[ $2 == $KERNEL_BYPASS ]]; then
 			if [ $# -ge 2 ] && [[ $2 == "--RELEASE" ]]; then
 				DEBUG=false
 			fi 
@@ -435,7 +464,7 @@ case $1 in
 			compile_morphStream
 			exit 1
 		else 
-			echo $USAGE 
+			echo -e $USAGE 
 			echo "failed. exit." 
 			exit 1
 		fi

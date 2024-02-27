@@ -28,11 +28,11 @@ if (${STACK} STREQUAL KERNEL)
 	# Flags
 	set(CMAKE_CXX_STANDARD 11)
 	if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    message(STATUS "Building in Debug mode.")
-    add_definitions(-DDEBUG=true)
+    	message(STATUS "Building in Debug mode.")
+    	add_definitions(-DDEBUG=true)
 	  set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -Wno-pointer-arith -lnuma -lrt -DLIBVNF_STACK=1 -g -ljsoncpp -O0")
 	else ()
-    message(STATUS "Building in Release mode.")
+    	message(STATUS "Building in Release mode.")
 	  set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -Wno-pointer-arith -lnuma -lrt -DLIBVNF_STACK=1 -ljsoncpp -O3")
 	endif()
 
@@ -58,49 +58,51 @@ if (${STACK} STREQUAL KERNEL)
   # Installation target 
   set(STACK_TARGET vnf-kernel-dynamic)
 elseif (${STACK} STREQUAL KERNEL_BYPASS)
-  message(STATUS "Using ${STACK} stack for libvnf")
-  # Flags
-  set(CMAKE_CXX_STANDARD 11)
-  if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    message(STATUS "Building in Debug mode.")
-    target_compile_definitions(libVNF PRIVATE DEBUG=true)
-    set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -g -ljsoncpp")
-  else ()
-    set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -ljsoncpp")
-  endif()
+  	message(STATUS "Using ${STACK} stack for libvnf")
+  	# Flags
+  	set(CMAKE_CXX_STANDARD 11)
+  	if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    		message(STATUS "Building in Debug mode.")
+    		add_definitions(-DDEBUG=true)
+	 	set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -g -ljsoncpp -O0")
+  	else ()
+    		message(STATUS "Building in Release mode.")
+	 	set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -ljsoncpp -O3")
+	endif()
+	# set(CMAKE_CXX_FLAGS "-fpermissive -lnuma -lrt -Wno-write-strings -Wall -DLIBVNF_STACK=2 -g -ljsoncpp")
 
-  # Include
-  include_directories(include)
+  	# Include
+  	include_directories(include)
 
-  include_directories(/home/kailian/mtcp/mtcp/include)
-  include_directories(/home/kailian/mtcp/util/include)
+  	include_directories(/home/kailian/MorphStream/tmp/mtcp/mtcp/include)
+  	include_directories(/home/kailian/MorphStream/tmp/mtcp/util/include)
 
-  #option(MTCP_INCLUDE_DIRS "mtcp and mtcp-util include directories" OFF)
-  #set(MTCP_INCLUDE_DIRS /home/rahul2514888/trishal/mtcp-p/mtcp/include  /home/rahul2514888/trishal/mtcp-p/util/include)
-  #if (${MTCP_INCLUDE_DIRS} STREQUAL OFF)
-  #  message(FATAL_ERROR "MTCP_INCLUDE_DIRS not provided. Please provide it. It will probably be 'mtcp/mtcp/include mtcp/util/include' (with full paths)")
-  #else ()
-  #  include_directories(${MTCP_INCLUDE_DIRS})
-  #endif ()
+  	#option(MTCP_INCLUDE_DIRS "mtcp and mtcp-util include directories" OFF)
+  	#set(MTCP_INCLUDE_DIRS /home/rahul2514888/trishal/mtcp-p/mtcp/include  /home/rahul2514888/trishal/mtcp-p/util/include)
+  	#if (${MTCP_INCLUDE_DIRS} STREQUAL OFF)
+  	#  message(FATAL_ERROR "MTCP_INCLUDE_DIRS not provided. Please provide it. It will probably be 'mtcp/mtcp/include mtcp/util/include' (with full paths)")
+  	#else ()
+  	#  include_directories(${MTCP_INCLUDE_DIRS})
+  	#endif ()
 
-  # Sources and Headers
-  file(GLOB_RECURSE HEADERS "include/*hpp")
-  file(GLOB_RECURSE SOURCES "src/datastore/*cpp" "src/kernel_bypass/*cpp")
+  	# Sources and Headers
+  	file(GLOB_RECURSE HEADERS "include/*hpp")
+  	file(GLOB_RECURSE SOURCES "src/datastore/*cpp" "src/kernel_bypass/*cpp")
 
-  # Library
-  add_library(vnf-kernelbypass-dynamic SHARED ${SOURCES} ${HEADERS})
-  add_library(vnf-kernelbypass-static STATIC ${SOURCES} ${HEADERS})
+  	# Library
+  	add_library(vnf-kernelbypass-dynamic SHARED ${SOURCES} ${HEADERS})
+  	add_library(vnf-kernelbypass-static STATIC ${SOURCES} ${HEADERS})
 
-  # Install
-  # install(TARGETS vnf-kernelbypass-dynamic vnf-kernelbypass-static DESTINATION ${LIBRARY_INSTALL_DIR})
-  # install(TARGETS vnf-kernelbypass-dynamic vnf-kernelbypass-static DESTINATION ${LIBRARY_INSTALL_DIR2})
-  install(TARGETS vnf-kernelbypass-dynamic DESTINATION ${LIBRARY_INSTALL_DIR})
-  install(TARGETS vnf-kernelbypass-dynamic DESTINATION ${LIBRARY_INSTALL_DIR2})
-  install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR})
-  install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR2})
+  	# Install
+  	# install(TARGETS vnf-kernelbypass-dynamic vnf-kernelbypass-static DESTINATION ${LIBRARY_INSTALL_DIR})
+  	# install(TARGETS vnf-kernelbypass-dynamic vnf-kernelbypass-static DESTINATION ${LIBRARY_INSTALL_DIR2})
+  	install(TARGETS vnf-kernelbypass-dynamic DESTINATION ${LIBRARY_INSTALL_DIR})
+  	install(TARGETS vnf-kernelbypass-dynamic DESTINATION ${LIBRARY_INSTALL_DIR2})
+  	install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR})
+  	install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR2})
 
-  # Installation target 
-  set(STACK_TARGET vnf-kernelbypass-dynamic)
+  	# Installation target 
+  	set(STACK_TARGET vnf-kernelbypass-dynamic)
 elseif (${STACK} STREQUAL L3VNF)
     message(STATUS "Using ${STACK} stack for libvnf")
     # Flags
@@ -145,7 +147,7 @@ if (${BACKEND_MORPH})
 	set(JAVA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 	# set(JAVA_JNI_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils/java/Loader/Loader.java)
 	set(JNI_HEADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-  set(JAVA_INCLUDE_PATH "$ENV{JAVA_HOME}/../include")
+  	set(JAVA_INCLUDE_PATH "$ENV{JAVA_HOME}/include")
 
 	message("Compiling with morphStream.")
 	add_definitions(-DBACKEND_MORPH)
