@@ -1,5 +1,5 @@
 //#include "json.hpp"
-#include "core.hpp"
+// #include "core.hpp" // Included in utils.hpp
 #include "utils.hpp"
 
 using namespace vnf;
@@ -22,14 +22,15 @@ Globals globals;
 
 UserConfig *userConfig = nullptr;
 
-int vnf::initLibvnf(int maxCores, int bufferSize, string dataStoreIP, vector<int> dataStorePorts, int dataStoreThreshold,
+int vnf::initLibvnf(int maxCores, int bufferSize, string dataStoreIPOrPath, vector<int> dataStorePortsOrFile, int dataStoreThreshold,
                enum DataLocation dsType) {
     userConfig = new UserConfig(maxCores, bufferSize,
-                                dataStoreIP, dataStorePorts,
+                                dataStoreIPOrPath, dataStorePortsOrFile,
                                 dataStoreThreshold, dsType);
     perCoreStates = new PerCoreState[userConfig->MAX_CORES];
     return 0;
 }
+
 /*
 int vnf::initLibvnf(const string &jsonFilePath) {
     std::ifstream jsonFileInputStream(jsonFilePath);
@@ -89,10 +90,13 @@ void freeDSPool() {
     globals.dsSize = 0;
 }
 
-int createClientToDS(int coreId, string remoteIP, int remotePort) {
+int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocation type){
+    int socketId = -1;
+    int ret = -1;
     mctx_t mctx = perCoreStates[coreId].mctxFd;
-    int socketId = mtcp_socket(mctx, AF_INET, SOCK_STREAM, 0);
-    if (socketId < 0) {
+    socketId = mtcp_socket(mctx, AF_INET, SOCK_STREAM, 0);
+    if (socketId < 0)
+    {
         spdlog::error("Failed to create listening socket!");
         return -1;
     }
@@ -103,13 +107,14 @@ int createClientToDS(int coreId, string remoteIP, int remotePort) {
     address.sin_addr.s_addr = inet_addr(remoteIP.c_str());
     address.sin_port = htons(remotePort);
 
-    int ret = mtcp_connect(mctx, socketId, (struct sockaddr *) &address, sizeof(struct sockaddr_in));
-    if (ret < 0 && errno != EINPROGRESS) {
+    int ret = mtcp_connect(mctx, socketId, (struct sockaddr *)&address, sizeof(struct sockaddr_in));
+    perCoreStates[coreId].dsSocketProtocol = globals.serverProtocol;
+    if (ret < 0 && errno != EINPROGRESS)
+    {
         spdlog::error("Connect issue {}", errno);
         mtcp_close(mctx, socketId);
         return -1;
     }
-
     struct mtcp_epoll_event ev;
     ev.events = MTCP_EPOLLIN | MTCP_EPOLLOUT;
     ev.data.sockid = socketId;
@@ -117,242 +122,369 @@ int createClientToDS(int coreId, string remoteIP, int remotePort) {
     mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_ADD, socketId, &ev);
 
     return socketId;
-}
-
-void *serverThread(void *args) {
-    struct ServerPThreadArgument argument = *((struct ServerPThreadArgument *) args);
-    int coreId = argument.coreId;
-    spdlog::info("Server thread started on core {}", coreId);
-
-    mtcp_core_affinitize(coreId);
-    mctx_t mctx = mtcp_create_context(coreId);
-    if (!mctx) {
-        spdlog::error("Failed to create mtcp context!");
-        return nullptr;
-    }
-    globals.mctxLock.lock();
-    perCoreStates[coreId].mctxFd = mctx;
-    globals.mctxLock.unlock();
-
-    // memory pool initialization for request objects
-    for (int reqObjType = 0; reqObjType < MAX_REQUEST_OBJECT_TYPES; ++reqObjType) {
-        perCoreStates[coreId].initMemPoolOfRequestObject(reqObjType);
     }
 
-    // memory pool initialization for packets
-    spdlog::info("Packets Memory Pool Size: {}", perCoreStates[coreId].packetMemPoolBlock.size());
-    perCoreStates[coreId].packetsMemPoolManager.add_block(
+    void *serverThread(void *args)
+    {
+        struct ServerPThreadArgument argument = *((struct ServerPThreadArgument *)args);
+        int coreId = argument.coreId;
+        spdlog::info("Server thread started on core {}", coreId);
+
+        mtcp_core_affinitize(coreId);
+        mctx_t mctx = mtcp_create_context(coreId);
+        if (!mctx)
+        {
+            spdlog::error("Failed to create mtcp context!");
+            return nullptr;
+        }
+        globals.mctxLock.lock();
+        perCoreStates[coreId].mctxFd = mctx;
+        globals.mctxLock.unlock();
+
+        // memory pool initialization for request objects
+        for (int reqObjType = 0; reqObjType < MAX_REQUEST_OBJECT_TYPES; ++reqObjType)
+        {
+            perCoreStates[coreId].initMemPoolOfRequestObject(reqObjType);
+        }
+
+        // memory pool initialization for packets
+        spdlog::info("Packets Memory Pool Size: {}", perCoreStates[coreId].packetMemPoolBlock.size());
+        perCoreStates[coreId].packetsMemPoolManager.add_block(
             &perCoreStates[coreId].packetMemPoolBlock.front(),
             perCoreStates[coreId].packetMemPoolBlock.size(),
             1500);
 
-    int epFd = mtcp_epoll_create(mctx,MAX_EVENTS + 5);
-    if (epFd < 0) {
-        spdlog::error("Failed to create epoll descriptor!");
-        return nullptr;
-    }
-    globals.epollArrayLock.lock();
-    perCoreStates[coreId].epollFd = epFd;
-    globals.epollArrayLock.unlock();
-     
-    //listener socket creation
-    int listeningSocketFd; 
-    listeningSocketFd = mtcp_socket(mctx, AF_INET, SOCK_STREAM, 0);
-    if (listeningSocketFd < 0) {
-        spdlog::error("Failed to create listening socket!");
-        return nullptr;
-    }
-    int ret = mtcp_setsock_nonblock(mctx, listeningSocketFd);
-    if (ret < 0) {
-        spdlog::error("Failed to set socket in nonblocking mode.");
-        return nullptr;
-    }
-    struct sockaddr_in saddr;
+        int epFd = mtcp_epoll_create(mctx, MAX_EVENTS + 5);
+        if (epFd < 0)
+        {
+            spdlog::error("Failed to create epoll descriptor!");
+            return nullptr;
+        }
+        globals.epollArrayLock.lock();
+        perCoreStates[coreId].epollFd = epFd;
+        globals.epollArrayLock.unlock();
 
-    saddr.sin_family = AF_INET;
-    saddr.sin_addr.s_addr = inet_addr((argument.ip).c_str());//inet_addr("192.168.100.2");//INADDR_ANY;
-    saddr.sin_port = htons(argument.port);
+        // listener socket creation
+        int listeningSocketFd;
+        listeningSocketFd = mtcp_socket(mctx, AF_INET, SOCK_STREAM, 0);
+        if (listeningSocketFd < 0)
+        {
+            spdlog::error("Failed to create listening socket!");
+            return nullptr;
+        }
+        int ret = mtcp_setsock_nonblock(mctx, listeningSocketFd);
+        if (ret < 0)
+        {
+            spdlog::error("Failed to set socket in nonblocking mode.");
+            return nullptr;
+        }
+        struct sockaddr_in saddr;
 
-    ret = mtcp_bind(mctx, listeningSocketFd, (struct sockaddr *) &saddr, sizeof(struct sockaddr_in));
-    if (ret < 0) {
-        spdlog::error("Failed to bind to the listening socket!");
-        return nullptr;
-    }
+        saddr.sin_family = AF_INET;
+        saddr.sin_addr.s_addr = inet_addr((argument.ip).c_str()); // inet_addr("192.168.100.2");//INADDR_ANY;
+        saddr.sin_port = htons(argument.port);
 
-    //step 5. mtcp_listen, mtcp_epoll_ctl
-    /* listen (backlog: 4K) */
-    ret = mtcp_listen(mctx, listeningSocketFd, 4096);  //4096
-    if (ret < 0) {
-        spdlog::error("mtcp_listen() failed!");
-        return nullptr;
-}
-
-    struct mtcp_epoll_event ev;
-    ev.events = MTCP_EPOLLIN | MTCP_EPOLLET;
-    ev.data.sockid = listeningSocketFd;
-    mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_ADD, listeningSocketFd, &ev);
-
-    struct mtcp_epoll_event *epollEvents;
-    epollEvents = (struct mtcp_epoll_event *) calloc(MAX_EVENTS, sizeof(struct mtcp_epoll_event));
-    if (!epollEvents) {
-        spdlog::error("Failed to create epoll event struct");
-        exit(-1);
-    }
-    spdlog::info("Waiting for epollEvents");
-
-    bool _useRemoteDataStore = userConfig->USE_REMOTE_DATASTORE;
-    while (!perCoreStates[coreId].isJobDone) {
-        // connect to remote data store for first time
-        if (_useRemoteDataStore) {
-            _useRemoteDataStore = false;
-            if (coreId == 0) {
-                perCoreStates[coreId].dsSocketId1 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[0]);
-                perCoreStates[coreId].dsSocketId2 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[1]);
-            } else {
-                perCoreStates[coreId].dsSocketId1 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[2]);
-                perCoreStates[coreId].dsSocketId2 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[3]);
-            }
+        ret = mtcp_bind(mctx, listeningSocketFd, (struct sockaddr *)&saddr, sizeof(struct sockaddr_in));
+        if (ret < 0)
+        {
+            spdlog::error("Failed to bind to the listening socket!");
+            return nullptr;
         }
 
-        // wait for epoll events
-        int numEventsCaptured = mtcp_epoll_wait(mctx, epFd, epollEvents, MAX_EVENTS, -1);
-        if (numEventsCaptured < 0) {
-            if (errno != EINTR) {
-                perror("epoll_wait");
-            }
-            break;
+        // step 5. mtcp_listen, mtcp_epoll_ctl
+        /* listen (backlog: 4K) */
+        ret = mtcp_listen(mctx, listeningSocketFd, 4096); // 4096
+        if (ret < 0)
+        {
+            spdlog::error("mtcp_listen() failed!");
+            return nullptr;
         }
-        spdlog::debug("Caught {} events\n", numEventsCaptured);
 
-        for (int i = 0; i < numEventsCaptured; i++) {
-            int currentSocketId = epollEvents[i].data.sockid;
-            uint32_t currentEvents = epollEvents[i].events;
+        struct mtcp_epoll_event ev;
+        ev.events = MTCP_EPOLLIN | MTCP_EPOLLET;
+        ev.data.sockid = listeningSocketFd;
+        mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_ADD, listeningSocketFd, &ev);
 
-            /* EPOLLERR: Error  condition  happened  on  the associated file descriptor.  This event is also reported for the write end of a pipe when the read end has been closed. EPOLLRDHUP (since Linux 2.6.17): Stream socket peer closed connection, or shut down writing half of connection. (This flag is especially useful for writing simple code to detect peer shutdown when using Edge Triggered monitoring.) */
-            if ((currentEvents & MTCP_EPOLLERR) || (currentEvents & MTCP_EPOLLRDHUP)) {
-                spdlog::error("EPOLLERR or EPOLLRDHUP. Clearing pending data queue and closing socket fd");
-                if (currentSocketId == listeningSocketFd) {
-                    spdlog::error("Oh Oh, lsfd it is");
-                    exit(-1);
+        // Apply txnSocket.
+        perCoreStates[coreId].txnSocket = eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK); // TODO. May not compatible.
+        if (perCoreStates[coreId].txnSocket == -1)
+        {
+            perror("fatal: failed to create event fd.");
+            assert(false);
+        }
+        struct mtcp_epoll_event ev1;
+        // TODO. set mode.
+        ev.events = MTCP_EPOLLIN | MTCP_EPOLLET;
+        ev1.data.fd = perCoreStates[coreId].txnSocket;
+
+        if (mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_ADD, perCoreStates[coreId].txnSocket, &ev1) == -1)
+        {
+            spdlog::error("epoll_ctl failed, txn socket fd {},  Error {}",
+                          perCoreStates[coreId].txnSocket, strerror(errno));
+        }
+
+        struct mtcp_epoll_event *epollEvents;
+        epollEvents = (struct mtcp_epoll_event *)calloc(MAX_EVENTS, sizeof(struct mtcp_epoll_event));
+        if (!epollEvents)
+        {
+            spdlog::error("Failed to create epoll event struct");
+            exit(-1);
+        }
+        spdlog::info("Waiting for epollEvents");
+
+        enum DataLocation _useRemoteDataStore = userConfig->USE_REMOTE_DATASTORE;
+        while (!perCoreStates[coreId].isJobDone)
+        {
+            // connect to remote data store for first time
+            if (_useRemoteDataStore == REMOTE || _useRemoteDataStore == UDS)
+            {
+                // Load balancing through different ports.
+                _useRemoteDataStore = false;
+                if (coreId == 0)
+                {
+                    perCoreStates[coreId].dsSocketId1 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[0], _useRemoteDataStore);
+                    perCoreStates[coreId].dsSocketId2 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[1], _useRemoteDataStore);
                 }
-                while (!perCoreStates[coreId].isPendingDataQueueEmpty(currentSocketId)) {
-                    PendingData dataToSend = perCoreStates[coreId].socketIdPendingDataQueueMap[currentSocketId].front();
-                    perCoreStates[coreId].packetsMemPoolManager.free((void *) dataToSend.data);
-                    perCoreStates[coreId].socketIdPendingDataQueueMap[currentSocketId].pop();
+                else
+                {
+                    perCoreStates[coreId].dsSocketId1 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[2], _useRemoteDataStore);
+                    perCoreStates[coreId].dsSocketId2 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[3], _useRemoteDataStore);
                 }
-                mtcp_close(mctx, currentSocketId);
-		mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_DEL, currentSocketId, NULL);
-                continue;
+                _useRemoteDataStore = LOCAL;
             }
 
-            /* Event occured on global listening socket. Therefore accept the connection */
-            if (currentSocketId == listeningSocketFd) {
+            // wait for epoll events
+            int numEventsCaptured = mtcp_epoll_wait(mctx, epFd, epollEvents, MAX_EVENTS, -1);
+            if (numEventsCaptured < 0)
+            {
+                if (errno != EINTR)
+                {
+                    perror("epoll_wait");
+                }
+                break;
+            }
+            spdlog::debug("Caught {} events\n", numEventsCaptured);
 
-                while (true) {
-                    int socketId = mtcp_accept(mctx, listeningSocketFd, NULL, NULL);
-                    if (socketId < 0) {
-                        // Need lsfd non blocking to run this!!!!!!
-                        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                            spdlog::error("Error on accept");
-                        }
-                        break;
-                    }
-                    mtcp_setsock_nonblock(mctx,socketId);
-                    ev.events = MTCP_EPOLLIN;
-                    ev.data.sockid = socketId;
-                    mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_ADD, socketId, &ev);
+            for (int i = 0; i < numEventsCaptured; i++)
+            {
+                int currentSocketId = epollEvents[i].data.sockid;
+                uint32_t currentEvents = epollEvents[i].events;
 
-                    perCoreStates[coreId].socketProtocolMap[socketId] = globals.serverProtocol;
-                    perCoreStates[coreId].connCounter++;
-                    for (int eventType = 0; eventType < NUM_CALLBACK_EVENTS; ++eventType) {
-                        perCoreStates[coreId].socketIdCallbackMap[eventType][socketId] = argument.onAcceptByServerCallback[eventType];
+                /* EPOLLERR: Error  condition  happened  on  the associated file descriptor.  This event is also reported for the write end of a pipe when the read end has been closed. EPOLLRDHUP (since Linux 2.6.17): Stream socket peer closed connection, or shut down writing half of connection. (This flag is especially useful for writing simple code to detect peer shutdown when using Edge Triggered monitoring.) */
+                if ((currentEvents & MTCP_EPOLLERR) || (currentEvents & MTCP_EPOLLRDHUP))
+                {
+                    spdlog::error("EPOLLERR or EPOLLRDHUP. Clearing pending data queue and closing socket fd");
+                    if (currentSocketId == listeningSocketFd)
+                    {
+                        spdlog::error("Oh Oh, lsfd it is");
+                        exit(-1);
                     }
-                    perCoreStates[coreId].socketIdDSCallbackMap[socketId] = argument.onAcceptByServerDSCallback;
-                    perCoreStates[coreId].socketIdReqObjIdExtractorMap[socketId] = argument.onAcceptByServerReqObjIdExtractor;
-                    perCoreStates[coreId].socketIdPBDMap[socketId] = argument.onAcceptByServerPBD;
-                    CallbackFn callback = perCoreStates[coreId].socketIdCallbackMap[ACCEPT][socketId];
-                    ConnId connId = ConnId(coreId, socketId);
-                    if(callback){
-                        callback(connId, 0, nullptr, nullptr, 0, 0, 0);
+                    while (!perCoreStates[coreId].isPendingDataQueueEmpty(currentSocketId))
+                    {
+                        PendingData dataToSend = perCoreStates[coreId].socketIdPendingDataQueueMap[currentSocketId].front();
+                        perCoreStates[coreId].packetsMemPoolManager.free((void *)dataToSend.data);
+                        perCoreStates[coreId].socketIdPendingDataQueueMap[currentSocketId].pop();
                     }
+                    mtcp_close(mctx, currentSocketId);
+                    mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_DEL, currentSocketId, NULL);
+                    continue;
                 }
 
-                continue;
-            }
+                /* Event occured on global listening socket. Therefore accept the connection */
+                if (currentSocketId == listeningSocketFd)
+                {
 
-            /* EPOLLIN: The associated file is available for read(2) operations. */
-            if (currentEvents & MTCP_EPOLLIN) {
-                /* Current socketId points to remote datastore */
-                if (perCoreStates[coreId].isDatastoreSocket(currentSocketId)) {
-                    /* TODO: fix this shit */
-                    while (true) {
-                        DSPacketHandler pkt;
-                        int pkt_len, retval;
-                        pkt.clear_pkt();
-                        retval = readFromStream(mctx, currentSocketId, pkt.data, sizeof(int));
-                        if (retval < 0) {
-                            if (errno == EAGAIN) {
-                                break;
+                    while (true)
+                    {
+                        int socketId = mtcp_accept(mctx, listeningSocketFd, NULL, NULL);
+                        if (socketId < 0)
+                        {
+                            // Need lsfd non blocking to run this!!!!!!
+                            if (errno != EAGAIN && errno != EWOULDBLOCK)
+                            {
+                                spdlog::error("Error on accept");
                             }
-                        } else {
-                            perCoreStates[coreId].numPacketsRecvFromDs++;
-                            memmove(&pkt_len, pkt.data, sizeof(int) * sizeof(uint8_t));
-                            pkt.clear_pkt();
-                            retval = readFromStream(mctx, currentSocketId, pkt.data, pkt_len);
-                            pkt.data_ptr = 0;
-                            pkt.len = retval;
-                            if (retval < 0) {
-                                spdlog::error("Error: Packet from HSS Corrupt, break");
-                                break;
-                            }
+                            break;
                         }
-                        int socketId, bufKey;
-                        string buffer;
-                        pkt.extract_item(socketId);
-                        pkt.extract_item(bufKey);
-                        pkt.extract_item(buffer);
-                        buffer += '\0';
+#ifdef DEBUG
+                        perCoreStates[coreId].monitor.conn_accepted();
+#endif
+                        mtcp_setsock_nonblock(mctx, socketId);
+                        ev.events = MTCP_EPOLLIN;
+                        ev.data.sockid = socketId;
+                        mtcp_epoll_ctl(mctx, epFd, MTCP_EPOLL_CTL_ADD, socketId, &ev);
 
-                        void *dsMalloc;
-                        globals.dataStoreLock.lock();
-                        if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-                            freeDSPool();
+                        perCoreStates[coreId].socketProtocolMap[socketId] = globals.serverProtocol;
+                        perCoreStates[coreId].connCounter++;
+                        for (int eventType = 0; eventType < NUM_CALLBACK_EVENTS; ++eventType)
+                        {
+                            perCoreStates[coreId].socketIdCallbackMap[eventType][socketId] = argument.onAcceptByServerCallback[eventType];
                         }
-                        // cache the state
-                        dsMalloc = globals.dsMemPoolManager.malloc();
-                        globals.dsSize++;
-                        memcpy(dsMalloc, buffer.c_str(), buffer.length());
-                        globals.localDatastore[bufKey] = dsMalloc;
-                        globals.localDatastoreLens[bufKey] = buffer.length();
-                        globals.cachedRemoteDatastore[bufKey] = dsMalloc;
-                        cache_void_list[dsMalloc] = bufKey;
-                        globals.dataStoreLock.unlock();
-
+                        perCoreStates[coreId].socketIdDSCallbackMap[socketId] = argument.onAcceptByServerDSCallback;
+                        perCoreStates[coreId].socketIdReqObjIdExtractorMap[socketId] = argument.onAcceptByServerReqObjIdExtractor;
+                        perCoreStates[coreId].socketIdPBDMap[socketId] = argument.onAcceptByServerPBD;
+                        CallbackFn callback = perCoreStates[coreId].socketIdCallbackMap[ACCEPT][socketId];
                         ConnId connId = ConnId(coreId, socketId);
-
-                        // request object id extractor from packet
-                        ReqObjExtractorFn extractor = perCoreStates[coreId].socketIdReqObjIdExtractorMap[socketId];
-                        int reqObjId = extractor == nullptr ? 0 : extractor(const_cast<char *>(buffer.c_str()), 0); // fix me : replace 0 packetlen with actual packet len
-                        cout.flush();
-
-                        // callback
-                        DSCallbackFn callback = perCoreStates[coreId].socketIdDSCallbackMap[socketId];
-                        callback(connId, reqObjId,
-                                 perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
-                                 (void *) buffer.c_str(),
-                                 userConfig->BUFFER_SIZE, 0);
+                        if (callback)
+                        {
+                            callback(connId, 0, nullptr, nullptr, perCoreStates[coreId].packetNumber++, 0, 0, 0);
+                        }
                     }
 
                     continue;
                 }
 
-                /* Current socketId points to non-remote datastore network function */
-                int socketId = currentSocketId;
-                char buffer[userConfig->BUFFER_SIZE];
-                int numBytesRead;
-                string currentProtocol = perCoreStates[coreId].socketProtocolMap[socketId];
-                int streamNum = -1;
-                /* read from socket as per the protocol specified */
+                /* EPOLLIN: The associated file is available for read(2) operations. */
+                if (currentEvents & MTCP_EPOLLIN)
+                {
+                    // Some handler done. Now we are going to trigger the continue handling.
+                    if (perCoreStates[coreId].txnSocket == currentSocketId)
+                    {
+
+                        // FIXME. To delete. Read to decrease from somaphore here.
+                        uint64_t wasted = 0;
+                        if (read(currentSocketId, &wasted, sizeof(uint64_t)) < 0)
+                        {
+                            perror("serverThread.transactions.read");
+                        }
+
+                        perCoreStates[coreId].txnDoneQueueLock.lock();
+                        uint64_t txnReqId = perCoreStates[coreId].txnDoneQueue.front();
+                        perCoreStates[coreId].txnDoneQueue.pop();
+                        perCoreStates[coreId].txnDoneQueueLock.unlock();
+                        assert(COREID(txnReqId) == coreId);
+
+                        // Prepare resources here.
+                        auto ctx = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
+
+                        ConnId connId = ConnId(coreId, ctx->_old_socket());
+                        ctx->_move_next();
+
+                        // TODO. Debug. Set the cache.
+                        // No need to modify to use the cache. Since it's totally inside.
+                        // void *dsMalloc;
+                        // globals.dataStoreLock.lock();
+                        // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+                        //     freeDSPool();
+                        // }
+                        // // cache the state
+                        // dsMalloc = globals.dsMemPoolManager.malloc();
+                        // globals.dsSize++;
+                        // memcpy(dsMalloc, buffer.c_str(), buffer.length());
+                        // // The local datastore is used as cache for reading.
+                        // globals.localDatastore[bufKey] = dsMalloc;
+                        // globals.localDatastoreLens[bufKey] = buffer.length();
+                        // globals.cachedRemoteDatastore[bufKey] = dsMalloc;
+                        // cache_void_list[dsMalloc] = bufKey;
+                        // globals.dataStoreLock.unlock();
+
+                        // TODO. Can receive error here.
+
+                        // _disposalBody(connId, o->reqObjId,
+                        //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
+                        //             o->packet_record, o->packet_len, 0);
+
+#ifdef DEBUG
+                        perCoreStates[coreId].monitor.update_latency(3, ctx->_full_ts());
+#endif
+
+                        _disposalBody(connId, *ctx);
+
+                        // This is allocated when txn triggered. So erase in handle done.
+                        perCoreStates[coreId].packetNumberContextMap.erase(
+                            perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId)));
+
+#ifdef DEBUG
+                        perCoreStates[coreId].monitor.packet_done();
+#endif
+                        // TODO. How to recover packets here.
+                        continue;
+                    }
+                    /* Current socketId points to remote datastore
+                        Each time we communicate with the data store, we are using the specified socket (Special IP and ports).
+                        So we can decide this is the message from the database.
+                    *
+                        /* Current socketId points to remote datastore */
+                    if (perCoreStates[coreId].isDatastoreSocket(currentSocketId))
+                    {
+                        /* TODO: fix this shit */
+                        while (true)
+                        {
+                            DSPacketHandler pkt;
+                            int pkt_len, retval;
+                            pkt.clear_pkt();
+                            retval = readFromStream(mctx, currentSocketId, pkt.data, sizeof(int));
+                            if (retval < 0)
+                            {
+                                if (errno == EAGAIN)
+                                {
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                perCoreStates[coreId].numPacketsRecvFromDs++;
+                                memmove(&pkt_len, pkt.data, sizeof(int) * sizeof(uint8_t));
+                                pkt.clear_pkt();
+                                retval = readFromStream(mctx, currentSocketId, pkt.data, pkt_len);
+                                pkt.data_ptr = 0;
+                                pkt.len = retval;
+                                if (retval < 0)
+                                {
+                                    spdlog::error("Error: Packet from HSS Corrupt, break");
+                                    break;
+                                }
+                            }
+                            int socketId, bufKey;
+                            string buffer;
+                            pkt.extract_item(socketId);
+                            pkt.extract_item(bufKey);
+                            pkt.extract_item(buffer);
+                            buffer += '\0';
+
+                            void *dsMalloc;
+                            globals.dataStoreLock.lock();
+                            if (globals.dsSize == userConfig->DATASTORE_THRESHOLD)
+                            {
+                                freeDSPool();
+                            }
+                            // cache the state
+                            dsMalloc = globals.dsMemPoolManager.malloc();
+                            globals.dsSize++;
+                            memcpy(dsMalloc, buffer.c_str(), buffer.length());
+                            globals.localDatastore[bufKey] = dsMalloc;
+                            globals.localDatastoreLens[bufKey] = buffer.length();
+                            globals.cachedRemoteDatastore[bufKey] = dsMalloc;
+                            cache_void_list[dsMalloc] = bufKey;
+                            globals.dataStoreLock.unlock();
+
+                            ConnId connId = ConnId(coreId, socketId);
+
+                            // request object id extractor from packet
+                            ReqObjExtractorFn extractor = perCoreStates[coreId].socketIdReqObjIdExtractorMap[socketId];
+                            int reqObjId = extractor == nullptr ? 0 : extractor(const_cast<char *>(buffer.c_str()), 0); // fix me : replace 0 packetlen with actual packet len
+                            cout.flush();
+
+                            // callback
+                            DSCallbackFn callback = perCoreStates[coreId].socketIdDSCallbackMap[socketId];
+                            callback(connId, reqObjId,
+                                     perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
+                                     (void *)buffer.c_str(),
+                                     perCoreStates[coreId].packetNumber++,
+                                     // The buffer size needs to be resigned before..
+                                     userConfig->BUFFER_SIZE, 0);
+                        }
+
+                        continue;
+                    }
+
+                    /* Current socketId points to non-remote datastore network function */
+                    int socketId = currentSocketId;
+                    char buffer[userConfig->BUFFER_SIZE];
+                    int numBytesRead;
+                    string currentProtocol = perCoreStates[coreId].socketProtocolMap[socketId];
+                    int streamNum = -1;
+                    /* read from socket as per the protocol specified */
                     numBytesRead = (int) mtcp_read(mctx, socketId, buffer, (size_t) userConfig->BUFFER_SIZE);
 
                 /* numBytesRead == -1 for errors & numBytesRead == 0 for EOF */
@@ -381,7 +513,10 @@ void *serverThread(void *args) {
                 ConnId connId = ConnId(coreId, socketId);
                 for (int packetLength : packetLengths) {
                     /* allocate heap and put current packet copy there for user to use */
+                    assert(perCoreStates[coreId].packetsMemPoolManager.empty() == false);
                     void *packet = perCoreStates[coreId].packetsMemPoolManager.malloc();
+                    perCoreStates[connId.coreId].monitor.allocate_packet();
+                    assert(packet != NULL);
                     string currentPacket = prependedBuffer.substr((uint) packetStart, (uint) packetLength);
                     memcpy(packet, currentPacket.c_str(), (size_t) (packetLength));
 
@@ -393,7 +528,8 @@ void *serverThread(void *args) {
                     /* user-defined on read callback function */
                     CallbackFn callback = perCoreStates[coreId].socketIdCallbackMap[READ][socketId];
                     void *reqObj = perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId];
-                    callback(connId, reqObjId, reqObj, (char *) packet, packetLength, 0, streamNum);
+                    callback(connId, 0, nullptr, (char *)packet, packetLength, perCoreStates[coreId].packetNumber++, 0, streamNum);
+                    // callback(connId, 0, nullptr, nullptr, perCoreStates[coreId].packetNumber++, 0, 0, 0);
                     packetStart += packetLength;
 
                     /* free heap previously allocated for packet if evicatable */
@@ -436,18 +572,21 @@ void *serverThread(void *args) {
 void* vnf::ConnId::allocReqObj(int reqObjType, int reqObjId) {
     int coreId = this->coreId;
     int socketId = this->socketId;
-    int ret = perCoreStates[coreId].mallocReqObj(socketId, reqObjType - 1, reqObjId);
-    if (ret) {
-        spdlog::error("Could not allocate request object on ConnId(coreId, socketId): ({}, {})", this->coreId, this->socketId);
-    }
-    return perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId];
+    return perCoreStates[coreId].myMallocReqObj(socketId, reqObjType - 1, reqObjId);
+
+    // int ret = perCoreStates[coreId].mallocReqObj(socketId, reqObjType - 1, reqObjId);
+    // if (ret) {
+    //     spdlog::error("Could not allocate request object on ConnId(coreId, socketId): ({}, {})", this->coreId, this->socketId);
+    // }
+    // return perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId];
 }
 
 ConnId& vnf::ConnId::freeReqObj(int reqObjType, int reqObjId) {
     int coreId = this->coreId;
     int socketId = this->socketId;
     if (perCoreStates[coreId].isARequestObjectAllocator(socketId, reqObjId)) {
-        perCoreStates[coreId].freeReqObj(socketId, reqObjType - 1, reqObjId);
+        assert(false);
+        // perCoreStates[coreId].freeReqObj(socketId, reqObjType - 1, reqObjId);
     } else {
         perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId].erase(reqObjId);
         if (perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId].empty()) {
@@ -516,7 +655,8 @@ ConnId vnf::initServer(string iface, string serverIp, int serverPort, string pro
 }
 
 // Use nested hashmaps as callback routers.
-ConnId& vnf::ConnId::registerCallback(enum EventType eventType, void callback(ConnId&, int, void *, char *, int, int, int)) {
+ConnId &vnf::ConnId::registerCallback(enum EventType eventType, vnf::CallbackFn callback)
+{
     if (*this == FIRST_TIME_CONN_ID) {
         globals.onAcceptByServerCallback[eventType] = callback;
     } else {
@@ -568,6 +708,23 @@ void sigINTHandler(int signalCode) {
     exit(signalCode);
 }
 
+void *monitorThread(void *args)
+{
+    struct ServerPThreadArgument argument = *((struct ServerPThreadArgument *)args);
+    int coreId = argument.coreId;
+    pinThreadToCore(coreId);
+    spdlog::info("Monitor thread started on core {}", coreId);
+
+    while (true)
+    {
+        for (int i = 0; i < globals.config.coreNumbers; i += 1)
+        {
+            perCoreStates[i].monitor.report(i);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(globals.config.monitorInterval));
+    }
+}
+
 void vnf::startEventLoop() {
     spdlog::info("Event loop is started");
     /* initialize mtcp */
@@ -595,7 +752,7 @@ void vnf::startEventLoop() {
     globals.dataStoreLock.unlock();
 
     auto *servers = new pthread_t[userConfig->MAX_CORES];
-    auto *arguments = new struct ServerPThreadArgument[userConfig->MAX_CORES];
+    auto *arguments = new struct ServerPThreadArgument[userConfig->MAX_CORES + 1];
   //  auto  mctx_arr = new mctx_t[userConfig->MAX_CORES];
 //    auto  ep_arr = new int[userConfig->MAX_CORES];
     for (int ithCore = 0; ithCore < userConfig->MAX_CORES; ithCore++) {
@@ -607,6 +764,14 @@ void vnf::startEventLoop() {
         // todo start client only after all threads have started or it would clear actual sockid mappings
         pthread_create(&servers[ithCore], NULL, serverThread, &arguments[ithCore]);
     }
+
+#if DEBUG
+    arguments[userConfig->MAX_CORES].set(userConfig->MAX_CORES, globals.serverIp, globals.serverPort, globals.onAcceptByServerCallback,
+                                         globals.onAcceptByServerDSCallback,
+                                         globals.onAcceptByServerReqObjIdExtractor,
+                                         globals.onAcceptByServerPBD);
+    pthread_create(&servers[userConfig->MAX_CORES], NULL, monitorThread, &arguments[userConfig->MAX_CORES]);
+#endif
 
     for (int i = 0; i < userConfig->MAX_CORES; i++) {
         pthread_join(servers[i], NULL);
@@ -670,7 +835,16 @@ ConnId& vnf::ConnId::sendData(char *data, int dataLen, int streamNum) {
     }
 
     int ret;
-    string currentProtocol = perCoreStates[coreId].socketProtocolMap[socketId];
+    string currentProtocol;
+    if (perCoreStates[coreId].isDatastoreSocket(socketId))
+    {
+        currentProtocol = perCoreStates[coreId].dsSocketProtocol;
+    }
+    else
+    {
+        currentProtocol = perCoreStates[coreId].socketProtocolMap[socketId];
+    }
+    // string currentProtocol = perCoreStates[coreId].socketProtocolMap[socketId];
     mctx_t mctx = perCoreStates[coreId].mctxFd;
     ret = mtcp_write(mctx,socketId, data, dataLen);
     int errnoLocal = errno;
@@ -705,7 +879,8 @@ ConnId& vnf::ConnId::sendData(char *data, int dataLen, int streamNum) {
     return *this;
 }
 
-void registerDSCallback(ConnId& connId, enum EventType eventType, void callback(ConnId&, int, void *, void *, int, int)) {
+void registerDSCallback(ConnId &connId, enum EventType eventType, DSCallbackFn callback)
+{
     if (connId == FIRST_TIME_CONN_ID) {
         globals.onAcceptByServerDSCallback = callback;
     } else {
@@ -719,13 +894,16 @@ void registerDSCallback(ConnId& connId, enum EventType eventType, void callback(
     }
 }
 
-ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId&, int, void *, void *, int, int)) {
-    if (errorCallback != nullptr) {
+ConnId &vnf::ConnId::storeData(string tableName, int key, enum DataLocation location, void *value, int valueLen, DSCallbackFn callback)
+{
+    if (callback != nullptr)
+    {
         // todo call this somewhere
-        registerDSCallback(*this, ERROR, errorCallback);
+        registerDSCallback(*this, ERROR, callback);
     }
 
-    if (location == REMOTE) {
+    if (location == REMOTE || location == UDS)
+    {
         /* TODO: fix this shit */
         int coreId = this->coreId;
         int socketId = this->socketId;
@@ -803,7 +981,8 @@ ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation loca
     return *this;
 }
 
-ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation location, void callback(ConnId&, int, void *, void *, int, int), int reqObjId) {
+ConnId &vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation location, vnf::DSCallbackFn callback, int reqObjId)
+{
     int coreId = this->coreId;
     int socketId = this->socketId;
 
@@ -824,15 +1003,15 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
             // callback
             callback(*this, reqObjId,
                      perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
-                     packet, userConfig->BUFFER_SIZE, 0);
+                     packet, userConfig->BUFFER_SIZE, 0, 0);
         } else {
-            string sndCmd = "get", sndTable = "abc", sndValue = "xyz";
+            string sndCmd = "get";
             DSPacketHandler packetHandler;
             packetHandler.clear_pkt();
             sndCmd = "get";
             packetHandler.append_item(socketId);
             packetHandler.append_item(sndCmd);
-            packetHandler.append_item(sndTable);
+            packetHandler.append_item(tableName);
             packetHandler.append_item(key);
             packetHandler.prepend_len();
 
@@ -855,12 +1034,12 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
         // todo check this
         registerDSCallback(*this, READ, callback);
 
-        string sndCmd = "get", sndTable = "abc", sndValue = "xyz";
+        string sndCmd = "get";
         DSPacketHandler packetHandler;
         packetHandler.clear_pkt();
         packetHandler.append_item(socketId);
         packetHandler.append_item(sndCmd);
-        packetHandler.append_item(sndTable);
+        packetHandler.append_item(tableName);
         packetHandler.append_item(key);
         packetHandler.prepend_len();
 
@@ -892,7 +1071,7 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
 
         globals.dataStoreLock.unlock();
 
-        callback(*this, reqObjId, perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId], valueCopy, userConfig->BUFFER_SIZE, 0);
+        callback(*this, reqObjId, perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId], valueCopy, userConfig->BUFFER_SIZE, 0, 0);
         return *this;
     }
 
@@ -977,8 +1156,9 @@ char * vnf::getPktBuf(ConnId& connId) {
   return connId.getPktBuf();
 }
 
-ConnId& vnf::registerCallback(ConnId& connId, enum EventType event, void callback(ConnId& connId, int reqObjId, void * requestObject, char * packet, int packetLen, int errorCode, int streamNum)) {
-  return connId.registerCallback(event, callback);
+ConnId &vnf::registerCallback(ConnId &connId, enum EventType event, vnf::CallbackFn callback)
+{
+    return connId.registerCallback(event, callback);
 }
 
 ConnId& vnf::registerReqObjIdExtractor(ConnId& connId, int roidExtractor(char *packet, int packetLen)) {
@@ -997,12 +1177,14 @@ ConnId& vnf::sendData(ConnId& connId, char *packetToSend, int packetSize, int st
   return connId.sendData(packetToSend, packetSize, streamNum);
 }
 
-ConnId& vnf::storeData(ConnId& connId, string tableName, int key, enum DataLocation location, void *value, int valueLen, void errorCallback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode)) {
-  return connId.storeData(tableName, key, location, value, valueLen, errorCallback);
+ConnId &vnf::storeData(ConnId &connId, string tableName, int key, enum DataLocation location, void *value, int valueLen, vnf::DSCallbackFn errorCallback)
+{
+    return connId.storeData(tableName, key, location, value, valueLen, errorCallback);
 }
 
-ConnId& vnf::retrieveData(ConnId& connId, string tableName, int key, enum DataLocation location, void callback(ConnId& connId, int reqObjId, void * requestObject, void * value, int valueLen, int errorCode), int reqObjId) {
-  return connId.retrieveData(tableName, key, location, callback, reqObjId);
+ConnId &vnf::retrieveData(ConnId &connId, string tableName, int key, enum DataLocation location, vnf::DSCallbackFn callback, int reqObjId)
+{
+    return connId.retrieveData(tableName, key, location, callback, reqObjId);
 }
 
 ConnId& vnf::delData(ConnId& connId, string tableName, int key, enum DataLocation location) {
@@ -1364,4 +1546,739 @@ vnf::ConnId vnf::getObjConnId(uint32_t connId) {
 
 uint32_t vnf::getIntConnId(vnf::ConnId& connId) { 
     return connId.coreId * 10000000 + connId.socketId;
+}
+
+uint64_t getNow()
+{
+    auto currentTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime).count();
+}
+
+inline uint64_t getDelay(uint64_t start)
+{
+    uint64_t delay = getNow() - start;
+    return delay;
+}
+
+// Entry for Java calling this thread.
+int __VNFThread(int argc, char *argv[])
+{
+    vnf::startEventLoop();
+    return 0;
+}
+
+/*
+    There's only 2 possibilities exiting this function:
+    1. Packet handle done. With return value.
+        So you should do packet clean up.
+    2. Packet waiting for txns.
+        So you should save context for next handing.
+*/
+void _disposalBody(vnf::ConnId &connId, Context &ctx)
+{
+    while (ctx.AppIdx() != -1)
+    {
+        auto app = globals.sfc.SFC_chain[ctx.AppIdx()];
+        ctx.NextApp(-1, ctx.ReturnValue());
+        switch (ctx.ReturnValue())
+        {
+        case vnf::ERROR:
+            (*app->errorHandler)(connId, ctx);
+            ctx._move_next();
+            break;
+        case vnf::ACCEPT:
+            (*app->acceptHandler)(connId, ctx);
+            ctx._move_next();
+            break;
+        case vnf::READ:
+            (*app->readHandler)(connId, ctx);
+            ctx._move_next();
+            break;
+        case vnf::ABORT:
+            // Execute when txn_finished. But the transaction sets ABORT. Then just stop.
+            ctx._move_next();
+            break;
+        default:
+            assert(false);
+        }
+        // If transactions handler being called, the mark would be set.
+        if (ctx.IsWaitingForTxnBack())
+        {
+            // If the packet is waiting for txn handling, it should return here.
+            return;
+        }
+    }
+    // If the packet has been handled done, it should return here. So do clean ups here.
+
+    /* free heap previously allocated for packet if evicatable */
+    if (ctx.packet() != NULL && perCoreStates[connId.coreId].canEvictPacket(static_cast<void *>(ctx.packet())))
+    {
+        perCoreStates[connId.coreId].packetsMemPoolManager.free(static_cast<void *>(ctx.packet()));
+    }
+    // Free reqObj. And reqObj ptr is just context ptr.
+    perCoreStates[connId.coreId].myFreeReqObj(1, static_cast<void *>(&ctx));
+    perCoreStates[connId.coreId].monitor.deallocate_packet();
+
+    spdlog::debug("Packet Handled done. ");
+    return;
+}
+
+// These three are executed when packet first arrives.
+void _AppsDisposalAccept(vnf::ConnId &connId, int reqObjId, void *requestObject, char *packet, int packetLen, int packetId, int errorCode, int streamNum)
+{
+    assert(requestObject == nullptr);
+    requestObject = connId.allocReqObj(1);
+    auto ctx = Context::Init(requestObject, nullptr, 0);
+    ctx->_set_status(ACCEPT);
+    _disposalBody(connId, *ctx);
+}
+
+void _AppsDisposalRead(vnf::ConnId &connId, int reqObjId, void *requestObject, char *packet, int packetLen, int packetId, int errorCode, int streamNum)
+{
+    requestObject = connId.allocReqObj(1);
+    assert(packet != NULL);
+    auto ctx = Context::Init(requestObject, packet, packetLen);
+    ctx->_set_status(READ);
+    _disposalBody(connId, *ctx);
+}
+
+void _AppsDisposalError(vnf::ConnId &connId, int reqObjId, void *requestObject, char *packet, int packetLen, int packetId, int errorCode, int streamNum)
+{
+    requestObject = connId.allocReqObj(1);
+    assert(packet != NULL);
+    auto ctx = Context::Init(requestObject, packet, packetLen);
+    ctx->_set_status(ERROR);
+    _disposalBody(connId, *ctx);
+}
+
+std::string DB4NFV::SFC::NFs()
+{
+    std::string json = globals.sfc.toJson().toStyledString();
+    if (globals.config.Debug)
+    {
+        std::cout << "[DEBUG] Registered App Definitions:" << std::endl;
+        std::cout << json << std::endl;
+    }
+    return json;
+};
+
+void DB4NFV::SFC::Entry(App &app)
+{
+    if (this->SFC_chain.size() != 0)
+    {
+        perror("fatal: the SFC has already registered entry.");
+    }
+    this->SFC_chain.push_back(&app);
+}
+void DB4NFV::SFC::Add(App &last, App &app)
+{
+    if (this->SFC_chain.size() == 0)
+    {
+        perror("fatal: the SFC has no entry.");
+    }
+    last.next = &app;
+    this->SFC_chain.push_back(&app);
+}
+
+// The entry for sending txn execution request to txnEngine.
+void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId &connId)
+{
+    // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
+    int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
+
+    // Use SetByteArrayRegion to copy data into the byte array
+    jbyte data[len];
+    int offset = 0;
+
+    memcpy(data + offset, &ts, sizeof(uint64_t));
+    offset += sizeof(uint64_t);
+    data[offset++] = jbyte(';');
+
+    memcpy(data + offset, &txnReqId, sizeof(uint64_t));
+    assert((txnReqId & 0xfffffff000000000) == 0);
+    offset += sizeof(uint64_t);
+    data[offset++] = ';';
+
+    memcpy(data + offset, key, strlen(key));
+    offset += strlen(key);
+    data[offset++] = ';';
+
+    memcpy(data + offset, &flag, sizeof(int));
+    offset += sizeof(int);
+    data[offset++] = ';';
+
+    // Todo. remove this field.
+    int isAbort_i = 0;
+    memcpy(data + offset, &isAbort_i, sizeof(int));
+    offset += sizeof(int);
+    data[offset] = '\0';
+
+    // Copy the data into the msg byte array
+    auto msg = env->NewByteArray(len);
+    assert(msg != NULL);
+    env->SetByteArrayRegion(msg, 0, len, data);
+
+    jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
+    assert(cls != NULL);
+
+    // jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+    jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "([B)V");
+    assert(methodId != NULL);
+
+#ifdef DEBUG
+    perCoreStates[connId.coreId].monitor.update_latency(0, ts);
+#endif
+
+    // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
+    env->CallStaticVoidMethod(cls, methodId, msg);
+    spdlog::debug("[DEBUG:] txn request sent. ");
+
+    // Clean up resources when done
+    env->DeleteLocalRef(msg); // Release the reference to msg
+}
+
+vector<int> pbdSeparator(char *buffer, int bufLen)
+{
+    vector<int> ret = {};
+    int size = 0;
+    for (int i = 0; i < bufLen; i += 1)
+    {
+        size += 1;
+        // Assume last char is ; or \0.
+        if (buffer[i] == ';' || buffer[i] == '\n')
+        {
+            assert(buffer[i] == ';' || buffer[i] == '\n' || buffer[i] == '\0');
+            buffer[i] = '\0';
+            ret.push_back(size);
+            size = 0;
+        }
+        else if (i == bufLen - 1)
+        {
+            // No substitution at the last.
+            ret.push_back(size);
+            break;
+        }
+    }
+    return ret;
+}
+
+// TODO. TO BE DEBUGGED.
+JNIEXPORT jstring
+    JNICALL
+    Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1init_1SFC(JNIEnv *env, jobject obj, jint argc, jobjectArray argv)
+{
+#if DEBUG
+    perCoreStates[0].monitor.report_header();
+    spdlog::set_level(spdlog::level::info);
+#endif
+    // Convert the jobjectArray to a char* array
+    char **argvC;
+    jsize arrayLength;
+    if (argv != nullptr)
+    {
+        arrayLength = env->GetArrayLength(argv);
+        argvC = new char *[arrayLength];
+        for (jsize i = 0; i < arrayLength; i++)
+        {
+            jstring string = (jstring)env->GetObjectArrayElement(argv, i);
+            const char *str = env->GetStringUTFChars(string, 0);
+            argvC[i] = strdup(str);
+            env->ReleaseStringUTFChars(string, str);
+        }
+    }
+    else
+    {
+        arrayLength = 0;
+    }
+
+    // Find the method and save in globals.
+    // Find the class that contains the sendTxnRequest method
+    // jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
+    // assert( cls != NULL);
+
+    // Get a reference to the txn method
+    // jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "(Ljava/lang/String;)V");
+
+    // Create a static object of the InputSource class.
+    // jmethodID constructor = env->GetMethodID(cls, "<init>", "()V");
+    // assert( constructor != NULL);
+
+    // jobject IS = env->NewObject(cls, constructor);
+    // Set Permanenet Ref.
+
+    // jmethodID methodId = env->GetStaticMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
+    // assert( methodId != NULL);
+
+    // Call the __request method
+    jint rs = env->GetJavaVM(&globals.__jvm);
+    assert(rs == JNI_OK);
+
+    // Call JVM. Errored. TODO.
+    // globals.__java_env->CallVoidMethod(
+    //     globals.__client_obj, globals.__request,
+    //     globals.__java_env->NewStringUTF(msg)
+    //     // Other parameters to be added.
+    // );
+
+    // TODO. Maybe we can provide command line parameters pass-in.
+
+    // Call the __init_SFC function
+    int res = VNFMain(argc, argvC);
+
+    if (res < 0)
+    {
+        perror("VNFMain returns error");
+        return env->NewStringUTF(std::string("").c_str());
+    }
+
+    vnf::initLibvnf(globals.config.coreNumbers, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
+    vnf::ConnId serverSocketId = vnf::initServer("", globals.config.serverIP, globals.config.serverPort, "tcp");
+
+    // Clean up the allocated memory
+    for (jsize i = 0; i < arrayLength; i++)
+    {
+        free(argvC[i]);
+    }
+    delete[] argvC;
+
+    // Fix the backlink.
+    int reqObjStart = 0;
+    int reqObjIndex = 0;
+    for (int i = 0; i < globals.sfc.SFC_chain.size(); i += 1)
+    {
+        auto app = globals.sfc.SFC_chain.at(i);
+        app->appIndex = i;
+        // Sort the reqObj. TODO.
+        globals.sfc.objSizes.push_back(app->reqObjSize);
+        globals.sfc.objSizesStarting.push_back(reqObjStart);
+        reqObjStart += app->reqObjSize;
+        globals.sfc.AppIdxMap[app] = reqObjIndex;
+        reqObjIndex += 1;
+
+        for (int j = 0; j < app->Txns.size(); j += 1)
+        {
+            auto Txn = &app->Txns.at(j);
+            Txn->txnIndex = j;
+            Txn->app = app;
+            for (int k = 0; k < (Txn->sas).size(); k += 1)
+            {
+                auto sa = &Txn->sas.at(k);
+                sa->app = app;
+                sa->txn = Txn;
+                sa->appIndex = i;
+                sa->txnIndex = j;
+                sa->saIndex = k;
+                app->SAs.push_back(sa);
+            }
+        }
+    }
+    // Config and init libVNF.
+    globals.sfc.reqObjTotalSize = reqObjStart + sizeof(Context);
+    // Create back links for transactions and state access.
+
+    int size[] = {globals.sfc.reqObjTotalSize};
+    vnf::initReqPool(size, 1);
+
+    serverSocketId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
+    serverSocketId.registerCallback(vnf::READ, _AppsDisposalRead);
+    serverSocketId.registerCallback(vnf::ERROR, _AppsDisposalError);
+    registerPacketBoundaryDisambiguator(serverSocketId, pbdSeparator);
+
+    // Return the result as a Java string
+    return env->NewStringUTF(globals.sfc.NFs().c_str());
+}
+
+// Actual vnfs loop.
+JNIEXPORT void
+    JNICALL
+    Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1VNFThread(JNIEnv *env, jobject obj, jint c, jobjectArray v)
+{
+    jint rs = env->GetJavaVM(&globals.__jvm);
+    assert(rs == JNI_OK);
+    // globals.__env = env;
+    startEventLoop();
+}
+
+// The callback handling entrance.
+JNIEXPORT jbyteArray
+    JNICALL
+    Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf(JNIEnv *env, jclass cls, jlong txnReqId_jni, jint saIdx, jbyteArray value, jint param_count)
+{
+    // Save the value in ctx.
+    uint64_t txnReqId = 0;
+    // reverse for switching endianness.
+    uint8_t *buf = reinterpret_cast<uint8_t *>(&txnReqId);
+    uint8_t *buf_jni = reinterpret_cast<uint8_t *>(&txnReqId_jni);
+    for (int i = 0; i < sizeof(jlong); i += 1)
+    {
+        buf[sizeof(jlong) - i - 1] = buf_jni[i];
+    }
+    assert((txnReqId & 0xffffff0000000000) == 0);
+
+    int coreId = COREID(txnReqId);
+    auto ctx = perCoreStates[coreId].packetNumberContextMap.at(PACKETID(txnReqId));
+
+#ifdef DEBUG
+    perCoreStates[coreId].monitor.update_latency(1, ctx->_full_ts());
+#endif
+
+    /*
+    Value fetched deallocation happens:
+    1. Requesting another transaction.
+    2. Return from the saUDF.
+    */
+
+    // Copy allocation value.
+    jbyte *inputBuffer = env->GetByteArrayElements(value, NULL);
+
+    // Length. Here we are getting the length from: field number; type.
+    int length = STATE_TYPE_SIZE * param_count;
+
+    auto tmp = new char[length]; // TO be Optimized.
+    memcpy(tmp, inputBuffer, length);
+    // ctx->_set_value_from_callback(tmp, length);
+
+    ConnId conn = ConnId(COREID(txnReqId), ctx->_old_socket());
+
+    assert(ctx->AppIdx() != -1);
+    // Call actual sa udf.
+    STATE_TYPE res = (*globals.sfc.SFC_chain[ctx->AppIdx()]->SAs[saIdx]->txnHandler_)(conn, *ctx, tmp, length);
+    int abortion = (ctx->ReturnValue()) ? 1 : 0;
+
+    delete tmp;
+
+    // Write back.
+    if (env == nullptr)
+    {
+        perror("core.cpp.Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1execute_1sa_1udf.NewByteArray.nullptr");
+    }
+
+    auto _result = env->NewByteArray(sizeof(int) + STATE_TYPE_SIZE);
+    // Set Abortion.
+    env->SetByteArrayRegion(_result, static_cast<jsize>(0), static_cast<jsize>(sizeof(int)), reinterpret_cast<jbyte *>(&abortion));
+    // Set result.
+    env->SetByteArrayRegion(_result, static_cast<jsize>(sizeof(int)), static_cast<jsize>(STATE_TYPE_SIZE), reinterpret_cast<jbyte *>(&res));
+
+#ifdef DEBUG
+    perCoreStates[coreId].monitor.update_latency(2, ctx->_full_ts());
+#endif
+
+    // How to release write back value? We don't need to release. They are managed.
+    return _result;
+}
+
+// Report done.
+JNIEXPORT jint
+    JNICALL
+    Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1txn_1finished(JNIEnv *env, jclass cls, jlong txnReqId_jni)
+{
+    // Save the value in ctx.
+    uint64_t txnReqId = 0;
+    // reverse for switching endianness.
+    uint8_t *buf = reinterpret_cast<uint8_t *>(&txnReqId);
+    uint8_t *buf_jni = reinterpret_cast<uint8_t *>(&txnReqId_jni);
+    for (int i = 0; i < sizeof(jlong); i += 1)
+    {
+        buf[sizeof(jlong) - i - 1] = buf_jni[i];
+    }
+    assert((txnReqId & 0xffffff0000000000) == 0);
+
+    int coreId = COREID(txnReqId);
+
+    // Release context transaction state.
+    perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)]->_unset_wait_txn_callback();
+
+    // Enqueue the txnReqId.
+    // FIXME. To be Optimized. may be the bottleneck.
+    perCoreStates[coreId].txnDoneQueueLock.lock();
+    perCoreStates[coreId].txnDoneQueue.push(txnReqId);
+    perCoreStates[coreId].txnDoneQueueLock.unlock();
+
+    // Write to the fd to suggest done and wake up the txn.
+    if (write(perCoreStates[coreId].txnSocket, &txnReqId, sizeof(uint64_t)) < 0)
+    {
+        perror("jni.handle_done.write");
+        return -1;
+    }
+    return 0;
+}
+
+// FIXME. TODO. CONTEXT shall not be done so easily...
+void *DB4NFV::App::reqObjClip(void *reqObjClip)
+{
+    return reqObjClip + sizeof(Context) + globals.sfc.objSizesStarting.at(globals.sfc.AppIdxMap[this]);
+}
+
+DB4NFV::SFC &GetSFC()
+{
+    auto &ref = globals.sfc;
+    return ref;
+};
+
+void SetConfig(std::string path)
+{
+    globals.config = Config(path);
+}
+
+Globals &GetGlobal()
+{
+    return globals;
+}
+
+/*
+    Operations about context.
+*/
+int Context::packet_len()
+{
+    if (_packet_len < 0)
+    {
+        std::cout << boost::stacktrace::stacktrace();
+    }
+    return _packet_len;
+}
+
+char *Context::packet()
+{
+    if (_packet == NULL && _ret != vnf::ACCEPT)
+    {
+        spdlog::warn("packet is null.");
+        std::cout << boost::stacktrace::stacktrace();
+    }
+    return _packet;
+}
+
+void Context::_set_txn_idx(int txnIdx)
+{
+    _TxnIdx = txnIdx;
+}
+
+// int Context::value_len()
+// {
+//     assert(_value != NULL);
+//     return _value_len;
+// }
+
+// void *Context::value()
+// {
+//     assert(_value != NULL);
+//     return _value;
+// }
+
+STATE_TYPE *Context::get_value(char *raw, int length, int index)
+{
+    assert(raw != NULL);
+    if (STATE_TYPE_SIZE * (index + 1) > length)
+    {
+        perror("index out of range.");
+        assert(false);
+    }
+    else
+        return static_cast<STATE_TYPE *>(static_cast<void *>(raw + (index * STATE_TYPE_SIZE)));
+}
+
+Context *Context::Init(void *reqObj, char *packet, int packet_len)
+{
+    // Input check
+    assert(reqObj != NULL);
+
+    // Get the current time in nanoseconds since the epoch
+    auto ctx = static_cast<Context *>(reqObj);
+    ctx->_set_time_now();
+    ctx->_set_packet(packet, packet_len);
+    ctx->NextApp(0, vnf::ABORT);
+    ctx->_unset_wait_txn_callback();
+    ctx->_set_txn_idx(-1);
+    ctx->_set_old_socket(-1);
+
+    return ctx;
+}
+
+int Context::AppIdx()
+{
+    return _AppIdx;
+}
+
+int Context::TxnIdx()
+{
+    return _TxnIdx;
+}
+
+void *Context::reqObj()
+{
+    return GetGlobal().sfc.SFC_chain[_AppIdx]->reqObjClip(this);
+}
+
+// int Context::reqObjId()
+// {
+//     return _reqObjId;
+// }
+
+// void Context::WriteBack(void *v, int len)
+// {
+//     assert(_result == NULL);
+//     JNIEnv *env;
+//     GetJniEnv(&env);
+//     _result = env->NewByteArray(sizeof(bool) + len);
+//     env->SetByteArrayRegion(_result, 1, static_cast<jsize>(len), reinterpret_cast<jbyte *>(v));
+// }
+
+void Context::Abort()
+{
+    _ret = ABORT;
+}
+
+DB4NFV::Transaction &Context::Transaction(int idx)
+{
+    assert(idx < GetGlobal().sfc.SFC_chain[_AppIdx]->Txns.size());
+    // _clear_value();
+    return GetGlobal().sfc.SFC_chain[_AppIdx]->Txns[idx];
+}
+
+void Context::_move_next()
+{
+    _AppIdx = _next_AppIdx;
+    _next_AppIdx = -1;
+    // // Already end.
+    // if (_AppIdx == -1){
+    //     return;
+    // // Move to end.
+    // } else if (globals.sfc.SFC_chain[_AppIdx]->MoveNext() != nullptr){
+    //     this->_next_AppIdx = globals.sfc.SFC_chain[_AppIdx]->MoveNext()->appIndex;
+    // } else {
+    // }
+}
+
+void Context::NextApp(int appIdx, vnf::EventType ret)
+{
+    _next_AppIdx = appIdx;
+    _ret = ret;
+}
+
+vnf::EventType Context::ReturnValue()
+{
+    return _ret;
+}
+
+bool Context::IsWaitingForTxnBack()
+{
+    return waiting_for_transaction_back;
+}
+
+void Context::_reset_appIdx()
+{
+    _AppIdx = -1;
+}
+
+void Context::_set_status(vnf::EventType status)
+{
+    _AppIdx = 0;
+    _ret = status;
+}
+
+// void Context::_set_value_from_callback(void *value, int value_len)
+// {
+//     _clear_value();
+//     _value = value;
+//     _value_len = value_len;
+// }
+
+// void Context::_clear_value()
+// {
+//     if (_value)
+//     {
+//         // delete _value;   // FIXME. LEAK.
+//         _value_len = -1;
+//     }
+// }
+
+int Context::_old_socket()
+{
+    return old_socket;
+}
+
+void Context::_set_old_socket(int s)
+{
+    old_socket = s;
+}
+
+void Context::_set_wait_txn_callback()
+{
+    waiting_for_transaction_back = true;
+}
+
+void Context::_unset_wait_txn_callback()
+{
+    waiting_for_transaction_back = false;
+}
+
+// jbyteArray Context::_res_ptr()
+// {
+//     return _result;
+// }
+
+uint32_t Context::_ts_low_32b()
+{
+    return static_cast<uint32_t>(ts & 0xFFFFFFFF);
+}
+
+uint64_t Context::_full_ts()
+{
+    return ts;
+}
+
+void DB4NFV::Transaction::Trigger(vnf::ConnId &connId, Context &ctx, const char *key, bool isAbort) const
+{
+    // Reset when transaction handle done.
+    ctx._set_wait_txn_callback();
+
+    ctx._set_txn_idx(txnIndex);
+    ctx.NextApp(ctx.AppIdx(), ctx.ReturnValue());
+    ctx._set_old_socket(connId.socketId);
+
+    // Create a new event blocking fd.
+    if (uint64_t(ctx.reqObj()) == 0)
+    {
+        perror("fatal: reqObj is null.");
+    }
+
+    // Register call back parameters in the context.
+    perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
+
+    JNIEnv *env;
+    GetJniEnv(&env);
+    __request(env, ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId);
+}
+
+// Get JVM and jenv related. FIXME. Optimize.
+// TODO. May not be working.
+bool GetJniEnv(JNIEnv **env)
+{
+    bool did_attach_thread = false;
+    *env = nullptr;
+    // Check if the current thread is attached to the VM
+    auto get_env_result = globals.__jvm->GetEnv((void **)env, JNI_VERSION_1_6);
+    if (get_env_result == JNI_EDETACHED)
+    {
+        if (globals.__jvm->AttachCurrentThread((void **)env, NULL) == JNI_OK)
+        {
+            did_attach_thread = true;
+        }
+        else
+        {
+            assert(false);
+        }
+    }
+    else if (get_env_result == JNI_EVERSION)
+    {
+        assert(false);
+    }
+    return did_attach_thread;
+    // // jint rs = (*GetGlobal().__jvm).AttachCurrentThread((void **)&env, NULL);
+    // // assert(rs == JNI_OK);
+    // return true;
+}
+
+inline int Monitor::packet_waiting(int coreId)
+{
+    return perCoreStates[coreId].packetNumberContextMap.size();
 }
