@@ -7,8 +7,9 @@ import intellistream.morphstream.common.io.Rdma.Channel.RdmaChannel;
 import intellistream.morphstream.common.io.Rdma.Channel.RdmaNode;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaCompletionListener;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CacheBuffer;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CircularMessageBuffer;
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.TableBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.OwnershipTableBuffer;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Msg.DWRegionTokenGroup;
@@ -62,7 +63,7 @@ public class RdmaWorkerManager implements Serializable {
         //PreAllocate message buffer
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         rdmaBufferManager.perAllocateTableBuffer(MorphStreamEnv.get().configuration().getInt("TableBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
-        rdmaBufferManager.perAllocateCacheBuffer(MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"),MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(","));
+        rdmaBufferManager.perAllocateCacheBuffer(this.managerId, MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"),MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(","));
         rdmaBufferManager.perAllocateRemoteOperationBuffer(MorphStreamEnv.get().configuration().getInt("workerNum"), MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         resultBatch = new ResultBatch(MorphStreamEnv.get().configuration().getInt("maxResultsCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"), this.totalFunctionExecutors);
         for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("workerNum"); i++) {
@@ -110,11 +111,13 @@ public class RdmaWorkerManager implements Serializable {
             }
         });
         MorphStreamEnv.get().workerLatch().countDown();
+
         //Connect to other workers
         for (int i = managerId + 1; i < workerHosts.length; i++) {
             if (i != managerId) {
                 workerRdmaChannelMap.put(i, rdmaNode.getRdmaChannel(new InetSocketAddress(workerHosts[i], Integer.parseInt(workerPorts[i])), true, conf.rdmaChannelConf.getRdmaChannelType()));
                 workerRegionTokenMap.put(i, new WWRegionTokenGroup());
+                //Receive region token from target workers
                 workerRegionTokenMap.get(i).addRegionTokens(rdmaNode.getRemoteRegionToken(workerRdmaChannelMap.get(i)));
 
                 //Send region token to target workers
@@ -132,7 +135,8 @@ public class RdmaWorkerManager implements Serializable {
     public CircularMessageBuffer getCircularRdmaBuffer() {
         return rdmaBufferManager.getCircularMessageBuffer();
     }
-    public TableBuffer getTableBuffer() { return rdmaBufferManager.getTableBuffer();}
+    public OwnershipTableBuffer getTableBuffer() { return rdmaBufferManager.getTableBuffer();}
+    public CacheBuffer getCacheBuffer() { return rdmaBufferManager.getCacheBuffer();}
     public CircularMessageBuffer getRemoteOperationsBuffer(int i) {
         return rdmaBufferManager.getRemoteOperationBuffer(i);
     }

@@ -3,6 +3,7 @@ package intellistream.morphstream.api.input.statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static intellistream.morphstream.util.PrintTable.printAlignedBorderedTable;
 
@@ -12,13 +13,15 @@ public class Statistic {
     private int delta;
     private int totalEvents = 0;
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
-    public OwnershipTable ownershipTable = new OwnershipTable();
-    private List<Integer> tempVotes = new ArrayList<>();
-    private Map<Integer, Integer> tempVoteCount = new HashMap<>();
+    public DriverSideOwnershipTable driverSideOwnershipTable;
+    private final List<Integer> tempVotes = new ArrayList<>();
+    private final Map<Integer, Integer> tempVoteCount = new HashMap<>();
+    private final ConcurrentLinkedQueue<String> tempKeys = new ConcurrentLinkedQueue();
     public Statistic(int workerNum, int shuffleType) {
         for (int i = 0; i < workerNum; i++) {
             workerIdToInputStatisticMap.put(i, new InputStatistic(i));
         }
+        this.driverSideOwnershipTable = new DriverSideOwnershipTable(workerNum);
         this.shuffleType = shuffleType;
         delta = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS") / workerNum;
     }
@@ -29,29 +32,29 @@ public class Statistic {
         return targetWorkerId;
     }
 
-    public OwnershipTable getOwnershipTable() {
-        for(Map.Entry<String, Integer> ownership : this.ownershipTable.entrySet()) {
+    public DriverSideOwnershipTable getOwnershipTable() {
+        for(String key : this.tempKeys) {
             int value = 0;
             int max = Integer.MIN_VALUE;
             for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
-                int number = inputStatistic.getNumber(ownership.getKey());
+                int number = inputStatistic.getNumber(key);
                 if (number > max) {
                     max = number;
                     value = inputStatistic.workerId;
                 }
             }
-            ownership.setValue(value);
+            driverSideOwnershipTable.put(key, value);
         }
-        return ownershipTable;
+        return driverSideOwnershipTable;
     }
 
     public void display() {
         getOwnershipTable();
-        ownershipTable.display();
+        driverSideOwnershipTable.display();
         String[] headers = {"workerId", "totalEvents", "totalKeys", "totalOperations", "averageOperationsPerKey", "maxOperationsPerKey", "withOwnership (%)", "withoutOwnership (%)"};
         String[][] data = new String[workerIdToInputStatisticMap.size()][8];
         for (Map.Entry<Integer, InputStatistic> entry : workerIdToInputStatisticMap.entrySet()) {
-            entry.getValue().display(data, this.ownershipTable);
+            entry.getValue().display(data, this.driverSideOwnershipTable);
         }
         printAlignedBorderedTable(headers, data);
     }
@@ -104,24 +107,27 @@ public class Statistic {
         int targetWorkerId = totalEvents % workerIdToInputStatisticMap.size();
         for (String key : keys) {
             this.tempVotes.add(targetWorkerId);
-            if (!this.ownershipTable.containsKey(key))
-                this.ownershipTable.put(key, targetWorkerId);
+            if (!this.tempKeys.contains(key)) {
+                this.tempKeys.add(key);
+            }
         }
     }
     private void getVotesRandom(List<String> keys) {
         int targetWorkerId = random.nextInt(workerIdToInputStatisticMap.size());
         for (String key : keys) {
             this.tempVotes.add(targetWorkerId);
-            if (!this.ownershipTable.containsKey(key))
-                this.ownershipTable.put(key, targetWorkerId);
+            if (!this.tempKeys.contains(key)) {
+                this.tempKeys.add(key);
+            }
         }
     }
     private void getVotesPartition(List<String> keys) {
         int targetWorkerId = Integer.parseInt(keys.get(0)) / delta;
         for (String key : keys) {
             this.tempVotes.add(targetWorkerId);
-            if (!this.ownershipTable.containsKey(key))
-                this.ownershipTable.put(key, targetWorkerId);
+            if (!this.tempKeys.contains(key)) {
+                this.tempKeys.add(key);
+            }
         }
     }
     private void getVotesOptimized(List<String> keys) {
@@ -138,9 +144,15 @@ public class Statistic {
 
             int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0.5, 0.5);
 
-            if (!this.ownershipTable.containsKey(key))
-                this.ownershipTable.put(key, targetWorkerId);
+            if (!this.tempKeys.contains(key)) {
+                this.tempKeys.add(key);
+            }
             this.tempVotes.add(targetWorkerId);
         }
+    }
+
+    public void clear() {
+        //TODO: How to use the information in the ownership table
+        this.tempKeys.clear();
     }
 }

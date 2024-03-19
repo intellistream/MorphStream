@@ -2,6 +2,7 @@ package intellistream.morphstream.engine.db.storage.impl;
 
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.BaseTable;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
@@ -10,23 +11,21 @@ import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotOptions;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotStrategy.ImplSnapshotStrategy.InMemorySnapshotStrategy;
-import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 import intellistream.morphstream.util.OsUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-public class StorageManager {
+public class LocalStorageManager extends StorageManager {
     private final InMemorySnapshotStrategy snapshotStrategy;
     public Map<String, BaseTable> tables;
     int table_count;
 
-    public StorageManager(Configuration configuration) {
+    public LocalStorageManager(Configuration configuration) {
         tables = new ConcurrentHashMap<>();
         snapshotStrategy = new InMemorySnapshotStrategy(tables,
                 new SnapshotOptions(configuration.getInt("parallelNum"), "None"),
@@ -101,5 +100,10 @@ public class StorageManager {
 
     public void syncReloadDatabase(SnapshotResult snapshotResult) throws IOException, ExecutionException, InterruptedException {
         this.snapshotStrategy.syncRecoveryFromSnapshot(snapshotResult);
+    }
+
+    @Override
+    public Map<String, BaseTable> getTables() {
+        return tables;
     }
 }

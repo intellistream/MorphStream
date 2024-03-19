@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.transaction.impl;
 
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecordRef;
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import org.slf4j.Logger;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class TxnManagerNoLock extends TxnManagerLock {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerNoLock.class);
 
-    public TxnManagerNoLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
+    public TxnManagerNoLock(LocalStorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
     }
 

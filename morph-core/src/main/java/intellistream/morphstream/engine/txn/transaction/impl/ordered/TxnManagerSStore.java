@@ -8,7 +8,7 @@ import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecordRef;
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
@@ -31,7 +31,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     public final PartitionedOrderLock orderLock;
     public final OrderLock shared_orderLock;
 
-    public TxnManagerSStore(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
+    public TxnManagerSStore(LocalStorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
         this.shared_orderLock = OrderLock.getInstance();
         this.orderLock = PartitionedOrderLock.getInstance();

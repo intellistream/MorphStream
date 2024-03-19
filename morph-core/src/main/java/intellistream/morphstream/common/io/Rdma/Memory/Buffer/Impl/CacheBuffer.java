@@ -3,6 +3,7 @@ package intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl;
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
+import lombok.Getter;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -11,43 +12,49 @@ import java.util.*;
 
 public class CacheBuffer {
     private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(CacheBuffer.class);
+    private int workId;
+    @Getter
+    private String[] tableNames;
     private final HashMap<String, RdmaBuffer> tableNameToRdmaBuffer = new HashMap<>();
-    private final HashMap<String, ByteBuffer> tableNameToByteBuffer = new HashMap<>();
-    private final HashMap<String, HashMap<String, Integer>> tableNameToKeyIndexMap = new HashMap<>();
+    private final HashMap<String, ByteBuffer> tableNameToByteBuffer = new HashMap<>();//To shared among workers
+    private final HashMap<String, HashMap<String, Integer>> tableNameToKeyIndexMap = new HashMap<>();//To fast update/read the value in the buffer
 
-    public CacheBuffer(IbvPd ibvPb, int length, String[] tableNames) throws Exception {
+
+    public CacheBuffer(int workId, IbvPd ibvPb, int length, String[] tableNames) throws Exception {
+        this.workId = workId;
         for (String tableName : tableNames) {
             tableNameToRdmaBuffer.put(tableName, new RdmaBuffer(ibvPb, length));
             tableNameToKeyIndexMap.put(tableName, new HashMap<>());
             tableNameToByteBuffer.put(tableName, tableNameToRdmaBuffer.get(tableName).getByteBuffer());
         }
+        this.tableNames = tableNames;
     }
     public List<RegionToken> createRegionTokens() {
         List<RegionToken> regionTokens = new ArrayList<>();
-        for (RdmaBuffer buffer : tableNameToRdmaBuffer.values()) {
-            regionTokens.add(buffer.createRegionToken());
+        for (String tableName : tableNames) {
+            regionTokens.add(tableNameToRdmaBuffer.get(tableName).createRegionToken());
         }
         return regionTokens;
     }
-    public void initLocalCacheBuffer(HashMap<String, Integer> keyValues, String tableName) throws IOException {
-        List<String> tempSortList = new ArrayList<>(keyValues.keySet());
-        Collections.sort(tempSortList);
+    public void initLocalCacheBuffer(List<String> keys, int[] values, String tableName) throws IOException {
         ByteBuffer byteBuffer = tableNameToRdmaBuffer.get(tableName).getByteBuffer();
 
-        for (int i = 0; i < tempSortList.size(); i++) {
-            byteBuffer.putInt(keyValues.get(tempSortList.get(i)));
-            tableNameToKeyIndexMap.get(tableName).put(tempSortList.get(i), i);
+        for (int i = 0; i < keys.size(); i++) {
+            byteBuffer.putShort((short) workId);//OwnershipId (Short)
+            byteBuffer.putInt(values[i]);//Value (Int)
+            tableNameToKeyIndexMap.get(tableName).put(keys.get(i), i);//Key, index
         }
         byteBuffer.flip();
     }
-    public int readCache(String tableName, String key, int workerId) {
+
+    public int readCache(String tableName, String key) {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         tableNameToByteBuffer.get(tableName).position(index * 8);
-        if (tableNameToByteBuffer.get(tableName).getInt() == workerId) {
-            return tableNameToByteBuffer.get(tableName).getInt();
-        } else {
-            return -1;
-        }
+        return tableNameToByteBuffer.get(tableName).getInt();
+    }
+
+    public boolean isCached(String tableName, String key) {
+        return tableNameToKeyIndexMap.get(tableName).containsKey(key);
     }
 
 }

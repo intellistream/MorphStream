@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
 import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.*;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
@@ -35,7 +35,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     private long local_epoch_;
     private long local_ts_;
 
-    public TxnManagerDedicatedLocked(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
+    public TxnManagerDedicatedLocked(LocalStorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         this.storageManager_ = storageManager;
         this.thisComponentId = thisComponentId;
         thread_id_ = thisTaskId;

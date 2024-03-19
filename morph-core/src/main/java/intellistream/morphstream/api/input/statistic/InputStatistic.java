@@ -3,8 +3,6 @@ package intellistream.morphstream.api.input.statistic;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static intellistream.morphstream.util.PrintTable.*;
-
 /**
  * Input Statistic for each worker
  */
@@ -28,7 +26,7 @@ public class InputStatistic {
     public int getNumber(String key) {
         return keyToNumberMap.getOrDefault(key, 0);
     }
-    public void display(String[][] data, OwnershipTable ownershipTable) {
+    public void display(String[][] data, DriverSideOwnershipTable driverSideOwnershipTable) {
         int totalOperations = 0;
         int maxOperationsPerKey = 0;
         int totalKeys = keyToNumberMap.size();
@@ -40,7 +38,7 @@ public class InputStatistic {
             if (number > maxOperationsPerKey) {
                 maxOperationsPerKey = number;
             }
-            if (ownershipTable.get(key) == workerId) {
+            if (driverSideOwnershipTable.isWorkerOwnKey(workerId, key)) {
                 withOwnership ++;
             } else {
                 withoutOwnership ++;

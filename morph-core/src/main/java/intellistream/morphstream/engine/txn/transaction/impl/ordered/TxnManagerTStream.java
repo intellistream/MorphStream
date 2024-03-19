@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction.impl.ordered;
 
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
 import intellistream.morphstream.engine.txn.transaction.impl.TxnManagerDedicatedAsy;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;

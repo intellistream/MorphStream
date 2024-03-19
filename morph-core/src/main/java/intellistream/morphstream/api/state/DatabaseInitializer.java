@@ -31,7 +31,7 @@ public class DatabaseInitializer {
     private int totalThreads;
     @Getter
     private final HashMap<String, Integer> numItemMaps = new HashMap<>();//table name to number of items
-    public void creates_Table() {
+    public void creates_Table() throws DatabaseException {
         configure_db();
         for (String tableName : tableNames) {
             MorphStreamEnv.get().database().createTable(schemas.get(tableName), tableName, totalThreads, numItemMaps.get(tableName));

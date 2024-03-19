@@ -1,6 +1,7 @@
 package intellistream.morphstream.engine.txn.scheduler.context.ds;
 
-import intellistream.morphstream.api.input.statistic.OwnershipTable;
+import intellistream.morphstream.api.input.statistic.DriverSideOwnershipTable;
+import intellistream.morphstream.api.input.statistic.WorkerSideOwnershipTable;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.txn.scheduler.Request;
@@ -17,12 +18,10 @@ import java.util.*;
 public class DSContext implements SchedulerContext {
     private final static Logger LOG = Logger.getLogger(DSContext.class);
     public int thisThreadId;
-    public ByteBuffer ownershipTableBuffer;
     private final int totalWorker;
     private final List<Integer> receivedWorker = new ArrayList<>();
     private Tuple2<Long, ByteBuffer> tempCanRead;//the temp buffer to decide whether the remote operations can read
     private ByteBuffer remoteOperationBuffer;
-    public final OwnershipTable ownershipTable = new OwnershipTable();
     private final List<Operation> remoteOperations = new ArrayList<>();
     public ArrayDeque<Request> requests;//functions in one DAG
     public final transient HashMap<String, Operation> tempOperationMap = new HashMap<>();//temp map for operations to set up dependencies

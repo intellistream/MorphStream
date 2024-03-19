@@ -7,6 +7,7 @@ import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.db.impl.RemoteDatabase;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
@@ -72,7 +73,7 @@ public class MorphStreamEnv {
     public void setRdmaWorkerManager(RdmaWorkerManager rdmaWorkerManager) {this.workerManager = rdmaWorkerManager;}
     public ZContext zContext() {return zContext;}
     public boolean isDriver() {return isDriver;}
-    public void LoadConfiguration(String configPath, String[] args) throws IOException {
+    public void LoadConfiguration(String configPath, String[] args) throws IOException, DatabaseException {
         if (configPath != null) {
             this.jCommanderHandler().loadProperties(configPath);
         }
@@ -95,9 +96,10 @@ public class MorphStreamEnv {
             DatabaseInitialize();
         }
     }
-    public void DatabaseInitialize() {
+    public void DatabaseInitialize() throws DatabaseException {
         if (configuration().getBoolean("isRemoteDB", false)) {
-            this.database = new RemoteDatabase();
+            this.database = new RemoteDatabase(configuration);
+            //TODO: Implement the remote database
         } else {
             this.database = new CavaliaDatabase(configuration);
             this.databaseInitializer.creates_Table();

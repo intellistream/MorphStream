@@ -1,11 +1,12 @@
 package intellistream.morphstream.engine.db;
 
 import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import lombok.Getter;
@@ -38,12 +39,8 @@ public abstract class Database {
      * @param tableSchema
      * @param tableName
      */
-    public void createTable(RecordSchema tableSchema, String tableName, int partition_num, int num_items) {
-        try {
-            storageManager.createTable(tableSchema, tableName, partition_num, num_items);
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
+    public void createTable(RecordSchema tableSchema, String tableName, int partition_num, int num_items) throws DatabaseException {
+        storageManager.createTable(tableSchema, tableName, partition_num, num_items);
     }
 
     public abstract void InsertRecord(String table, TableRecord record, int partition_id) throws DatabaseException;

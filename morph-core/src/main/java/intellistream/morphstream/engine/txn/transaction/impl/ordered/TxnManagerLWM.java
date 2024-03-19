@@ -5,7 +5,7 @@ import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecordRef;
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
@@ -22,7 +22,7 @@ import static intellistream.morphstream.engine.txn.content.common.CommonMetaType
 public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     final OrderLock orderLock;
 
-    public TxnManagerLWM(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
+    public TxnManagerLWM(LocalStorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
         this.orderLock = OrderLock.getInstance();
     }

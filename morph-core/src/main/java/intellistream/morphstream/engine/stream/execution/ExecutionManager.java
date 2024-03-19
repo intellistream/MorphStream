@@ -4,6 +4,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.configuration.Constants;
+import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.components.exception.UnhandledCaseException;
 import intellistream.morphstream.engine.stream.controller.affinity.AffinityController;
@@ -128,7 +129,7 @@ public class ExecutionManager {
                     TxnManager.initSchedulersByGroupForMultipleWorkload(conf.getString("SchedulersForGroup"), totalThread, numberOfStates);
                 } else {
                     if (conf.getBoolean("isRDMA")) {
-                        TxnManager.initDScheduler(totalThread, numberOfStates, MorphStreamEnv.get().rdmaWorkerManager());
+                        TxnManager.initDScheduler(totalThread, numberOfStates, MorphStreamEnv.get().rdmaWorkerManager(), (RemoteStorageManager) MorphStreamEnv.get().database().getStorageManager());
                     } else {
                         TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates);
                     }

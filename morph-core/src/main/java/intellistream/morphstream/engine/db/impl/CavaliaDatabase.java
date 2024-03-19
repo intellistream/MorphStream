@@ -10,7 +10,7 @@ import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.I
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 
 import java.io.IOException;
@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class CavaliaDatabase extends Database {
     public CavaliaDatabase(Configuration configuration) {
-        storageManager = new StorageManager(configuration);
+        storageManager = new LocalStorageManager(configuration);
         switch (configuration.getInt("FTOption")) {
             case 0:
             case 1:
@@ -31,13 +31,13 @@ public class CavaliaDatabase extends Database {
                 this.loggingManager = new PathLoggingManager(configuration);
                 break;
             case 4:
-                this.loggingManager = new LSNVectorLoggingManager(this.storageManager.tables, configuration);
+                this.loggingManager = new LSNVectorLoggingManager(this.storageManager.getTables(), configuration);
                 break;
             case 5:
-                this.loggingManager = new DependencyLoggingManager(this.storageManager.tables, configuration);
+                this.loggingManager = new DependencyLoggingManager(this.storageManager.getTables(), configuration);
                 break;
             case 6:
-                this.loggingManager = new CommandLoggingManager(this.storageManager.tables, configuration);
+                this.loggingManager = new CommandLoggingManager(this.storageManager.getTables(), configuration);
                 break;
             default:
                 throw new UnsupportedOperationException("No such kind of FTOption");

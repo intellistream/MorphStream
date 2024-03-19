@@ -4,6 +4,7 @@ import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
+import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.scheduler.Request;
@@ -29,6 +30,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public final int totalThreads;
     public final TaskPrecedenceGraph<Context> tpg;
     public final RdmaWorkerManager rdmaWorkerManager;
+    public final RemoteStorageManager remoteStorageManager;
     public static final Client clientObj;
     static {
         try {
@@ -39,8 +41,9 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             throw new RuntimeException(e);
         }
     }
-    public DSSchedule(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager) {
+    public DSSchedule(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager, RemoteStorageManager remoteStorageManager) {
         this.rdmaWorkerManager = rdmaWorkerManager;
+        this.remoteStorageManager = remoteStorageManager;
         this.totalThreads = totalThreads;
         this.delta = numItems / totalThreads;
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, numItems);
@@ -80,10 +83,10 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public void INITIALIZE(Context context) {
         try {
             //Get ownership table from driver
-            getOwnershipTable(context);
+            this.remoteStorageManager.getOwnershipTable(this.rdmaWorkerManager, context);
             //Send remote operations to remote workers
             for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
-                int remoteWorkerId = context.ownershipTable.get(oc.getPrimaryKey());
+                int remoteWorkerId = this.remoteStorageManager.workerSideOwnershipTable.getOwnershipWorkerId(oc.getPrimaryKey());
                 if (remoteWorkerId != rdmaWorkerManager.getManagerId()) {
                     for (Operation op : oc.operations) {
                         this.rdmaWorkerManager.sendRemoteOperations(context.thisThreadId, remoteWorkerId, new FunctionMessage(op.getOperationRef()));
@@ -193,21 +196,6 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             operation.operationType = MetaTypes.OperationStateType.ABORTED;
             operation.notifyChildren();
         }
-    }
-    private void getOwnershipTable(Context context) throws IOException {
-        while (context.ownershipTableBuffer == null) {
-            context.ownershipTableBuffer = this.rdmaWorkerManager.getTableBuffer().getOwnershipTable(context.thisThreadId);
-        }
-        int length = context.ownershipTableBuffer.getInt();
-        for (int i = 0; i < length; i++) {
-            int keyLength = context.ownershipTableBuffer.getInt();
-            byte[] keyBytes = new byte[keyLength];
-            context.ownershipTableBuffer.get(keyBytes);
-            String key = new String(keyBytes);
-            int value = context.ownershipTableBuffer.getInt();
-            context.ownershipTable.put(key, value);
-        }
-        LOG.info("Get ownership table");
     }
 
     @Override

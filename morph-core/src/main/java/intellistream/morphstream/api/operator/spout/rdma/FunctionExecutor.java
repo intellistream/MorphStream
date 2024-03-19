@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.operator.spout.rdma;
 
 import intellistream.morphstream.api.input.InputSource;
-import intellistream.morphstream.api.input.statistic.OwnershipTable;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.rdma.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;

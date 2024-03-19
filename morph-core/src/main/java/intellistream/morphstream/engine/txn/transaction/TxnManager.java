@@ -1,6 +1,8 @@
 package intellistream.morphstream.engine.txn.transaction;
 
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
+import intellistream.morphstream.engine.db.storage.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.scheduler.collector.Collector;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
@@ -19,7 +21,7 @@ import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPBFSSc
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSAScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
-import intellistream.morphstream.engine.db.storage.impl.StorageManager;
+import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,8 +105,8 @@ public abstract class TxnManager implements ITxnManager {
             scheduler = recoveryScheduler;
         }
     }
-    public static void initDScheduler(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager) {
-        scheduler = new DSSchedule(totalThreads, numItems, rdmaWorkerManager);
+    public static void initDScheduler(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager, RemoteStorageManager remoteStorageManager) {
+        scheduler = new DSSchedule(totalThreads, numItems, rdmaWorkerManager, remoteStorageManager);
         scheduler.initTPG(0);
         if (loggingManager != null) {
             scheduler.setLoggingManager(loggingManager);

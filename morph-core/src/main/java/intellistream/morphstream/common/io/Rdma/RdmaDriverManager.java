@@ -2,7 +2,7 @@ package intellistream.morphstream.common.io.Rdma;
 
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.input.MessageBatch;
-import intellistream.morphstream.api.input.statistic.OwnershipTable;
+import intellistream.morphstream.api.input.statistic.DriverSideOwnershipTable;
 import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Channel.RdmaChannel;
@@ -103,6 +103,7 @@ public class RdmaDriverManager {
             if (model_switch(frontendId)) {
                 sendOwnershipTable(frontendId);
                 SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
+                this.statistic.clear();
             }
             SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
         }
@@ -161,8 +162,8 @@ public class RdmaDriverManager {
         if (workerRdmaChannelMap.get(workId) == null) {
             return;
         }
-        OwnershipTable ownershipTable = this.statistic.getOwnershipTable();
-        ByteBuffer bytebuffer = ownershipTable.buffer();
+        DriverSideOwnershipTable driverSideOwnershipTable = this.statistic.getOwnershipTable();
+        ByteBuffer bytebuffer = driverSideOwnershipTable.buffer();
         bytebuffer.flip();
 
         RdmaBuffer rdmaBuffer = rdmaBufferManager.get(bytebuffer.capacity());
