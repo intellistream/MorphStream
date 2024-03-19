@@ -10,14 +10,14 @@
       </nz-breadcrumb-item>
     </nz-breadcrumb>
     <div id="code-container">
-<!--      <ngx-codemirror id="codemirror"-->
-<!--                      [(ngModel)]="code"-->
-<!--                      [options]="{-->
-<!--                      lineNumbers: true,-->
-<!--                      theme: 'material',-->
-<!--                      mode: 'text/x-java',-->
-<!--            }">-->
-<!--      </ngx-codemirror>-->
+      <!--      <ngx-codemirror id="codemirror"-->
+      <!--                      [(ngModel)]="code"-->
+      <!--                      [options]="{-->
+      <!--                      lineNumbers: true,-->
+      <!--                      theme: 'material',-->
+      <!--                      mode: 'text/x-java',-->
+      <!--            }">-->
+      <!--      </ngx-codemirror>-->
 
       <nz-code-editor class="editor" [ngModel]="code" [nzEditorOption]="{ language: 'java' }"></nz-code-editor>
     </div>
@@ -51,7 +51,7 @@
       <nz-row>
         <nz-col nzSpan="24">
           <nz-form-item>
-            <nz-form-label nzSpan="6" nzRequired>new job</nz-form-label>
+            <nz-form-label nzSpan="6" nzRequired>name</nz-form-label>
             <nz-form-control nzSpan="18" nzErrorTip="input the job name!">
               <input nz-input [(ngModel)]="job" placeholder="Job" formControlName="job" style="width: 100%">
             </nz-form-control>
@@ -74,6 +74,18 @@
               ></nz-switch>
               <ng-template #checkedTemplate><span nz-icon nzType="check"></span></ng-template>
               <ng-template #unCheckedTemplate><span nz-icon nzType="close"></span></ng-template>
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzSpan="6" nzRequired>descriptions</nz-form-label>
+            <nz-form-control nzSpan="18">
+              <nz-upload nzListType="text" [nzCustomRequest]="dummyRequestHandler"
+                         nzShowButton="true" nzLimit="1" [(nzFileList)]="fileList"
+                         nzAccept=".json" (nzChange)="handleFileChange($event)">
+                <button nz-button>
+                  <i nz-icon nzType="upload"></i><span>Upload</span>
+                </button>
+              </nz-upload>
             </nz-form-control>
           </nz-form-item>
         </nz-col>

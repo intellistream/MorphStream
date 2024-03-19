@@ -1,16 +1,18 @@
 import {AfterViewInit, Component} from '@angular/core';
 
 import 'codemirror/mode/clike/clike';
-import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
+import {AbstractControl, FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
 import {CodeEditorService} from "./code-editor.service";
 import {NzMessageService} from "ng-zorro-antd/message";
+import {NzUploadFile} from "ng-zorro-antd/upload";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-code-editor',
   templateUrl: './code-editor.component.html',
   styleUrls: ['./code-editor.component.less']
 })
-export class CodeEditorComponent implements AfterViewInit{
+export class CodeEditorComponent implements AfterViewInit {
   job = '';
   parallelism = 4;
   code = `import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor'`;
@@ -19,8 +21,9 @@ export class CodeEditorComponent implements AfterViewInit{
     job: FormControl<string>;
     parallelism: FormControl<number>;
     startNow: FormControl<boolean>;
+    configFile: FormControl;
   }>;
-
+  fileList: NzUploadFile[] = [];
 
   ngAfterViewInit(): void {
   }
@@ -29,7 +32,10 @@ export class CodeEditorComponent implements AfterViewInit{
     this.submitForm = this.fb.group({
       job: ['', [Validators.required]],
       parallelism: [4, [Validators.required]],
-      startNow: [false, [Validators.required]]
+      startNow: [false, [Validators.required]],
+      configFile: [null, [Validators.required, (control: AbstractControl): { [key: string]: any } | null => {
+        return control.value instanceof File ? null : {invalid: true};
+      }]]
     });
   }
 
@@ -43,7 +49,7 @@ export class CodeEditorComponent implements AfterViewInit{
 
   confirmSubmit() {
     if (this.submitForm.valid) {
-      this.codeEditorService.submitNewJob(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code).subscribe(res => {
+      this.codeEditorService.submitNewJob(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code, this.fileList[0]).subscribe(res => {
         this.message.success(`Job ${this.submitForm.value.job} is submitted successfully`);
         this.isSubmittingNewJob = false;
       });
@@ -54,6 +60,27 @@ export class CodeEditorComponent implements AfterViewInit{
           control.updateValueAndValidity({onlySelf: true});
         }
       });
+      if (this.submitForm.controls['configFile'].invalid) {
+        this.message.error('Please upload a description file');
+      }
+    }
+  }
+
+  dummyRequestHandler = (item: any): Subscription => {
+    setTimeout(() => {
+      item.onSuccess(null, item.file, null); // simulating a success callback
+    }, 0);
+    return new Subscription(); // a dummy subscription
+  };
+
+  handleFileChange(event: any): void {
+    // Check the latest fileList status
+    if (event.fileList.length > 0) {
+      const latestFile = event.fileList[event.fileList.length - 1].originFileObj;
+      this.submitForm.controls['configFile'].setValue(latestFile);
+    } else {
+      // clear the form control
+      this.submitForm.controls['configFile'].reset();
     }
   }
 }

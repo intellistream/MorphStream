@@ -1,15 +1,18 @@
 package runtimeweb.controller;
 
-import dao.JobSubmit;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import runtimeweb.service.SignalService;
+
+import org.slf4j.Logger;
 
 @Controller
 @RequestMapping("/api/signal")
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:4200")
 public class SignalController {
     private final SignalService signalService;
 
@@ -37,8 +40,24 @@ public class SignalController {
         return new ResponseEntity<>(signalService.onStopSignal(jobId), HttpStatus.OK);
     }
 
-    @PostMapping("/submit")
-    public ResponseEntity<Boolean> onSubmitSignal(@RequestBody JobSubmit job) {
-        return new ResponseEntity<>(signalService.onSubmitSignal(job.getJob(), job.getParallelism(), job.isStartNow(), job.getCode()), HttpStatus.OK);
+    @PostMapping("/submit/job")
+    public ResponseEntity<Boolean> onSubmitJobSignal(@RequestParam String jobName, @RequestParam int parallelism,@ RequestParam boolean startNow,
+                                                     @RequestParam String code, @RequestParam MultipartFile configFile) {
+        signalService.onSubmitConfigFile(configFile);
+        return new ResponseEntity<>(signalService.onSubmitSignal(jobName, parallelism, startNow, code), HttpStatus.OK);
     }
+
+//    @PostMapping("/submit/config")
+//    public ResponseEntity<Boolean> onSubmitConfigSignal(@RequestParam("file") MultipartFile file) {
+//        try {
+//            LOG.info("File uploaded: " + file.getOriginalFilename());
+//            String fileName = file.getOriginalFilename();
+//            Path path = Paths.get("./" + fileName); // TODO: Change the path to the correct location
+//            Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+//            return new ResponseEntity<>(true, HttpStatus.OK);
+//        } catch (Exception e) {
+//            LOG.error("Failed to upload the file", e);
+//            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 }

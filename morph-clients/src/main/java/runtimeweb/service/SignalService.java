@@ -3,11 +3,21 @@ package runtimeweb.service;
 import client.impl.SLClient;
 import client.jobmanage.util.initialize.JobPrepareUtil;
 import intellistream.morphstream.api.input.InputSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import client.jobmanage.util.initialize.JobInitializeUtil;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 @Service
 public class SignalService {
+    private static final Logger LOG = LoggerFactory.getLogger(SignalService.class);
+
     /**
      * Start a job
      * @param jobId job id
@@ -44,7 +54,6 @@ public class SignalService {
      * @return true if the job is submitted successfully, false otherwise
      */
     public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code) {
-//        System.out.println(code);
         // TODO: analyze code and generate job
         boolean initialized = JobInitializeUtil.initialize(jobName); // initialize the job
         if (!initialized) {
@@ -59,5 +68,16 @@ public class SignalService {
             }
         }
         return true;
+    }
+
+    public void onSubmitConfigFile(MultipartFile file) {
+        try {
+            LOG.info("File uploaded: " + file.getOriginalFilename());
+            String fileName = file.getOriginalFilename();
+            Path path = Paths.get("./" + fileName); // TODO: Change the path to the correct location
+            Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            LOG.error("Failed to upload the file", e);
+        }
     }
 }
