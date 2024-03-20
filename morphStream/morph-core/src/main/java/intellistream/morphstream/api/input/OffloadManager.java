@@ -29,7 +29,7 @@ public class OffloadManager implements Runnable {
             } else if (txnType == 0) {
                 txnResult = readGlobalStates(0);
             }
-            NativeInterface.__txn_finished(txnEvent.getTxnRequestID(), txnResult);
+            NativeInterface.__txn_finished_results(txnEvent.getTxnRequestID(), txnResult);
         }
     }
 
