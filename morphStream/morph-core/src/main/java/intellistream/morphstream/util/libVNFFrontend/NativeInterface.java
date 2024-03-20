@@ -23,7 +23,7 @@ public class NativeInterface {
     // Native method declaration for __handle_done
     public static native int __txn_finished(long txnID);
 
-    public static native int __txn_finished(long txnID, int txnResult); //TODO: Used by LockManager, OffloadManager, to return read-results to VNF instances
+    public static native int __txn_finished_results(long txnID, int txnResult); //TODO: Used by LockManager, OffloadManager, to return read-results to VNF instances
 
     // Manager notifies VNF instances for pattern change: (1) pause further txn transmission to manager, (2) update CC strategy to instances
     // then, VNF instances should wait for manager to notify again for state movement completion
