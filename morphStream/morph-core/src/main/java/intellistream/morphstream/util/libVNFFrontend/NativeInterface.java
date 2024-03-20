@@ -1,6 +1,8 @@
 package intellistream.morphstream.util.libVNFFrontend;
 // import intellistream.morphstream.api.input.InputSource;
 
+import java.util.HashMap;
+
 public class NativeInterface {
 
     // Delegate EventRequestInsertion.
@@ -19,7 +21,17 @@ public class NativeInterface {
     public static native byte[] _execute_sa_udf(long txnReqId, int saFlag, byte[] saData, int length);
 
     // Native method declaration for __handle_done
-    public static native int __txn_finished(long txnID); //TODO: This should be txnID (or packet ID)
+    public static native int __txn_finished(long txnID);
+
+    // Manager notifies VNF instances for pattern change: (1) pause further txn transmission to manager, (2) update CC strategy to instances
+    // then, VNF instances should wait for manager to notify again for state movement completion
+    public static native void __pause_txn_processing(HashMap<String, Integer> changedPatterns); //Maps tupleIDs whose pattern changed to their new patterns
+
+    public static native void __get_states(); //TODO: Coordinate with VNF instances for state movement during CC switch
+    public static native void __update_states();
+
+    // Manager notifies VNF instances to resume normal txn processing.
+    public static native void __resume_txn_processing();
 
     // Load the native library when the class is initialized
     static {
