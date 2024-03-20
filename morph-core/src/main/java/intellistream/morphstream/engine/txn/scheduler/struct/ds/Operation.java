@@ -30,10 +30,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         this.isRemote = isRemote;
     }
 
-    public <Context extends DSContext> Operation(String pKey, Context context, String table_name, FunctionContext txn_context, long bid,
-                                                 CommonMetaTypes.AccessType accessType, TableRecord record,
-                                                 HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
-        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
+    public <Context extends DSContext> Operation(String pKey, String table_name, FunctionContext txn_context, long bid,
+                                                 CommonMetaTypes.AccessType accessType, StateAccess stateAccess) {
+        super(table_name, stateAccess, null, txn_context, accessType, null, bid, null, pKey);
         this.pKey = pKey;
         this.isRemote = false;
     }

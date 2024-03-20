@@ -60,7 +60,7 @@ public class JCommanderHandler {
             description = "Scheduler for MorphStream:" +
                     "OG_DFS,OG_DFS_A,OG_BFS,OG_BFS_A,OG_NS,OG_NS_A," +
                     "OP_DFS,OP_DFS_A,OP_BFS,OP_BFS_A,OP_NS,OP_NS_A," + "DScheduler,TStream")
-    public String scheduler = "OP_BFS_A";
+    public String scheduler = "DScheduler";
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")

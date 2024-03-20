@@ -1,6 +1,7 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
 import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.*;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
@@ -25,6 +26,7 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
  */
 public abstract class TxnManagerDedicatedLocked extends TxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManagerDedicatedLocked.class);
+    protected StorageManager storageManager_;
     protected final String thisComponentId;
     private final long thread_id_;
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(CommonMetaTypes.kMaxAccessNum);

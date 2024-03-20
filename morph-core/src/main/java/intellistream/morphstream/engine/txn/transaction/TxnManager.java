@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class TxnManager implements ITxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManager.class);
     public static LoggingManager loggingManager;
-    protected StorageManager storageManager_;
     public static boolean enableGroup = false;
     protected static boolean enableDynamic = false;
     protected static IScheduler scheduler; // TODO: this is a bad encapsulation, try to make it non static, remove after stage is done

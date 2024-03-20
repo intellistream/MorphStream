@@ -44,6 +44,7 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
  */
 public abstract class TxnManagerDedicatedAsy extends TxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManagerDedicatedAsy.class);
+    protected StorageManager storageManager_;
     protected final String thisComponentId;
     public HashMap<String, SchedulerContext> contexts;
     public SchedulerContext context;

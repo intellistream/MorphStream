@@ -7,10 +7,12 @@ import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecordRef;
+import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.og.OGNSAContext;
@@ -32,14 +34,15 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+
 public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerDedicatedAsyDistributed.class);
     protected int thread_count_;
     public HashMap<String, SchedulerContext> contexts;
     public SchedulerContext context;
     protected int dalta;
-    public TxnManagerDedicatedAsyDistributed(StorageManager storageManager, int thisTaskId, int thread_count, String schedulerType) {
-        this.storageManager_ = storageManager;
+    public TxnManagerDedicatedAsyDistributed(int thisTaskId, int thread_count, String schedulerType) {
         this.thread_count_ = thread_count;
         contexts = new HashMap<>();
         if (enableGroup) {
@@ -65,16 +68,8 @@ public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
         MetaTypes.AccessType accessType = stateAccess.getAccessType();
         if (accessType == MetaTypes.AccessType.READ) {
             return Asy_ReadRecord(stateAccess, functionContext);
-//        } else if (accessType == MetaTypes.AccessType.WRITE) {
-//            return Asy_WriteRecord(stateAccess, functionContext);
-//        } else if (accessType == MetaTypes.AccessType.WINDOW_READ) {
-//            return Asy_WindowReadRecord(stateAccess, functionContext);
-//        } else if (accessType == MetaTypes.AccessType.WINDOW_WRITE) {
-//            return Asy_WindowWriteRecord(stateAccess, functionContext);
-//        } else if (accessType == MetaTypes.AccessType.NON_DETER_READ) {
-//            return Asy_NonDeterReadRecord(stateAccess, functionContext);
-//        } else if (accessType == MetaTypes.AccessType.NON_DETER_WRITE) {
-//            return Asy_NonDeterWriteRecord(stateAccess, functionContext);
+        } else if (accessType == MetaTypes.AccessType.WRITE) {
+            return Asy_WriteRecord(stateAccess, functionContext);
         } else {
             throw new UnsupportedOperationException("Unsupported access type: " + accessType);
         }
@@ -88,7 +83,47 @@ public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
         StateObject stateObj = stateObjects.get(0);
         String srcTable = stateObj.getTable();
         String srcKey = stateObj.getKey();
+        String[] condition_sourceTables = {srcTable};
+        String[] condition_sourceKeys = {srcKey};
 
+        if (enableGroup) {
+            schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context,
+                    new Request(functionContext, accessType, srcTable,
+                    srcKey, condition_sourceTables, condition_sourceKeys, stateAccess));
+        } else {
+            scheduler.SubmitRequest(context, new Request(functionContext, accessType, srcTable,
+                    srcKey, condition_sourceTables, condition_sourceKeys, stateAccess));
+        }
+        return false;
+    }
+    private boolean Asy_WriteRecord(StateAccess stateAccess, FunctionContext functionContext) {
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
+        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+
+        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
+        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
+
+        for (int i = 0; i < stateObjects.size(); i++) {
+            StateObject stateObj = stateObjects.get(i);
+            String stateObjTable = stateObj.getTable();
+            String stateObjKey = stateObj.getKey();
+
+            condition_tables[i] = stateObjTable;
+            condition_keys[i] = stateObjKey;
+        }
+
+        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        String writeTable = writeStateObj.getTable();
+        String writeKey = writeStateObj.getKey();
+
+        if (enableGroup) {
+            schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context,
+                    new Request(functionContext, accessType, writeTable,
+                            writeKey, condition_tables, condition_keys, stateAccess));
+        } else {
+            scheduler.SubmitRequest(context, new Request(functionContext, accessType, writeTable,
+                    writeKey, condition_tables, condition_keys, stateAccess));
+        }
         return false;
     }
 

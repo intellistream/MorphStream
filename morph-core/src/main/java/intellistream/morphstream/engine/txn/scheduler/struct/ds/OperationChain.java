@@ -13,6 +13,10 @@ public class OperationChain implements Comparable<OperationChain> {
     private final String tableName;
     @Getter
     private final String primaryKey;
+    @Setter @Getter
+    private Object tempValue;
+    @Setter @Getter
+    private boolean isLocalState = false;
     public OperationChain(String tableName, String primaryKey) {
         this.primaryKey = primaryKey;
         this.tableName = tableName;

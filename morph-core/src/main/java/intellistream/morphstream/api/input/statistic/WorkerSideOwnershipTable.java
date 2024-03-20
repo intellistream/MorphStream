@@ -2,6 +2,7 @@ package intellistream.morphstream.api.input.statistic;
 
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.MutablePair;
+import scala.Tuple2;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class WorkerSideOwnershipTable {
     protected int totalWorker;
     public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
     public ByteBuffer ownershipTableBuffer;
-    protected final ConcurrentHashMap<String, Integer> ownershipTable = new ConcurrentHashMap<>();//Key -> OwnerWorkerId
+    protected final ConcurrentHashMap<String, Tuple2<Integer, Integer>> ownershipTable = new ConcurrentHashMap<>();//Key -> <OwnerWorkerId, index>
     @Getter
     protected final List<String> keysForThisWorker = new ArrayList<>();
     public final ConcurrentHashMap<String, int[]> tableNameToValueList = new ConcurrentHashMap<>();
@@ -30,15 +31,15 @@ public class WorkerSideOwnershipTable {
     public void initTableNameToValueList(String tableName) {
         tableNameToValueList.put(tableName, new int[keysForThisWorker.size()]);
     }
-    public void putEachOwnership(String key, Integer workerId) {
-        ownershipTable.put(key, workerId);
+    public void putEachOwnership(String key, int workerId, int index) {
+        ownershipTable.put(key, new Tuple2<>(workerId, index));
     }
 
     public int getOwnershipWorkerId(String key) {
-        return ownershipTable.get(key);
+        return ownershipTable.get(key)._1;
     }
     public boolean isWorkerOwnKey(int workerId, String key) {
-        return ownershipTable.get(key) == workerId;
+        return ownershipTable.get(key)._1 == workerId;
     }
     public void clean() {
         ownershipTable.clear();

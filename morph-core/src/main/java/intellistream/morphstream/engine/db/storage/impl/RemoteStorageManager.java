@@ -49,7 +49,7 @@ public class RemoteStorageManager extends StorageManager {
                     byte[] keyBytes = new byte[keyLength];
                     workerSideOwnershipTable.ownershipTableBuffer.get(keyBytes);
                     String key = new String(keyBytes);
-                    workerSideOwnershipTable.putEachOwnership(key, i);
+                    workerSideOwnershipTable.putEachOwnership(key, i, j);
                     if (i == rdmaWorkerManager.getManagerId()) {
                         workerSideOwnershipTable.putEachKeyForThisWorker(key);
                     }

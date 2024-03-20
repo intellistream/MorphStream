@@ -18,7 +18,6 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
 
     /**
      * This is the API: SP-Layer inform the arrival of checkpoint, which informs the TP-Layer to start evaluation.
-     *
      * @param operatorID
      * @param batchID
      * @param num_events

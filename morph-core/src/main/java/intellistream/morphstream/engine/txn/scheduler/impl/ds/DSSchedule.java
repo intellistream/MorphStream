@@ -74,7 +74,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public void TxnSubmitFinished(Context context, int batchID) {
         for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
-            Operation operation = new Operation(request.write_key, null, request.table_name, request.txn_context, bid, request.accessType, request.d_record, request.condition_records, request.stateAccess);
+            Operation operation = new Operation(request.write_key, request.table_name, request.txn_context, bid, request.accessType, request.stateAccess);
             context.tempOperationMap.put(request.stateAccess.getStateAccessName(), operation);
         }
         this.tpg.setupOperations(context.tempOperationMap);
@@ -91,6 +91,10 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     for (Operation op : oc.operations) {
                         this.rdmaWorkerManager.sendRemoteOperations(context.thisThreadId, remoteWorkerId, new FunctionMessage(op.getOperationRef()));
                     }
+                    oc.setLocalState(false);
+                } else {
+                    oc.setTempValue(this.remoteStorageManager.read(oc.getTableName(), oc.getPrimaryKey()));
+                    oc.setLocalState(true);
                 }
             }
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -160,6 +164,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
         context.reset();
     }
     private void execute(Operation operation, long mark_ID) {
+        
         if (operation.isRemote) {
             operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             return;

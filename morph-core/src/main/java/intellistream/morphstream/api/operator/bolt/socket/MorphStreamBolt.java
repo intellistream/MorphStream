@@ -9,11 +9,13 @@ import intellistream.morphstream.api.state.*;
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,7 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
+import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
@@ -59,6 +62,12 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
+    }
+
+    @Override
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+        super.initialize(thread_Id, thisTaskId, graph);
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler"));
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {

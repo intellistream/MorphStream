@@ -75,5 +75,14 @@ public class Request {
         this.condition_records = condition_records; //records to read from in write operation
         this.tables = baseTable; //used for non-deter, allow null input
     }
-
+    //no table record
+    public Request(FunctionContext txn_context,
+                   CommonMetaTypes.AccessType accessType,
+                   String table_name,
+                   String src_key,
+                   String[] condition_tables,
+                   String[] condition_keys,
+                   StateAccess access) {
+        this(txn_context, null, accessType, table_name, src_key, null, condition_tables, condition_keys, null, access);
+    }
 }
