@@ -3,8 +3,13 @@ package client.jobmanage.util.initialize;
 import client.jobmanage.util.Util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.Job;
+import dao.config.JobConfiguration;
+import dao.config.StateAccessDescription;
+import dao.config.StateObjectDescription;
+import dao.config.TransactionDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -26,9 +32,9 @@ public class JobInitializeUtil {
      * @param jobName the name of the job
      * @return true if the job is initialized successfully, false otherwise
      */
-    public static boolean initialize(String jobName) {
+    public static boolean initialize(String jobName, int parallelism) {
         // create jobInfo directory if not exists
-        if (!Util.validateAndMakeDirectory(Util.jobInfoDirectory) || Util.validateAndMakeDirectory(Util.jobCompileDirectory)) {
+        if (!Util.validateAndMakeDirectory(Util.jobInfoDirectory) || !Util.validateAndMakeDirectory(Util.jobCompileDirectory)) {
             return false;
         }
 
@@ -56,7 +62,7 @@ public class JobInitializeUtil {
         Util.validateAndMakeDirectory(jobCompileFolder);
 
         // create jobInfo json file for new job
-        Job job = new Job(jobId, jobName);
+        Job job = new Job(jobId, jobName, parallelism);
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
@@ -66,6 +72,102 @@ public class JobInitializeUtil {
             log.error("Error in creating Job JSON file: " + e.getMessage());
         }
         return true;
+    }
+
+    /**
+     * Concatenate the code
+     *
+     * @param code       code
+     * @param configFile config file
+     * @return concatenated code
+     */
+    public static String preprocessedCode(String code, MultipartFile configFile) {
+        StringBuilder startJobCodeBuilder = new StringBuilder();
+
+        // add necessary imports if not exists
+        List<String> necessaryImports = new ArrayList<String>(){{
+            add("import client.CliFrontend;");
+            add("import intellistream.morphstream.api.Client;");
+            add("import intellistream.morphstream.api.state.StateAccess;");
+            add("import intellistream.morphstream.api.state.StateAccessDescription;");
+            add("import intellistream.morphstream.api.state.StateObject;");
+            add("import intellistream.morphstream.api.utils.MetaTypes.AccessType;");
+            add("import intellistream.morphstream.engine.txn.transaction.TxnDescription;\n");
+            add("import java.util.HashMap;");
+            add("import java.util.Objects;");
+        }};
+
+        for (String necessaryImport : necessaryImports) {
+            if (startJobCodeBuilder.indexOf(necessaryImport) == -1) {
+                startJobCodeBuilder.insert(0, necessaryImport + "\n");
+            }
+        }
+
+        startJobCodeBuilder.append(code);
+
+        // remove the last occurrence of }
+        int lastBraceIndex = startJobCodeBuilder.lastIndexOf("}");
+        if (lastBraceIndex != -1) {
+            startJobCodeBuilder.deleteCharAt(lastBraceIndex);
+        }
+
+        startJobCodeBuilder.append("\n");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JobConfiguration jobConfiguration;
+        try {
+            jobConfiguration = objectMapper.readValue(configFile.getInputStream(), JobConfiguration.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        startJobCodeBuilder.append("    public static void startJob(String[] args) throws Exception {\n");
+        startJobCodeBuilder.append("        CliFrontend job = CliFrontend.getOrCreate().appName(\"")
+                .append(jobConfiguration.getName()).append("\");\n");
+        startJobCodeBuilder.append("        job.LoadConfiguration(null, args);\n");
+        startJobCodeBuilder.append("        job.prepare()\n");
+        startJobCodeBuilder.append("        HashMap<String, TxnDescription> txnDescriptions = new HashMap<>();\n");
+
+        for (TransactionDescription txnDesc : jobConfiguration.getOperatorDescription().getTransactionDescription()) {
+            startJobCodeBuilder.append("        TxnDescription ").append(txnDesc.getName()).append("Descriptor = new TxnDescription();\n");
+            for (StateAccessDescription stateAccessDescription : txnDesc.getStateAccessDescriptions()) {
+                startJobCodeBuilder.append("        StateAccessDescription ").append(stateAccessDescription.getName())
+                        .append(" = new StateAccessDescription(\"").append(stateAccessDescription.getName())
+                        .append("\", AccessType.").append(stateAccessDescription.getAccessType().toUpperCase()).append(");\n");
+                for (StateObjectDescription stateObjectDescription : stateAccessDescription.getStateObjectDescription()) {
+                    startJobCodeBuilder.append("        ").append(stateAccessDescription.getName()).append(".addStateObjectDescription(\"")
+                            .append(stateObjectDescription.getName()).append("\", ").append("AccessType.")
+                            .append(stateObjectDescription.getAccessType().toUpperCase()).append(", ")
+                            .append("\"").append(stateObjectDescription.getTableName()).append("\", ")
+                            .append("\"").append(stateObjectDescription.getKeyName()).append("\", ")
+                            .append("\"").append(stateObjectDescription.getValueName()).append("\", ")
+                            .append(stateObjectDescription.getKeyIndex()).append(");\n");
+                }
+                startJobCodeBuilder.append("        ").append(stateAccessDescription.getName()).append(".addValueName(\"")
+                        .append(stateAccessDescription.getValueName()).append("\");\n");
+                startJobCodeBuilder.append("        ").append(txnDesc.getName()).append("Descriptor.addStateAccess(\"")
+                        .append(stateAccessDescription.getName()).append("\", ").append(stateAccessDescription.getName()).append(");\n");
+            }
+            startJobCodeBuilder.append("        txnDescriptions.put(\"").append(txnDesc.getName()).append("\", ")
+                    .append(txnDesc.getName()).append("Descriptor);\n\n");
+        }
+
+
+        startJobCodeBuilder.append("        job.setTxnDescriptions(").append(jobConfiguration.getOperatorDescription().getName()).append(", txnDescriptions, 4);\n");
+        startJobCodeBuilder.append("        try {\n");
+        startJobCodeBuilder.append("            job.run();\n");
+        startJobCodeBuilder.append("        } catch (InterruptedException ex) {\n");
+        startJobCodeBuilder.append("            if (enable_log) log.error(\"Error in running topology locally\", ex);\n");
+        startJobCodeBuilder.append("        }\n");
+
+        startJobCodeBuilder.append("    }\n");
+
+        startJobCodeBuilder.append("    public static void main(String[] args) throws Exception {");
+        startJobCodeBuilder.append("        startJob(args);\n");
+        startJobCodeBuilder.append("    }\n");
+        startJobCodeBuilder.append("}");
+
+        return startJobCodeBuilder.toString();
     }
 
     /**

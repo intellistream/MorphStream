@@ -30,11 +30,9 @@ public class EDKeywordClient {
         TxnDescription depositDescription = new TxnDescription();
         txnDescriptions.put("deposit", depositDescription);
 
-
         EDKeywordClient.setSpout("executor", 1);
         EDKeywordClient.setBolt("executor", txnDescriptions, 1, 1, new ShuffleGrouping("spout"));
 
         EDKeywordClient.run();
     }
-
 }

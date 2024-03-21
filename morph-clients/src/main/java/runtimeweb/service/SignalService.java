@@ -53,9 +53,19 @@ public class SignalService {
      * @param code code
      * @return true if the job is submitted successfully, false otherwise
      */
-    public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code) {
+    public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code, MultipartFile configFile) {
+        // save the config file
+        try {
+            LOG.info("File uploaded: " + configFile.getOriginalFilename());
+            String fileName = configFile.getOriginalFilename();
+            Path path = Paths.get("./" + fileName); // TODO: Change the path to the correct location
+            Files.copy(configFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            LOG.error("Failed to upload the file", e);
+        }
         // TODO: analyze code and generate job
-        boolean initialized = JobInitializeUtil.initialize(jobName); // initialize the job
+
+        boolean initialized = JobInitializeUtil.initialize(jobName, parallelism); // initialize the job
         if (!initialized) {
             return false;
         }
@@ -68,16 +78,5 @@ public class SignalService {
             }
         }
         return true;
-    }
-
-    public void onSubmitConfigFile(MultipartFile file) {
-        try {
-            LOG.info("File uploaded: " + file.getOriginalFilename());
-            String fileName = file.getOriginalFilename();
-            Path path = Paths.get("./" + fileName); // TODO: Change the path to the correct location
-            Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            LOG.error("Failed to upload the file", e);
-        }
     }
 }

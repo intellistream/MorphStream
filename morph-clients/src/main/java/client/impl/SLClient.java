@@ -104,7 +104,7 @@ public class SLClient extends Client {
         }
         return result;
     }
-
+    
     public static void startJob(String[] args) throws Exception {
         CliFrontend slClientJob = CliFrontend.getOrCreate().appName("SLClient");
 //        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
