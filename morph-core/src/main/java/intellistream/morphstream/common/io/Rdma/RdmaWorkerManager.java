@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RdmaWorkerManager implements Serializable {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaWorkerManager.class);
@@ -236,5 +237,37 @@ public class RdmaWorkerManager implements Serializable {
             }
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         latch.await();
+    }
+    public int syncReadRemoteCache(int workerId, int keyIndex, int tableIndex, int signature) throws Exception {
+        RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workerId);
+        RegionToken regionToken = workerRegionTokenMap.get(workerId).getRegionTokens().get(tableIndex);
+
+        long remoteAddress = regionToken.getAddress() + keyIndex;
+        int rkey = regionToken.getLocalKey();
+
+        RdmaBuffer readData = rdmaBufferManager.get(6);
+        ByteBuffer dataBuffer = readData.getByteBuffer();
+
+        AtomicInteger atomicInteger = new AtomicInteger(signature);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        rdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                int ownershipId = dataBuffer.getShort();
+                int value = dataBuffer.getInt();
+                if (ownershipId == managerId) {
+                    atomicInteger.set(value);
+                }
+                rdmaBufferManager.put(readData);
+                latch.countDown();
+            }
+            @Override
+            public void onFailure(Throwable exception) {
+                rdmaBufferManager.put(readData);
+                latch.countDown();
+            }
+        }, readData.getAddress(), readData.getLkey(), new int[]{6}, new long[]{remoteAddress}, new int[]{rkey});
+        return atomicInteger.get();
     }
 }

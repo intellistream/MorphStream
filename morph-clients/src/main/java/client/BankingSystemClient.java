@@ -37,12 +37,10 @@ public class BankingSystemClient extends Client {
                     return false; //abort txn
                 }
             } else if (Objects.equals(stateAccessName, "destTransfer")) {
-                StateObject srcAccountState = access.getStateObject("srcAccountState");
                 StateObject destAccountState = access.getStateObject("destAccountState");
-                double srcBalance = srcAccountState.getDoubleValue("balance");
                 double destBalance = destAccountState.getDoubleValue("balance");
                 double transferAmount = Double.parseDouble((String) access.getValue("transferAmount"));
-                if (srcBalance > 100 && srcBalance > transferAmount) {
+                if (destBalance > 0) {
                     access.udfResult = destBalance + transferAmount;
                     return true;
                 } else {
@@ -111,8 +109,7 @@ public class BankingSystemClient extends Client {
         srcTransfer.addValueName("transferAmount");
         //Define transfer's 2nd state accesses
         StateAccessDescription destTransfer = new StateAccessDescription("destTransfer", AccessType.WRITE);
-        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", 0);
-        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", 1);
+        destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", 0);
         destTransfer.addValueName("transferAmount");
         //Add state accesses to transaction
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
@@ -120,7 +117,6 @@ public class BankingSystemClient extends Client {
         destTransfer.addFatherName("srcTransfer");
         transferDescriptor.comboFunctionsIntoTransaction(Arrays.asList("srcTransfer", "destTransfer"));
         this.txnDescriptions.put("transfer", transferDescriptor);
-
 
         //Define deposit transaction
         FunctionDescription depositDescriptor = new FunctionDescription("Deposit");

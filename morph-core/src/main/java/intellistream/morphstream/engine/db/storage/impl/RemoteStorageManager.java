@@ -42,6 +42,7 @@ public class RemoteStorageManager extends StorageManager {
             int[] length = new int[workerSideOwnershipTable.getTotalWorker()];
             for (int i = 0; i < workerSideOwnershipTable.getTotalWorker(); i++) {
                 length[i] = workerSideOwnershipTable.ownershipTableBuffer.getInt();
+                workerSideOwnershipTable.putTotalKeysForWorker(i, length[i]);
             }
             for (int i = 0; i < workerSideOwnershipTable.getTotalWorker(); i++) {
                 for (int j = 0; j < length[i]; j++) {
@@ -77,21 +78,44 @@ public class RemoteStorageManager extends StorageManager {
            int end = Math.min(interval * (context.thisThreadId + 1), keys.size());
            for (int i = start; i < end; i++) {
                String key = keys.get(i);
-               int value = this.readFromRemoteDatabase(tableName, key);
+               int value = this.readRemoteDatabase(tableName, key);
                this.workerSideOwnershipTable.tableNameToValueList.get(tableName)[i] = value;
            }
            LOG.info("Thread " + context.thisThreadId + " load cache for table " + tableName + " from remote database");
        }
     }
-    public int read(String tableName, String key) {
-        return this.cacheBuffer.readCache(tableName, key);
+    public void updateOwnership(String tableName, String key, int ownershipWorkerId) {
+        this.cacheBuffer.updateOwnership(tableName, key, ownershipWorkerId);
     }
-
+    public boolean checkOwnership(String tableName, String key) {
+        return this.cacheBuffer.checkOwnership(tableName, key);
+    }
+    public int readLocalCache(String tableName, String key, int workerId, int signature) {
+        return this.cacheBuffer.readCache(tableName, key, workerId, signature);
+    }
+    public int syncReadRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, int signature)  {
+        int keyIndex = 0;
+        int tableIndex = 0;
+        for (int i = 0; i < this.tableNames.length; i ++) {
+            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                break;
+            }
+        }
+        keyIndex = keyIndex + this.workerSideOwnershipTable.getOwnershipIndex(key) * 6;
+        int workerId = this.workerSideOwnershipTable.getOwnershipWorkerId(key);
+        try {
+            return rdmaWorkerManager.syncReadRemoteCache(workerId, keyIndex, tableIndex, signature);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void write(String tableName, String key, int workerId) {
         //TODO: add whether to write to remote database or not
         LOG.info("Writing to remote database");
     }
-    private int readFromRemoteDatabase(String tableName, String key) {
+    private int readRemoteDatabase(String tableName, String key) {
         return 0;
     }
 

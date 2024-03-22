@@ -20,7 +20,7 @@ public class StateAccess {
     private final String stateAccessName;
     @Getter
     private final List<String> fatherStateAccessNames;
-    @Setter
+    @Setter @Getter
     private String writeRecordName;
     @Getter
     private final MetaTypes.AccessType accessType;

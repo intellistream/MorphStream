@@ -80,9 +80,8 @@ public class Request {
                    CommonMetaTypes.AccessType accessType,
                    String table_name,
                    String src_key,
-                   String[] condition_tables,
-                   String[] condition_keys,
+                   HashMap<String, TableRecord> condition_records,
                    StateAccess access) {
-        this(txn_context, null, accessType, table_name, src_key, null, condition_tables, condition_keys, null, access);
+        this(txn_context, null, accessType, table_name, src_key, null, null, null, condition_records, access);
     }
 }

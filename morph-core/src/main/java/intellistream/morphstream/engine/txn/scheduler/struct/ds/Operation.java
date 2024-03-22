@@ -5,36 +5,35 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
-import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import lombok.Getter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public class Operation extends AbstractOperation implements Comparable<Operation> {
-    public final String pKey;
     public int addTimes = 0;
     public List<Operation> brothers = new ArrayList<>();
     public List<Operation> children = new ArrayList<>();
     public AtomicInteger fatherCount = new AtomicInteger(0);//We only need to count the number of fathers (lds) and invokes (pds), tds count can be ensured by skipList
     public int txnOpId = 0;
     public MetaTypes.OperationStateType operationType = MetaTypes.OperationStateType.BLOCKED;
+    public int sourceWorkerId;
+    public volatile ArrayList<String> stateObjectName;
 
-    public Operation(String tableName, String pKey, long bid, boolean isRemote) {
+    public Operation(String tableName, String pKey, long bid, boolean isReference, int sourceWorkerId) {
         super(tableName, null, null, null, null, null, bid, null, pKey);
-        this.pKey = pKey;
-        this.isRemote = isRemote;
+        this.isReference = isReference;
+        this.sourceWorkerId = sourceWorkerId;
     }
 
     public <Context extends DSContext> Operation(String pKey, String table_name, FunctionContext txn_context, long bid,
-                                                 CommonMetaTypes.AccessType accessType, StateAccess stateAccess) {
+                                                 CommonMetaTypes.AccessType accessType, ArrayList<String> stateObjectName, StateAccess stateAccess) {
         super(table_name, stateAccess, null, txn_context, accessType, null, bid, null, pKey);
-        this.pKey = pKey;
-        this.isRemote = false;
+        this.isReference = false;
+        this.stateObjectName = stateObjectName;
     }
     public void addBrother(Operation brother) {
         this.brothers.add(brother);

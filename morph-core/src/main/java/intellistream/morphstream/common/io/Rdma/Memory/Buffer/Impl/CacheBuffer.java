@@ -40,21 +40,33 @@ public class CacheBuffer {
         ByteBuffer byteBuffer = tableNameToRdmaBuffer.get(tableName).getByteBuffer();
 
         for (int i = 0; i < keys.size(); i++) {
-            byteBuffer.putShort((short) workId);//OwnershipId (Short)
-            byteBuffer.putInt(values[i]);//Value (Int)
+            byteBuffer.putShort((short) workId);//OwnershipId (Short) 2
+            byteBuffer.putInt(values[i]);//Value (Int) 4
             tableNameToKeyIndexMap.get(tableName).put(keys.get(i), i);//Key, index
         }
         byteBuffer.flip();
     }
 
-    public int readCache(String tableName, String key) {
+    public int readCache(String tableName, String key, int workerId, int signature) {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
-        tableNameToByteBuffer.get(tableName).position(index * 8);
-        return tableNameToByteBuffer.get(tableName).getInt();
+        tableNameToByteBuffer.get(tableName).position(index * 6);
+        short ownershipId = tableNameToByteBuffer.get(tableName).getShort();
+        if (ownershipId == workerId) {
+            return tableNameToByteBuffer.get(tableName).getInt();
+        } else {
+            return signature;
+        }
     }
-
-    public boolean isCached(String tableName, String key) {
-        return tableNameToKeyIndexMap.get(tableName).containsKey(key);
+    public void updateOwnership(String tableName, String key, int value) {
+        int index = tableNameToKeyIndexMap.get(tableName).get(key);
+        tableNameToByteBuffer.get(tableName).position(index * 6);
+        tableNameToByteBuffer.get(tableName).putShort((short) value);
+    }
+    public boolean checkOwnership(String tableName, String key) {
+        int index = tableNameToKeyIndexMap.get(tableName).get(key);
+        tableNameToByteBuffer.get(tableName).position(index * 6);
+        short ownershipId = tableNameToByteBuffer.get(tableName).getShort();
+        return ownershipId == workId;
     }
 
 }

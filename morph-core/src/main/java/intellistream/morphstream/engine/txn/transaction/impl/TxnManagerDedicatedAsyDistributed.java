@@ -83,35 +83,26 @@ public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
         StateObject stateObj = stateObjects.get(0);
         String srcTable = stateObj.getTable();
         String srcKey = stateObj.getKey();
-        String[] condition_sourceTables = {srcTable};
-        String[] condition_sourceKeys = {srcKey};
+        HashMap<String, TableRecord> condition_records = new HashMap<>();
+        condition_records.put(stateObj.getName(), null);
 
         if (enableGroup) {
             schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context,
-                    new Request(functionContext, accessType, srcTable,
-                    srcKey, condition_sourceTables, condition_sourceKeys, stateAccess));
+                    new Request(functionContext, accessType, srcTable, srcKey, condition_records, stateAccess));
         } else {
             scheduler.SubmitRequest(context, new Request(functionContext, accessType, srcTable,
-                    srcKey, condition_sourceTables, condition_sourceKeys, stateAccess));
+                    srcKey, condition_records, stateAccess));
         }
         return false;
     }
     private boolean Asy_WriteRecord(StateAccess stateAccess, FunctionContext functionContext) {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        HashMap<String, TableRecord> condition_records = new HashMap<>();
 
-        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
-        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
-
-        for (int i = 0; i < stateObjects.size(); i++) {
-            StateObject stateObj = stateObjects.get(i);
-            String stateObjTable = stateObj.getTable();
-            String stateObjKey = stateObj.getKey();
-
-            condition_tables[i] = stateObjTable;
-            condition_keys[i] = stateObjKey;
+        for (StateObject stateObject : stateObjects) {
+            condition_records.put(stateObject.getName(), null);
         }
-
         StateObject writeStateObj = stateAccess.getStateObjectToWrite();
         String writeTable = writeStateObj.getTable();
         String writeKey = writeStateObj.getKey();
@@ -119,10 +110,10 @@ public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
         if (enableGroup) {
             schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context,
                     new Request(functionContext, accessType, writeTable,
-                            writeKey, condition_tables, condition_keys, stateAccess));
+                            writeKey, condition_records, stateAccess));
         } else {
             scheduler.SubmitRequest(context, new Request(functionContext, accessType, writeTable,
-                    writeKey, condition_tables, condition_keys, stateAccess));
+                    writeKey, condition_records, stateAccess));
         }
         return false;
     }

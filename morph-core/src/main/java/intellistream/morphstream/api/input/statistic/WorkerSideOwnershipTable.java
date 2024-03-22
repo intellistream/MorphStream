@@ -18,6 +18,7 @@ public class WorkerSideOwnershipTable {
     protected int totalWorker;
     public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
     public ByteBuffer ownershipTableBuffer;
+    public ConcurrentHashMap<Integer, Integer> workerIdToTotalKeys = new ConcurrentHashMap<>();//workerId -> totalKeys
     protected final ConcurrentHashMap<String, Tuple2<Integer, Integer>> ownershipTable = new ConcurrentHashMap<>();//Key -> <OwnerWorkerId, index>
     @Getter
     protected final List<String> keysForThisWorker = new ArrayList<>();
@@ -27,6 +28,9 @@ public class WorkerSideOwnershipTable {
     }
     public void putEachKeyForThisWorker(String key) {
         keysForThisWorker.add(key);
+    }
+    public void putTotalKeysForWorker(int workerId, int totalKeys) {
+        workerIdToTotalKeys.put(workerId, totalKeys);
     }
     public void initTableNameToValueList(String tableName) {
         tableNameToValueList.put(tableName, new int[keysForThisWorker.size()]);
@@ -38,6 +42,7 @@ public class WorkerSideOwnershipTable {
     public int getOwnershipWorkerId(String key) {
         return ownershipTable.get(key)._1;
     }
+    public int getOwnershipIndex(String key) { return ownershipTable.get(key)._2; }
     public boolean isWorkerOwnKey(int workerId, String key) {
         return ownershipTable.get(key)._1 == workerId;
     }

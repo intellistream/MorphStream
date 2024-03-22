@@ -20,8 +20,7 @@ import static intellistream.morphstream.util.FaultToleranceConstants.*;
  * TODO: clean ``state" and ``reference".
  */
 public abstract class AbstractOperation {
-    public boolean isRemote;
-
+    public boolean isReference;
     //required by READ_WRITE_and Condition.
     public final String table_name;
     public final FunctionContext txn_context;
