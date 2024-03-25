@@ -11,5 +11,5 @@ import java.util.List;
 @NoArgsConstructor
 public class TransactionDescription {
     private String name;
-    private List<StateAccessDescription> stateAccessDescriptions;
+    private List<StateAccessDescription> stateAccessDescription;
 }

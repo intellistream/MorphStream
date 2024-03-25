@@ -89,10 +89,11 @@ public class JobInitializeUtil {
             add("import client.CliFrontend;");
             add("import intellistream.morphstream.api.Client;");
             add("import intellistream.morphstream.api.state.StateAccess;");
+            add("import intellistream.morphstream.api.output.Result;");
             add("import intellistream.morphstream.api.state.StateAccessDescription;");
             add("import intellistream.morphstream.api.state.StateObject;");
             add("import intellistream.morphstream.api.utils.MetaTypes.AccessType;");
-            add("import intellistream.morphstream.engine.txn.transaction.TxnDescription;\n");
+            add("import intellistream.morphstream.engine.txn.transaction.TxnDescription;");
             add("import java.util.HashMap;");
             add("import java.util.Objects;");
         }};
@@ -125,12 +126,12 @@ public class JobInitializeUtil {
         startJobCodeBuilder.append("        CliFrontend job = CliFrontend.getOrCreate().appName(\"")
                 .append(jobConfiguration.getName()).append("\");\n");
         startJobCodeBuilder.append("        job.LoadConfiguration(null, args);\n");
-        startJobCodeBuilder.append("        job.prepare()\n");
+        startJobCodeBuilder.append("        job.prepare();\n");
         startJobCodeBuilder.append("        HashMap<String, TxnDescription> txnDescriptions = new HashMap<>();\n");
 
         for (TransactionDescription txnDesc : jobConfiguration.getOperatorDescription().getTransactionDescription()) {
             startJobCodeBuilder.append("        TxnDescription ").append(txnDesc.getName()).append("Descriptor = new TxnDescription();\n");
-            for (StateAccessDescription stateAccessDescription : txnDesc.getStateAccessDescriptions()) {
+            for (StateAccessDescription stateAccessDescription : txnDesc.getStateAccessDescription()) {
                 startJobCodeBuilder.append("        StateAccessDescription ").append(stateAccessDescription.getName())
                         .append(" = new StateAccessDescription(\"").append(stateAccessDescription.getName())
                         .append("\", AccessType.").append(stateAccessDescription.getAccessType().toUpperCase()).append(");\n");
@@ -153,16 +154,16 @@ public class JobInitializeUtil {
         }
 
 
-        startJobCodeBuilder.append("        job.setTxnDescriptions(").append(jobConfiguration.getOperatorDescription().getName()).append(", txnDescriptions, 4);\n");
+        startJobCodeBuilder.append("        job.setSpoutCombo(\").append(jobConfiguration.getOperatorDescription().getName()).append(\", txnDescriptions, 4);\n");
         startJobCodeBuilder.append("        try {\n");
         startJobCodeBuilder.append("            job.run();\n");
         startJobCodeBuilder.append("        } catch (InterruptedException ex) {\n");
-        startJobCodeBuilder.append("            if (enable_log) log.error(\"Error in running topology locally\", ex);\n");
+        startJobCodeBuilder.append("            ex.printStackTrace();\n");
         startJobCodeBuilder.append("        }\n");
 
         startJobCodeBuilder.append("    }\n");
 
-        startJobCodeBuilder.append("    public static void main(String[] args) throws Exception {");
+        startJobCodeBuilder.append("    public static void main(String[] args) throws Exception {\n");
         startJobCodeBuilder.append("        startJob(args);\n");
         startJobCodeBuilder.append("    }\n");
         startJobCodeBuilder.append("}");
