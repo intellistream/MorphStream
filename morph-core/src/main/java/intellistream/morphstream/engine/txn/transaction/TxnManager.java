@@ -1,7 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction;
 
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
-import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.scheduler.collector.Collector;
@@ -21,7 +20,6 @@ import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPBFSSc
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSAScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
-import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

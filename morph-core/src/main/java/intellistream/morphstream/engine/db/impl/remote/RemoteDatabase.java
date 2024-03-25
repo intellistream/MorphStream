@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.db.impl;
+package intellistream.morphstream.engine.db.impl.remote;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 public class RemoteDatabase extends Database {
+    private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
     public RemoteDatabase(Configuration configuration) {
         this.storageManager = new RemoteStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
     }

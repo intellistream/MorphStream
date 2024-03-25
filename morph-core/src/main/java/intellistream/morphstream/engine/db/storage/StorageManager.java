@@ -27,7 +27,5 @@ public abstract class StorageManager {
     public Map<String, BaseTable> getTables() {
         throw new UnsupportedOperationException("Not implemented yet");
     }
-    public BaseTable getTable(String tableName) throws DatabaseException {
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
+    public BaseTable getTable(String tableName) throws DatabaseException {throw new UnsupportedOperationException("Not implemented yet");}
 }

@@ -8,7 +8,7 @@ import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.db.impl.RemoteDatabase;
+import intellistream.morphstream.engine.db.impl.remote.RemoteDatabase;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpout;
