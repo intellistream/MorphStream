@@ -1,6 +1,6 @@
 package client.jobmanage;
 
-import client.jobmanage.util.seek.JobInfoSeekUtil;
+import client.jobmanage.util.seek.JobSeekUtil;
 import dao.Batch;
 import dao.Job;
 import org.slf4j.Logger;
@@ -26,7 +26,7 @@ public class JobManager {
      * @return a list of jobs
      */
     public List<Job> getAllJobs() {
-        return JobInfoSeekUtil.getAllJobs();
+        return JobSeekUtil.getAllJobs();
     }
 
     /**
@@ -35,7 +35,7 @@ public class JobManager {
      * @return the job
      */
     public Job getJobById(String jobId) {
-        return JobInfoSeekUtil.getJobById(jobId);
+        return JobSeekUtil.getJobById(jobId);
     }
 
     /**
@@ -43,7 +43,7 @@ public class JobManager {
      * @return a list of batches
      */
     public List<Batch> getAllBatches(String jobId, String operatorId) {
-        return JobInfoSeekUtil.getAllBatches(jobId, operatorId);
+        return JobSeekUtil.getAllBatches(jobId, operatorId);
     }
 
     /**
@@ -53,6 +53,6 @@ public class JobManager {
      * @return a batch
      */
     public Batch getBatchById(String jobId, String operatorId, String batchId) {
-        return JobInfoSeekUtil.getBatchById(jobId, operatorId, batchId);
+        return JobSeekUtil.getBatchById(jobId, operatorId, batchId);
     }
 }

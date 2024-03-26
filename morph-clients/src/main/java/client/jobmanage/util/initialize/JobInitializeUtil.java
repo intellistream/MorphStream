@@ -172,6 +172,22 @@ public class JobInitializeUtil {
     }
 
     /**
+     * Save the code to the file system
+     * @param code code
+     * @param jobId job id
+     * @param jobName job name
+     */
+    public static void saveCode(String code, String jobId, String jobName) {
+        String fileName = String.format("%s/%s/%s.java", Util.jobCompileDirectory, jobId, jobName);
+        Path path = Paths.get(fileName);
+        try {
+            Files.write(path, code.getBytes());
+        } catch (IOException e) {
+            log.error("Error in saving code: " + e.getMessage());
+        }
+    }
+
+    /**
      * Generate a new job id
      *
      * @return job id

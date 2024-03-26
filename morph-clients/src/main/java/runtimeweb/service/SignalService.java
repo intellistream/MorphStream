@@ -1,7 +1,9 @@
 package runtimeweb.service;
 
 import client.impl.SLClient;
+import client.jobmanage.util.initialize.JobCallingUtil;
 import client.jobmanage.util.initialize.JobPrepareUtil;
+import client.jobmanage.util.seek.JobSeekUtil;
 import intellistream.morphstream.api.input.InputSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,9 +71,16 @@ public class SignalService {
         if (!initialized) {
             return false;
         }
+
+        // save the code after job is initialized
+        code = JobInitializeUtil.preprocessedCode(code, configFile);
+        JobInitializeUtil.saveCode(code, String.valueOf(JobSeekUtil.getJobIdByName(jobName)), jobName);
+
         if (startNow) {
             try {
-                SLClient.startJob(new String[]{}); // start the job
+//                SLClient.startJob(new String[]{}); // start the job
+                JobCallingUtil.compileJobByName(jobName);
+                JobCallingUtil.startJobByName(jobName);
                 return true;
             } catch (Exception e) {
                 return false;

@@ -16,9 +16,9 @@ import java.util.List;
 /**
  * JobInfoSeekUtil contains utils used to seek job info from local file system
  */
-public class JobInfoSeekUtil {
+public class JobSeekUtil {
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(JobInfoSeekUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(JobSeekUtil.class);
 
     /**
      * Get all jobs
@@ -112,6 +112,42 @@ public class JobInfoSeekUtil {
                     return objectMapper.readValue(jsonFiles[0], Batch.class);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the job id by job name
+     * @param jobName the name of the job
+     * @return the id of the job
+     */
+    public static Integer getJobIdByName(String jobName) {
+        if (Util.validateAndMakeDirectory(Util.jobInfoDirectory)) {
+            // read all json files and check if the job name matches
+            List<Job> jobs = getAllJobs();
+            for (Job job : jobs) {
+                if (job.getName().equals(jobName)) {
+                    return job.getJobId();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the job name by job id
+     * @param jobId the id of the job
+     * @return the name of the job
+     */
+    public static String getJobNameById(int jobId) {
+        if (Util.validateAndMakeDirectory(Util.jobInfoDirectory)) {
+            // read all json files and check if the job name matches
+            List<Job> jobs = getAllJobs();
+            for (Job job : jobs) {
+                if (job.getJobId() == jobId) {
+                    return job.getName();
                 }
             }
         }
