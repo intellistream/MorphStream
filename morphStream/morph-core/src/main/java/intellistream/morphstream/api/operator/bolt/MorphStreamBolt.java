@@ -63,8 +63,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (enable_latency_measurement)
             operatorTimestamp = System.nanoTime();
         else
-            operatorTimestamp = 0L;//
-        _bid = in.getBID(); //TODO: Refine this, pass bid directly to PRE_TXN_PROCESS?
+            operatorTimestamp = 0L;
+        _bid = in.getBID();
         input_event = in.getValue(0);
 //        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid, ((TransactionalEvent) input_event).getTxnRequestID());
     }

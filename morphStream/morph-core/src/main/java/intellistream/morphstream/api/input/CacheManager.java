@@ -22,7 +22,7 @@ public class CacheManager implements Runnable {
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             TransactionalEvent txnEvent = txnQueue.pollFirst();
-            NativeInterface.__update_states_to_cache(0, 0); //Sync state updates to all caches
+            NativeInterface.__update_states_to_cache("", 0); //Sync state updates to all caches
         }
     }
 

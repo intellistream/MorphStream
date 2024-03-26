@@ -27,10 +27,10 @@ public class NativeInterface {
 
     // Manager notifies VNF instances for pattern change: (1) pause further txn transmission to manager, (2) update CC strategy to instances
     // then, VNF instances should wait for manager to notify again for state movement completion
-    public static native void __pause_txn_processing(HashMap<String, Integer> changedPatterns); //Maps tupleIDs whose pattern changed to their new patterns
+    public static native void __pause_txn_processing(HashMap<String, Integer> statesFromLocalToRemote, HashMap<String, Integer> statesFromRemoteToLocal); //Maps tupleIDs whose pattern changed to their new patterns
 
-    public static native void __get_states_from_cache(); //TODO: Coordinate with VNF instances for state movement during CC switch
-    public static native void __update_states_to_cache(long tupleID, int value);
+    public static native int __get_state_from_cache(String tupleID); //TODO: Coordinate with VNF instances for state movement during CC switch
+    public static native void __update_states_to_cache(String tupleID, int value);
 
     // Manager notifies VNF instances to resume normal txn processing.
     public static native void __resume_txn_processing();

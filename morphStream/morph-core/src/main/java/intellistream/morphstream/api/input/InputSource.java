@@ -53,7 +53,9 @@ public class InputSource {
 //        }
     }
 
-    // Delegate calling from libVNF for possible type changing.
+    //TODO: For all 4 CCs, their bid should be created from the same source (as bid controls DB state versions, crucial during CC switch and offloading write).
+    // Consider create bid as packet IDs.
+    //Delegate calling from libVNF for possible type changing.
     public static void libVNFInsertInputData(byte[] input){
         executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(input));
         rrIndex = (rrIndex + 1) % spoutNum;
