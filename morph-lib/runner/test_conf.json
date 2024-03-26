@@ -1,0 +1,22 @@
+{
+    "role": "SERVER",
+    "conn_type": "IB",
+    "server_id": 0,
+    "udp_port": 2333,
+    "memory_num": 2,
+    "memory_ips": [
+        "10.10.10.1",
+        "10.10.10.2"
+    ],
+
+    "ib_dev_id": 0,
+    "ib_port_id": 1,
+    
+    "server_base_addr": "0x100000",
+    "server_data_len": 2147483648,
+    "block_size": 67108864,
+    "subblock_size": 256,
+    "client_local_size": 1073741824,
+    
+    "num_replication": 3
+}
