@@ -178,7 +178,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
     public String configStr; //TODO: if config string specified, load configs from the file using loadProperties()
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
+    public String rootPath = "/Users/curryzjj/hair-loss/MorphStream/Benchmark";
     @Parameter(names = {"--inputFileType"}, description = "input file type, [txt, csv, json]")
     public int inputFileType = 0;
     @Parameter(names = {"--inputFilePath"}, description = "relative path of input file to the root")

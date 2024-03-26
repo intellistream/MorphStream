@@ -2,10 +2,10 @@ package intellistream.morphstream.engine.db.impl.remote;
 
 public class RemoteCallLibrary {
     static {
-        System.loadLibrary("RemoteCallLibrary");
+        System.load(System.getProperty("java.library.path") + "/RemoteCallLibrary.so");
     }
-    private native long init();
-    private native boolean connect();
-    private native void write(String tableName, String key, int workerId);
-    private native int read(String tableName, String key);
+    public native long init();
+    public native boolean connect();
+    public native void write(String tableName, String key, int workerId);
+    public native int read(String tableName, String key);
 }
