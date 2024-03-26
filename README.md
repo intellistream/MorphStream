@@ -29,7 +29,8 @@ If you use MorphStream in your paper, please cite our work.
   Multicore Processors, ICDE, 2020
 * **[SIGMOD]** Yancan Mao and Jianjun Zhao and Shuhao Zhang and Haikun Liu and Volker Markl. MorphStream: Adaptive
   Scheduling for Scalable Transactional Stream Processing on Multicores, SIGMOD, 2023
-* We are working on another two follow-up works on MorphStream. Stay tuned.
+* **[ICDE]** Jianjun Zhao*, Haikun Liu, Shuhao Zhang, Zhuohui Duan, Xiaofei Liao, Hai Jin, Yu Zhang. Fast Parallel Recovery for Transactional Stream Processing on Multicores, ICDE, 2024
+* **[ICDE]** Siqi Xiang*, Zhonghao Yang*, Shuhao Zhang, Jianjun Zhao, Yancan Mao. MorphStream: Scalable Processing of Transactions over Streams, ICDE (Demo), 2024
 
 ```
 @inproceedings{9101749,
