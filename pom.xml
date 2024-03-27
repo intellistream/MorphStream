@@ -13,7 +13,6 @@
         <module>morph-web</module>
         <module>morph-common</module>
     </modules>
-
     <build>
         <plugins>
             <plugin>

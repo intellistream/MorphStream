@@ -3,6 +3,7 @@ package worker.rdma;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.spout.rdma.FunctionExecutor;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
+import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
@@ -31,6 +32,10 @@ public class MorphStreamWorker extends Thread {
         this.rdmaWorkerManager = new RdmaWorkerManager(false, env.configuration());
         this.spout = new FunctionExecutor("functionExecutor");
         LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is initialized");
+    }
+    public void initialize(HashMap<String, FunctionDescription> functions) throws DatabaseException {
+        this.registerFunction(functions);
+        MorphStreamEnv.get().DatabaseInitialize();
     }
     public void registerFunction(HashMap<String, FunctionDescription> functions) {
         this.spout.registerFunction(functions);

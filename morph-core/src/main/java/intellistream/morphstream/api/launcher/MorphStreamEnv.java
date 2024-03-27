@@ -90,10 +90,8 @@ public class MorphStreamEnv {
         if (isDriver) {
             this.clientLatch = new CountDownLatch(this.configuration().getInt("clientNum", 1) + 1);// Client Number + MorphStreamDriver
             this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));
-            InputSourceInitialize();
         } else {
             this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));
-            DatabaseInitialize();
         }
     }
     public void DatabaseInitialize() throws DatabaseException {

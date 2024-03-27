@@ -9,6 +9,7 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -41,11 +42,12 @@ public class MorphStreamDriver extends Thread {
         rdmaDriverManager = new RdmaDriverManager(true, env.configuration(), statistic);
         workerLatch = MorphStreamEnv.get().workerLatch();
     }
-    public void initialize() {
+    public void initialize() throws IOException {
         for (int i = 0; i < numFrontend; i++) {
             Thread frontend = new Thread(new MorphStreamFrontend(i, zContext, rdmaDriverManager, statistic));
             frontends.add(frontend);
         }
+        MorphStreamEnv.get().InputSourceInitialize();
     }
 
     @Override

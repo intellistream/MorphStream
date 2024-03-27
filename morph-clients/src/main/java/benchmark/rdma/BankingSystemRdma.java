@@ -16,10 +16,10 @@ public class BankingSystemRdma {
                 BankingSystemClient.startClient(new String[]{});
             } else {
                 MorphStreamWorker morphStreamWorker = new MorphStreamWorker();
+                MorphStreamEnv.get().setRdmaWorkerManager(morphStreamWorker.getRdmaWorkerManager());
                 BankingSystemClient client = new BankingSystemClient();
                 client.defineFunction();
-                morphStreamWorker.registerFunction(client.txnDescriptions);
-                MorphStreamEnv.get().setRdmaWorkerManager(morphStreamWorker.getRdmaWorkerManager());
+                morphStreamWorker.initialize(client.txnDescriptions);
                 morphStreamWorker.start();
                 morphStreamWorker.join(10000);
             }
