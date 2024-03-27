@@ -10,6 +10,7 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
@@ -21,7 +22,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public int txnOpId = 0;
     public MetaTypes.OperationStateType operationType = MetaTypes.OperationStateType.BLOCKED;
     public int sourceWorkerId;
-    public volatile ArrayList<String> stateObjectName;
+    public volatile ArrayList<String> stateObjectName = new ArrayList<>();
 
     public Operation(String tableName, String pKey, long bid, boolean isReference, int sourceWorkerId) {
         super(tableName, null, null, null, null, null, bid, null, pKey);
@@ -30,10 +31,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public <Context extends DSContext> Operation(String pKey, String table_name, FunctionContext txn_context, long bid,
-                                                 CommonMetaTypes.AccessType accessType, ArrayList<String> stateObjectName, StateAccess stateAccess) {
+                                                 CommonMetaTypes.AccessType accessType, Set<String> stateObjectName, StateAccess stateAccess) {
         super(table_name, stateAccess, null, txn_context, accessType, null, bid, null, pKey);
         this.isReference = false;
-        this.stateObjectName = stateObjectName;
+        for (String name : stateObjectName) {
+            this.stateObjectName.add(name);
+        }
     }
     public void addBrother(Operation brother) {
         this.brothers.add(brother);

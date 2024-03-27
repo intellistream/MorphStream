@@ -77,7 +77,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public void TxnSubmitFinished(Context context, int batchID) {
         for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
-            Operation operation = new Operation(request.write_key, request.table_name, request.txn_context, bid, request.accessType, (ArrayList<String>) request.condition_records.keySet(), request.stateAccess);
+            Operation operation = new Operation(request.write_key, request.table_name, request.txn_context, bid, request.accessType, request.condition_records.keySet(), request.stateAccess);
             context.tempOperationMap.put(request.stateAccess.getStateAccessName(), operation);
         }
         this.tpg.setupOperations(context.tempOperationMap);

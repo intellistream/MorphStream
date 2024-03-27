@@ -43,7 +43,7 @@ function ResetParameters() {
     stateAccessSkewnessForEvents="0,0"
     abortRatioForEvents="0,0"
     isCyclic=0
-    isDynamic=1
+    isDynamic=0
     workloadType="default,unchanging,unchanging,unchanging"
     shiftRate=1
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
