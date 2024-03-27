@@ -20,7 +20,7 @@ function ResetParameters() {
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=5
+    totalBatch=1
     returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations

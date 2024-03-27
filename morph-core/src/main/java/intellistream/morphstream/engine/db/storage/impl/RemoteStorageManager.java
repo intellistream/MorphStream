@@ -38,9 +38,11 @@ public class RemoteStorageManager extends StorageManager {
         if (!this.workerSideOwnershipTable.ownershipTableReady.compareAndSet(false, true)) {
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         } else {
+            LOG.info("Start to get ownership table");
             while (this.workerSideOwnershipTable.ownershipTableBuffer == null) {
                 this.workerSideOwnershipTable.ownershipTableBuffer = rdmaWorkerManager.getTableBuffer().getOwnershipTable();
             }
+            LOG.info("Start to receive ownership table");
             int[] length = new int[workerSideOwnershipTable.getTotalWorker()];
             for (int i = 0; i < workerSideOwnershipTable.getTotalWorker(); i++) {
                 length[i] = workerSideOwnershipTable.ownershipTableBuffer.getInt();
@@ -71,6 +73,7 @@ public class RemoteStorageManager extends StorageManager {
                 this.cacheBuffer.initLocalCacheBuffer(this.workerSideOwnershipTable.getKeysForThisWorker(), this.workerSideOwnershipTable.tableNameToValueList.get(tableName), tableName);
             }
         }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
     public void loadCache(DSContext context) {
        for (String tableName : tableNames) {

@@ -23,9 +23,7 @@ public class StateObject {
         this.fieldNameToIndex = fieldNameToIndex;
     }
 
-    public void setSchemaRecord(SchemaRecord schemaRecord) {
-        this.schemaRecord = schemaRecord;
-    }
+    public void setSchemaRecord(SchemaRecord schemaRecord) {this.schemaRecord = schemaRecord;}
 
     public String getName() {
         return name;

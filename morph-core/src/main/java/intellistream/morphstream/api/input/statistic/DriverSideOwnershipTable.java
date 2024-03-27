@@ -26,7 +26,7 @@ public class DriverSideOwnershipTable {
         }
     }
     public void put(String key, Integer workerId) {
-        encoded_length += key.length() + 4;//Key length + Total length
+        encoded_length += key.getBytes().length + 4;//Key length + Total length
         this.ownershipTableForEachWorker.get(workerId).add(key);
     }
 
@@ -46,6 +46,11 @@ public class DriverSideOwnershipTable {
     }
 
     public ByteBuffer buffer() {
+        int totalSize = 0;
+        for (ConcurrentSkipListSet<String> ownershipTable : ownershipTableForEachWorker) {
+            totalSize += ownershipTable.size();
+        }
+        System.out.println(totalSize);
         //START_FLAG(Short) + TotalLength(Int) + TotalNumberForEachWorker(Int) * 4 + Length(Int) + Key + Value + Length(Int) + Key + Value + ... + END_FLAG(Short)
         ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(encoded_length + 2 + 4 + 4 * totalWorkers + 2));
         try {
@@ -56,7 +61,7 @@ public class DriverSideOwnershipTable {
             }
             for (int i = 0; i < totalWorkers; i++) {
                 for (String key : ownershipTableForEachWorker.get(i)) {
-                    bout.writeInt(key.length());
+                    bout.writeInt(key.getBytes().length);
                     bout.write(key.getBytes());
                 }
             }

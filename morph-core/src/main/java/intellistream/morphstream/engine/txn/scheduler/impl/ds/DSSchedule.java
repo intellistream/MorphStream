@@ -4,6 +4,7 @@ import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
+import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 import intellistream.morphstream.engine.db.storage.datatype.IntDataBox;
 import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
@@ -22,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class DSSchedule<Context extends DSContext> implements IScheduler<Context> {
@@ -89,6 +91,9 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             this.remoteStorageManager.getOwnershipTable(this.rdmaWorkerManager, context);
             //Send remote operations to remote workers
             for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
+                if (oc.operations.isEmpty()) {
+                    continue;
+                }
                 int remoteWorkerId = this.remoteStorageManager.workerSideOwnershipTable.getOwnershipWorkerId(oc.getPrimaryKey());
                 if (remoteWorkerId != this.managerId) {
                     for (Operation op : oc.operations) {
@@ -178,6 +183,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             this.remoteStorageManager.updateOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId);
             operation.operationType = MetaTypes.OperationStateType.EXECUTED;
         } else {
+            List<DataBox> dataBoxes = new ArrayList<>();
             IntDataBox intDataBox = new IntDataBox();
             if (oc.isLocalState()) {
                 intDataBox.setInt((Integer) oc.getTempValue());
@@ -190,7 +196,8 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     intDataBox.setInt(value);
                 }
             }
-            SchemaRecord readRecord = new SchemaRecord(intDataBox);
+            dataBoxes.add(intDataBox);
+            SchemaRecord readRecord = new SchemaRecord(dataBoxes);
             operation.stateAccess.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
             //UDF updates operation.udfResult, which is the value to be written to writeRecord
             boolean udfSuccess = false;

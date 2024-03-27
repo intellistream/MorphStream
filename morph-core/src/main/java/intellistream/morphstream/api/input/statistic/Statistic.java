@@ -9,11 +9,11 @@ import static intellistream.morphstream.util.PrintTable.printAlignedBorderedTabl
 
 public class Statistic {
     public int shuffleType = 0;
+    public int workNum;
     private Random random = new Random();
     private int delta;
     private int totalEvents = 0;
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
-    public DriverSideOwnershipTable driverSideOwnershipTable;
     private final List<Integer> tempVotes = new ArrayList<>();
     private final Map<Integer, Integer> tempVoteCount = new HashMap<>();
     private final ConcurrentLinkedQueue<String> tempKeys = new ConcurrentLinkedQueue();
@@ -21,8 +21,8 @@ public class Statistic {
         for (int i = 0; i < workerNum; i++) {
             workerIdToInputStatisticMap.put(i, new InputStatistic(i));
         }
-        this.driverSideOwnershipTable = new DriverSideOwnershipTable(workerNum);
         this.shuffleType = shuffleType;
+        this.workNum = workerNum;
         delta = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS") / workerNum;
     }
     public synchronized int add(List<String> keys) {
@@ -33,6 +33,8 @@ public class Statistic {
     }
 
     public DriverSideOwnershipTable getOwnershipTable() {
+        System.out.println(this.tempKeys.size());
+        DriverSideOwnershipTable driverSideOwnershipTable = new DriverSideOwnershipTable(workNum);
         for(String key : this.tempKeys) {
             int value = 0;
             int max = Integer.MIN_VALUE;
@@ -49,12 +51,12 @@ public class Statistic {
     }
 
     public void display() {
-        getOwnershipTable();
+        DriverSideOwnershipTable driverSideOwnershipTable = getOwnershipTable();
         driverSideOwnershipTable.display();
         String[] headers = {"workerId", "totalEvents", "totalKeys", "totalOperations", "averageOperationsPerKey", "maxOperationsPerKey", "withOwnership (%)", "withoutOwnership (%)"};
         String[][] data = new String[workerIdToInputStatisticMap.size()][8];
         for (Map.Entry<Integer, InputStatistic> entry : workerIdToInputStatisticMap.entrySet()) {
-            entry.getValue().display(data, this.driverSideOwnershipTable);
+            entry.getValue().display(data, driverSideOwnershipTable);
         }
         printAlignedBorderedTable(headers, data);
     }

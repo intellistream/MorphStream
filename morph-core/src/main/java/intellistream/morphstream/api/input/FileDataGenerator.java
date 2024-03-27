@@ -123,7 +123,7 @@ public class FileDataGenerator {
     }
 
     private void generateStream() {
-        for (int tupleNumber = 0; tupleNumber < totalEvents; tupleNumber++) {
+        for (int tupleNumber = 0; tupleNumber < totalEvents; tupleNumber ++) {
             if (tupleNumber % (punctuation * totalPartition) == 0) {
                 nextDataGeneratorConfig();
             }
