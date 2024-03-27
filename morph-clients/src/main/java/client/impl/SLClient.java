@@ -7,6 +7,7 @@ import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
+import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,6 +141,9 @@ public class SLClient extends Client {
 
         //Define topology
         slClientJob.setSpoutCombo("sl", txnDescriptions, 4);
+        // create an array of operator IDs for monitoring
+        RuntimeMonitor.setOperatorIDs(new String[]{"sl"});
+
         //TODO: let client determine number of DB loader threads, and update in config, then pass to DBInitializer
         //TODO: loadDBThreadNum = total threads of all stateful operators (bolts)
 

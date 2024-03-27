@@ -94,6 +94,7 @@ public class JobInitializeUtil {
             add("import intellistream.morphstream.api.state.StateObject;");
             add("import intellistream.morphstream.api.utils.MetaTypes.AccessType;");
             add("import intellistream.morphstream.engine.txn.transaction.TxnDescription;");
+            add("import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;");
             add("import java.util.HashMap;");
             add("import java.util.Objects;");
         }};
@@ -153,8 +154,8 @@ public class JobInitializeUtil {
                     .append(txnDesc.getName()).append("Descriptor);\n\n");
         }
 
-
-        startJobCodeBuilder.append("        job.setSpoutCombo(\").append(jobConfiguration.getOperatorDescription().getName()).append(\", txnDescriptions, 4);\n");
+        startJobCodeBuilder.append("        job.setSpoutCombo(jobConfiguration.getOperatorDescription().getName(), txnDescriptions, 4);\n");
+        startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{jobConfiguration.getOperatorDescription().getName()});\n");
         startJobCodeBuilder.append("        try {\n");
         startJobCodeBuilder.append("            job.run();\n");
         startJobCodeBuilder.append("        } catch (InterruptedException ex) {\n");
@@ -180,6 +181,14 @@ public class JobInitializeUtil {
     public static void saveCode(String code, String jobId, String jobName) {
         String fileName = String.format("%s/%s/%s.java", Util.jobCompileDirectory, jobId, jobName);
         Path path = Paths.get(fileName);
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectories(path);
+            } catch (IOException e) {
+                log.error("Error in creating file: " + e.getMessage());
+            }
+        }
+
         try {
             Files.write(path, code.getBytes());
         } catch (IOException e) {

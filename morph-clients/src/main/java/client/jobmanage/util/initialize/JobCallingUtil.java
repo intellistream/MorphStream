@@ -75,7 +75,7 @@ public class JobCallingUtil {
         // start the job
         try {
             Process process = Runtime.getRuntime().exec(runningCommand);
-            // process.waitFor();  // wait for the process to finish
+             process.waitFor();  // wait for the process to finish
         } catch (Exception e) {
             throw new RuntimeException("Failed to start job: " + e.getMessage());
         }
