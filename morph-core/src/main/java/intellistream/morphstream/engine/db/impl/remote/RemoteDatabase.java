@@ -43,11 +43,4 @@ public class RemoteDatabase extends Database {
     public void syncRetrieveLogs(RedoLogResult redoLogResult) throws IOException, ExecutionException, InterruptedException {
         throw new UnsupportedOperationException("Not implemented yet");
     }
-    public static void main(String[] args) {
-        RemoteCallLibrary callLibrary = new RemoteCallLibrary();
-        callLibrary.init();
-        callLibrary.connect();
-        callLibrary.read("table1", "key1");
-        callLibrary.write("table1","key1", 1);
-    }
 }
