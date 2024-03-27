@@ -14,14 +14,13 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 public class RemoteDatabase extends Database {
-    private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
     public RemoteDatabase(Configuration configuration) {
         this.storageManager = new RemoteStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
     }
 
     @Override
     public void InsertRecord(String table, TableRecord record, int partition_id) throws DatabaseException {
-
+        this.storageManager.InsertRecord(table, record, partition_id);
     }
 
     @Override

@@ -4,6 +4,7 @@ import intellistream.morphstream.api.input.statistic.WorkerSideOwnershipTable;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CacheBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.impl.remote.RemoteCallLibrary;
 import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
@@ -19,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 
 public class RemoteStorageManager extends StorageManager {
     private static final Logger LOG = Logger.getLogger(RemoteStorageManager.class);
+    private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
     private String[] tableNames;
     public CacheBuffer cacheBuffer;
     public int totalWorker;
@@ -129,25 +131,20 @@ public class RemoteStorageManager extends StorageManager {
             throw new RuntimeException(e);
         }
     }
-    public void write(String tableName, String key, int workerId) {
-        //TODO: add whether to write to remote database or not
-        LOG.info("Writing to remote database");
+    public void writeRemoteDatabase(String tableName, String key, int workerId) {
+        remoteCallLibrary.write(tableName, key, workerId);
     }
     private int readRemoteDatabase(String tableName, String key) {
         return 0;
     }
 
-    public void initRemoteDataBase() {
-        LOG.info("Initializing remote database");
-    }
-
     @Override
     public void createTable(RecordSchema tableSchema, String tableName, int partitionNum, int numItems) {
-
+        remoteCallLibrary.init();
     }
     @Override
     public void InsertRecord(String table, TableRecord record, int partitionId) throws DatabaseException {
-
+        writeRemoteDatabase(table, record.record_.GetPrimaryKey(), partitionId);
     }
 
     @Override

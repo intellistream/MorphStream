@@ -24,7 +24,7 @@ function ResetParameters() {
     returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
-    isRemoteDB=0
+    isRemoteDB=1
     numberItemsForTables="8000"
     NUM_ITEMS=8000
     tableNames="accounts"

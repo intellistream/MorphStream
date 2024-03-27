@@ -96,8 +96,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     }
                     oc.setLocalState(false);
                 } else {
-                    oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(),
-                            this.managerId, signatureRandom.nextInt()));
+                    oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, signatureRandom.nextInt()));
                     oc.setLocalState(true);
                 }
             }
@@ -141,6 +140,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                 if (op.isReference) {
                     if (this.remoteStorageManager.checkOwnership(op.table_name, op.pKey)) {
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
+                        oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, signatureRandom.nextInt()));
                     }
                 } else {
                     op.tryToCommit(oc);

@@ -115,7 +115,7 @@ public class BankingSystemClient extends Client {
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
         transferDescriptor.addStateAccess("destTransfer", destTransfer);
         destTransfer.addFatherName("srcTransfer");
-        transferDescriptor.comboFunctionsIntoTransaction(Arrays.asList("srcTransfer", "destTransfer"));
+        //transferDescriptor.comboFunctionsIntoTransaction(Arrays.asList("srcTransfer", "destTransfer"));
         this.txnDescriptions.put("transfer", transferDescriptor);
 
         //Define deposit transaction

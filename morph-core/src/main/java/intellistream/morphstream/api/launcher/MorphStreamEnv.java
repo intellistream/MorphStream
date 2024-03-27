@@ -99,15 +99,14 @@ public class MorphStreamEnv {
     public void DatabaseInitialize() throws DatabaseException {
         if (configuration().getBoolean("isRemoteDB", false)) {
             this.database = new RemoteDatabase(configuration);
-            //TODO: Implement the remote database
         } else {
             this.database = new CavaliaDatabase(configuration);
-            this.databaseInitializer.creates_Table();
-            if (configuration.getBoolean("partition", false)) {
-                for (int i = 0; i < configuration.getInt("tthread", 4); i++)
-                    databaseInitializer.setSpinlock_(i, new SpinLock());
-                PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
-            }
+        }
+        this.databaseInitializer.creates_Table();
+        if (configuration.getBoolean("partition", false)) {
+            for (int i = 0; i < configuration.getInt("tthread", 4); i++)
+                databaseInitializer.setSpinlock_(i, new SpinLock());
+            PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
         }
     }
     public void InputSourceInitialize() throws IOException {
