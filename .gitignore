@@ -54,3 +54,4 @@ results/
 *.lock
 *.nolock
 dependency-reduced-pom.xml.DS_Store
+/morph-lib/lib/
