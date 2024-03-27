@@ -238,7 +238,7 @@ public class DatabaseInitializer {
         for (String tableName : tableNames) {
             HashMap<String, Integer> fieldIndexMap = new HashMap<>();
             for (int i = 0; i < fieldNamesMap.get(tableName).length; i++) {
-                fieldIndexMap.put(fieldNamesMap.get(tableName)[i], i + 1); //field index starts from 1
+                fieldIndexMap.put(fieldNamesMap.get(tableName)[i], i); //field index starts from 0
             }
             tableFieldIndexMap.put(tableName, fieldIndexMap);
         }

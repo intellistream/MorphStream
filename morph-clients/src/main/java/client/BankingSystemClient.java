@@ -29,7 +29,7 @@ public class BankingSystemClient extends Client {
             if (Objects.equals(stateAccessName, "srcTransfer")) {
                 StateObject srcAccountState = access.getStateObject("srcAccountState");
                 double srcBalance = srcAccountState.getIntValue("balance");
-                double transferAmount = Double.parseDouble((String) access.getValue("transferAmount"));
+                double transferAmount = Integer.parseInt((String) access.getValue("transferAmount"));
                 if (srcBalance > 100 && srcBalance > transferAmount) {
                     access.udfResult = srcBalance - transferAmount;
                     return true;
@@ -39,7 +39,7 @@ public class BankingSystemClient extends Client {
             } else if (Objects.equals(stateAccessName, "destTransfer")) {
                 StateObject destAccountState = access.getStateObject("destAccountState");
                 double destBalance = destAccountState.getIntValue("balance");
-                double transferAmount = Double.parseDouble((String) access.getValue("transferAmount"));
+                double transferAmount = Integer.parseInt((String) access.getValue("transferAmount"));
                 if (destBalance > 0) {
                     access.udfResult = destBalance + transferAmount;
                     return true;
@@ -51,8 +51,8 @@ public class BankingSystemClient extends Client {
             }
         } else if (Objects.equals(txnName, "deposit")) {
             StateObject srcAccountState = access.getStateObject("srcAccountState");
-            double srcBalance = srcAccountState.getDoubleValue("balance");
-            double depositAmount = Double.parseDouble((String) access.getValue("depositAmount"));
+            double srcBalance = srcAccountState.getIntValue("balance");
+            double depositAmount = Integer.parseInt((String) access.getValue("depositAmount"));
             access.udfResult = srcBalance + depositAmount;
             return true;
         } else {
