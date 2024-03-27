@@ -11,3 +11,4 @@
 export RUNDIR="/home/jjzhao/project/MorphStream"
 export RSTDIR="/home/jjzhao/Benchmark/MorphStream"
 export JAR="/home/jjzhao/project/MorphStream/morph-clients/target/morph-clients-0.1-jar-with-dependencies.jar"
+export LIBDIR="/home/jjzhao/local/lib"

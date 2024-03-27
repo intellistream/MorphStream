@@ -57,7 +57,7 @@ function ResetParameters() {
 }
 
 function runApplication() {
-  echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=/home/jjzhao/local/lib \
+  echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
       --workerId $workerId \
       --workerNum $workerNum \
@@ -107,7 +107,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -Djava.library.path=/home/jjzhao/local/disni/lib -jar -d64 $JAR \
+  java -Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
       --workerId $workerId \
       --workerNum $workerNum \

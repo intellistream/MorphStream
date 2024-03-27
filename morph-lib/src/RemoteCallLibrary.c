@@ -1,6 +1,5 @@
 #include <jni.h>
 #include <stdio.h>
-#include <client.h>
 #include <intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary.h>
 
 /*
@@ -8,7 +7,7 @@
  * Method:    init
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_init (JNIEnv *, jobject)
+JNIEXPORT jlong JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_init (JNIEnv *env, jobject obj)
 {
 printf("init\n");
 }
@@ -18,7 +17,7 @@ printf("init\n");
  * Method:    connect
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_connect (JNIEnv *, jobject)
+JNIEXPORT jboolean JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_connect (JNIEnv *env, jobject obj)
 {
 printf("connect\n");
 }
@@ -28,7 +27,7 @@ printf("connect\n");
  * Method:    write
  * Signature: (Ljava/lang/String;Ljava/lang/String;I)V
  */
-JNIEXPORT void JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_write (JNIEnv *, jobject, jstring, jstring, jint)
+JNIEXPORT void JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_write (JNIEnv *env, jobject obj, jstring sbj, jstring sbj1, jint inj)
 {
 printf("write\n");
 }
@@ -38,7 +37,7 @@ printf("write\n");
  * Method:    read
  * Signature: (Ljava/lang/String;Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_read (JNIEnv *, jobject, jstring, jstring)
+JNIEXPORT jint JNICALL Java_intellistream_morphstream_engine_db_impl_remote_RemoteCallLibrary_read (JNIEnv *env, jobject obj, jstring sbj1, jstring sbj2)
 {
 printf("read\n");
 }
