@@ -152,8 +152,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
                 //Assign updated schemaRecord back to stateAccess
                 operation.stateAccess.setUpdatedStateObject(tempo_record);
-            } else {
-                throw new UnsupportedOperationException();
             }
         } else {
             operation.stateAccess.setAborted();

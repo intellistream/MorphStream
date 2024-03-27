@@ -207,8 +207,12 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     tempo_record.getValues().get(1).setInt((int) udfResult);
                     //Assign updated schemaRecord back to stateAccess
                     operation.stateAccess.setUpdatedStateObject(tempo_record);
-                } else {
-                    throw new UnsupportedOperationException();
+                    //Update State
+                    if (oc.isLocalState()) {
+                        oc.setTempValue(udfResult);
+                    } else {
+                        this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (int) udfResult);
+                    }
                 }
                 operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             } else {

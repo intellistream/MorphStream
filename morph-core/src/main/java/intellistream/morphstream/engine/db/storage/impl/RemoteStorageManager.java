@@ -111,6 +111,24 @@ public class RemoteStorageManager extends StorageManager {
             throw new RuntimeException(e);
         }
     }
+    public void syncWriteRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, int value) {
+        int keyIndex = 0;
+        int tableIndex = 0;
+        for (int i = 0; i < this.tableNames.length; i ++) {
+            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                break;
+            }
+        }
+        keyIndex = keyIndex + this.workerSideOwnershipTable.getOwnershipIndex(key) * 6;
+        int workerId = this.workerSideOwnershipTable.getOwnershipWorkerId(key);
+        try {
+            rdmaWorkerManager.syncWriteRemoteCache(workerId, keyIndex, tableIndex, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void write(String tableName, String key, int workerId) {
         //TODO: add whether to write to remote database or not
         LOG.info("Writing to remote database");

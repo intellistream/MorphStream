@@ -270,4 +270,32 @@ public class RdmaWorkerManager implements Serializable {
         }, readData.getAddress(), readData.getLkey(), new int[]{6}, new long[]{remoteAddress}, new int[]{rkey});
         return atomicInteger.get();
     }
+    public void syncWriteRemoteCache(int workerId, int keyIndex, int tableIndex, int value) throws Exception {
+        RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workerId);
+        RegionToken regionToken = workerRegionTokenMap.get(workerId).getRegionTokens().get(tableIndex);
+
+        long remoteAddress = regionToken.getAddress() + keyIndex;
+        int rkey = regionToken.getLocalKey();
+
+        RdmaBuffer readData = rdmaBufferManager.get(6);
+        ByteBuffer dataBuffer = readData.getByteBuffer();
+
+        dataBuffer.putShort((short) workerId);
+        dataBuffer.putInt(value);
+        dataBuffer.flip();
+
+        CountDownLatch latch = new CountDownLatch(1);
+        rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                rdmaBufferManager.put(readData);
+                latch.countDown();
+            }
+            @Override
+            public void onFailure(Throwable exception) {
+                rdmaBufferManager.put(readData);
+                latch.countDown();
+            }
+        }, readData.getAddress(), readData.getLength(), readData.getLkey(), remoteAddress, rkey);
+    }
 }
