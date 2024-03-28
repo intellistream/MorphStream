@@ -47,14 +47,16 @@ public class MorphStreamWorker extends Thread {
         MeasureTools.Initialize();
         try {
             runTopologyLocally();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void runTopologyLocally() throws InterruptedException {
+    private void runTopologyLocally() throws Exception {
         Topology topology = env.createTopology();
         env.submitTopology(topology);
+        this.rdmaWorkerManager.connectDriver();
+        env.OM().start();
     }
 
 }

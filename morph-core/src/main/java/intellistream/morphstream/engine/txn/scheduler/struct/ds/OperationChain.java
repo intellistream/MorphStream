@@ -17,6 +17,7 @@ public class OperationChain implements Comparable<OperationChain> {
     private Object tempValue;
     @Setter @Getter
     private boolean isLocalState = false;
+    public int tryTimes = 0;
     public OperationChain(String tableName, String primaryKey) {
         this.primaryKey = primaryKey;
         this.tableName = tableName;

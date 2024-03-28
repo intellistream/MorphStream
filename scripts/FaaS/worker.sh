@@ -1,11 +1,12 @@
 #!/bin/bash
 source ../dir.sh || exit
+Id=$1
 function ResetParameters() {
     #Cluster Configurations
     isDriver=0
-    workerId=0
+    workerId=$Id
     workerNum=2
-    tthread=4
+    tthread=8
     clientNum=4
     frontendNum=4
     clientClassName="client.BankingSystemClient"
@@ -19,14 +20,14 @@ function ResetParameters() {
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 2000 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=1
+    sendMessagePerFrontend=`expr 100 \* $tthread \* $workerNum / $frontendNum`
+    totalBatch=2
     returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
-    numberItemsForTables="8000"
-    NUM_ITEMS=8000
+    numberItemsForTables="1000"
+    NUM_ITEMS=1000
     tableNames="accounts"
     keyDataTypesForTables="String"
     valueDataTypesForTables="double"

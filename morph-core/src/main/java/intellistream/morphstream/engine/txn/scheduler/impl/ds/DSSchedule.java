@@ -146,21 +146,28 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     if (this.remoteStorageManager.checkOwnership(op.table_name, op.pKey)) {
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
                         oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, signatureRandom.nextInt()));
+                        oc.deleteOperation(op);
                     }
                 } else {
                     op.tryToCommit(oc);
                 }
             } else if (op.isReady()) {
-                if (op.earlyAbort()) {
-                    oc.deleteOperation(op);
-                    continue;
-                } else {
+                if (op.isReference) {
                     execute(op, oc);
-                }
-                if (op.getOperationType().equals(MetaTypes.OperationStateType.ABORTED)) {
-                    oc.deleteOperation(op);
-                } else if (op.getOperationType().equals(MetaTypes.OperationStateType.EXECUTED)) {
-                    op.tryToCommit(oc);
+                } else {
+                    if (op.earlyAbort()) {
+                        oc.deleteOperation(op);
+                        continue;
+                    } else {
+                        execute(op, oc);
+                    }
+                    if (op.getOperationType().equals(MetaTypes.OperationStateType.ABORTED)) {
+                        oc.deleteOperation(op);
+                    } else if (op.getOperationType().equals(MetaTypes.OperationStateType.EXECUTED)) {
+                        op.tryToCommit(oc);
+                    } else if (op.getOperationType().equals(MetaTypes.OperationStateType.READY)) {
+                        break;
+                    }
                 }
             } else {
                 break;
@@ -190,10 +197,13 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             } else {
                 int signature = signatureRandom.nextInt();
                 int value = this.remoteStorageManager.syncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, signature);
+                oc.tryTimes ++;
                 if (value == signature) {
                     return;
                 } else {
                     intDataBox.setInt(value);
+                    LOG.info("Read from remote cache with " +  oc.tryTimes + "times");
+                    oc.tryTimes = 0;
                 }
             }
             dataBoxes.add(intDataBox);
@@ -211,7 +221,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     Object udfResult = operation.stateAccess.udfResult; //value to be written
                     oc.setTempValue(udfResult);
                     SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                    tempo_record.getValues().get(1).setInt((int) udfResult);
+                    tempo_record.getValues().get(0).setInt((int) udfResult);
                     //Assign updated schemaRecord back to stateAccess
                     operation.stateAccess.setUpdatedStateObject(tempo_record);
                     //Update State

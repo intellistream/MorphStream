@@ -57,10 +57,10 @@ public class CacheBuffer {
             return signature;
         }
     }
-    public void updateOwnership(String tableName, String key, int value) {
+    public void updateOwnership(String tableName, String key, int workerId) {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         tableNameToByteBuffer.get(tableName).position(index * 6);
-        tableNameToByteBuffer.get(tableName).putShort((short) value);
+        tableNameToByteBuffer.get(tableName).putShort((short) workerId);
     }
     public boolean checkOwnership(String tableName, String key) {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);

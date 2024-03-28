@@ -36,7 +36,6 @@ public class TopologySubmitter {
         //launch
         OM = new OptimizationManager(g, conf);//support different kinds of optimization module.
         OM.lanuch(MorphStreamEnv.get().database());
-        OM.start();
         return g.topology;
     }
 }

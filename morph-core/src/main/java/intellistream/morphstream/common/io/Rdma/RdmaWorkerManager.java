@@ -74,16 +74,6 @@ public class RdmaWorkerManager implements Serializable {
         //Result count to decide whether to send the batched results
         SOURCE_CONTROL.getInstance().config(MorphStreamEnv.get().configuration().getInt("frontendNum"), MorphStreamEnv.get().configuration().getInt("sendMessagePerFrontend"), this.totalFunctionExecutors, MorphStreamEnv.get().configuration().getInt("returnResultPerExecutor"));
 
-        //Connect to driver and receive region token from driver
-        driverRdmaChannel = rdmaNode.getRdmaChannel(new InetSocketAddress(driverHost, driverPort), true, conf.rdmaChannelConf.getRdmaChannelType());
-        dwRegionTokenGroup.addRegionTokens(rdmaNode.getRemoteRegionToken(driverRdmaChannel));
-
-        //Send region token to driver
-        WDRegionTokenGroup wdRegionTokenGroup = new WDRegionTokenGroup();
-        wdRegionTokenGroup.addRegionToken(rdmaBufferManager.getCircularMessageBuffer().createRegionToken());
-        wdRegionTokenGroup.addRegionToken(rdmaBufferManager.getTableBuffer().createRegionToken());
-        rdmaNode.sendRegionTokenToRemote(driverRdmaChannel, wdRegionTokenGroup.getRegionTokens(), driverHost);
-
         //Wait for other workers to connect
         rdmaNode.bindConnectCompleteListener(new RdmaConnectionListener() {
             @Override
@@ -132,6 +122,17 @@ public class RdmaWorkerManager implements Serializable {
         }
         //Wait for other workers to connect
         MorphStreamEnv.get().workerLatch().await();
+    }
+    public void connectDriver() throws Exception {
+        //Connect to driver and receive region token from driver
+        driverRdmaChannel = rdmaNode.getRdmaChannel(new InetSocketAddress(driverHost, driverPort), true, conf.rdmaChannelConf.getRdmaChannelType());
+        dwRegionTokenGroup.addRegionTokens(rdmaNode.getRemoteRegionToken(driverRdmaChannel));
+
+        //Send region token to driver
+        WDRegionTokenGroup wdRegionTokenGroup = new WDRegionTokenGroup();
+        wdRegionTokenGroup.addRegionToken(rdmaBufferManager.getCircularMessageBuffer().createRegionToken());
+        wdRegionTokenGroup.addRegionToken(rdmaBufferManager.getTableBuffer().createRegionToken());
+        rdmaNode.sendRegionTokenToRemote(driverRdmaChannel, wdRegionTokenGroup.getRegionTokens(), driverHost);
     }
     public CircularMessageBuffer getCircularRdmaBuffer() {
         return rdmaBufferManager.getCircularMessageBuffer();
