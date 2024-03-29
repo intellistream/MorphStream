@@ -1,5 +1,10 @@
 package intellistream.morphstream.api.input;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.StorageManager;
+import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.nio.ByteBuffer;
@@ -7,28 +12,82 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class CacheManager implements Runnable {
 
-    private ConcurrentLinkedDeque<TransactionalEvent> txnQueue;
+public class OffloadCCManager implements Runnable {
+
+    private Thread managerThread;
+    private static ConcurrentLinkedDeque<byte[]> txnQueue;
+    private ExecutorService writeExecutor;
+    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
+    private static final int writeThreadPoolSize = 4; //TODO: Hardcoded
 
-    public CacheManager() {
+    public OffloadCCManager() {
         txnQueue = new ConcurrentLinkedDeque<>();
+        this.writeExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
+    }
+
+    public void initialize() {
+        managerThread = new Thread(this);
+        managerThread.start();
     }
 
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            TransactionalEvent txnEvent = txnQueue.pollFirst();
-            NativeInterface.__update_states_to_cache("", 0); //Sync state updates to all caches
+            byte[] txnByteArray = txnQueue.pollFirst();
+            long txnID = 0;
+            int txnType = 1; //TODO: Hardcode, 0:R, 1:W
+            if (txnType == 1) {
+                NativeInterface.__txn_finished_results(txnID, 0); //Immediate ACK TODO: Pay attention to the case of txn(R+W)
+                writeExecutor.submit(() -> writeGlobalStates(txnID, txnByteArray));
+
+            } else if (txnType == 0) {
+                synchronized (this) { //TODO: Consider replace lock with MVCC
+                    int txnResult = readGlobalStates(txnID, txnByteArray);
+                    NativeInterface.__txn_finished_results(txnID, txnResult); //ACK
+                }
+            }
         }
     }
 
     //Called by VNF instances
-    public void addCacheTxn(byte[] byteArray) {
-        txnQueue.add(inputFromStringToTxnVNFEvent(byteArray));
+    public static void addOffloadTxn(byte[] byteArray) {
+        txnQueue.add(byteArray);
+    }
+
+    private static void writeGlobalStates(long txnID, byte[] byteArray) {
+        String tableID = "table";
+        String tupleID = "0";
+        int value = 0;
+        try {
+            TableRecord condition_record = storageManager.getTable(tableID).SelectKeyRecord(tupleID);
+            SchemaRecord srcRecord = condition_record.content_.readPreValues(txnID);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+            tempo_record.getValues().get(1).setInt(value);
+            condition_record.content_.updateMultiValues(-1, 0, true, tempo_record);
+
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static int readGlobalStates(long txnID, byte[] byteArray) {
+        // Check the latest value from DB global store
+        int value;
+        String tupleID = "0";
+        try {
+            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(tupleID);
+            value = (int) condition_record.content_.readPreValues(txnID).getValues().get(1).getDouble(); //TODO: read the corresponding version, blocking
+
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
+        return value;
     }
 
     /**

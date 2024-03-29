@@ -5,47 +5,44 @@ import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-public class OffloadManager implements Runnable {
+public class PartitionCCManager implements Runnable {
 
-    private ConcurrentLinkedDeque<TransactionalEvent> txnQueue;
+    private Thread managerThread;
+    private static ConcurrentLinkedDeque<TransactionalEvent> txnQueue;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
 
-    public OffloadManager() {
+    private static final int partitionSize = 10;
+    private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance. The key labels partition start index.
+
+    public PartitionCCManager() {
         txnQueue = new ConcurrentLinkedDeque<>();
+        partitionOwnership = new HashMap<>();
+    }
+
+    public void initialize() {
+        managerThread = new Thread(this);
+        managerThread.start();
     }
 
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             TransactionalEvent txnEvent = txnQueue.pollFirst();
-            int txnType = 1; //TODO: Hardcode, 0:R, 1:W
-            int txnResult = -1;
-            if (txnType == 1) {
-                writeGlobalStates(0,0);
-            } else if (txnType == 0) {
-                txnResult = readGlobalStates(0);
-            }
-            NativeInterface.__txn_finished_results(txnEvent.getTxnRequestID(), txnResult);
+            int txnResult = NativeInterface.__request_lock(partitionOwnership.get(0), txnEvent.getTxnRequestID(), 0);
+            NativeInterface.__txn_finished(txnEvent.getTxnRequestID());
         }
     }
 
     //Called by VNF instances
-    public void addOffloadTxn(byte[] byteArray) {
+    public static void addPartitionTxn(byte[] byteArray) {
         txnQueue.add(inputFromStringToTxnVNFEvent(byteArray));
     }
 
-    private void writeGlobalStates(long tupleID, int value) {
-        // Apply serially to DB according to txn timestamps
-    }
-
-    private int readGlobalStates(long tupleID) {
-        // Check the latest value from DB
-        return 0;
-    }
 
     /**
      * Packet string format (split by ";"):

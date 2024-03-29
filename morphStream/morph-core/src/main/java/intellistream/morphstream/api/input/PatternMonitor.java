@@ -16,31 +16,35 @@ import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 
 public class PatternMonitor implements Runnable {
+    private Thread monitorThread;
     /**
      * Below 4 hashmaps store per-window pattern data for each state-tuple
      * */
-    private final ConcurrentHashMap<String, Integer> readCountMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Integer> writeCountMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Integer> ownershipMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Integer> conflictCountMap = new ConcurrentHashMap<>();
-    private final HashMap<String, Integer> statePatterns = new HashMap<>(); //0: Low_conflict, 1: Read_heavy, 2: Write_heavy, 3: High_conflict
-    private final HashMap<String, Integer> changedStatesOldPatterns = new HashMap<>();
-    private final HashMap<String, Integer> changedStatesNewPatterns = new HashMap<>();
-    private final HashMap<String, Integer> statesFromLocalToRemote = new HashMap<>(); //state tuples whose pattern changed from 0/1 (local state cache) to 2/3 (global state)
-    private final HashMap<String, Integer> statesFromRemoteToLocal = new HashMap<>(); //state tuples whose pattern changed from 2/3 (global state) to 0/1 (local state cache)
-    private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-
-    private final int conflictThreshold = 10;
-    private final int typeThreshold = 10;
-
-    private ConcurrentLinkedDeque<TxnMetaData> txnMetaDataQueue;
-    private int punctuation_interval;
-    private int txnCounter;
+    private static final ConcurrentHashMap<String, Integer> readCountMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Integer> writeCountMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Integer> ownershipMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Integer> conflictCountMap = new ConcurrentHashMap<>();
+    private static final HashMap<String, Integer> statePatterns = new HashMap<>(); //0: Low_conflict, 1: Read_heavy, 2: Write_heavy, 3: High_conflict
+    private static final HashMap<String, Integer> changedStatesOldPatterns = new HashMap<>();
+    private static final HashMap<String, Integer> changedStatesNewPatterns = new HashMap<>();
+    private static final HashMap<String, Integer> statesFromLocalToRemote = new HashMap<>(); //state tuples whose pattern changed from 0/1 (local state cache) to 2/3 (global state)
+    private static final HashMap<String, Integer> statesFromRemoteToLocal = new HashMap<>(); //state tuples whose pattern changed from 2/3 (global state) to 0/1 (local state cache)
+    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private static final int conflictThreshold = 10;
+    private static final int typeThreshold = 10;
+    private static ConcurrentLinkedDeque<TxnMetaData> txnMetaDataQueue;
+    private static int punctuation_interval;
+    private static int txnCounter;
 
     public PatternMonitor() {
         txnMetaDataQueue = new ConcurrentLinkedDeque<>();
         txnCounter = 0;
         punctuation_interval = 100;
+    }
+
+    public void initialize() {
+        monitorThread = new Thread(this);
+        monitorThread.start();
     }
 
     @Override
@@ -70,12 +74,12 @@ public class PatternMonitor implements Runnable {
 
 
     // Called by VNF instances
-    public void addTxnMetaData(TxnMetaData txnMetaData) { //TODO: Align format with VNF instances
+    public static void addTxnMetaData(TxnMetaData txnMetaData) { //TODO: Align format with VNF instances
         txnMetaDataQueue.add(txnMetaData);
     }
 
 
-    private void updatePatternData(TxnMetaData txnData) {
+    private static void updatePatternData(TxnMetaData txnData) {
         HashMap<String, Integer> operations = txnData.getOperationMap(); //TODO: The txnData datastructure could be optimized
         for (Map.Entry<String, Integer> operation : operations.entrySet()) {
             String tupleID = operation.getKey();
@@ -92,7 +96,7 @@ public class PatternMonitor implements Runnable {
         }
     }
 
-    private void judgePattern() {
+    private static void judgePattern() {
 
         for (Map.Entry<String, Integer> entry : readCountMap.entrySet()) {
             String state = entry.getKey();
@@ -135,7 +139,7 @@ public class PatternMonitor implements Runnable {
         }
     }
 
-    private void ccSwitch() {
+    private static void ccSwitch() {
         NativeInterface.__pause_txn_processing(statesFromLocalToRemote, statesFromRemoteToLocal);
 
         //TODO: State movement optimizations

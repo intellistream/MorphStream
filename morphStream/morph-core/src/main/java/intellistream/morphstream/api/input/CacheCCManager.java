@@ -5,38 +5,36 @@ import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-public class LockManager implements Runnable {
-
-    private ConcurrentLinkedDeque<TransactionalEvent> txnQueue;
+public class CacheCCManager implements Runnable {
+    private Thread managerThread;
+    private static ConcurrentLinkedDeque<TransactionalEvent> txnQueue;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
 
-    private int partitionSize = 10;
-    private HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance. The key labels partition start index.
-
-    public LockManager() {
+    public CacheCCManager() {
         txnQueue = new ConcurrentLinkedDeque<>();
-        partitionOwnership = new HashMap<>();
+    }
+
+    public void initialize() {
+        managerThread = new Thread(this);
+        managerThread.start();
     }
 
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             TransactionalEvent txnEvent = txnQueue.pollFirst();
-            int txnResult = NativeInterface.__request_lock(partitionOwnership.get(0), txnEvent.getTxnRequestID(), 0);
-            NativeInterface.__txn_finished(txnEvent.getTxnRequestID());
+            NativeInterface.__update_states_to_cache("", 0); //Sync state updates to all caches
         }
     }
 
     //Called by VNF instances
-    public void addLockTxn(byte[] byteArray) {
+    public void addCacheTxn(byte[] byteArray) {
         txnQueue.add(inputFromStringToTxnVNFEvent(byteArray));
     }
-
 
     /**
      * Packet string format (split by ";"):
