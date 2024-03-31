@@ -12,7 +12,7 @@ import static intellistream.morphstream.engine.txn.scheduler.struct.OperationCha
 
 /**
  * We still call it OperationChain in TPG but with different representation
- * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies construction.
+ * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies' construction.
  */
 public class OperationChain implements Comparable<OperationChain> {
     public final String tableName;

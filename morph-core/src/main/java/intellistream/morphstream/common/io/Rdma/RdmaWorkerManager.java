@@ -257,7 +257,10 @@ public class RdmaWorkerManager implements Serializable {
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 int ownershipId = dataBuffer.getShort();
                 int value = dataBuffer.getInt();
+                LOG.info("Get ownership: " + ownershipId + " value: " + value);
                 if (ownershipId == managerId) {
+                    if (atomicInteger.get() == value)
+                        LOG.info("error");
                     atomicInteger.set(value);
                 }
                 rdmaBufferManager.put(readData);
@@ -291,6 +294,7 @@ public class RdmaWorkerManager implements Serializable {
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 rdmaBufferManager.put(readData);
                 latch.countDown();
+                LOG.info("Write to remote cache with workerId: " +  workerId);
             }
             @Override
             public void onFailure(Throwable exception) {

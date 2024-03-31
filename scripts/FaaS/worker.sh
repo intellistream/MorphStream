@@ -22,7 +22,7 @@ function ResetParameters() {
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 100 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=2
-    returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
+    returnResultPerExecutor=`expr 400 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
@@ -108,7 +108,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
+  java -Xms80g -Xmx80g -Xss100M -XX:+PrintGCDetails -Xmn60g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
       --workerId $workerId \
       --workerNum $workerNum \

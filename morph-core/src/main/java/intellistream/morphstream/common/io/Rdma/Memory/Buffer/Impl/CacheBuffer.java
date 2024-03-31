@@ -12,7 +12,7 @@ import java.util.*;
 
 public class CacheBuffer {
     private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(CacheBuffer.class);
-    private int workId;
+    private int workerId;
     @Getter
     private String[] tableNames;
     private final HashMap<String, RdmaBuffer> tableNameToRdmaBuffer = new HashMap<>();
@@ -21,7 +21,7 @@ public class CacheBuffer {
 
 
     public CacheBuffer(int workId, IbvPd ibvPb, int length, String[] tableNames) throws Exception {
-        this.workId = workId;
+        this.workerId = workId;
         for (String tableName : tableNames) {
             tableNameToRdmaBuffer.put(tableName, new RdmaBuffer(ibvPb, length));
             tableNameToKeyIndexMap.put(tableName, new HashMap<>());
@@ -40,14 +40,14 @@ public class CacheBuffer {
         ByteBuffer byteBuffer = tableNameToRdmaBuffer.get(tableName).getByteBuffer();
 
         for (int i = 0; i < keys.size(); i++) {
-            byteBuffer.putShort((short) workId);//OwnershipId (Short) 2
+            byteBuffer.putShort((short) workerId);//OwnershipId (Short) 2
             byteBuffer.putInt(values[i]);//Value (Int) 4
             tableNameToKeyIndexMap.get(tableName).put(keys.get(i), i);//Key, index
         }
         byteBuffer.flip();
     }
 
-    public int readCache(String tableName, String key, int workerId, int signature) {
+    public synchronized int readCache(String tableName, String key, int workerId, int signature) {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         tableNameToByteBuffer.get(tableName).position(index * 6);
         short ownershipId = tableNameToByteBuffer.get(tableName).getShort();
@@ -57,16 +57,16 @@ public class CacheBuffer {
             return signature;
         }
     }
-    public void updateOwnership(String tableName, String key, int workerId) {
+    public synchronized void updateOwnership(String tableName, String key, int workerId) {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         tableNameToByteBuffer.get(tableName).position(index * 6);
         tableNameToByteBuffer.get(tableName).putShort((short) workerId);
     }
-    public boolean checkOwnership(String tableName, String key) {
+    public synchronized boolean checkOwnership(String tableName, String key) {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         tableNameToByteBuffer.get(tableName).position(index * 6);
         short ownershipId = tableNameToByteBuffer.get(tableName).getShort();
-        return ownershipId == workId;
+        return ownershipId == (short) workerId;
     }
 
 }

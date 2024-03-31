@@ -33,19 +33,18 @@ public class Statistic {
     }
 
     public DriverSideOwnershipTable getOwnershipTable() {
-        System.out.println(this.tempKeys.size());
         DriverSideOwnershipTable driverSideOwnershipTable = new DriverSideOwnershipTable(workNum);
         for(String key : this.tempKeys) {
-            int value = 0;
+            int id = 0;
             int max = Integer.MIN_VALUE;
             for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
                 int number = inputStatistic.getNumber(key);
                 if (number > max) {
                     max = number;
-                    value = inputStatistic.workerId;
+                    id = inputStatistic.workerId;
                 }
             }
-            driverSideOwnershipTable.put(key, value);
+            driverSideOwnershipTable.put(key, id);
         }
         return driverSideOwnershipTable;
     }

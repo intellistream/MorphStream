@@ -130,6 +130,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             PROCESS(context, mark_ID, batchID);
         } while (!FINISHED(context));
         RESET(context);
+        LOG.info("Finish evaluation: " + context.thisThreadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
     @Override
@@ -147,6 +148,9 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
                         oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, signatureRandom.nextInt()));
                         oc.deleteOperation(op);
+                        LOG.info("Commit reference operation");
+                    } else {
+                        break;
                     }
                 } else {
                     op.tryToCommit(oc);
@@ -154,6 +158,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             } else if (op.isReady()) {
                 if (op.isReference) {
                     execute(op, oc);
+                    break;
                 } else {
                     if (op.earlyAbort()) {
                         oc.deleteOperation(op);
@@ -189,6 +194,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
         if (operation.isReference) {
             this.remoteStorageManager.updateOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId);
             operation.operationType = MetaTypes.OperationStateType.EXECUTED;
+            LOG.info("Reference operation from worker: " + operation.sourceWorkerId);
         } else {
             List<DataBox> dataBoxes = new ArrayList<>();
             IntDataBox intDataBox = new IntDataBox();
@@ -202,7 +208,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     return;
                 } else {
                     intDataBox.setInt(value);
-                    LOG.info("Read from remote cache with " +  oc.tryTimes + "times");
+                    LOG.info("Read from remote cache with " +  oc.tryTimes + " times");
                     oc.tryTimes = 0;
                 }
             }
@@ -210,8 +216,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             SchemaRecord readRecord = new SchemaRecord(dataBoxes);
             operation.stateAccess.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
             //UDF updates operation.udfResult, which is the value to be written to writeRecord
-            boolean udfSuccess = false;
-            udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+            boolean udfSuccess = clientObj.transactionUDF(operation.stateAccess);
             AppConfig.randomDelay();//To quantify the overhead of user-defined function
             if (udfSuccess) {
                 if (operation.accessType == CommonMetaTypes.AccessType.WRITE

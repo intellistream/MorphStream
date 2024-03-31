@@ -21,7 +21,7 @@ function ResetParameters() {
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 100 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=2
-    returnResultPerExecutor=`expr 10000 \* $frontendNum / $workerNum / $tthread`
+    returnResultPerExecutor=`expr 400 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
     isRemoteDB=0

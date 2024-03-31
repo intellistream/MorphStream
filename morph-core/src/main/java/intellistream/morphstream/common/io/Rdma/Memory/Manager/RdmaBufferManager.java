@@ -40,7 +40,7 @@ public abstract class RdmaBufferManager {
         return getOrCreateAllocatorStack(length).get();
     }
     public void put(RdmaBuffer rdmaBuffer) {
-
+        getOrCreateAllocatorStack(rdmaBuffer.getLength()).put(rdmaBuffer);
     }
     private AllocatorStack getOrCreateAllocatorStack(int length) {
         AllocatorStack allocatorStack = allocStackMap.get(length);

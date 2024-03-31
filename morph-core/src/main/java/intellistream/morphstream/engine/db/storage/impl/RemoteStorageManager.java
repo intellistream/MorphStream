@@ -48,20 +48,20 @@ public class RemoteStorageManager extends StorageManager {
                 length[i] = workerSideOwnershipTable.ownershipTableBuffer.getInt();
                 workerSideOwnershipTable.putTotalKeysForWorker(i, length[i]);
             }
-            for (int i = 0; i < workerSideOwnershipTable.getTotalWorker(); i++) {
-                for (int j = 0; j < length[i]; j++) {
+            for (int workerId = 0; workerId < workerSideOwnershipTable.getTotalWorker(); workerId ++) {
+                for (int index = 0; index < length[workerId]; index ++) {
                     int keyLength = workerSideOwnershipTable.ownershipTableBuffer.getInt();
                     byte[] keyBytes = new byte[keyLength];
                     workerSideOwnershipTable.ownershipTableBuffer.get(keyBytes);
                     String key = new String(keyBytes);
-                    workerSideOwnershipTable.putEachOwnership(key, i, j);
-                    if (i == rdmaWorkerManager.getManagerId()) {
+                    workerSideOwnershipTable.putEachOwnership(key, workerId, index);
+                    if (workerId == rdmaWorkerManager.getManagerId()) {
                         workerSideOwnershipTable.putEachKeyForThisWorker(key);
                     }
-                    for (String tableName : tableNames) {
-                        workerSideOwnershipTable.initTableNameToValueList(tableName);
-                    }
                 }
+            }
+            for (String tableName : tableNames) {
+                workerSideOwnershipTable.initTableNameToValueList(tableName);
             }
             LOG.info("Get ownership table");
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -102,11 +102,11 @@ public class RemoteStorageManager extends StorageManager {
         int keyIndex = 0;
         int tableIndex = 0;
         for (int i = 0; i < this.tableNames.length; i ++) {
-            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
                 break;
             }
+            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
         }
         keyIndex = keyIndex + this.workerSideOwnershipTable.getOwnershipIndex(key) * 6;
         int workerId = this.workerSideOwnershipTable.getOwnershipWorkerId(key);
@@ -120,11 +120,11 @@ public class RemoteStorageManager extends StorageManager {
         int keyIndex = 0;
         int tableIndex = 0;
         for (int i = 0; i < this.tableNames.length; i ++) {
-            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
                 break;
             }
+            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
         }
         keyIndex = keyIndex + this.workerSideOwnershipTable.getOwnershipIndex(key) * 6;
         int workerId = this.workerSideOwnershipTable.getOwnershipWorkerId(key);
@@ -135,10 +135,10 @@ public class RemoteStorageManager extends StorageManager {
         }
     }
     public void writeRemoteDatabase(String tableName, String key, int workerId) {
-        remoteCallLibrary.write(tableName, key, workerId);
+        //remoteCallLibrary.write(tableName, key, workerId);
     }
     private int readRemoteDatabase(String tableName, String key) {
-        return 0;
+        return 100;
     }
 
     @Override

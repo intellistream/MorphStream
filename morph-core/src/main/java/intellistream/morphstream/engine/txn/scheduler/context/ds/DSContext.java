@@ -1,7 +1,5 @@
 package intellistream.morphstream.engine.txn.scheduler.context.ds;
 
-import intellistream.morphstream.api.input.statistic.DriverSideOwnershipTable;
-import intellistream.morphstream.api.input.statistic.WorkerSideOwnershipTable;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.txn.scheduler.Request;
@@ -25,7 +23,11 @@ public class DSContext implements SchedulerContext {
     private final List<Operation> remoteOperations = new ArrayList<>();
     public ArrayDeque<Request> requests;//functions in one DAG
     public final transient HashMap<String, Operation> tempOperationMap = new HashMap<>();//temp map for operations to set up dependencies
-    private final Deque<OperationChain> allocatedTasks = new ArrayDeque<>();
+    private final Deque<OperationChain> allocatedLocalTasks = new ArrayDeque<>();
+    private final Deque<OperationChain> allocatedRemoteTasks = new ArrayDeque<>();
+    private boolean useLocal = true;
+    private int localCount = 0;
+    private int remoteCount = 0;
     private int totalOperations = 0;
     public int scheduledOperations = 0;
     public OperationChain ready_oc;
@@ -38,13 +40,45 @@ public class DSContext implements SchedulerContext {
         requests.push(request);
     }
     public void next() {
-        if (ready_oc != null) {
-            allocatedTasks.remove(ready_oc);
-            if (!ready_oc.isFinished()) {
-                allocatedTasks.addLast(ready_oc);
+        if (useLocal) {
+            if (ready_oc != null) {
+                allocatedLocalTasks.remove(ready_oc);
+                if (!ready_oc.isFinished()) {
+                    allocatedLocalTasks.addLast(ready_oc);
+                }
+            }
+        } else {
+            if (ready_oc != null) {
+                allocatedRemoteTasks.remove(ready_oc);
+                if (!ready_oc.isFinished()) {
+                    allocatedRemoteTasks.addLast(ready_oc);
+                }
             }
         }
-        ready_oc = allocatedTasks.peekFirst();
+        switchLocal();
+        if (useLocal) {
+            ready_oc = allocatedLocalTasks.peekFirst();
+            localCount++;
+        } else {
+            ready_oc = allocatedRemoteTasks.peekFirst();
+            remoteCount++;
+        }
+    }
+
+    private void switchLocal() {
+        if (useLocal) {
+            if (localCount > this.allocatedLocalTasks.size()) {
+                if (!allocatedRemoteTasks.isEmpty())
+                    useLocal = false;
+                localCount = 0;
+            }
+        } else {
+            if (remoteCount > this.allocatedRemoteTasks.size()) {
+                if (!allocatedLocalTasks.isEmpty())
+                    useLocal = true;
+                remoteCount = 0;
+            }
+        }
     }
 
     public OperationChain createTask(String tableName, String key) {
@@ -52,7 +86,11 @@ public class DSContext implements SchedulerContext {
     }
 
     public void addTasks(OperationChain oc) {
-        this.allocatedTasks.add(oc);
+        if (oc.isLocalState()) {
+            this.allocatedLocalTasks.add(oc);
+        } else {
+            this.allocatedRemoteTasks.add(oc);
+        }
         totalOperations = totalOperations + oc.operations.size();
     }
     public boolean isFinished() {
@@ -66,6 +104,10 @@ public class DSContext implements SchedulerContext {
         ready_oc = null;
         remoteOperations.clear();
         receivedWorker.clear();
+        tempOperationMap.clear();
+        localCount = 0;
+        remoteCount = 0;
+        useLocal = true;
     }
     public List<Operation> receiveRemoteOperations(RdmaWorkerManager rdmaWorkerManager) {
         while (receivedWorker.size() != totalWorker) {
