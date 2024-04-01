@@ -75,7 +75,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                     }
                 }
             }
-            } catch (BrokenBarrierException | IOException | DatabaseException ex) {
+        } catch (BrokenBarrierException | IOException | DatabaseException ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -92,9 +92,13 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                 for (int i = 0; i < this.threadId; i++) {
                     myOffset += lengthQueue.get(i);
                 }
-                msgBuffer = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().read(myOffset, myLength);
-                counter ++;
-                LOG.info("ThreadId : " + threadId + " receive: " + counter);
+                if (myLength != 0) {
+                    msgBuffer = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().read(myOffset, myLength);
+                    counter ++;
+                    LOG.info("ThreadId : " + threadId + " receive: " + counter);
+                } else {
+                    context.stop_running();
+                }
             } else {
                 return null;
             }

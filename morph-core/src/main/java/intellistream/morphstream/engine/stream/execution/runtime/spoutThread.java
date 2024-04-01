@@ -63,7 +63,6 @@ public class spoutThread extends executorThread {
     }
 
     protected void _execute() throws InterruptedException {
-
         _execute_noControl();
 
     }

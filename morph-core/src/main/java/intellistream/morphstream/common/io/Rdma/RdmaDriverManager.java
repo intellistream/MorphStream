@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import static intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL.FINISH_FLAG;
+import static intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL.*;
 
 public class RdmaDriverManager {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaDriverManager.class);
@@ -164,10 +164,16 @@ public class RdmaDriverManager {
         if (workerRdmaChannelMap.get(workId) == null) {
             return;
         }
-        RdmaBuffer writeData = rdmaBufferManager.get(6);
+        int tthread = MorphStreamEnv.get().configuration().getInt("tthread");
+        RdmaBuffer writeData = rdmaBufferManager.get(8 + 4 * tthread);
         ByteBuffer dataBuffer = writeData.getByteBuffer();
 
-        dataBuffer.putShort(FINISH_FLAG);
+        dataBuffer.putShort(START_FLAG);//2
+        dataBuffer.putInt(0);//4
+        for (int i = 0; i < tthread; i++) {
+            dataBuffer.putInt(0);//4 * tthread
+        }
+        dataBuffer.putShort(END_FLAG);//2
         dataBuffer.flip();
 
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
