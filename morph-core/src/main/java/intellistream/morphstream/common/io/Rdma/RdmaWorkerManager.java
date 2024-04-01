@@ -258,7 +258,6 @@ public class RdmaWorkerManager implements Serializable {
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 int ownershipId = dataBuffer.getShort();
                 int value = dataBuffer.getInt();
-                LOG.info("Get ownership: " + ownershipId + " value: " + value);
                 if (ownershipId == managerId) {
                     if (atomicInteger.get() == value)
                         LOG.info("error");
