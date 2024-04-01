@@ -37,9 +37,10 @@ public class CacheBuffer {
         return regionTokens;
     }
     public void initLocalCacheBuffer(List<String> keys, int[] values, String tableName) throws IOException {
+        LOG.info("The number of ownership keys is " + keys.size());
         ByteBuffer byteBuffer = tableNameToRdmaBuffer.get(tableName).getByteBuffer();
 
-        for (int i = 0; i < keys.size(); i++) {
+        for (int i = 0; i < keys.size(); i ++) {
             byteBuffer.putShort((short) workerId);//OwnershipId (Short) 2
             byteBuffer.putInt(values[i]);//Value (Int) 4
             tableNameToKeyIndexMap.get(tableName).put(keys.get(i), i);//Key, index

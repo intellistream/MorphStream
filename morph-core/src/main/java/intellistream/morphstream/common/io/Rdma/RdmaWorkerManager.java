@@ -272,6 +272,7 @@ public class RdmaWorkerManager implements Serializable {
                 latch.countDown();
             }
         }, readData.getAddress(), readData.getLkey(), new int[]{6}, new long[]{remoteAddress}, new int[]{rkey});
+        latch.await();
         return atomicInteger.get();
     }
     public void syncWriteRemoteCache(int workerId, int keyIndex, int tableIndex, int value) throws Exception {
@@ -302,5 +303,6 @@ public class RdmaWorkerManager implements Serializable {
                 latch.countDown();
             }
         }, readData.getAddress(), readData.getLength(), readData.getLkey(), remoteAddress, rkey);
+        latch.await();
     }
 }

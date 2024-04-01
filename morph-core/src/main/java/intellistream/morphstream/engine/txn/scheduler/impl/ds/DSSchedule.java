@@ -112,6 +112,9 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             tpg.setupDependencies(context);
             for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
+                if (oc.operations.isEmpty()) {
+                    continue;
+                }
                 oc.setDsContext(context);
                 context.addTasks(oc);
             }

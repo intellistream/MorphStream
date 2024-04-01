@@ -22,7 +22,7 @@ public class DriverSideOwnershipTable {
     public DriverSideOwnershipTable(int totalWorkers) {
         this.totalWorkers = totalWorkers;
         for (int i = 0; i < totalWorkers; i++) {
-            ownershipTableForEachWorker.add(new ConcurrentSkipListSet<String>());
+            ownershipTableForEachWorker.add(new ConcurrentSkipListSet());
         }
     }
     public void put(String key, Integer workerId) {

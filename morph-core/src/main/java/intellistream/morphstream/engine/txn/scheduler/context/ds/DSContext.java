@@ -42,14 +42,12 @@ public class DSContext implements SchedulerContext {
     public void next() {
         if (useLocal) {
             if (ready_oc != null) {
-                allocatedLocalTasks.remove(ready_oc);
                 if (!ready_oc.isFinished()) {
                     allocatedLocalTasks.addLast(ready_oc);
                 }
             }
         } else {
             if (ready_oc != null) {
-                allocatedRemoteTasks.remove(ready_oc);
                 if (!ready_oc.isFinished()) {
                     allocatedRemoteTasks.addLast(ready_oc);
                 }
@@ -57,23 +55,23 @@ public class DSContext implements SchedulerContext {
         }
         switchLocal();
         if (useLocal) {
-            ready_oc = allocatedLocalTasks.peekFirst();
-            localCount++;
+            ready_oc = allocatedLocalTasks.pollFirst();
+            localCount ++;
         } else {
-            ready_oc = allocatedRemoteTasks.peekFirst();
-            remoteCount++;
+            ready_oc = allocatedRemoteTasks.pollFirst();
+            remoteCount ++;
         }
     }
 
     private void switchLocal() {
         if (useLocal) {
-            if (localCount > this.allocatedLocalTasks.size()) {
+            if (localCount >= this.allocatedLocalTasks.size()) {
                 if (!allocatedRemoteTasks.isEmpty())
                     useLocal = false;
                 localCount = 0;
             }
         } else {
-            if (remoteCount > this.allocatedRemoteTasks.size()) {
+            if (remoteCount >= this.allocatedRemoteTasks.size()) {
                 if (!allocatedLocalTasks.isEmpty())
                     useLocal = true;
                 remoteCount = 0;
