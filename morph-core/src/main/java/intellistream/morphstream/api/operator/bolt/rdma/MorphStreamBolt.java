@@ -12,6 +12,7 @@ import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
@@ -166,7 +167,12 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 throw new RuntimeException(e);
             }
         }
-
+        marker = new Tuple(this.thread_Id, context, new Marker(DEFAULT_STREAM_ID, -1, eventQueue.size(), 0, "punctuation"));
+        try {
+            sink.execute(marker);
+        } catch (InterruptedException | DatabaseException | BrokenBarrierException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

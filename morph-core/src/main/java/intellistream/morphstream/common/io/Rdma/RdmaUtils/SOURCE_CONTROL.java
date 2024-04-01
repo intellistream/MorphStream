@@ -9,6 +9,7 @@ public class SOURCE_CONTROL {
     private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
     public static short START_FLAG = 0x6FFF;
     public static short END_FLAG = 0x7FFF;
+    public static short FINISH_FLAG = 0x5FFF;
     private CyclicBarrier driverStartBarrier;
     private CyclicBarrier driverEndBarrier;
     private CyclicBarrier workerStartBarrier;

@@ -18,6 +18,7 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt {
     protected TransactionalEvent input_event;
+    public Tuple marker;
     protected long _bid;
     public AbstractMorphStreamBolt(String id, Logger log, int fid) {
         super(id, log, fid);

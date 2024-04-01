@@ -21,11 +21,19 @@ public class ApplicationSink extends AbstractSink {
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
-        Result result = (Result) in.getValue(0);
-        try {
-            MorphStreamEnv.get().rdmaWorkerManager().sendResults(this.thread_Id, new FunctionMessage(result.toString()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (in.isMarker()) {
+            try {
+                MorphStreamEnv.get().rdmaWorkerManager().sendResultBatch(this.thread_Id);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            Result result = (Result) in.getValue(0);
+            try {
+                MorphStreamEnv.get().rdmaWorkerManager().sendResults(this.thread_Id, new FunctionMessage(result.toString()));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

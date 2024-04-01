@@ -146,52 +146,53 @@ public class RdmaWorkerManager implements Serializable {
     public void sendResults(int senderThreadId, FunctionMessage functionMessage) throws Exception {
         this.resultBatch.add(senderThreadId, functionMessage);
         if (this.resultBatch.getTotalResultCount(senderThreadId) >= SOURCE_CONTROL.getInstance().getResultPerExecutor()) {
-            SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
-            if (senderThreadId == 0)
-                sendResultBatch();
-            SOURCE_CONTROL.getInstance().workerEndSendResultBarrier();
+            sendResultBatch(senderThreadId);
         }
     }
-    public void sendResultBatch() throws Exception {
-        ByteBuffer byteBuffer = this.resultBatch.buffer();
-        byteBuffer.flip();
+    public void sendResultBatch(int senderThreadId) throws Exception {
+        SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
+        if (senderThreadId == 0) {
+            ByteBuffer byteBuffer = this.resultBatch.buffer();
+            byteBuffer.flip();
 
-        RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
-        ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
-        dataBuffer.put(byteBuffer);
-        dataBuffer.flip();
+            RdmaBuffer rdmaBuffer = rdmaBufferManager.get(byteBuffer.capacity());
+            ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
+            dataBuffer.put(byteBuffer);
+            dataBuffer.flip();
 
-        RdmaChannel rdmaChannel = driverRdmaChannel;
-        RegionToken regionToken = dwRegionTokenGroup.getResultsToken();
+            RdmaChannel rdmaChannel = driverRdmaChannel;
+            RegionToken regionToken = dwRegionTokenGroup.getResultsToken();
 
-        long remoteAddress = regionToken.getAddress();
-        int rkey = regionToken.getLocalKey();
-        CountDownLatch latch = new CountDownLatch(1);
-        rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
-            @Override
-            public void onSuccess(ByteBuffer buffer, Integer imm) {
-                try {
-                    rdmaBuffer.getByteBuffer().clear();
-                    rdmaBufferManager.put(rdmaBuffer);
-                    regionToken.setAddress(remoteAddress + byteBuffer.capacity());
-                    resultBatch.clear();
-                    latch.countDown();
-                    LOG.info("Worker " + managerId + " sends results" + " to driver.");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+            long remoteAddress = regionToken.getAddress();
+            int rkey = regionToken.getLocalKey();
+            CountDownLatch latch = new CountDownLatch(1);
+            rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
+                @Override
+                public void onSuccess(ByteBuffer buffer, Integer imm) {
+                    try {
+                        rdmaBuffer.getByteBuffer().clear();
+                        rdmaBufferManager.put(rdmaBuffer);
+                        regionToken.setAddress(remoteAddress + byteBuffer.capacity());
+                        resultBatch.clear();
+                        latch.countDown();
+                        LOG.info("Worker " + managerId + " sends results" + " to driver.");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-            }
-            @Override
-            public void onFailure(Throwable exception) {
-                try {
-                    rdmaBuffer.getByteBuffer().clear();
-                    rdmaBufferManager.put(rdmaBuffer);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                @Override
+                public void onFailure(Throwable exception) {
+                    try {
+                        rdmaBuffer.getByteBuffer().clear();
+                        rdmaBufferManager.put(rdmaBuffer);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-            }
-        }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
-        latch.await();
+            }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
+            latch.await();
+        }
+        SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
     }
     public void sendRemoteOperations(int senderThreadId, int receiverWorkerId, FunctionMessage functionMessage) {
         this.remoteOperationBatchMap.get(receiverWorkerId).addMessage(senderThreadId, functionMessage);

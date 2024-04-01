@@ -24,6 +24,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+import static intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL.FINISH_FLAG;
+
 public class RdmaDriverManager {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaDriverManager.class);
     private final RdmaNode rdmaNode;
@@ -156,6 +158,49 @@ public class RdmaDriverManager {
                 }
             }
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
+        latch.await();
+    }
+    public void sendFinish(int workId) throws Exception {
+        if (workerRdmaChannelMap.get(workId) == null) {
+            return;
+        }
+        RdmaBuffer writeData = rdmaBufferManager.get(6);
+        ByteBuffer dataBuffer = writeData.getByteBuffer();
+
+        dataBuffer.putShort(FINISH_FLAG);
+        dataBuffer.flip();
+
+        RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
+        RegionToken regionToken = workerRegionTokenMap.get(workId).getTableToken();
+
+        long remoteAddress = regionToken.getAddress();
+        int rkey = regionToken.getLocalKey();
+        CountDownLatch latch = new CountDownLatch(1);
+        rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                try {
+                    writeData.getByteBuffer().clear();
+                    rdmaBufferManager.put(writeData);
+                    regionToken.setAddress(remoteAddress + dataBuffer.capacity());
+                    latch.countDown();
+                    LOG.info("Driver sends finish flag to worker " + workId);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                try {
+                    writeData.getByteBuffer().clear();
+                    rdmaBufferManager.put(writeData);
+                    latch.countDown();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, writeData.getAddress(), writeData.getLength(), writeData.getLkey(), remoteAddress, rkey);
         latch.await();
     }
     private void sendOwnershipTable(int workId) throws Exception {
