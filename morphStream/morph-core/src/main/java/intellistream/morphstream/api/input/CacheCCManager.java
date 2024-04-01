@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class CacheCCManager implements Runnable {
     private Thread managerThread;
-    private static ConcurrentLinkedDeque<TransactionalEvent> txnQueue;
+    private static ConcurrentLinkedDeque<byte[]> txnQueue;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
 
@@ -26,14 +26,17 @@ public class CacheCCManager implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            TransactionalEvent txnEvent = txnQueue.pollFirst();
-            NativeInterface.__update_states_to_cache("", 0); //Sync state updates to all caches
+            byte[] txnByteArray = txnQueue.pollFirst();
+            long txnID = 0;
+            String tupleID = "0"; //TODO: Hardcoded
+            int value = 0;
+            NativeInterface.__update_states_to_cache(tupleID, value); //Sync state updates to all caches
         }
     }
 
     //Called by VNF instances
     public void addCacheTxn(byte[] byteArray) {
-        txnQueue.add(inputFromStringToTxnVNFEvent(byteArray));
+        txnQueue.add(byteArray);
     }
 
     /**

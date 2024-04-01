@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 public class PartitionCCManager implements Runnable {
 
     private Thread managerThread;
-    private static ConcurrentLinkedDeque<TransactionalEvent> txnQueue;
+    private static ConcurrentLinkedDeque<byte[]> txnQueue;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
 
@@ -32,15 +32,18 @@ public class PartitionCCManager implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            TransactionalEvent txnEvent = txnQueue.pollFirst();
-            int txnResult = NativeInterface.__request_lock(partitionOwnership.get(0), txnEvent.getTxnRequestID(), 0);
-            NativeInterface.__txn_finished(txnEvent.getTxnRequestID());
+            byte[] txnByteArray = txnQueue.pollFirst();
+            long txnID = 0;
+            String tupleID = "0"; //TODO: Hardcoded
+            int value = 0;
+            int txnResult = NativeInterface.__request_lock(partitionOwnership.get(0), tupleID, value);
+            NativeInterface.__txn_finished(txnID);
         }
     }
 
     //Called by VNF instances
     public static void addPartitionTxn(byte[] byteArray) {
-        txnQueue.add(inputFromStringToTxnVNFEvent(byteArray));
+        txnQueue.add(byteArray);
     }
 
 

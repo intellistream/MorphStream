@@ -35,7 +35,7 @@ public class NativeInterface {
     // Manager notifies VNF instances to resume normal txn processing.
     public static native void __resume_txn_processing();
 
-    public static native int __request_lock(int instanceID, long tupleID, int value); //Value==-1: R, returns read result; Value==others: value to be written, returns -1.
+    public static native int __request_lock(int instanceID, String tupleID, int value); //Value==-1: R, returns read result; Value==others: value to be written, returns -1.
 
     // Load the native library when the class is initialized
     static {

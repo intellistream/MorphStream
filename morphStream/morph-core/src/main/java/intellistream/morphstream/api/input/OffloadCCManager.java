@@ -20,7 +20,7 @@ public class OffloadCCManager implements Runnable {
 
     private Thread managerThread;
     private static ConcurrentLinkedDeque<byte[]> txnQueue;
-    private ExecutorService writeExecutor;
+    private ExecutorService offloadExecutor;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
@@ -28,7 +28,7 @@ public class OffloadCCManager implements Runnable {
 
     public OffloadCCManager() {
         txnQueue = new ConcurrentLinkedDeque<>();
-        this.writeExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
+        this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
     }
 
     public void initialize() {
@@ -43,8 +43,8 @@ public class OffloadCCManager implements Runnable {
             long txnID = 0;
             int txnType = 1; //TODO: Hardcode, 0:R, 1:W
             if (txnType == 1) {
-                NativeInterface.__txn_finished_results(txnID, 0); //Immediate ACK TODO: Pay attention to the case of txn(R+W)
-                writeExecutor.submit(() -> writeGlobalStates(txnID, txnByteArray));
+                NativeInterface.__txn_finished_results(txnID, 0); //Immediate ACK
+                offloadExecutor.submit(() -> writeGlobalStates(txnID, txnByteArray));
 
             } else if (txnType == 0) {
                 synchronized (this) { //TODO: Consider replace lock with MVCC

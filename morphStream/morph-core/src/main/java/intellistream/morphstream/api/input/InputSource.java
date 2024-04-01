@@ -1,6 +1,5 @@
 package intellistream.morphstream.api.input;
 
-import com.esotericsoftware.minlog.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import intellistream.morphstream.configuration.CONTROL;
@@ -53,8 +52,6 @@ public class InputSource {
 //        }
     }
 
-    //TODO: For all 4 CCs, their bid should be created from the same source (as bid controls DB state versions, crucial during CC switch and offloading write).
-    // Consider create bid as packet IDs.
     //Delegate calling from libVNF for possible type changing.
     public static void libVNFInsertInputData(byte[] input){
         executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(input));
@@ -115,6 +112,8 @@ public class InputSource {
         byte[] flagByte = splitByteArrays.get(3);
         byte[] isAbortByte = splitByteArrays.get(4);
 
+        long timestamp = 0; // TODO: Pass-in timestamp from VNF instance
+
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         buffer.clear();
         buffer.put(reqIDByte);
@@ -133,14 +132,14 @@ public class InputSource {
         String flagStr = String.valueOf(flag);
         boolean isAbortBool = isAbort != 0;
 
-        TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(bid, txnReqID, keys, flagStr, isAbortBool);
+        TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(timestamp, txnReqID, keys, flagStr, isAbortBool);
 
         if (createTimestampForEvent) {
             txnEvent.setOriginTimestamp(System.nanoTime());
         } else {
             txnEvent.setOriginTimestamp(0L);
         }
-        bid++;
+//        bid++;
         return txnEvent;
     }
 
