@@ -25,7 +25,7 @@ public abstract class RdmaBufferManager {
     protected static final ExecutorService executorService = ExecutorsServiceContext.getInstance();
     public RdmaBufferManager(IbvPd pd, RdmaChannelConf conf) throws IOException {
         this.pd = pd;
-        this.minimumAllocationSize = Math.min(10, MIN_BLOCK_SIZE);
+        this.minimumAllocationSize = Math.min(6, MIN_BLOCK_SIZE);
         this.maxCacheSize = conf.maxBufferAllocationSize();
     }
 
