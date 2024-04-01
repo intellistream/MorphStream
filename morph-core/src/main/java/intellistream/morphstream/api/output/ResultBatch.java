@@ -82,6 +82,13 @@ public class ResultBatch {
     public int getTotalResultCount(int functionExecutorId) {
         return functionExecutorTotalResultCountMap.get(functionExecutorId);
     }
+    public int getAllResultCount() {
+        int total = 0;
+        for (int i = 0; i < sendThreads; i++) {
+            total += functionExecutorTotalResultCountMap.get(i);
+        }
+        return total;
+    }
     public void clear() {
         for (int i = 0; i < sendThreads; i++) {
             results.get(i).clear();

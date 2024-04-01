@@ -173,9 +173,9 @@ public class RdmaWorkerManager implements Serializable {
                         rdmaBuffer.getByteBuffer().clear();
                         rdmaBufferManager.put(rdmaBuffer);
                         regionToken.setAddress(remoteAddress + byteBuffer.capacity());
+                        LOG.info("Worker " + managerId + " sends " + resultBatch.getAllResultCount() + " results" + " to driver.");
                         resultBatch.clear();
                         latch.countDown();
-                        LOG.info("Worker " + managerId + " sends results" + " to driver.");
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
