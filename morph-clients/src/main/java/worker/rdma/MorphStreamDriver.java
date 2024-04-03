@@ -63,22 +63,28 @@ public class MorphStreamDriver extends Thread {
         }
         MorphStreamEnv.get().clientLatch().countDown();
         ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
+        MorphStreamDriverJoin();
     }
-    public void MorphStreamDriverJoin() throws InterruptedException {
-        this.frontends.get(0).join();
-        boolean allFinished = false;
-        while (!allFinished) {
-            allFinished = true;
-            for (int i = 0; i < frontends.size(); i++) {
-                if (frontends.get(i).isRunning) {
-                    allFinished = false;
-                    break;
+    public void MorphStreamDriverJoin() {
+        try {
+            this.frontends.get(0).join();
+            boolean allFinished = false;
+            while (!allFinished) {
+                allFinished = true;
+                for (int i = 0; i < frontends.size(); i++) {
+                    if (frontends.get(i).isRunning) {
+                        allFinished = false;
+                        break;
+                    }
                 }
+                Thread.sleep(1000);
             }
-            Thread.sleep(1000);
+            this.rdmaDriverManager.close();
+            LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + "k functions/s");
+
+            System.exit(0);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        this.rdmaDriverManager.close();
-        LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + "k functions/s");
-        System.exit(0);
     }
 }
