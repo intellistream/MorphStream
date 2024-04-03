@@ -177,7 +177,7 @@ public class RdmaDriverManager {
         dataBuffer.flip();
 
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
-        RegionToken regionToken = workerRegionTokenMap.get(workId).getTableToken();
+        RegionToken regionToken = workerRegionTokenMap.get(workId).getCircularMessageToken();
 
         long remoteAddress = regionToken.getAddress();
         int rkey = regionToken.getLocalKey();

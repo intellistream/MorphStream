@@ -27,7 +27,7 @@ public class CircularMessageBuffer {
         }
         this.totalThreads = totalThreads;
     }
-    public Tuple2<Long, ByteBuffer>  canRead(int threadId) throws IOException {
+    public Tuple2<Long, ByteBuffer> canRead(int threadId) throws IOException {
         long baseOffset = 0L;
         canRead[threadId] = this.buffer.getByteBuffer(readOffset[threadId], 6);//START_FLAG(short) + TotalLength(Int)
         short start_flag = canRead[threadId].getShort();

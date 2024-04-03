@@ -22,7 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MorphStreamFrontend extends Thread{
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamFrontend.class);
-      private boolean isRunning = true;
+    private boolean isRunning = true;
+    private boolean isSending = true;
     private int threadId;
     private ZMQ.Socket frontend;// Frontend socket talks to Driver over TCP
     private RdmaDriverManager rdmaDriverManager;
@@ -50,43 +51,47 @@ public class MorphStreamFrontend extends Thread{
         }
     }
 
-    public void asyncReceiveFunctionOutput() throws IOException {
-        ByteBuffer results = getResult();
-        if (results != null && results.hasRemaining()) {
-            int length = results.getInt();
-            byte[] bytes = new byte[length];
-            results.get(bytes);
-            receiveCount ++;
-            if (receiveCount == totalEventToReceive) {
-                isRunning = false;
+    public void asyncReceiveFunctionOutput(){
+        try {
+            ByteBuffer results = getResult();
+            if (results != null && results.hasRemaining()) {
+                int length = results.getInt();
+                byte[] bytes = new byte[length];
+                results.get(bytes);
+                receiveCount ++;
+                LOG.info("ThreadId : " + threadId + " receive " + receiveCount + " results");
+                if (receiveCount == totalEventToReceive) {
+                    isRunning = false;
+                }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
-    public void invokeFunctionToWorker(int workId) throws Exception {
-        rdmaDriverManager.send(this.threadId, workId, new FunctionMessage(tempInput));
-        sendCount ++;
-        if (sendCount == totalEventToReceive) {
-            rdmaDriverManager.sendFinish(this.threadId);
+    private void invokeFunctionToWorker(){
+        ZMsg msg = ZMsg.recvMsg(frontend, false);
+        if (msg != null) {
+            try {
+                tempInput = msg.getLast().toString();
+                tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
+                rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getAllKeys()), new FunctionMessage(tempInput));
+                sendCount ++;
+                if (sendCount == totalEventToReceive) {
+                    rdmaDriverManager.sendFinish(this.threadId);
+                    isSending = false;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     public void run(){
         while (!interrupted() && isRunning) {
-            ZMsg msg = ZMsg.recvMsg(frontend, false);
-            if (msg != null) {
-                try {
-                    tempInput = msg.getLast().toString();
-                    tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
-                    invokeFunctionToWorker(getWorkId(tempEvent.getAllKeys()));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+            if (isSending) {
+                invokeFunctionToWorker();
             }
-            try {
-                asyncReceiveFunctionOutput();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            asyncReceiveFunctionOutput();
         }
         LOG.info("ThreadId : " + threadId + " sendCount: " + sendCount + " receiveCount: " + receiveCount);
     }
@@ -118,7 +123,7 @@ public class MorphStreamFrontend extends Thread{
         return workerIdToResultBufferMap.get(hasRemaining());
     }
     private int hasRemaining() {
-        for (int i = 0; i < workerIdToResultBufferMap.size(); i++) {
+        for (int i = 0; i < workIdList.size(); i++) {
             if (workerIdToResultBufferMap.get(i) != null && workerIdToResultBufferMap.get(i).hasRemaining()) {
                 return i;
             }

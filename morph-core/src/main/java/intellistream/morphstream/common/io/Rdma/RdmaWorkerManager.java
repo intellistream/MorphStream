@@ -151,7 +151,7 @@ public class RdmaWorkerManager implements Serializable {
     }
     public void sendResultBatch(int senderThreadId) throws Exception {
         SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
-        if (senderThreadId == 0) {
+        if (senderThreadId == 0 && this.resultBatch.getAllResultCount() > 0 ){
             ByteBuffer byteBuffer = this.resultBatch.buffer();
             byteBuffer.flip();
 
