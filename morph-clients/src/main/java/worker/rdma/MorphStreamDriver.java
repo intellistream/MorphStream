@@ -12,6 +12,7 @@ import org.zeromq.ZMQ;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 public class MorphStreamDriver extends Thread {
@@ -22,7 +23,7 @@ public class MorphStreamDriver extends Thread {
     private final MorphStreamEnv env = MorphStreamEnv.get();
     private final CountDownLatch workerLatch;
     private final int numFrontend;
-    private final List<Thread> frontends = new ArrayList<>();
+    private final List<MorphStreamFrontend> frontends = new ArrayList<>();
     private final RdmaDriverManager rdmaDriverManager;
     private final Statistic statistic;
     public MorphStreamDriver() throws Exception {
@@ -44,8 +45,7 @@ public class MorphStreamDriver extends Thread {
     }
     public void initialize() throws IOException {
         for (int i = 0; i < numFrontend; i++) {
-            Thread frontend = new Thread(new MorphStreamFrontend(i, zContext, rdmaDriverManager, statistic));
-            frontends.add(frontend);
+            frontends.add(new MorphStreamFrontend(i, zContext, rdmaDriverManager, statistic));
         }
         MorphStreamEnv.get().InputSourceInitialize();
     }
@@ -59,8 +59,26 @@ public class MorphStreamDriver extends Thread {
         }
         for (int i = 0; i < numFrontend; i++) {
             frontends.get(i).start();
+            frontends.get(i).setSystemStartTime(System.nanoTime());
         }
         MorphStreamEnv.get().clientLatch().countDown();
         ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
+    }
+    public void MorphStreamDriverJoin() throws InterruptedException {
+        this.frontends.get(0).join();
+        boolean allFinished = false;
+        while (!allFinished) {
+            allFinished = true;
+            for (int i = 0; i < frontends.size(); i++) {
+                if (frontends.get(i).isRunning) {
+                    allFinished = false;
+                    break;
+                }
+            }
+            Thread.sleep(1000);
+        }
+        this.rdmaDriverManager.close();
+        LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + "k functions/s");
+        System.exit(0);
     }
 }

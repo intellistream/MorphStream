@@ -3,6 +3,7 @@ package intellistream.morphstream.api.input.statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static intellistream.morphstream.util.PrintTable.printAlignedBorderedTable;
@@ -13,6 +14,7 @@ public class Statistic {
     private Random random = new Random();
     private int delta;
     private int totalEvents = 0;
+    private final ConcurrentHashMap<Integer, Double> frontendIdToThroughput = new ConcurrentHashMap<>();
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
     private final List<Integer> tempVotes = new ArrayList<>();
     private final Map<Integer, Integer> tempVoteCount = new HashMap<>();
@@ -155,5 +157,15 @@ public class Statistic {
     public void clear() {
         //TODO: How to use the information in the ownership table
         this.tempKeys.clear();
+    }
+    public void addThroughput(int frontendId, double throughput) {
+        frontendIdToThroughput.put(frontendId, throughput);
+    }
+    public double getThroughput() {
+        double sum = 0;
+        for (Double throughput : frontendIdToThroughput.values()) {
+            sum += throughput;
+        }
+        return sum;
     }
 }

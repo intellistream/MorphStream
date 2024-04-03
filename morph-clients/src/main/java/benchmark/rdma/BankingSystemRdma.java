@@ -21,7 +21,6 @@ public class BankingSystemRdma {
                 client.defineFunction();
                 morphStreamWorker.initialize(client.txnDescriptions);
                 morphStreamWorker.start();
-                morphStreamWorker.join(10000);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

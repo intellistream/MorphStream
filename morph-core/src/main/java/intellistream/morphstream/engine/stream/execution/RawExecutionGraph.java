@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.stream.execution;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 public class RawExecutionGraph implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(RawExecutionGraph.class);
     private static final long serialVersionUID = 5066635517599230626L;
+    @Getter
     final ArrayList<ExecutionNode> executionNodeArrayList;
     int vertex_id = 0;//Each executor has its unique vertex id.
 
@@ -30,7 +32,4 @@ public class RawExecutionGraph implements Serializable {
         return executionNodeArrayList.get(id);
     }
 
-    public ArrayList<ExecutionNode> getExecutionNodeArrayList() {
-        return executionNodeArrayList;
-    }
 }

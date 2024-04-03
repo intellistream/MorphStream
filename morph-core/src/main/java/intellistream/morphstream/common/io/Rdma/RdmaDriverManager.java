@@ -258,4 +258,12 @@ public class RdmaDriverManager {
     private boolean model_switch(int frontend_Id) {
         return frontendTotalBatchCountMap.get(frontend_Id) % punctuation_interval == 0;
     }
+
+    public void close() {
+        try {
+            rdmaNode.stop();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

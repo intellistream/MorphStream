@@ -55,15 +55,15 @@ public class OptimizationManager extends executorThread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        //TODO: add optimization module here.
-        //if (enable_log) LOG.info("Optimization manager exists");
     }
 
     @Override
     protected void _execute_noControl() {
+
     }
 
     @Override
     protected void _execute() {
+
     }
 }

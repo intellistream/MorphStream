@@ -19,6 +19,7 @@ import intellistream.morphstream.engine.db.impl.CavaliaDatabase;
 import intellistream.morphstream.engine.db.Database;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.ZContext;
@@ -40,6 +41,7 @@ public class MorphStreamEnv {
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
+    @Getter
     private Topology topology;
     private RdmaWorkerManager workerManager;
     private final ZContext zContext = new ZContext();
@@ -157,9 +159,5 @@ public class MorphStreamEnv {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public Topology getTopology() {
-        return topology;
     }
 }

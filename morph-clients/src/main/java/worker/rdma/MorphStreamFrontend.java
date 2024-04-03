@@ -7,6 +7,8 @@ import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CircularMessageBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaDriverManager;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
@@ -22,8 +24,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MorphStreamFrontend extends Thread{
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamFrontend.class);
-    private boolean isRunning = true;
-    private boolean isSending = true;
+    @Setter
+    public long systemStartTime;
+    public long systemEndTime;
+    public boolean isRunning = true;
+    public boolean isSending = true;
     private int threadId;
     private ZMQ.Socket frontend;// Frontend socket talks to Driver over TCP
     private RdmaDriverManager rdmaDriverManager;
@@ -59,7 +64,6 @@ public class MorphStreamFrontend extends Thread{
                 byte[] bytes = new byte[length];
                 results.get(bytes);
                 receiveCount ++;
-                LOG.info("ThreadId : " + threadId + " receive " + receiveCount + " results");
                 if (receiveCount == totalEventToReceive) {
                     isRunning = false;
                 }
@@ -93,7 +97,9 @@ public class MorphStreamFrontend extends Thread{
             }
             asyncReceiveFunctionOutput();
         }
+        this.systemEndTime = System.nanoTime();
         LOG.info("ThreadId : " + threadId + " sendCount: " + sendCount + " receiveCount: " + receiveCount);
+        this.statistic.addThroughput(this.threadId, totalEventToReceive * 1E6 / ((this.systemEndTime - this.systemStartTime)));
     }
     private int getWorkId(List<String> keys) {
         return this.statistic.add(keys);

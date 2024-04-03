@@ -90,4 +90,10 @@ public abstract class Client extends Thread {
             //asyncReceiveFunctionOutput("localhost");
         }
     }
+    public void close() {
+        for (ZMQ.Socket socket : sockets.values()) {
+            socket.close();
+        }
+        zContext.close();
+    }
 }

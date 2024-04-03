@@ -47,9 +47,27 @@ public class MorphStreamWorker extends Thread {
         MeasureTools.Initialize();
         try {
             runTopologyLocally();
+            this.RdmaWorkerManagerJoin();
+            LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is finished");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    public void RdmaWorkerManagerJoin() throws InterruptedException {
+        MorphStreamEnv.get().OM().getEM().ThreadMap.get(0).join();
+        boolean allFinished = false;
+        while (!allFinished) {
+            allFinished = true;
+            for (int i = 0; i < MorphStreamEnv.get().OM().getEM().ThreadMap.size(); i++) {
+                if (MorphStreamEnv.get().OM().getEM().ThreadMap.get(i).running) {
+                    allFinished = false;
+                    break;
+                }
+            }
+            Thread.sleep(1000);
+        }
+        MorphStreamEnv.get().rdmaWorkerManager().close();
+        System.exit(0);
     }
 
     private void runTopologyLocally() throws Exception {

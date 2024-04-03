@@ -166,7 +166,6 @@ public class TopologyContext {
     public void force_existALL() {
         for (int id : threadMap.keySet()) {
             if (id != getThisTaskId()) {
-//                threadMap.GetAndUpdate(id).running = false;
                 while (threadMap.get(id).isAlive()) {
                     threadMap.get(id).running = false;
                     threadMap.get(id).interrupt();

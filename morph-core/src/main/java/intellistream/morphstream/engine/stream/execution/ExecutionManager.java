@@ -207,8 +207,7 @@ public class ExecutionManager {
                                               int node, long[] cores, CountDownLatch latch) {
 
         spoutThread st;
-        st = new spoutThread(e, context, conf, cores, node, latch,
-                ThreadMap);
+        st = new spoutThread(e, context, conf, cores, node, latch, ThreadMap);
         st.setDaemon(true);
         if (!(conf.getBoolean("monte", false) || conf.getBoolean("simulation", false))) {
             st.start();

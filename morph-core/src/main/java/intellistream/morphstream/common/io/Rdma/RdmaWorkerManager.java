@@ -305,4 +305,11 @@ public class RdmaWorkerManager implements Serializable {
         }, readData.getAddress(), readData.getLength(), readData.getLkey(), remoteAddress, rkey);
         latch.await();
     }
+    public void close() {
+        try {
+            rdmaNode.stop();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
