@@ -27,7 +27,7 @@ MTCP_TARGET = $(MTCP_LIB)/libmtcp.a
 # mtcp util library and header
 UTIL_FLD = $(MTCP_P_FLD)/util
 UTIL_INC = -I$(UTIL_FLD)/include
-JAVA_INCLUDE=-I${JAVA_HOME}/../include -I${JAVA_HOME}/../include/linux
+JAVA_INCLUDE=-I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 UTIL_OBJ = $(UTIL_FLD)/http_parsing.o $(UTIL_FLD)/tdate_parse.o $(UTIL_FLD)/netlib.o
 
 INCLUDES = $(UTIL_INC) $(MTCP_INC) 

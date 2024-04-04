@@ -100,6 +100,8 @@
 #define STATE_TYPE int
 #define STATE_TYPE_SIZE (sizeof(int))
 
+#define STANDALONE
+
 // DEBUG to print CONTEXT.
 #define DEBUG_PRINT_CONTEXT(sig, ctx) \
 	(spdlog::warn("DEBUG at {}: Context {}:\n\tcurrent app[{}].idx[{}] state {} \n\tpacket [{}] of length {} with reqObj {}.", sig, (ctx)->_ts_low_32b(), (ctx)->AppIdx(), (ctx)->TxnIdx(), (ctx)->ReturnValue(), (ctx)->packet() == NULL? "[isNull]" : (ctx)->packet(), (ctx)->packet_len(), reinterpret_cast<uint64_t>(ctx)))
@@ -497,6 +499,11 @@ ConnId getObjConnId(uint32_t connId);
 
 uint32_t getIntConnId(ConnId& connId);
 }
+
+#ifdef STANDALONE
+	int get_state_from_cache(uint64_t tupleID, int socketId);
+	void* update_state_to_cache(int tupleID, int write_value);
+#endif
 
 struct BackendServer
 {

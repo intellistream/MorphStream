@@ -109,22 +109,6 @@ int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocat
         address.sin_port = htons(remotePort);
         ret = connect(socketId, (struct sockaddr *) &address, sizeof(struct sockaddr_in));
         perCoreStates[coreId].dsSocketProtocol = globals.serverProtocol;
-    } else if (type == UDS) {
-        socketId = socket(AF_UNIX, SOCK_STREAM, 0);
-        struct sockaddr_un remote;
-        remote.sun_family = AF_UNIX;
-        std::ostringstream oss;
-        oss << remoteIP << remotePort << ".sock";
-        strcpy(remote.sun_path, oss.str().c_str());
-
-        if (socketId < 0)
-        {
-            spdlog::error("Failed to create listening socket!");
-            return -1;
-        }
-        ret = connect(socketId, (struct sockaddr *) &remote, strlen(remote.sun_path) + sizeof(remote.sun_family));
-        std::cout << "[DEBUG] Listen on " << oss.str() << std::endl;
-        perCoreStates[coreId].dsSocketProtocol = "uds";
     } else {
         std::cerr << "no such type" << std::endl;
         assert(false);
@@ -220,21 +204,10 @@ void *serverThread(void *args) {
     }
     spdlog::info("Waiting for epollEvents");
 
-    enum DataLocation _useRemoteDataStore = userConfig->USE_REMOTE_DATASTORE;
-    while (!perCoreStates[coreId].isJobDone) {
-        // connect to remote data store for first time
-        if (_useRemoteDataStore == REMOTE || _useRemoteDataStore == UDS) {
-            // Load balancing through different ports. 
-            if (coreId == 0) {
-                perCoreStates[coreId].dsSocketId1 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[0], _useRemoteDataStore);
-                perCoreStates[coreId].dsSocketId2 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[1], _useRemoteDataStore);
-            } else {
-                perCoreStates[coreId].dsSocketId1 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[2], _useRemoteDataStore);
-                perCoreStates[coreId].dsSocketId2 = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[3], _useRemoteDataStore);
-            }
-            _useRemoteDataStore = LOCAL;
-        }
+    // Connect to remote state manager.
+    perCoreStates[coreId].txnSocket = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[0], REMOTE);
 
+    while (!perCoreStates[coreId].isJobDone) {
         int numEventsCaptured = epoll_wait(epFd, epollEvents, MAX_EVENTS, -1);      // Epoll provided by libc. -1: infinite time out.
         if (numEventsCaptured < 0) {
             if (errno != EINTR) {
@@ -415,70 +388,59 @@ void *serverThread(void *args) {
                     Each time we communicate with the data store, we are using the specified socket (Special IP and ports).
                     So we can decide this is the message from the database.
                 */
-                if (perCoreStates[coreId].isDatastoreSocket(currentSocketId)) {
+                if (perCoreStates[coreId].isStateManagerSocket(currentSocketId)) {
                     while (true) {
-                        DSPacketHandler pkt;
-                        int pkt_len, retval;
-                        pkt.clear_pkt();
+                        uint8_t retval,command,length;
                         /*
                             We've predefined the data format here: first byte is an integer suggesting length.
                             And the others are the true data.
                         */
-                        retval = readFromStream(currentSocketId, pkt.data, sizeof(int));
-                        if (retval < 0) {
-                            if (errno == EAGAIN) {
-                                break;
+                       /*
+                            Message format: 
+                                (uint8_t) Type (0 = pause, 1 = continue, 2 = get_state_from_cache, 3 = update_state_to_cache)
+                                (uint8_t) Body length; 
+                                (void *) Body if neccessary.
+                       */
+                        if (readFromStream(currentSocketId, &command, sizeof(int)) < 0){
+                            assert(false);
+                        // } else {
+                            // memmove(&pkt_len, pkt.data, sizeof(int) * sizeof(uint8_t));
+                            // retval = readFromStream(currentSocketId, pkt.data, pkt_len);
+                            // pkt.data_ptr = 0;
+                            // pkt.len = retval;
+                            // if (retval < 0) {
+                            //     spdlog::error("Error: Packet from HSS Corrupt, break");
+                            //     break;
+                            // }
+                        }
+                        // Pause.
+                        if (command == 0){
+                            assert(perCoreStates[coreId].isPaused == false);
+                            perCoreStates[coreId].isPaused = true;
+                        } else if (command == 1){
+                            assert(perCoreStates[coreId].isPaused);
+                            perCoreStates[coreId].isPaused = false;
+                        } else if (command == 2){
+                            // Fetch local cache result.
+                            if (readFromStream(currentSocketId, &length, sizeof(uint8_t))<0) assert(false);
+                            uint64_t tupleID;
+                            if (readFromStream(currentSocketId, (uint8_t *)&tupleID, sizeof(uint64_t))<0) assert(false);
+                            if ( get_state_from_cache( tupleID, perCoreStates[coreId].txnSocket) <= 0) {
+                                assert(false);
+                            }
+                        } else if (command == 3){
+                            // Fetch local cache result.
+                            if (readFromStream(currentSocketId, &length, sizeof(uint8_t))<0) assert(false);
+                            uint64_t tupleID;
+                            if (readFromStream(currentSocketId, (uint8_t *)&tupleID, sizeof(uint64_t))<0) assert(false);
+                            int value;
+                            if (readFromStream(currentSocketId, (uint8_t *)&value, sizeof(int))<0) assert(false);
+                            if ( update_state_to_cache(tupleID, value) <= 0) {
+                                assert(false);
                             }
                         } else {
-                            perCoreStates[coreId].numPacketsRecvFromDs++;
-                            memmove(&pkt_len, pkt.data, sizeof(int) * sizeof(uint8_t));
-                            pkt.clear_pkt();
-                            retval = readFromStream(currentSocketId, pkt.data, pkt_len);
-                            pkt.data_ptr = 0;
-                            pkt.len = retval;
-                            if (retval < 0) {
-                                spdlog::error("Error: Packet from HSS Corrupt, break");
-                                break;
-                            }
+                            assert(false);
                         }
-                        int socketId, bufKey;
-                        string buffer;
-                        pkt.extract_item(socketId);
-                        pkt.extract_item(bufKey);
-                        pkt.extract_item(buffer);
-                        buffer += '\0';
-
-                        void *dsMalloc;
-                        globals.dataStoreLock.lock();
-                        if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-                            freeDSPool();
-                        }
-                        // cache the state
-                        dsMalloc = globals.dsMemPoolManager.malloc();
-                        globals.dsSize++;
-                        memcpy(dsMalloc, buffer.c_str(), buffer.length());
-                        // The local datastore is used as cache for reading.
-                        globals.localDatastore[bufKey] = dsMalloc;
-                        globals.localDatastoreLens[bufKey] = buffer.length();
-                        globals.cachedRemoteDatastore[bufKey] = dsMalloc;
-                        cache_void_list[dsMalloc] = bufKey;
-                        globals.dataStoreLock.unlock();
-
-                        ConnId connId = ConnId(coreId, socketId);
-
-                        // request object id extractor from packet
-                        ReqObjExtractorFn extractor = perCoreStates[coreId].socketIdReqObjIdExtractorMap[socketId];
-                        int reqObjId = extractor == nullptr ? 0 : extractor(const_cast<char *>(buffer.c_str()), 0); // fix me : replace 0 packetlen with actual packet len
-                        cout.flush();
-
-                        // callback. This part handles the DataBase return function.
-                        DSCallbackFn callback = perCoreStates[coreId].socketIdDSCallbackMap[socketId];
-                        callback(connId, reqObjId,
-                                 perCoreStates[coreId].socketIdReqObjIdToReqObjMap[socketId][reqObjId],
-                                 (void *) buffer.c_str(),
-                                 perCoreStates[coreId].packetNumber++,
-                                 // The buffer size needs to be resigned before..
-                                 userConfig->BUFFER_SIZE, 0);
                     }
 
                     continue;
@@ -1713,12 +1675,6 @@ inline uint64_t getDelay(uint64_t start){
     return delay;
 }
 
-// Entry for Java calling this thread.
-int __VNFThread(int argc, char *argv[]){
-	vnf::startEventLoop();
-    return 0;
-}
-
 /*
     There's only 2 possibilities exiting this function:
     1. Packet handle done. With return value.
@@ -1820,7 +1776,7 @@ void DB4NFV::SFC::Add(App& last, App& app){
 }
 
 // The entry for sending txn execution request to txnEngine.
-void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId& connId)
+void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId& connId)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
     int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
@@ -1853,27 +1809,29 @@ void __request(JNIEnv *env, uint64_t ts, uint64_t txnReqId, const char *key, int
     data[offset] = '\0';
 
     // Copy the data into the msg byte array
-    auto msg = env->NewByteArray(len);
-    assert(msg != NULL);
-    env->SetByteArrayRegion(msg, 0, len, data);
+    // auto msg = env->NewByteArray(len);
+    // assert(msg != NULL);
+    // env->SetByteArrayRegion(msg, 0, len, data);
 
-    jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
-    assert(cls != NULL);
+    // jclass cls = env->FindClass("intellistream/morphstream/api/input/InputSource");
+    // assert(cls != NULL);
 
     // jmethodID methodId = env->GetMethodID(cls, "insertInputData", "(Ljava/lang/String;)V");
-    jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "([B)V");
-    assert(methodId != NULL);
+    // jmethodID methodId = env->GetStaticMethodID(cls, "libVNFInsertInputData", "([B)V");
+    // assert(methodId != NULL);
 
 #ifdef DEBUG
     perCoreStates[connId.coreId].monitor.update_latency(0, ts);
 #endif
 
     // We can't cache JNIenv and related things according to https://stackoverflow.com/questions/12420463/keeping-a-global-reference-to-the-jnienv-environment.
-    env->CallStaticVoidMethod(cls, methodId, msg);
-    spdlog::debug("[DEBUG:] txn request sent. ");
+    // env->CallStaticVoidMethod(cls, methodId, msg);
+    // spdlog::debug("[DEBUG:] txn request sent. ");
 
     // Clean up resources when done
-    env->DeleteLocalRef(msg); // Release the reference to msg
+    // env->DeleteLocalRef(msg); // Release the reference to msg
+
+    if (write(perCoreStates[connId.coreId].txnSocket, data, len) < 0) assert(false);
 }
 
 vector<int> pbdSeparator(char* buffer, int bufLen) {
@@ -1894,6 +1852,129 @@ vector<int> pbdSeparator(char* buffer, int bufLen) {
         }
     }
     return ret;
+}
+
+int __init_sfc(int argc, char ** argvC){
+        // Call the __init_SFC function
+        int res = VNFMain(argc, argvC);
+
+        if (res < 0){
+            perror("VNFMain returns error");
+            return -1;
+        }
+
+        vnf::initLibvnf(globals.config.coreNumbers, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
+        vnf::ConnId serverSocketId = vnf::initServer("", globals.config.serverIP, globals.config.serverPort, "tcp");
+
+        // Fix the backlink.
+        int reqObjStart = 0;
+        int reqObjIndex = 0;
+        for (int i = 0 ; i < globals.sfc.SFC_chain.size(); i += 1)
+        {
+            auto app = globals.sfc.SFC_chain.at(i);
+            app->appIndex = i;
+            // Sort the reqObj. TODO.
+            globals.sfc.objSizes.push_back(app->reqObjSize);
+            globals.sfc.objSizesStarting.push_back(reqObjStart);
+            reqObjStart += app->reqObjSize;
+            globals.sfc.AppIdxMap[app] = reqObjIndex;
+            reqObjIndex += 1;
+            
+            for (int j = 0 ; j < app->Txns.size(); j += 1){
+                auto Txn = &app->Txns.at(j);
+                Txn->txnIndex = j;
+                Txn->app = app;
+                for (int k = 0; k < (Txn->sas).size(); k += 1){
+                    auto sa = &Txn->sas.at(k);
+                    sa->app = app;
+                    sa->txn = Txn;
+                    sa->appIndex = i;
+                    sa->txnIndex = j;
+                    sa->saIndex = k;
+                    app->SAs.push_back(sa);
+                }
+            }
+        }
+        // Config and init libVNF.
+        globals.sfc.reqObjTotalSize = reqObjStart + sizeof(Context);
+        // Create back links for transactions and state access.
+
+        int size[] = {globals.sfc.reqObjTotalSize};
+        vnf::initReqPool(size, 1);
+
+        serverSocketId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
+        serverSocketId.registerCallback(vnf::READ, _AppsDisposalRead);
+        serverSocketId.registerCallback(vnf::ERROR, _AppsDisposalError);
+        registerPacketBoundaryDisambiguator(serverSocketId, pbdSeparator);
+
+        return 0;
+}
+
+#ifdef STANDALONE
+
+// Main to run as a standalone
+int main(int argc, char ** argv) {
+    if (__init_sfc(argc, argv) != 0){
+        return -1;
+    }
+	startEventLoop();
+    return 0;
+}
+
+int txn_finished(uint64_t txnReqId){
+    // Save the value in ctx.
+    int coreId = COREID(txnReqId);
+
+    // Release context transaction state.
+	perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)]->_unset_wait_txn_callback();
+
+    // Enqueue the txnReqId.
+    // FIXME. To be Optimized. may be the bottleneck.
+    perCoreStates[coreId].txnDoneQueueLock.lock();
+    perCoreStates[coreId].txnDoneQueue.push(txnReqId);
+    perCoreStates[coreId].txnDoneQueueLock.unlock();
+
+    // Write to the fd to suggest done and wake up the txn.
+    if (write(perCoreStates[coreId].txnSocket, &txnReqId, sizeof(uint64_t)) < 0){
+        perror("jni.handle_done.write");
+        return -1;
+    }
+    return 0;
+}
+
+int get_state_from_cache(uint64_t tupleID, int socketId){
+    globals.dataStoreLock.lock();
+    if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+        freeDSPool();
+    }
+    // cache the state
+    assert(globals.localDatastoreLens[tupleID] == sizeof(int));
+	return write(socketId, globals.localDatastore[tupleID], sizeof(int));
+}
+
+void* update_state_to_cache(int tupleID, int write_value){
+    globals.dataStoreLock.lock();
+    if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+        freeDSPool();
+    }
+    // cache the state
+    void *dsMalloc = globals.dsMemPoolManager.malloc();
+    globals.dsSize++;
+    memcpy(dsMalloc, (void *) &write_value, sizeof(int));
+    // The local datastore is used as cache for reading.
+    globals.localDatastore[tupleID] = dsMalloc;
+    globals.localDatastoreLens[tupleID] = sizeof(int);
+    globals.cachedRemoteDatastore[tupleID] = dsMalloc;
+    cache_void_list[dsMalloc] = tupleID;
+    globals.dataStoreLock.unlock();
+}
+
+#else
+
+// Entry for Java calling this thread.
+int __VNFThread(int argc, char *argv[]){
+	vnf::startEventLoop();
+    return 0;
 }
 
 // TODO. TO BE DEBUGGED.
@@ -1952,17 +2033,9 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
         // );
 
         // TODO. Maybe we can provide command line parameters pass-in.
-
-        // Call the __init_SFC function
-        int res = VNFMain(argc, argvC);
-
-        if (res < 0){
-            perror("VNFMain returns error");
-            return  env->NewStringUTF(std::string("").c_str());
+        if (__init_sfc(argc, argvC) !=0 ) {
+            return env->NewStringUTF(std::string("").c_str());
         }
-
-        vnf::initLibvnf(globals.config.coreNumbers, 128, "127.0.0.1", std::vector<int>(), 131072, vnf::LOCAL);
-        vnf::ConnId serverSocketId = vnf::initServer("", globals.config.serverIP, globals.config.serverPort, "tcp");
 
 		// Clean up the allocated memory
 		for (jsize i = 0; i < arrayLength; i++)
@@ -1971,61 +2044,10 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1i
 		}
 		delete[] argvC;
 
-        // Fix the backlink.
-        int reqObjStart = 0;
-        int reqObjIndex = 0;
-        for (int i = 0 ; i < globals.sfc.SFC_chain.size(); i += 1)
-        {
-            auto app = globals.sfc.SFC_chain.at(i);
-            app->appIndex = i;
-            // Sort the reqObj. TODO.
-            globals.sfc.objSizes.push_back(app->reqObjSize);
-            globals.sfc.objSizesStarting.push_back(reqObjStart);
-            reqObjStart += app->reqObjSize;
-            globals.sfc.AppIdxMap[app] = reqObjIndex;
-            reqObjIndex += 1;
-            
-            for (int j = 0 ; j < app->Txns.size(); j += 1){
-                auto Txn = &app->Txns.at(j);
-                Txn->txnIndex = j;
-                Txn->app = app;
-                for (int k = 0; k < (Txn->sas).size(); k += 1){
-                    auto sa = &Txn->sas.at(k);
-                    sa->app = app;
-                    sa->txn = Txn;
-                    sa->appIndex = i;
-                    sa->txnIndex = j;
-                    sa->saIndex = k;
-                    app->SAs.push_back(sa);
-                }
-            }
-        }
-        // Config and init libVNF.
-        globals.sfc.reqObjTotalSize = reqObjStart + sizeof(Context);
-        // Create back links for transactions and state access.
-
-        int size[] = {globals.sfc.reqObjTotalSize};
-        vnf::initReqPool(size, 1);
-
-        serverSocketId.registerCallback(vnf::ACCEPT, _AppsDisposalAccept);
-        serverSocketId.registerCallback(vnf::READ, _AppsDisposalRead);
-        serverSocketId.registerCallback(vnf::ERROR, _AppsDisposalError);
-        registerPacketBoundaryDisambiguator(serverSocketId, pbdSeparator);
 
 		// Return the result as a Java string
 		return env->NewStringUTF(globals.sfc.NFs().c_str());
 }
-
-// Actual vnfs loop.
-JNIEXPORT void 
-JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1VNFThread
-  (JNIEnv * env, jobject obj, jint c, jobjectArray v){
-    jint rs = env->GetJavaVM(&globals.__jvm);
-    assert(rs == JNI_OK);
-    // globals.__env = env;
-	startEventLoop();
-  }
-
 
 // The callback handling entrance.
 JNIEXPORT jbyteArray 
@@ -2092,38 +2114,7 @@ JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1exe
     return _result;
   }
 
-// Report done.
-JNIEXPORT jint 
-JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1txn_1finished
-  (JNIEnv * env, jclass cls, jlong txnReqId_jni){
-    // Save the value in ctx.
-    uint64_t txnReqId = 0;
-    // reverse for switching endianness.
-    uint8_t *buf = reinterpret_cast<uint8_t *>(&txnReqId);
-    uint8_t *buf_jni = reinterpret_cast<uint8_t *>(&txnReqId_jni);
-    for (int  i = 0; i < sizeof(jlong); i += 1) {
-        buf[sizeof(jlong) - i - 1] = buf_jni[i];
-    }
-    assert((txnReqId & 0xffffff0000000000) == 0);
-
-    int coreId = COREID(txnReqId);
-
-    // Release context transaction state.
-	perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)]->_unset_wait_txn_callback();
-
-    // Enqueue the txnReqId.
-    // FIXME. To be Optimized. may be the bottleneck.
-    perCoreStates[coreId].txnDoneQueueLock.lock();
-    perCoreStates[coreId].txnDoneQueue.push(txnReqId);
-    perCoreStates[coreId].txnDoneQueueLock.unlock();
-
-    // Write to the fd to suggest done and wake up the txn.
-    if (write(perCoreStates[coreId].txnSocket, &txnReqId, sizeof(uint64_t)) < 0){
-        perror("jni.handle_done.write");
-        return -1;
-    }
-    return 0;
-  }
+#endif
 
 // FIXME. TODO. CONTEXT shall not be done so easily...
 void *DB4NFV::App::reqObjClip(void * reqObjClip) {
@@ -2353,12 +2344,26 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
         perror("fatal: reqObj is null.");
     }
 
+    // Find out the state disposal strategy to be used.
+    switch (globals.tupleIDtoCCMap[(int)(*key)]) {
+        case Partition: 
+            // read local and execute the disposal. Read & Write all locally.
+            break;
+        case Cache:
+            // Execute locally, and send result with update.
+            break;
+        case Offloading:
+            // Execute. And offload writing.
+            break;
+        case TPG:
+            // Just send txn request.
+            break;
+    } 
+
     // Register call back parameters in the context.
     perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
 
-    JNIEnv * env; 
-    GetJniEnv(&env);
-	__request(env, ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId);
+	__request(ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId);
 }
 
 // Get JVM and jenv related. FIXME. Optimize.

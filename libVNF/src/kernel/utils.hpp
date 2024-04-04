@@ -130,6 +130,9 @@ struct Globals {
 	int txnNotifyFd = -1;
     Config config;
 
+    // CC for different IDs.
+    unordered_map<uint64_t, strategy> tupleIDtoCCMap;
+
     // data store management
     // may have to increase this at high load
     vector<char> dsMemPoolBlock;
@@ -173,6 +176,13 @@ struct Globals {
 bool GetJniEnv(JNIEnv **env);
 
 Globals& GetGlobal();
+
+enum strategy {
+    Partition,
+    Cache,
+    Offloading,
+    TPG
+};
 
 struct PerCoreState {
     // For joining threads.
@@ -224,6 +234,8 @@ struct PerCoreState {
     int txnSocket = -1;
     std::queue<uint64_t> txnDoneQueue;
     std::mutex txnDoneQueueLock;
+
+    bool isPaused = false;
 
     // stat counters
     int connCounter;
@@ -332,6 +344,10 @@ struct PerCoreState {
 
     bool isDatastoreSocket(int socketId) {
         return socketId == dsSocketId1 || socketId == dsSocketId2;
+    }
+
+    bool isStateManagerSocket(int socketId) {
+        return socketId == txnSocket;
     }
 
     string getLeftOverPacketFragment(int socketId) {

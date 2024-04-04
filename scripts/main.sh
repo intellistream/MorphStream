@@ -26,6 +26,7 @@ INTERFACE_FILE=$PROJ_DIR/intellistream/morphstream/util/libVNFFrontend/NativeInt
 HEADER=$LIBVNF_DIR/include
 HEADER_INSTALL=/usr/local/include/libvnf/
 
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 # Executable
 CMAKE=$TMP_DIR/cmake/bin/cmake
@@ -39,6 +40,7 @@ echo "Using cmake: $CMAKE"
 
 # Globals
 DEBUG=true
+IS_KENREL_BYPASS=false
 
 # If you let script make the vm.
 ISO_URL="https://releases.ubuntu.com/18.04/ubuntu-18.04.6-live-server-amd64.iso"
@@ -283,15 +285,15 @@ setup_normal() {
 	fi
 
 	# Check JAVA
-	if [[ -z $(echo $JAVA_HOME) ]]; then
-		export JAVA_HOME=$(java -XshowSettings:properties -version 2>&1 | grep java.home | awk '{print $3}')
-	fi
+	# if [[ -z $(echo $JAVA_HOME) ]]; then
+	# 	export JAVA_HOME=$(java -XshowSettings:properties -version 2>&1 | grep java.home | awk '{print $3}')
+	# fi
 
 	if [[ -f $JAVA_HOME/include/jni.h ]]; then
+		echo "JNI in $JAVA_HOME/include/jni.h"
+	else
 		echo "Jni.h not found"
 		exit 1
-	else
-		echo "JNI in $JAVA_HOME/include/jni.h"
 	fi
 }
 
@@ -300,7 +302,7 @@ compile_example_vnf() {
 	echo "Compiling Example VNF: $VNF_PATH"
 	cd "$VNF_PATH"
 	make clean
-	if [[ $IS_KENREL_BYPASS ]]; then 
+	if [[ $IS_KENREL_BYPASS == true ]]; then 
 		 echo "unfinished." && exit 1
 		 make kernel_bypass-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
 	else
@@ -450,11 +452,8 @@ case $1 in
 	$COMPILE)
 		echo "starting compilation.."
 		if [ $# -ge 2 ] && [[ $2 == $KERNEL_BYPASS ]]; then
-			if [ $# -ge 2 ] && [[ $2 == "--RELEASE" ]]; then
-				DEBUG=false
-			fi 
 			check_system || error_exit
-			IS_KENREL_BYPASS=true
+			export IS_KENREL_BYPASS=true
 			setup_kernel_bypass_stack
 			if [ $# -ge 3 ] && [[ $3 == $EXAMPLE ]]; then
 				compile_example_vnf || error_exit
@@ -463,7 +462,7 @@ case $1 in
 				exit 0
 			fi
 		elif [ $# -ge 2 ] && [[ $2 == $KERNEL_STACK ]]; then
-			IS_KENREL_BYPASS=false
+			export IS_KENREL_BYPASS=false
 			setup_kernel_stack
 			if [ $# -ge 3 ] && [[ $3 == $EXAMPLE ]]; then
 				compile_example_vnf || error_exit
