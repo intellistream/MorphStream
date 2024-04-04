@@ -3,6 +3,7 @@ package cli;
 import intellistream.morphstream.api.Client;
 // import intellistream.morphstream.common.io.ByteIO.InputWithDecompression.NativeDataInputView;
 
+import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,6 +148,10 @@ public class FastSLClient extends Client {
 
         // Start the thread
         libVNFThread.start();
+
+        // Start all 4 CC strategies
+        AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();
+        adaptiveCCManager.initialize();
 
         fastSLClient.start();
     }
