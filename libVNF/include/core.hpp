@@ -502,6 +502,7 @@ uint32_t getIntConnId(ConnId& connId);
 
 #ifdef STANDALONE
 	int get_state_from_cache(uint64_t tupleID, int socketId);
+	int send_state_from_cache(uint64_t tupleID, int socketId);
 	void* update_state_to_cache(int tupleID, int write_value);
 #endif
 

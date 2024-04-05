@@ -148,7 +148,7 @@ struct Globals {
     unordered_map<int, int> localDatastoreLens;
     unordered_map<int, void *> cachedRemoteDatastore;
     unordered_map<void *, int> doNotEvictCachedDSValueKeyMap;
-  //  unordered_map<int, string> socketProtocolMap;
+    // unordered_map<int, string> socketProtocolMap;
     int dsSize;
 
     // locks

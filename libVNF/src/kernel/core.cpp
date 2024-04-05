@@ -85,6 +85,7 @@ void freeDSPool() {
         if (globals.canEvictCachedDSKey(it.first)) {
             globals.cachedRemoteDatastore.erase(it.second);
             globals.localDatastore.erase(it.second);
+            assert(false);
             globals.localDatastoreLens.erase(it.second);
             globals.dsMemPoolManager.free(it.first);
         }
@@ -322,72 +323,6 @@ void *serverThread(void *args) {
                 There are new messages come in from the socket. So we decide the type and call the related callbacks.
             */
             if (currentEvents & EPOLLIN) {
-                // Some handler done. Now we are going to trigger the continue handling.
-                if (perCoreStates[coreId].txnSocket == currentSocketId) {
-
-                    // FIXME. To delete. Read to decrease from somaphore here.
-                    uint64_t wasted = 0; 
-                    if (read(currentSocketId, &wasted, sizeof(uint64_t)) < 0) {
-                        perror("serverThread.transactions.read");
-                    }
-
-                    perCoreStates[coreId].txnDoneQueueLock.lock();
-                    uint64_t txnReqId = perCoreStates[coreId].txnDoneQueue.front(); 
-                    perCoreStates[coreId].txnDoneQueue.pop();
-                    perCoreStates[coreId].txnDoneQueueLock.unlock();
-                    assert(COREID(txnReqId) == coreId);
-
-                    // Prepare resources here.
-                    auto ctx = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
-
-                    ConnId connId = ConnId(coreId, ctx->_old_socket());
-                    ctx->_move_next();
-
-                    // TODO. Debug. Set the cache.
-                    // No need to modify to use the cache. Since it's totally inside.
-                    // void *dsMalloc;
-                    // globals.dataStoreLock.lock();
-                    // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-                    //     freeDSPool();
-                    // }
-                    // // cache the state
-                    // dsMalloc = globals.dsMemPoolManager.malloc();
-                    // globals.dsSize++;
-                    // memcpy(dsMalloc, buffer.c_str(), buffer.length());
-                    // // The local datastore is used as cache for reading.
-                    // globals.localDatastore[bufKey] = dsMalloc;
-                    // globals.localDatastoreLens[bufKey] = buffer.length();
-                    // globals.cachedRemoteDatastore[bufKey] = dsMalloc;
-                    // cache_void_list[dsMalloc] = bufKey;
-                    // globals.dataStoreLock.unlock();
-
-                    // TODO. Can receive error here.
-
-                    // _disposalBody(connId, o->reqObjId,
-                    //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
-                    //             o->packet_record, o->packet_len, 0);
-                    
-#ifdef DEBUG
-                    perCoreStates[coreId].monitor.update_latency(3, ctx->_full_ts());
-#endif
-
-                    _disposalBody(connId, *ctx);
-
-                    // This is allocated when txn triggered. So erase in handle done.
-                    perCoreStates[coreId].packetNumberContextMap.erase(
-                        perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
-                    );
-
-#ifdef DEBUG
-                    perCoreStates[coreId].monitor.packet_done();
-#endif
-                    // TODO. How to recover packets here.
-                    continue;    
-                }
-                /* Current socketId points to remote datastore 
-                    Each time we communicate with the data store, we are using the specified socket (Special IP and ports).
-                    So we can decide this is the message from the database.
-                */
                 if (perCoreStates[coreId].isStateManagerSocket(currentSocketId)) {
                     while (true) {
                         uint8_t retval,command,length;
@@ -397,7 +332,7 @@ void *serverThread(void *args) {
                         */
                        /*
                             Message format: 
-                                (uint8_t) Type (0 = pause, 1 = continue, 2 = get_state_from_cache, 3 = update_state_to_cache)
+                                (uint8_t) Type (0 = pause, 1 = continue, 2 = get_state_from_cache, 3 = update_state_to_cache, 4 = txn_finished)
                                 (uint8_t) Body length; 
                                 (void *) Body if neccessary.
                        */
@@ -425,7 +360,7 @@ void *serverThread(void *args) {
                             if (readFromStream(currentSocketId, &length, sizeof(uint8_t))<0) assert(false);
                             uint64_t tupleID;
                             if (readFromStream(currentSocketId, (uint8_t *)&tupleID, sizeof(uint64_t))<0) assert(false);
-                            if ( get_state_from_cache( tupleID, perCoreStates[coreId].txnSocket) <= 0) {
+                            if (send_state_from_cache(tupleID, perCoreStates[coreId].txnSocket) <= 0) {
                                 assert(false);
                             }
                         } else if (command == 3){
@@ -435,9 +370,67 @@ void *serverThread(void *args) {
                             if (readFromStream(currentSocketId, (uint8_t *)&tupleID, sizeof(uint64_t))<0) assert(false);
                             int value;
                             if (readFromStream(currentSocketId, (uint8_t *)&value, sizeof(int))<0) assert(false);
-                            if ( update_state_to_cache(tupleID, value) <= 0) {
+                            if (update_state_to_cache(tupleID, value) <= 0) {
                                 assert(false);
                             }
+                        } else if (command == 4){
+                            // Txn finished.  
+                            uint64_t txnReqId = 0; 
+                            if (read(currentSocketId, &txnReqId, sizeof(uint64_t)) < 0) {
+                                perror("serverThread.transactions.read");
+                            }
+
+                            // perCoreStates[coreId].txnDoneQueueLock.lock();
+                            // uint64_t txnReqId = perCoreStates[coreId].txnDoneQueue.front(); 
+                            // perCoreStates[coreId].txnDoneQueue.pop();
+                            // perCoreStates[coreId].txnDoneQueueLock.unlock();
+                            assert(COREID(txnReqId) == coreId);
+
+                            // Prepare resources here.
+                            auto ctx = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
+
+                            ConnId connId = ConnId(coreId, ctx->_old_socket());
+                            ctx->_move_next();
+
+                            // TODO. Debug. Set the cache.
+                            // No need to modify to use the cache. Since it's totally inside.
+                            // void *dsMalloc;
+                            // globals.dataStoreLock.lock();
+                            // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+                            //     freeDSPool();
+                            // }
+                            // // cache the state
+                            // dsMalloc = globals.dsMemPoolManager.malloc();
+                            // globals.dsSize++;
+                            // memcpy(dsMalloc, buffer.c_str(), buffer.length());
+                            // // The local datastore is used as cache for reading.
+                            // globals.localDatastore[bufKey] = dsMalloc;
+                            // globals.localDatastoreLens[bufKey] = buffer.length();
+                            // globals.cachedRemoteDatastore[bufKey] = dsMalloc;
+                            // cache_void_list[dsMalloc] = bufKey;
+                            // globals.dataStoreLock.unlock();
+
+                            // TODO. Can receive error here.
+
+                            // _disposalBody(connId, o->reqObjId,
+                            //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
+                            //             o->packet_record, o->packet_len, 0);
+                            
+        #ifdef DEBUG
+                            perCoreStates[coreId].monitor.update_latency(3, ctx->_full_ts());
+        #endif
+
+                            _disposalBody(connId, *ctx);
+
+                            // This is allocated when txn triggered. So erase in handle done.
+                            perCoreStates[coreId].packetNumberContextMap.erase(
+                                perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
+                            );
+
+        #ifdef DEBUG
+                            perCoreStates[coreId].monitor.packet_done();
+        #endif
+
                         } else {
                             assert(false);
                         }
@@ -1921,28 +1914,28 @@ int main(int argc, char ** argv) {
     return 0;
 }
 
-int txn_finished(uint64_t txnReqId){
-    // Save the value in ctx.
-    int coreId = COREID(txnReqId);
+// int txn_finished(uint64_t txnReqId){
+//     // Save the value in ctx.
+//     int coreId = COREID(txnReqId);
 
-    // Release context transaction state.
-	perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)]->_unset_wait_txn_callback();
+//     // Release context transaction state.
+// 	perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)]->_unset_wait_txn_callback();
 
-    // Enqueue the txnReqId.
-    // FIXME. To be Optimized. may be the bottleneck.
-    perCoreStates[coreId].txnDoneQueueLock.lock();
-    perCoreStates[coreId].txnDoneQueue.push(txnReqId);
-    perCoreStates[coreId].txnDoneQueueLock.unlock();
+//     // Enqueue the txnReqId.
+//     // FIXME. To be Optimized. may be the bottleneck.
+//     perCoreStates[coreId].txnDoneQueueLock.lock();
+//     perCoreStates[coreId].txnDoneQueue.push(txnReqId);
+//     perCoreStates[coreId].txnDoneQueueLock.unlock();
 
-    // Write to the fd to suggest done and wake up the txn.
-    if (write(perCoreStates[coreId].txnSocket, &txnReqId, sizeof(uint64_t)) < 0){
-        perror("jni.handle_done.write");
-        return -1;
-    }
-    return 0;
-}
+//     // Write to the fd to suggest done and wake up the txn.
+//     if (write(perCoreStates[coreId].txnSocket, &txnReqId, sizeof(uint64_t)) < 0){
+//         perror("jni.handle_done.write");
+//         return -1;
+//     }
+//     return 0;
+// }
 
-int get_state_from_cache(uint64_t tupleID, int socketId){
+int send_state_from_cache(uint64_t tupleID, int socketId){
     globals.dataStoreLock.lock();
     if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
         freeDSPool();
@@ -1950,6 +1943,17 @@ int get_state_from_cache(uint64_t tupleID, int socketId){
     // cache the state
     assert(globals.localDatastoreLens[tupleID] == sizeof(int));
 	return write(socketId, globals.localDatastore[tupleID], sizeof(int));
+}
+
+int get_state_from_cache(uint64_t tupleID, int *v){
+    globals.dataStoreLock.lock();
+    if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+        freeDSPool();
+    }
+    // cache the state
+    assert(globals.localDatastoreLens[tupleID] == sizeof(int));
+    memcpy(v, globals.localDatastore[tupleID], sizeof(int));
+	return sizeof(int);
 }
 
 void* update_state_to_cache(int tupleID, int write_value){
@@ -1964,8 +1968,8 @@ void* update_state_to_cache(int tupleID, int write_value){
     // The local datastore is used as cache for reading.
     globals.localDatastore[tupleID] = dsMalloc;
     globals.localDatastoreLens[tupleID] = sizeof(int);
-    globals.cachedRemoteDatastore[tupleID] = dsMalloc;
-    cache_void_list[dsMalloc] = tupleID;
+    // globals.cachedRemoteDatastore[tupleID] = dsMalloc;
+    // cache_void_list[dsMalloc] = tupleID;
     globals.dataStoreLock.unlock();
 }
 
@@ -2344,26 +2348,95 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
         perror("fatal: reqObj is null.");
     }
 
-    // Find out the state disposal strategy to be used.
-    switch (globals.tupleIDtoCCMap[(int)(*key)]) {
-        case Partition: 
-            // read local and execute the disposal. Read & Write all locally.
-            break;
-        case Cache:
-            // Execute locally, and send result with update.
-            break;
-        case Offloading:
-            // Execute. And offload writing.
-            break;
-        case TPG:
-            // Just send txn request.
-            break;
-    } 
+    for (auto sa: sas){
+        // Find out the state disposal strategy to be used.
+        switch (globals.tupleIDtoCCMap[(int)(*key)]) {
+            case Partition: {
+                // read local and execute the disposal. Read & Write all locally.
+                auto tmp = globals.localDatastore[*(uint64_t *)key];
+                auto len = globals.localDatastoreLens[*(uint64_t *)key];
+                // Call callback.
+                // TODO.
+                assert(ctx.AppIdx() != -1);
+                // Call actual sa udf.
+                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, len);
+                int abortion = (ctx.ReturnValue())? 1: 0;
+                // TODO. Abortion not handled here.
 
-    // Register call back parameters in the context.
-    perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
+                // Write back.
+                globals.dataStoreLock.lock();
+                if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+                    freeDSPool();
+                }
+                void *dsMalloc;
+                if (globals.keyExistsInLocalDatastore((int)*key)) {
+                    dsMalloc = globals.localDatastore[(int)*key];
+                } else {
+                    dsMalloc = globals.dsMemPoolManager.malloc();
+                    globals.dsSize++;
+                }
+                memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
+                globals.localDatastore[(int)*key] = dsMalloc;
+                globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
+                globals.dataStoreLock.unlock();
 
-	__request(ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId);
+                // Move next.
+                ctx._move_next();
+                _disposalBody(connId, ctx);
+                break;
+            }
+            case Cache:{
+                // Execute locally, and send result with update.
+                // read local and execute the disposal. Read & Write all locally.
+                auto tmp = globals.localDatastore[*(uint64_t *)key];
+                auto len = globals.localDatastoreLens[*(uint64_t *)key];
+                // Call callback.
+                // TODO.
+                assert(ctx.AppIdx() != -1);
+                // Call actual sa udf.
+                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, len);
+                int abortion = (ctx.ReturnValue())? 1: 0;
+                // TODO. Abortion not handled here.
+
+                // Write back.
+                globals.dataStoreLock.lock();
+                if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+                    freeDSPool();
+                }
+                void *dsMalloc;
+                if (globals.keyExistsInLocalDatastore((int)*key)) {
+                    dsMalloc = globals.localDatastore[(int)*key];
+                } else {
+                    dsMalloc = globals.dsMemPoolManager.malloc();
+                    globals.dsSize++;
+                }
+                memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
+                globals.localDatastore[(int)*key] = dsMalloc;
+                globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
+
+                // Send to record.
+                assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int))); // Send key to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, dsMalloc, sizeof(int)) > 0); // Send key to write.
+                globals.dataStoreLock.unlock();
+
+                // Move next.
+                ctx._move_next();
+                _disposalBody(connId, ctx);
+                break;
+            }
+            case Offloading:{
+                // Execute. And offload writing.
+                break;
+            }
+            default:{  // TPG as the default strategy.{
+                // Register call back parameters in the context.
+                perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
+
+                __request(ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId);
+                break;
+            }
+        } 
+    }
 }
 
 // Get JVM and jenv related. FIXME. Optimize.
