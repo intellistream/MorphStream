@@ -39,6 +39,54 @@ JNIEXPORT jbyteArray JNICALL Java_intellistream_morphstream_util_libVNFFrontend_
 JNIEXPORT jint JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1txn_1finished
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     intellistream_morphstream_util_libVNFFrontend_NativeInterface
+ * Method:    __txn_finished_results
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1txn_1finished_1results
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     intellistream_morphstream_util_libVNFFrontend_NativeInterface
+ * Method:    __pause_txn_processing
+ * Signature: (Ljava/util/HashMap;Ljava/util/HashMap;)V
+ */
+JNIEXPORT void JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1pause_1txn_1processing
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     intellistream_morphstream_util_libVNFFrontend_NativeInterface
+ * Method:    __get_state_from_cache
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1get_1state_1from_1cache
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     intellistream_morphstream_util_libVNFFrontend_NativeInterface
+ * Method:    __update_states_to_cache
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1update_1states_1to_1cache
+  (JNIEnv *, jclass, jstring, jint);
+
+/*
+ * Class:     intellistream_morphstream_util_libVNFFrontend_NativeInterface
+ * Method:    __resume_txn_processing
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1resume_1txn_1processing
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     intellistream_morphstream_util_libVNFFrontend_NativeInterface
+ * Method:    __request_lock
+ * Signature: (ILjava/lang/String;I)I
+ */
+JNIEXPORT jint JNICALL Java_intellistream_morphstream_util_libVNFFrontend_NativeInterface__1_1request_1lock
+  (JNIEnv *, jclass, jint, jstring, jint);
+
 #ifdef __cplusplus
 }
 #endif

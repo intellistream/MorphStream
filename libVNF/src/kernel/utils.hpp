@@ -3,6 +3,13 @@
 
 #include "core.hpp"
 
+enum strategy {
+    Partition,
+    Cache,
+    Offloading,
+    TPG
+};
+
 uint64_t GetCurrentTime()
 {
 	auto currentTimePoint = std::chrono::high_resolution_clock::now();
@@ -177,12 +184,6 @@ bool GetJniEnv(JNIEnv **env);
 
 Globals& GetGlobal();
 
-enum strategy {
-    Partition,
-    Cache,
-    Offloading,
-    TPG
-};
 
 struct PerCoreState {
     // For joining threads.
