@@ -3,8 +3,7 @@ import cli.SLClient;
 import cli.WebServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import communication.dao.Response;
-import intellistream.morphstream.api.input.InputSource;
-import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.api.input.TPGInputListener;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,7 @@ public class SignalHandler extends SimpleChannelInboundHandler<SignalRequest> {
             SLClient.startJob(new String[]{});
         } else if (request.getSignal().equals("stop")) {
             log.info("Stop signal received");
-            InputSource.get().insertStopSignal(); // notify spout to pass stop signal downstream
+            TPGInputListener.get().insertStopSignal(); // notify spout to pass stop signal downstream
             Response<SignalResponse> response = generateResponse(appId, correlationId, false);
             channelHandlerContext.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(response)));
         } else {

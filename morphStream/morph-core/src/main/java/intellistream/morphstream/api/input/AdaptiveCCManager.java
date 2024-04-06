@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.input;
 
+import java.io.IOException;
+
 public class AdaptiveCCManager {
 
     CacheCCManager cacheCCManager;
@@ -14,12 +16,11 @@ public class AdaptiveCCManager {
         patternMonitor = new PatternMonitor();
     }
 
-    public void initialize() {
+    public void initialize() throws IOException {
         cacheCCManager.initialize();
         lockCCManager.initialize();
         offloadCCManager.initialize();
         patternMonitor.initialize();
     }
 
-    //TODO: Optimization: Initialize CC123 managers as multi-threaded processes
 }

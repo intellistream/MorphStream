@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.launcher;
 
 import intellistream.morphstream.api.input.FileDataGenerator;
-import intellistream.morphstream.api.input.InputSource;
+import intellistream.morphstream.api.input.TPGInputListener;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
@@ -22,13 +22,18 @@ public class MorphStreamEnv {
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
     private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
-    private final InputSource inputSource = new InputSource();
+    private final TPGInputListener inputSource = new TPGInputListener();
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
+
+    public MorphStreamEnv() {
+        inputSource.initialize();
+    }
+
     public static MorphStreamEnv get() {
         return ourInstance;
     }
@@ -46,7 +51,7 @@ public class MorphStreamEnv {
     }
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
-    public InputSource inputSource() {return inputSource;}
+    public TPGInputListener inputSource() {return inputSource;}
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();
