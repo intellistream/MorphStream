@@ -142,12 +142,12 @@ public class FastSLClient extends Client {
 
         fastSLClient.registerOperator("fastSLClient", txnIDs, 0, 4);
 
-        Thread libVNFThread = new Thread(() -> {
-            VNF_JNI.__VNFThread(0, null);
-        });
-
-        // Start the thread
-        libVNFThread.start();
+//        Thread libVNFThread = new Thread(() -> {
+//            VNF_JNI.__VNFThread(0, null);
+//        });
+//
+//        // Start the thread
+//        libVNFThread.start();
 
         // Start all 4 CC strategies
         AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();

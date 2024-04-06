@@ -14,7 +14,7 @@ public class PartitionCCManager {
 
     public void initialize() throws IOException {
         LinkedBlockingQueue<byte[]> messageQueue = new LinkedBlockingQueue<>();
-        Thread listenerThread = new Thread(new CCInputListener(messageQueue, PARTITION_PORT));
+        Thread listenerThread = new Thread(new SocketListener(messageQueue, PARTITION_PORT));
         Thread processorThread = new Thread(new PartitionInputProcessor(messageQueue, partitionOwnership));
 
         listenerThread.start();

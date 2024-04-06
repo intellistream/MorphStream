@@ -127,25 +127,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int isAbort = -1;
         int udfResult = -1;
 
-        if (useNativeLib) {
-            // TODO. @Zhonghao: result_ptr is the pointer to write back result for Write type
-            byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
-            isAbort = decodeInt(saResultBytes, 0);
-            udfResult = decodeInt(saResultBytes, 4);
-        } else {
-            try {
-                Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-                if (Client.class.isAssignableFrom(clientClass)) {
-                    Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-//                    byte[] testBytes = encodeStringArray(readValues);
-//                    testBytes = clientObj.execute_txn_udf(operation.stateAccess[0], testBytes);
-//                    readValues = decodeStringArray(testBytes);
-                }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                     InvocationTargetException | NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
+        isAbort = decodeInt(saResultBytes, 0);
+        udfResult = decodeInt(saResultBytes, 4);
 
         if (isAbort == 0) { //txn is not aborted
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE

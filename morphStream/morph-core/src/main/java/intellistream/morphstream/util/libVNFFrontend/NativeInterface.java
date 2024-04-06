@@ -50,9 +50,9 @@ public class NativeInterface {
         System.out.println(def);
         // TODO: Dispose definition of apps.
 
-        System.out.println("VNFs spawned.");
-        lf.__VNFThread(0, null);
-
-        System.out.println("VNFs ends.");
+//        System.out.println("VNFs spawned.");
+//        lf.__VNFThread(0, null);
+//
+//        System.out.println("VNFs ends.");
     }
 }

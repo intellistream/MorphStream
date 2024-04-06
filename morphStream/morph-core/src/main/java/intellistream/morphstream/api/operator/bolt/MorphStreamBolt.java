@@ -3,6 +3,7 @@ package intellistream.morphstream.api.operator.bolt;
 import commonStorage.RequestTemplates;
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.input.TransactionalVNFEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
@@ -16,9 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
@@ -28,11 +32,12 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
     private final HashMap<String, String[]> txnTemplates; //Transaction flag -> state access IDs. E.g. "transfer" -> {"srcTransfer", "destTransfer"}
     private final HashMap<String, String[]> saTemplates; //State access ID -> state objects.
-    private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
+    private final ArrayDeque<TransactionalVNFEvent> eventQueue;//Transactional events deque
     private final HashMap<Long, HashMap<String, String[]>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
+    private final Map<Integer, Socket> instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
 
     public MorphStreamBolt(String id, int fid) {
@@ -71,7 +76,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
-        TransactionalEvent event = (TransactionalEvent) input_event;
+        TransactionalVNFEvent event = (TransactionalVNFEvent) input_event;
         TxnContext txnContext = new TxnContext(thread_Id, this.fid, _bid, ((TransactionalEvent) input_event).getTxnRequestID());
         if (enable_latency_measurement) {
             event.setOperationTimestamp(operatorTimestamp);
@@ -79,7 +84,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         Transaction_Request_Construct(event, txnContext);
     }
 
-    protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void Transaction_Request_Construct(TransactionalVNFEvent event, TxnContext txnContext) throws DatabaseException {
         String[] saIDs = txnTemplates.get(event.getFlag());
 //        eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
@@ -105,43 +110,16 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Post_Process() {
-
-        if (useNativeLib) {
-            for (TransactionalEvent event : eventQueue) {
-                NativeInterface.__txn_finished(event.getTxnRequestID()); //Notify libVNF for txn completion
-            }
-        } else {
-            for (TransactionalEvent event : eventQueue) {
-                Result udfResultReflect = null;
-                try {
-                    //Invoke client defined post-processing UDF using Reflection
-                    Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-                    if (Client.class.isAssignableFrom(clientClass)) {
-                        Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                        HashMap<String, String[]> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                        udfResultReflect = new Result();
-                        //TODO: Pass txn result to post UDF
-//                        udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
-                    }
-                    if (!isCombo) {
-                        assert udfResultReflect != null;
-                        collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
-                    } else {
-                        if (enable_latency_measurement) {
-                            assert udfResultReflect != null;
-                            sink.execute(new Tuple(event.getBid(), this.thread_Id, context,
-                                    new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
-                        }
-                    }
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException("Client class instantiation failed");
-                } catch (NoSuchMethodException | InvocationTargetException e) {
-                    throw new RuntimeException("Client post UDF invocation failed");
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Output emission interrupted");
-                } catch (BrokenBarrierException | IOException | DatabaseException e) {
-                    throw new RuntimeException(e);
-                }
+        for (TransactionalVNFEvent event : eventQueue) {
+            int instanceID = event.getInstanceID();
+            try {
+                OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
+                String combined =  4 + ";" + event.getTxnRequestID();
+                byte[] byteArray = combined.getBytes();
+                out.write(byteArray);
+                out.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
     }

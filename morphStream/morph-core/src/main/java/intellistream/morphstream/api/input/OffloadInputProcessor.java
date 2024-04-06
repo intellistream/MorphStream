@@ -7,6 +7,10 @@ import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,11 +18,13 @@ import java.util.concurrent.Executors;
 public class OffloadInputProcessor implements Runnable {
     private final BlockingQueue<byte[]> operationQueue;
     private final ExecutorService offloadExecutor;
+    private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
 
     public OffloadInputProcessor(BlockingQueue<byte[]> operationQueue, int writeThreadPoolSize) {
         this.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
+        this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     }
 
 
@@ -26,16 +32,34 @@ public class OffloadInputProcessor implements Runnable {
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             byte[] txnByteArray = operationQueue.poll();
-            long txnID = 0;
+            int instanceID = 0;
+            long txnReqID = 0;
             int txnType = 1; //TODO: Hardcode, 0:R, 1:W
             if (txnType == 1) {
-                NativeInterface.__txn_finished_results(txnID, 0); //Immediate ACK
-                offloadExecutor.submit(() -> writeGlobalStates(txnID, txnByteArray));
+                try {
+                    OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
+                    String combined =  4 + ";" + txnReqID;
+                    byte[] byteArray = combined.getBytes();
+                    out.write(byteArray);
+                    out.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                offloadExecutor.submit(() -> writeGlobalStates(txnReqID, txnByteArray));
 
             } else if (txnType == 0) {
                 synchronized (this) { //TODO: Consider replace lock with MVCC
-                    int txnResult = readGlobalStates(txnID, txnByteArray);
-                    NativeInterface.__txn_finished_results(txnID, txnResult); //ACK
+                    int txnResult = readGlobalStates(txnReqID, txnByteArray);
+                    try {
+                        OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
+                        String combined =  4 + ";" + txnReqID + ";" + txnResult; //__txn_finished
+                        byte[] byteArray = combined.getBytes();
+                        out.write(byteArray);
+                        out.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }
@@ -43,7 +67,7 @@ public class OffloadInputProcessor implements Runnable {
 
     private static void writeGlobalStates(long txnID, byte[] byteArray) {
         String tableID = "table";
-        String tupleID = "0";
+        String tupleID = "0"; //TODO: Hardcoded
         int value = 0;
         try {
             TableRecord condition_record = storageManager.getTable(tableID).SelectKeyRecord(tupleID);

@@ -136,6 +136,8 @@ public class TPGInputListener implements Runnable {
 
         List<byte[]> splitByteArrays = splitByteArray(byteArray, fullSeparator);
 
+        int instanceID = 0; //TODO: Hardcoded, should be extracted from the byte array
+
         byte[] reqIDByte = splitByteArrays.get(1);
         byte[] keysByte = splitByteArrays.get(2);
         byte[] flagByte = splitByteArrays.get(3);
@@ -161,7 +163,7 @@ public class TPGInputListener implements Runnable {
         String flagStr = String.valueOf(flag);
         boolean isAbortBool = isAbort != 0;
 
-        TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(timestamp, txnReqID, keys, flagStr, isAbortBool);
+        TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(instanceID, timestamp, txnReqID, keys, flagStr, isAbortBool);
 
         if (createTimestampForEvent) {
             txnEvent.setOriginTimestamp(System.nanoTime());
