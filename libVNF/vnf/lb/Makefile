@@ -73,10 +73,10 @@ $(APP_KERNELapp.PASS_DYNAMIC): app.cpp
 
 $(APP_KERNEL_STATIC): app.cpp
 	g++ $(CXX_FLAGS) app.cpp -c
-	g++ app.o -O${CPP_OPTIMIZE} -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -ljsoncpp -o $(APP_KERNEL_STATIC)
+	g++ app.o -O${CPP_OPTIMIZE} -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -ljsoncpp -o app-$(APP_KERNEL_STATIC)
 
 $(APP_KERNEL_DYNAMIC): app.cpp
-	g++ app.cpp $(CXX_FLAGS) -shared $(JAVA_INCLUDE) -lvnf-kernel-dynamic -lpthread -lboost_system -ljsoncpp -o $(APP_KERNEL_DYNAMIC)
+	g++ app.cpp $(CXX_FLAGS) -shared $(JAVA_INCLUDE) -lvnf-kernel-dynamic -lpthread -lboost_system -ljsoncpp -o app-$(APP_KERNEL_DYNAMIC)
 
 $(APP_KERNEL_STANDALONE): app.cpp
 	g++ $(CXX_FLAGS) $(JAVA_INCLUDE) app.cpp -c

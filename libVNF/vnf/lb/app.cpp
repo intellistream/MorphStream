@@ -72,9 +72,9 @@ void app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
     auto content = string(ctx.packet());
 
     // Parse content from comma.
-    int comma_pos[3] = {0,0,0};
+    int comma_pos[] = {0,0,0,0};
     int com = 0;
-    for (int i = 0; i < content.length() && com < 3; i++)
+    for (int i = 0; i < content.length() && com < 4; i++)
     {
         if (content[i] == ','){
             comma_pos[com] = i;
@@ -84,7 +84,7 @@ void app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
 
     // std::cout << content.substr(0, comma_pos[0]) << std::endl;
     auto host = content.substr(0, comma_pos[0]).c_str(); 
-	auto isFirst = content.substr(comma_pos[2] + 1) == "false"? true: false;
+	auto isFirst = content.substr(comma_pos[0] + 1, comma_pos[1] - comma_pos[0] - 1) == "true"? true: false;
     // std::cout << "key" << key << std::endl;
 
     // std::cout << content.substr(comma_pos[0] + 1, comma_pos[1] - comma_pos[0] - 1) << std::endl;
@@ -98,7 +98,7 @@ void app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
         ctx.Transaction(0).Trigger(connId, ctx, (const char*)&threadLocal->assigned_backend, false); // Rount and count. Record count to the earlier assigned backend count.
     }
     // Route and increment count if not.
-    threadLocal->abortion = content.substr(comma_pos[2] + 1) == "false"? true: false;
+    threadLocal->abortion = content.substr(comma_pos[3] + 1) == "true"? true: false;
     return;
 };
 

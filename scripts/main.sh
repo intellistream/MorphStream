@@ -318,7 +318,6 @@ compile_example_vnf() {
 	# 	 echo "unfinished." && exit 1
 	# 	 make kernel_bypass-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
 	# else
-	rm $VNF_PATH/kernel-standalone
 	make kernel-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
 	make kernel-standalone JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
 	# fi
@@ -482,7 +481,8 @@ case $1 in
 			if [ $# -ge 3 ] && [[ $3 == $EXAMPLE ]]; then
 				compile_example_vnf || error_exit
 				rm "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so" &>/dev/null || true
-				mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
+				mv "$VNF_PATH/app-kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
+				mv "$VNF_PATH/app-kernel-standalone" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-standalone"
 				exit 0
 			fi
 		elif [ $# -ge 2 ] && [[ $2 == "$MORPH" ]]; then
