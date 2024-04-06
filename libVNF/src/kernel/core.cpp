@@ -94,6 +94,12 @@ void freeDSPool() {
     globals.dsSize = 0;
 }
 
+#ifdef STANDALONE
+	int get_state_from_cache(uint64_t tupleID, int socketId);
+	int send_state_from_cache(uint64_t tupleID, int socketId);
+	void* update_state_to_cache(int tupleID, int write_value);
+#endif
+
 int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocation type) {
     int socketId = -1;
     int ret = -1;
@@ -206,7 +212,7 @@ void *serverThread(void *args) {
     spdlog::info("Waiting for epollEvents");
 
     // Connect to remote state manager.
-    perCoreStates[coreId].txnSocket = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[0], REMOTE);
+    perCoreStates[coreId].txnSocket = createClientToDS(coreId, globals.config.dataStoreIP, globals.config.dataStorePort, REMOTE);
 
     while (!perCoreStates[coreId].isJobDone) {
         int numEventsCaptured = epoll_wait(epFd, epollEvents, MAX_EVENTS, -1);      // Epoll provided by libc. -1: infinite time out.
@@ -324,6 +330,7 @@ void *serverThread(void *args) {
             */
             if (currentEvents & EPOLLIN) {
                 if (perCoreStates[coreId].isStateManagerSocket(currentSocketId)) {
+                    #ifdef STANDALONE
                     while (true) {
                         uint8_t retval,command,length;
                         /*
@@ -437,6 +444,9 @@ void *serverThread(void *args) {
                     }
 
                     continue;
+                    #else 
+                        assert(false);
+                    #endif
                 } 
 
                 /* Current socketId points to non-remote datastore network function */
@@ -2143,18 +2153,18 @@ Globals& GetGlobal(){
 */
 int Context::packet_len()
 {
-    if (_packet_len < 0){
-        std::cout << boost::stacktrace::stacktrace();
-    }
+    // if (_packet_len < 0){
+    //     std::cout << boost::stacktrace::stacktrace();
+    // }
     return _packet_len;
 }
 
 char *Context::packet()
 {
-    if (_packet == NULL && _ret != vnf::ACCEPT){
-        spdlog::warn("packet is null.");
-        std::cout << boost::stacktrace::stacktrace();
-    }
+    // if (_packet == NULL && _ret != vnf::ACCEPT){
+    //     spdlog::warn("packet is null.");
+    //     std::cout << boost::stacktrace::stacktrace();
+    // }
     return _packet;
 }
 
@@ -2424,11 +2434,10 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 _disposalBody(connId, ctx);
                 break;
             }
-            case Offloading:{
-                // Execute. And offload writing.
-                break;
-            }
-            default:{  // TPG as the default strategy.{
+            // Offloading and TPG are just sending the request.
+            case Offloading:{}
+            case TPG:{}
+            default:{  
                 // Register call back parameters in the context.
                 perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
 
