@@ -3,7 +3,7 @@ package cli;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import commonStorage.RequestTemplates;
-import intellistream.morphstream.api.input.InputSource;
+import intellistream.morphstream.api.input.TPGInputListener;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
@@ -154,7 +154,7 @@ public class CliFrontend {
 
     public void prepareStreaming() {
         env.DatabaseInitialize();
-        env.inputSource().initializeStreaming(InputSource.InputSourceType.JNI, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+        env.inputSource().initializeStreaming(TPGInputListener.InputSourceType.JNI, MorphStreamEnv.get().configuration().getInt("spoutNum"));
     }
 
     public void prepareStatic() throws IOException {
@@ -178,7 +178,7 @@ public class CliFrontend {
                 stringBuilder.deleteCharAt(stringBuilder.length()-1);
                 env.configuration().put("WorkloadConfig",stringBuilder.toString()); //For each workload, how many TD/LD/PD
             }
-            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), TPGInputListener.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         } else if (env.configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
             String inputFile = env.configuration().getString("inputFilePath");
             File file = new File(inputFile);
@@ -188,7 +188,7 @@ public class CliFrontend {
                 String fileName = env.fileDataGenerator().prepareInputData(false);
                 env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), TPGInputListener.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         }
     }
     public void start() throws InterruptedException {

@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.net.*;
 
 
 /**
@@ -18,8 +19,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * It should support both static (read from file) and streaming (Kafka, HTTP or WebSocket) input data.
  * It maintains a BlockingQueue to manage data insertion (from data source) and retrieval (by Spout).
  */
-public class InputSource {
-    private static final InputSource ourInstance = new InputSource();
+public class TPGInputListener implements Runnable {
+    private static final TPGInputListener ourInstance = new TPGInputListener();
     private InputSourceType inputSourceType; //from file or streaming
 //    private static int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
@@ -30,6 +31,8 @@ public class InputSource {
     private static final boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
+    private static final int TPG_PORT = 12004;
+
     public enum InputSourceType {
         FILE_STRING,
         FILE_JSON,
@@ -39,17 +42,43 @@ public class InputSource {
         JNI
     }
 
-    public static InputSource get() {
+    public static TPGInputListener get() {
         return ourInstance;
     }
 
-    public void insertStopSignal() {
-//        int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
-//        int spoutNum = 4;
-//        for (int i = 0; i < spoutNum; i++) {
-//            BlockingQueue<TransactionalEvent> inputQueue = executorInputQueues.get(i);
-//            inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));
-//        }
+    public void initialize() {
+        Thread serverThread = new Thread(this);
+        serverThread.start();
+    }
+
+    public void insertStopSignal() {}
+
+    public void run() {
+        try (ServerSocket serverSocket = new ServerSocket(TPG_PORT)) {
+            System.out.println("TPG state manager is listening on port " + TPG_PORT);
+
+            while (true) {
+                try (Socket socket = serverSocket.accept()) {
+                    
+                    InputStream input = socket.getInputStream();
+                    byte[] buffer = new byte[1024]; // Buffer for reading data
+                    int bytesRead = input.read(buffer); // Read the message into the buffer
+
+                    if (bytesRead > 0) {
+                        byte[] message = new byte[bytesRead]; // Create an array of the exact length
+                        System.arraycopy(buffer, 0, message, 0, bytesRead); // Copy the relevant bytes
+                        
+                        executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(message));
+                        rrIndex = (rrIndex + 1) % spoutNum;
+                    }
+                    
+                } catch (IOException e) {
+                    System.out.println("Exception occurred when trying to connect to VM2: " + e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Exception occurred when trying to start VM1 Server: " + e.getMessage());
+        }
     }
 
     //Delegate calling from libVNF for possible type changing.
@@ -66,7 +95,7 @@ public class InputSource {
         bid = 0;
         this.staticFilePath = staticFilePath;
         this.inputSourceType = inputSourceType;
-        InputSource.spoutNum = spoutNum;
+        TPGInputListener.spoutNum = spoutNum;
         for (int i = 0; i < spoutNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
             executorInputQueues.put(i, inputQueue);
