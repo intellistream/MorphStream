@@ -94,6 +94,12 @@ void freeDSPool() {
     globals.dsSize = 0;
 }
 
+#ifdef STANDALONE
+	int get_state_from_cache(uint64_t tupleID, int socketId);
+	int send_state_from_cache(uint64_t tupleID, int socketId);
+	void* update_state_to_cache(int tupleID, int write_value);
+#endif
+
 int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocation type) {
     int socketId = -1;
     int ret = -1;
@@ -206,7 +212,7 @@ void *serverThread(void *args) {
     spdlog::info("Waiting for epollEvents");
 
     // Connect to remote state manager.
-    perCoreStates[coreId].txnSocket = createClientToDS(coreId, userConfig->DATASTORE_IP, userConfig->DATASTORE_PORTS[0], REMOTE);
+    perCoreStates[coreId].txnSocket = createClientToDS(coreId, globals.config.dataStoreIP, globals.config.dataStorePort, REMOTE);
 
     while (!perCoreStates[coreId].isJobDone) {
         int numEventsCaptured = epoll_wait(epFd, epollEvents, MAX_EVENTS, -1);      // Epoll provided by libc. -1: infinite time out.
@@ -324,6 +330,7 @@ void *serverThread(void *args) {
             */
             if (currentEvents & EPOLLIN) {
                 if (perCoreStates[coreId].isStateManagerSocket(currentSocketId)) {
+                    #ifdef STANDALONE
                     while (true) {
                         uint8_t retval,command,length;
                         /*
@@ -437,6 +444,9 @@ void *serverThread(void *args) {
                     }
 
                     continue;
+                    #else 
+                        assert(false);
+                    #endif
                 } 
 
                 /* Current socketId points to non-remote datastore network function */
@@ -1769,7 +1779,7 @@ void DB4NFV::SFC::Add(App& last, App& app){
 }
 
 // The entry for sending txn execution request to txnEngine.
-void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId& connId)
+void __request(uint64_t ts, uint64_t txnReqId, const char *key, int txnIndex, int saIndex, ConnId& connId)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
     int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
@@ -1791,7 +1801,11 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int flag, ConnId
     offset += strlen(key);
     data[offset++] = ';';
 
-    memcpy(data + offset, &flag, sizeof(int));
+    memcpy(data + offset, &txnIndex, sizeof(int));
+    offset += sizeof(int);
+    data[offset++] = ';';
+
+    memcpy(data + offset, &saIndex, sizeof(int));
     offset += sizeof(int);
     data[offset++] = ';';
 
@@ -2143,18 +2157,18 @@ Globals& GetGlobal(){
 */
 int Context::packet_len()
 {
-    if (_packet_len < 0){
-        std::cout << boost::stacktrace::stacktrace();
-    }
+    // if (_packet_len < 0){
+    //     std::cout << boost::stacktrace::stacktrace();
+    // }
     return _packet_len;
 }
 
 char *Context::packet()
 {
-    if (_packet == NULL && _ret != vnf::ACCEPT){
-        spdlog::warn("packet is null.");
-        std::cout << boost::stacktrace::stacktrace();
-    }
+    // if (_packet == NULL && _ret != vnf::ACCEPT){
+    //     spdlog::warn("packet is null.");
+    //     std::cout << boost::stacktrace::stacktrace();
+    // }
     return _packet;
 }
 
@@ -2356,7 +2370,6 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 auto tmp = globals.localDatastore[*(uint64_t *)key];
                 auto len = globals.localDatastoreLens[*(uint64_t *)key];
                 // Call callback.
-                // TODO.
                 assert(ctx.AppIdx() != -1);
                 // Call actual sa udf.
                 STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, len);
@@ -2415,8 +2428,9 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
 
                 // Send to record.
-                assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int))); // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, dsMalloc, sizeof(int)) > 0); // Send key to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int)) > 0); // Send key to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, dsMalloc, sizeof(int)) > 0); // Send content to write.
                 globals.dataStoreLock.unlock();
 
                 // Move next.
@@ -2424,16 +2438,14 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 _disposalBody(connId, ctx);
                 break;
             }
-            case Offloading:{
-                // Execute. And offload writing.
-                break;
-            }
-            default:{  // TPG as the default strategy.{
+            // Offloading and TPG are just sending the request.
+            case Offloading:{}
+            case TPG:{}
+            default:{  
                 // Register call back parameters in the context.
                 perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
 
-                __request(ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, connId);
-                break;
+                __request(ctx._full_ts(), TXNREQID(connId.coreId, ctx._ts_low_32b()), key, this->txnIndex, sa.saIndex, connId);
             }
         } 
     }

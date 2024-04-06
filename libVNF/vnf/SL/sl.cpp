@@ -103,7 +103,7 @@ void sl_app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
         // ctx.NextApp(1, vnf::READ);
         ctx.Transaction(0).Trigger(connId, ctx, content.substr(0, comma_pos[0]).c_str(), false);
     } else {
-        std::cout << boost::stacktrace::stacktrace();
+        // std::cout << boost::stacktrace::stacktrace();
         std::cout << "Invalid txn name: " << txn << std::endl;
         assert(false);
     }

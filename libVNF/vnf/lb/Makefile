@@ -1,9 +1,10 @@
 DEBUG=false
 
-SL_KERNEL_STATIC=kernel-static
-SL_KERNEL_DYNAMIC=kernel-dynamic
-SL_KERNELBYPASS_STATIC=kernelbypass-static
-SL_KERNELBYPASS_DYNAMIC=kernelbypass-dynamic
+APP_KERNEL_STATIC=kernel-static
+APP_KERNEL_DYNAMIC=kernel-dynamic
+APP_KERNELBYPASS_STATIC=kernelbypass-static
+APP_KERNELBYPASS_DYNAMIC=kernelbypass-dynamic
+APP_KERNEL_STANDALONE=kernel-standalone
 
 CXX_FLAGS=-fpermissive -std=c++11 -Wno-write-strings -Wcomment -fPIC -Wno-pointer-arith
 ifeq ($(DEBUG),true)
@@ -55,27 +56,31 @@ ifeq ($(shell uname -m),x86_64)
 endif
 
 ifeq ($(DPDK),1)
-	DPDK_LISL_FLAGS = $(shell cat /lib/ldflags.txt)
-	LIBS += -ldl -march=native -export-dynamic -L$(MTCP_P_FLD)/dpdk/lib $(DPDK_LISL_FLAGS)
+	DPDK_LIAPP_FLAGS = $(shell cat /lib/ldflags.txt)
+	LIBS += -ldl -march=native -export-dynamic -L$(MTCP_P_FLD)/dpdk/lib $(DPDK_LIAPP_FLAGS)
 else
-	LIBS += -ldl -march=native -export-dynamic -L$(MTCP_P_FLD)/dpdk/lib $(DPDK_LISL_FLAGS)
+	LIBS += -ldl -march=native -export-dynamic -L$(MTCP_P_FLD)/dpdk/lib $(DPDK_LIAPP_FLAGS)
 endif
 
 all:
 
-$(SL_KERNELBYPASS_STATIC): sl.cpp
-	g++ $(CXX_FLAGS) sl.cpp -c
-	g++ sl.o -o $(SL_KERNELBYPASS_STATIC) $(CXX_FLAGS) -lvnf-kernelbypass-static $(LIBS) $(INCLUDES)
+$(APP_KERNELBYPASS_STATIC): app.cpp
+	g++ $(CXX_FLAGS) app.cpp -c
+	g++ app.o -o $(APP_KERNELBYPASS_STATIC) $(CXX_FLAGS) -lvnf-kernelbypass-static $(LIBS) $(INCLUDES)
 
-$(SL_KERNELsl.PASS_DYNAMIC): sl.cpp
-	g++ sl.cpp -o $(SL_KERNELsl.PASS_DYNAMIC) $(CXX_FLAGS) -lvnf-kernelbypass-dynamic $(LIBS) $(INCLUDES)
+$(APP_KERNELapp.PASS_DYNAMIC): app.cpp
+	g++ app.cpp -o $(APP_KERNELapp.PASS_DYNAMIC) $(CXX_FLAGS) -lvnf-kernelbypass-dynamic $(LIBS) $(INCLUDES)
 
-$(SL_KERNEL_STATIC): sl.cpp
-	g++ $(CXX_FLAGS) sl.cpp -c
-	g++ sl.o -O${CPP_OPTIMIZE} $(DEBUG) -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -ljsoncpp -o $(SL_KERNEL_STATIC)
+$(APP_KERNEL_STATIC): app.cpp
+	g++ $(CXX_FLAGS) app.cpp -c
+	g++ app.o -O${CPP_OPTIMIZE} -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -ljsoncpp -o app-$(APP_KERNEL_STATIC)
 
-$(SL_KERNEL_DYNAMIC): sl.cpp
-	g++ sl.cpp $(CXX_FLAGS) -shared $(JAVA_INCLUDE) -lvnf-kernel-dynamic -lpthread -lboost_system -ljsoncpp -o $(SL_KERNEL_DYNAMIC)
+$(APP_KERNEL_DYNAMIC): app.cpp
+	g++ app.cpp $(CXX_FLAGS) -shared $(JAVA_INCLUDE) -lvnf-kernel-dynamic -lpthread -lboost_system -ljsoncpp -o app-$(APP_KERNEL_DYNAMIC)
+
+$(APP_KERNEL_STANDALONE): app.cpp
+	g++ $(CXX_FLAGS) $(JAVA_INCLUDE) app.cpp -c
+	g++ app.o -O${CPP_OPTIMIZE} -lvnf-kernel-static -lpthread -lboost_system -lsctp -lfmt -ljsoncpp -o app-$(APP_KERNEL_STANDALONE)
 
 clean:
-	rm -f *~ *.o *.log $(SL_KERNEL_STATIC) $(SL_KERNEL_DYNAMIC) $(SL_KERNELBYPASS_STATIC) $(SL_KERNELBYPASS_DYNAMIC)  log_*
+	rm -f *~ *.o *.log $(APP_KERNEL_STATIC) $(APP_KERNEL_DYNAMIC) $(APP_KERNELBYPASS_STATIC) $(APP_KERNELBYPASS_DYNAMIC)  log_*

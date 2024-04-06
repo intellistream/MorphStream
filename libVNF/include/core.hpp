@@ -45,7 +45,7 @@
 #include <fstream>
 #include <chrono>
 #include <mutex>
-#include <boost/stacktrace.hpp>
+// #include <boost/stacktrace.hpp>
 #include <jsoncpp/json/json.h>
 #include "intellistream_morphstream_util_libVNFFrontend_NativeInterface.h"
 
@@ -99,8 +99,6 @@
 
 #define STATE_TYPE int
 #define STATE_TYPE_SIZE (sizeof(int))
-
-#define STANDALONE
 
 // DEBUG to print CONTEXT.
 #define DEBUG_PRINT_CONTEXT(sig, ctx) \
@@ -499,12 +497,6 @@ ConnId getObjConnId(uint32_t connId);
 
 uint32_t getIntConnId(ConnId& connId);
 }
-
-#ifdef STANDALONE
-	int get_state_from_cache(uint64_t tupleID, int socketId);
-	int send_state_from_cache(uint64_t tupleID, int socketId);
-	void* update_state_to_cache(int tupleID, int write_value);
-#endif
 
 struct BackendServer
 {

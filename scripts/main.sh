@@ -67,34 +67,46 @@ PLOT="--PLOT"
 
 # Compile Example VNF options
 EXAMPLE="--EXAMPLE_VNF"
-VNF_PATH="$LIBVNF_DIR/vnf/SL"
+VNF_PATH="$LIBVNF_DIR/vnf/lb"
 
 USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable kernel to run the system. \n\t $RUN [$KERNEL_STACK|$KERNEL_BYPASS] to run the compiled system. \n\t $COMPILE [$KERNEL_STACK|$KERNEL_BYPASS] to set up the environment and compile. "
 
-compile_libVNF(){
-	# TODO. check if includes has been there.
-	# TODO. If needs kernel_bypass. remind to use kernel_bypass
+compile_libVNF() {
+	echo "Compiling libVNF $1 mode."
 
-	if [ $# -ge 2 ] && [[ $2 == "$KERNEL_STACK" ]]; then
+	if [[ $1 == "STANDALONE" ]]; then
 		rm -dfr "$BUILD_DIR" &> /dev/null || true
 		mkdir "$BUILD_DIR" && cd "$BUILD_DIR"
 		if [[ $DEBUG == true ]]; then 
-			$CMAKE "$LIBVNF_DIR" -DSTACK=KERNEL \
+			$CMAKE "$LIBVNF_DIR" -DMODE=STANDALONE \
 				-DCMAKE_BUILD_TYPE=Debug  \
 				-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
 		else 
-			$CMAKE "$LIBVNF_DIR" -DSTACK=KERNEL \
+			$CMAKE "$LIBVNF_DIR" -DMODE=STANDALONE \
+				-DCMAKE_BUILD_TYPE=Release  \
+				-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
+		fi
+		rm -dfr $HEADER_INSTALL 
+		mkdir $HEADER_INSTALL && cp "$HEADER/core.hpp" "$HEADER_INSTALL/"
+		make install -j4 && echo "Done: libVNF built and installed." 
+	elif [[ $1 == "SHARED" ]]; then 
+		rm -dfr "$BUILD_DIR" &> /dev/null || true
+		mkdir "$BUILD_DIR" && cd "$BUILD_DIR"
+		if [[ $DEBUG == true ]]; then 
+			$CMAKE "$LIBVNF_DIR" -DMODE=SHARED \
+				-DCMAKE_BUILD_TYPE=Debug  \
+				-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
+		else 
+			$CMAKE "$LIBVNF_DIR" -DMODE=SHARED \
 				-DCMAKE_BUILD_TYPE=Release \
 				-DJAVA_JNI_INTERFACE="$INTERFACE_FILE"
 		fi
 		rm -dfr $HEADER_INSTALL 
 		mkdir $HEADER_INSTALL && cp "$HEADER/core.hpp" "$HEADER_INSTALL/"
 		make install -j4 && echo "Done: libVNF built and installed." 
-		exit 0
-	elif [ $# -ge 2 ] && [[ $2 == "$KERNEL_BYPASS" ]]; then 
-		local 
+	else 
+		echo "Invalid argument. exit." && exit 1
 	fi
-	exit 0
 }
 
 compile_jni_header(){
@@ -302,12 +314,13 @@ compile_example_vnf() {
 	echo "Compiling Example VNF: $VNF_PATH"
 	cd "$VNF_PATH"
 	make clean
-	if [[ $IS_KENREL_BYPASS == true ]]; then 
-		 echo "unfinished." && exit 1
-		 make kernel_bypass-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
-	else
-		 make kernel-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
-	fi
+	# if [[ $IS_KENREL_BYPASS == true ]]; then 
+	# 	 echo "unfinished." && exit 1
+	# 	 make kernel_bypass-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
+	# else
+	make kernel-dynamic JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
+	make kernel-standalone JAVA_HOME="$JAVA_HOME" DEBUG=$DEBUG || error_exit
+	# fi
 }
 
 # TODO.
@@ -324,6 +337,7 @@ setup_kernel_bypass_stack(){
 	GCC_VERSION=$(gcc --version | head -n 1 | awk '{print $4}')
 	local DEPENDENCY="libdpdk-dev libnuma-dev librt-client-rest-perl libgmp-dev \
 	linux-headers-$(uname -r) \
+	libfmt-dev \
 	build-essential \
 	gcc-7 \
 	g++-7 \
@@ -467,7 +481,8 @@ case $1 in
 			if [ $# -ge 3 ] && [[ $3 == $EXAMPLE ]]; then
 				compile_example_vnf || error_exit
 				rm "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so" &>/dev/null || true
-				mv "$VNF_PATH/kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
+				mv "$VNF_PATH/app-kernel-dynamic" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-dynamic.so"
+				mv "$VNF_PATH/app-kernel-standalone" "$TMP_DIR/$(basename "$VNF_PATH")-kernel-standalone"
 				exit 0
 			fi
 		elif [ $# -ge 2 ] && [[ $2 == "$MORPH" ]]; then
@@ -479,7 +494,8 @@ case $1 in
 			exit 1
 		fi
 		compile_jni_header
-		compile_libVNF "$@" || error_exit
+		compile_libVNF "STANDALONE" || error_exit
+		compile_libVNF "SHARED" || error_exit
 		echo "Setup done"
 		exit 0;
 		;;
