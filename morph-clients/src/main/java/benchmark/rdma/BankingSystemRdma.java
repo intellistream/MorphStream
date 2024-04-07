@@ -14,6 +14,7 @@ public class BankingSystemRdma {
                 driver.initialize();
                 driver.start();
                 BankingSystemClient.startClient(new String[]{});
+                driver.MorphStreamDriverJoin();
             } else {
                 MorphStreamWorker morphStreamWorker = new MorphStreamWorker();
                 MorphStreamEnv.get().setRdmaWorkerManager(morphStreamWorker.getRdmaWorkerManager());
