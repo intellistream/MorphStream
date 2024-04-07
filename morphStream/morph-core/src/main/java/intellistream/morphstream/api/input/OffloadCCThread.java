@@ -5,7 +5,6 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -15,13 +14,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class OffloadInputProcessor implements Runnable {
+public class OffloadCCThread implements Runnable {
     private final BlockingQueue<byte[]> operationQueue;
     private final ExecutorService offloadExecutor;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
 
-    public OffloadInputProcessor(BlockingQueue<byte[]> operationQueue, int writeThreadPoolSize) {
+    public OffloadCCThread(BlockingQueue<byte[]> operationQueue, int writeThreadPoolSize) {
         this.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();

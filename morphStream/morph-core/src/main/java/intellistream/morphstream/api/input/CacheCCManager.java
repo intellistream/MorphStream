@@ -1,8 +1,6 @@
 package intellistream.morphstream.api.input;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class CacheCCManager {
@@ -12,7 +10,7 @@ public class CacheCCManager {
 
         LinkedBlockingQueue<byte[]> messageQueue = new LinkedBlockingQueue<>();
         Thread listenerThread = new Thread(new SocketListener(messageQueue, CACHE_PORT));
-        Thread processorThread = new Thread(new CacheInputProcessor(messageQueue));
+        Thread processorThread = new Thread(new CacheCCThread(messageQueue));
 
         listenerThread.start();
         processorThread.start();

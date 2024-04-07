@@ -59,16 +59,20 @@ public class TPGInputListener implements Runnable {
 
             while (true) {
                 try (Socket socket = serverSocket.accept()) {
-                    
+                    int senderPort = socket.getPort();
                     InputStream input = socket.getInputStream();
                     byte[] buffer = new byte[1024]; // Buffer for reading data
                     int bytesRead = input.read(buffer); // Read the message into the buffer
 
                     if (bytesRead > 0) {
-                        byte[] message = new byte[bytesRead]; // Create an array of the exact length
-                        System.arraycopy(buffer, 0, message, 0, bytesRead); // Copy the relevant bytes
-                        
-                        executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(message));
+                        // Convert senderPort to byte array and concatenate with ";" and message
+                        String senderPortStr = senderPort + ";";
+                        byte[] senderPortBytes = senderPortStr.getBytes();
+                        byte[] result = new byte[senderPortBytes.length + bytesRead];
+                        System.arraycopy(senderPortBytes, 0, result, 0, senderPortBytes.length);
+                        System.arraycopy(buffer, 0, result, senderPortBytes.length, bytesRead);
+
+                        executorInputQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(result));
                         rrIndex = (rrIndex + 1) % spoutNum;
                     }
                     

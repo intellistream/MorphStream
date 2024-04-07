@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -10,14 +9,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-public class PartitionInputProcessor implements Runnable {
+public class PartitionCCThread implements Runnable {
     private final BlockingQueue<byte[]> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
     private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance. The key labels partition start index.
 
-    public PartitionInputProcessor(BlockingQueue<byte[]> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
+    public PartitionCCThread(BlockingQueue<byte[]> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
         this.operationQueue = operationQueue;
-        PartitionInputProcessor.partitionOwnership = partitionOwnership;
+        PartitionCCThread.partitionOwnership = partitionOwnership;
         instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
     }
 
