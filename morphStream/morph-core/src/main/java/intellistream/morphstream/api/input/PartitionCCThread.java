@@ -12,11 +12,11 @@ import java.util.concurrent.BlockingQueue;
 public class PartitionCCThread implements Runnable {
     private final BlockingQueue<byte[]> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
-    private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance. The key labels partition start index.
+    private static HashMap<Integer, Integer> partitionOwnership = MorphStreamEnv.get().stateInstanceMap(); //Maps each state partition to its current owner VNF instance.
+    //TODO: The key should labels partition start index as optimization
 
-    public PartitionCCThread(BlockingQueue<byte[]> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
+    public PartitionCCThread(BlockingQueue<byte[]> operationQueue) {
         this.operationQueue = operationQueue;
-        PartitionCCThread.partitionOwnership = partitionOwnership;
         instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
     }
 
@@ -28,10 +28,10 @@ public class PartitionCCThread implements Runnable {
             int txnReqID = 0;
             int tupleID = 0; //TODO: Hardcoded
             int value = 0;
-//            int txnResult = NativeInterface.__request_lock(partitionOwnership.get(0), tupleID, value);
+            int targetInstanceID = partitionOwnership.get(tupleID);
 
             try {
-                OutputStream out = instanceSocketMap.get(instanceID).getOutputStream(); //TODO: Current workloads do not require cross-partition state access
+                OutputStream out = instanceSocketMap.get(targetInstanceID).getOutputStream(); //TODO: Current workloads do not require cross-partition state access
                 String combined =  4 + ";" + txnReqID; //__txn_finished
                 byte[] byteArray = combined.getBytes();
                 out.write(byteArray);

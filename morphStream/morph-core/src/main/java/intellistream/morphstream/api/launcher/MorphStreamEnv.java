@@ -18,6 +18,7 @@ import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MorphStreamEnv {
@@ -34,6 +35,7 @@ public class MorphStreamEnv {
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
     private int[] instancePorts = {11001, 11002, 11003, 11004};
     private final Map<Integer, Socket> instanceSocketMap = new java.util.HashMap<>();
+    private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
 
     public MorphStreamEnv() {
         inputSource.initialize();
@@ -65,6 +67,7 @@ public class MorphStreamEnv {
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
     public TPGInputListener inputSource() {return inputSource;}
     public Map<Integer, Socket> instanceSocketMap() {return instanceSocketMap;}
+    public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();
