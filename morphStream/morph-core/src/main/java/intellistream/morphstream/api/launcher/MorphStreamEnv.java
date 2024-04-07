@@ -41,7 +41,7 @@ public class MorphStreamEnv {
         inputSource.initialize();
         for (int i = 0; i < instancePorts.length; i++) {
             try {
-                instanceSocketMap.put(i, new Socket(String.valueOf(i), instancePorts[i]));
+                instanceSocketMap.put(i, new Socket("localhost", instancePorts[i]));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
