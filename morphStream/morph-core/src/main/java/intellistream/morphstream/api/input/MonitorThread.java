@@ -139,6 +139,17 @@ public class MonitorThread implements Runnable {
         }
     }
 
+    private static void notifyStateSyncComplete(int instanceID, int tupleID) {
+        try {
+            OutputStream output = instanceSocketMap.get(instanceID).getOutputStream();
+            byte[] message = (1 + ";" + 1 + ";" + tupleID).getBytes();
+            output.write(message);
+            output.flush();
+        } catch (IOException e) {
+            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+        }
+    }
+
     private static void syncStateFromLocalToRemote(int instanceID, int tupleID) {
         try {
             Socket socket = instanceSocketMap.get(instanceID);
@@ -234,10 +245,16 @@ public class MonitorThread implements Runnable {
             }
         }
 
+        //Notify instances for state sync completion
+        for (Map.Entry<Integer, Integer> entry : statesPatternChanges.entrySet()) {
+            int tupleID = entry.getKey();
+            int instanceID = statePartitionMap.get(tupleID);
+            notifyStateSyncComplete(instanceID, tupleID);
+        }
 
         //TODO: State movement optimizations
 
-        //TODO: Release the buffered operations at pattern monitor to CC threads.
+
     }
 
 }

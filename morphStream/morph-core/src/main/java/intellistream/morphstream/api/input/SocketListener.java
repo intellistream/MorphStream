@@ -27,11 +27,14 @@ public class SocketListener implements Runnable {
 
                 if (bytesRead > 0) {
                     // Convert senderPort to byte array and concatenate with ";" and message
+                    // Format: senderPort + ";" + message
                     String senderPortStr = senderPort + ";";
                     byte[] senderPortBytes = senderPortStr.getBytes();
                     byte[] result = new byte[senderPortBytes.length + bytesRead];
                     System.arraycopy(senderPortBytes, 0, result, 0, senderPortBytes.length);
                     System.arraycopy(buffer, 0, result, senderPortBytes.length, bytesRead);
+
+                    System.out.println("Received message from port " + senderPort + ": " + new String(buffer, 0, bytesRead));
 
                     messageQueue.add(result); // Add the concatenated result to the message queue
                 }
