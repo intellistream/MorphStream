@@ -33,7 +33,8 @@ public class MorphStreamEnv {
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
-    private int[] instancePorts = {11001, 11002, 11003, 11004};
+//    private int[] instancePorts = {11001, 11002, 11003, 11004};
+    private int[] instancePorts = {9090};
     private final Map<Integer, Socket> instanceSocketMap = new java.util.HashMap<>();
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
 
@@ -41,7 +42,7 @@ public class MorphStreamEnv {
         inputSource.initialize();
         for (int i = 0; i < instancePorts.length; i++) {
             try {
-                instanceSocketMap.put(i, new Socket("localhost", instancePorts[i]));
+                instanceSocketMap.put(i, new Socket("172.20.0.251", instancePorts[i]));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
