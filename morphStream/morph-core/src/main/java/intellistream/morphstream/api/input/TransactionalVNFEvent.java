@@ -9,7 +9,7 @@ package intellistream.morphstream.api.input;
 public class TransactionalVNFEvent extends TransactionalEvent {
     private String[] keys;
     private long txnRequestID; //Unique ID for each txn request, encoded by VNF instance
-    private String flag; //E.g., "Deposit" or "Transfer"
+    private String flag; //E.g., "Deposit" or "Transfer", txnFlag
     private boolean isAbort = false;
     private int instanceID;
 

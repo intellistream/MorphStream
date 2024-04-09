@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.C;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -9,11 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class AdaptiveCCManager {
-    private LinkedBlockingQueue<byte[]> monitorQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<byte[]> partitionQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<byte[]> cacheQueue = new LinkedBlockingQueue<>();
-    private LinkedBlockingQueue<byte[]> offloadQueue = new LinkedBlockingQueue<>();
-    private static ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
+    private final LinkedBlockingQueue<byte[]> monitorQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<byte[]> partitionQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<byte[]> cacheQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<byte[]> offloadQueue = new LinkedBlockingQueue<>();
+    private static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private static final int writeThreadPoolSize = 4; //TODO: Hardcoded
 
     public AdaptiveCCManager() {

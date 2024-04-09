@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.launcher;
 
 import intellistream.morphstream.api.input.AdaptiveCCManager;
-import intellistream.morphstream.api.input.FileDataGenerator;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
@@ -27,7 +26,6 @@ public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
-    private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
     private final AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
@@ -77,7 +75,6 @@ public class MorphStreamEnv {
     public OptimizationManager OM() {
         return OM;
     }
-    public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
     public Map<Integer, Socket> instanceSocketMap() {return instanceSocketMap;}
     public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}

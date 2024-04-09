@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,13 +44,14 @@ public class SocketListener implements Runnable { //A single thread that listens
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try (Socket socket = stateManagerSocket.accept()) {
+
                 int senderPort = socket.getPort();
                 InputStream input = socket.getInputStream();
                 byte[] buffer = new byte[1024]; // Buffer for reading data
                 int bytesRead = input.read(buffer); // Read the message into the buffer
 
                 if (bytesRead > 0) {
-                    // Convert senderPort to byte array and concatenate with ";" and message
+
                     // Format: senderPort + ";" + message
                     String senderPortStr = senderPort + ";";
                     byte[] senderPortBytes = senderPortStr.getBytes();
@@ -59,9 +59,10 @@ public class SocketListener implements Runnable { //A single thread that listens
                     System.arraycopy(senderPortBytes, 0, result, 0, senderPortBytes.length);
                     System.arraycopy(buffer, 0, result, senderPortBytes.length, bytesRead);
 
-                    System.out.println("Received message from port " + senderPort + ": " + new String(buffer, 0, bytesRead));
+                    List<byte[]> splitByteArrays = splitByteArray(result, fullSeparator);
+                    int target = decodeInt(splitByteArrays.get(1), 0);
 
-                    int target = 0;
+                    System.out.println("Received message from port " + senderPort + ": " + new String(buffer, 0, bytesRead));
 
                     if (target == 0) {
                         monitorQueue.add(result); // Add the concatenated result to the monitor queue
@@ -90,30 +91,43 @@ public class SocketListener implements Runnable { //A single thread that listens
 
         List<byte[]> splitByteArrays = splitByteArray(byteArray, fullSeparator);
 
-        int instanceID = 0; //TODO: Hardcoded, should be extracted from the byte array
+//instanceID(int) -0
+//target = 4 (int) -1
+//timeStamp(long) -2
+//txnReqId(long) -3
+//tupleID (int) -4
+//txnIndex(int) -5
+//saIndex(int) -6
+//isAbort(int) -7
 
-        byte[] reqIDByte = splitByteArrays.get(1);
-        byte[] keysByte = splitByteArrays.get(2);
-        byte[] flagByte = splitByteArrays.get(3);
-        byte[] isAbortByte = splitByteArrays.get(4);
+        byte[] instanceIDByte = splitByteArrays.get(0);
+        byte[] timestampByte = splitByteArrays.get(2);
+        byte[] reqIDByte = splitByteArrays.get(3);
+        byte[] tupleIDByte = splitByteArrays.get(4);
+        byte[] txnIndexByte = splitByteArrays.get(5);
+        byte[] saIndexByte = splitByteArrays.get(6);
+        byte[] isAbortByte = splitByteArrays.get(7);
 
-        long timestamp = 0; // TODO: Pass-in timestamp from VNF instance
+        int instanceID = decodeInt(instanceIDByte, 0);
+        long timestamp = decodeLong(timestampByte, 0);
+        long txnReqID = decodeLong(reqIDByte, 0);
 
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-        buffer.clear();
-        buffer.put(reqIDByte);
-        buffer.flip();
-        long txnReqID = buffer.getLong();
-        assert (txnReqID & 0xfffffff000000000L) == 0 : "Assertion failed: (txnReqId & 0xfffffff000000000) != 0";
+        int flag = decodeInt(txnIndexByte, 0);
+        int isAbort = decodeInt(isAbortByte, 0);
 
-        List<byte[]> splitKeyByteArrays = splitByteArray(keysByte, keySeparator);
+
+//        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+//        buffer.clear();
+//        buffer.put(reqIDByte);
+//        buffer.flip();
+//        long txnReqID = buffer.getLong();
+
+        List<byte[]> splitKeyByteArrays = splitByteArray(tupleIDByte, keySeparator);
         String[] keys = new String[splitKeyByteArrays.size()];
         for (int i = 0; i < splitKeyByteArrays.size(); i++) {
             keys[i] = new String(splitKeyByteArrays.get(i), StandardCharsets.US_ASCII);
         }
 
-        int flag = decodeInt(flagByte, 0);
-        int isAbort = decodeInt(isAbortByte, 0);
         String flagStr = String.valueOf(flag);
         boolean isAbortBool = isAbort != 0;
 
@@ -125,6 +139,14 @@ public class SocketListener implements Runnable { //A single thread that listens
             txnEvent.setOriginTimestamp(0L);
         }
         return txnEvent;
+    }
+
+    private static long decodeLong(byte[] bytes, int offset) {
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
+        }
+        return value;
     }
 
     private static int decodeInt(byte[] bytes, int offset) {
