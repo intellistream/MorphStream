@@ -1,6 +1,8 @@
 package intellistream.morphstream.api.input;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.util.Map;
 
 public class AdaptiveCCManager {
 
@@ -8,6 +10,7 @@ public class AdaptiveCCManager {
     PartitionCCManager lockCCManager;
     OffloadCCManager offloadCCManager;
     PatternMonitor patternMonitor;
+
 
     public AdaptiveCCManager() {
         cacheCCManager = new CacheCCManager();
@@ -21,6 +24,7 @@ public class AdaptiveCCManager {
         lockCCManager.initialize();
         offloadCCManager.initialize();
         patternMonitor.initialize();
+
     }
 
 }

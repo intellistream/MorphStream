@@ -10,8 +10,8 @@ public class OffloadCCManager {
 
     public void initialize() throws IOException {
         LinkedBlockingQueue<byte[]> messageQueue = new LinkedBlockingQueue<>();
-        Thread listenerThread = new Thread(new CCInputListener(messageQueue, OFFLOAD_PORT));
-        Thread processorThread = new Thread(new OffloadInputProcessor(messageQueue, writeThreadPoolSize));
+        Thread listenerThread = new Thread(new SocketListener(messageQueue, OFFLOAD_PORT));
+        Thread processorThread = new Thread(new OffloadCCThread(messageQueue, writeThreadPoolSize));
 
         listenerThread.start();
         processorThread.start();

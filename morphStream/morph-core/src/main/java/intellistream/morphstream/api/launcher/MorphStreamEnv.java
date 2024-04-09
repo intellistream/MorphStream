@@ -17,6 +17,10 @@ import intellistream.morphstream.engine.txn.db.Database;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+
 public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
@@ -29,9 +33,20 @@ public class MorphStreamEnv {
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
+//    private int[] instancePorts = {11001, 11002, 11003, 11004};
+    private int[] instancePorts = {9090};
+    private final Map<Integer, Socket> instanceSocketMap = new java.util.HashMap<>();
+    private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
 
     public MorphStreamEnv() {
         inputSource.initialize();
+        for (int i = 0; i < instancePorts.length; i++) {
+            try {
+                instanceSocketMap.put(i, new Socket("172.20.0.251", instancePorts[i]));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public static MorphStreamEnv get() {
@@ -52,6 +67,8 @@ public class MorphStreamEnv {
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
     public TPGInputListener inputSource() {return inputSource;}
+    public Map<Integer, Socket> instanceSocketMap() {return instanceSocketMap;}
+    public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();

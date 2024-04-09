@@ -11,9 +11,11 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     private long txnRequestID; //Unique ID for each txn request, encoded by VNF instance
     private String flag; //E.g., "Deposit" or "Transfer"
     private boolean isAbort = false;
+    private int instanceID;
 
-    public TransactionalVNFEvent(long bid, long txnRequestID, String[] keys, String flag, boolean isAbort) {
+    public TransactionalVNFEvent(int instanceID, long bid, long txnRequestID, String[] keys, String flag, boolean isAbort) {
         super(bid);
+        this.instanceID = instanceID;
         this.txnRequestID = txnRequestID;
         this.keys = keys;
         this.flag = flag;
@@ -22,6 +24,9 @@ public class TransactionalVNFEvent extends TransactionalEvent {
 
     public TransactionalVNFEvent(long bid) {
         super(bid);
+    }
+    public int getInstanceID() {
+        return this.instanceID;
     }
 
     public void setBid(long bid) {
