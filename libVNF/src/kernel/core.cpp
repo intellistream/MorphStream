@@ -136,6 +136,151 @@ int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocat
     return socketId;
 }
 
+void handleCCSwitching(int socket) {
+    int length;
+    assert(read(socket, &length, sizeof(length)));
+    char buf[length];
+    int byte_read = 0;
+    while (byte_read< length) {
+        int bytes = read(socket, buf + byte_read, length - byte_read);
+        assert(bytes);
+        byte_read += bytes;
+    }
+    // Parsing records
+    int index = 0;
+    while (index < length) {
+        int key, value;
+        sscanf(buf + index, "%d:%d;", &key, &value);
+        // Do something with key and value
+        index = strcspn(buf + index, ";") + 1; // Move index to next record
+        // Push to local.
+        // cache the state
+        globals.ccMapLock.lock();
+        strategy s;
+        switch (value) {
+            case 1: {
+                s = Partition;
+                break;
+            }
+            case 2: {
+                s = Cache;
+                break;
+            }
+            case 3: {
+                s = Offloading;
+                break;
+            }
+            case 4: {
+                s = TPG;
+                break;
+            }
+            default: {
+                assert(false);
+            }
+        }
+        globals.tupleIDtoCCMap[key] = s;
+        // cache_void_list[dsMalloc] = bufKey;
+        globals.ccMapLock.unlock();
+    }
+}
+
+void updateStateToCache(int socket) {
+    int length;
+    assert(read(socket, &length, sizeof(length)));
+    char buf[length];
+    int byte_read = 0;
+    while (byte_read< length) {
+        int bytes = read(socket, buf + byte_read, length - byte_read);
+        assert(bytes);
+        byte_read += bytes;
+    }
+    // Parsing records
+    int index = 0;
+    while (index < length) {
+        int key, value;
+        sscanf(buf + index, "%d:%d;", &key, &value);
+        // Do something with key and value
+        index = strcspn(buf + index, ";") + 1; // Move index to next record
+        // Push to local.
+        // cache the state
+        globals.dataStoreLock.lock();
+        auto dsMalloc = globals.dsMemPoolManager.malloc();
+        globals.dsSize++;
+        memcpy(dsMalloc, (void *)&key, sizeof(int));
+        if (globals.localDatastore.find(key) == globals.localDatastore.end()) {
+            globals.dsMemPoolManager.free(globals.localDatastore[key]);
+        }
+        // The local datastore is used as cache for reading.
+        globals.localDatastore[key] = dsMalloc;
+        globals.localDatastoreLens[key] = sizeof(int);
+        // cache_void_list[dsMalloc] = bufKey;
+        globals.dataStoreLock.unlock();
+    }
+}
+
+void handleGetStateFromCache(int socket) {
+    int length;
+    assert(read(socket, &length, sizeof(length)));
+    char buf[length];
+    int byte_read = 0;
+    while (byte_read< length) {
+        int bytes = read(socket, buf + byte_read, length - byte_read);
+        assert(bytes);
+        byte_read += bytes;
+    }
+    // Parsing records
+    int index = 0;
+    while (index < length) {
+        int key;
+        sscanf(buf + index, "%d;", &key);
+        // Do something with key and value
+        index = strcspn(buf + index, ";") + 1; // Move index to next record
+        // cache the state
+        globals.dataStoreLock.lock();
+        if (globals.localDatastore.find(key) == globals.localDatastore.end()) {
+            assert(false);
+        }
+        // The local datastore is used as cache for reading.
+        assert(write(socket, (void *)globals.localDatastore[key], sizeof(int)));
+        globals.dataStoreLock.unlock();
+    }
+}
+
+void handleTxnFinished(int socket, int coreId){
+    // Txn finished.  
+    uint64_t txnReqId = 0; 
+    if (read(socket, &txnReqId, sizeof(uint64_t)) < 0) {
+        perror("serverThread.transactions.read");
+    }
+
+    // perCoreStates[coreId].txnDoneQueueLock.lock();
+    // uint64_t txnReqId = perCoreStates[coreId].txnDoneQueue.front(); 
+    // perCoreStates[coreId].txnDoneQueue.pop();
+    // perCoreStates[coreId].txnDoneQueueLock.unlock();
+    assert(COREID(txnReqId) == coreId);
+
+    // Prepare resources here.
+    auto ctx = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
+
+    ConnId connId = ConnId(coreId, ctx->_old_socket());
+    ctx->_move_next();
+
+#ifdef DEBUG
+    perCoreStates[coreId].monitor.update_latency(3, ctx->_full_ts());
+#endif
+
+    _disposalBody(connId, *ctx);
+
+    // This is allocated when txn triggered. So erase in handle done.
+    perCoreStates[coreId].packetNumberContextMap.erase(
+        perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
+    );
+
+#ifdef DEBUG
+    perCoreStates[coreId].monitor.packet_done();
+#endif
+}
+
 void *serverThread(void *args) {
     struct ServerPThreadArgument argument = *((struct ServerPThreadArgument *) args);
     int coreId = argument.coreId;
@@ -173,20 +318,20 @@ void *serverThread(void *args) {
     epoll_ctl(epFd, EPOLL_CTL_ADD, globals.listeningSocketFd, &ev);
 
     // Apply txnSocket.
-    perCoreStates[coreId].txnSocket = eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK);
-    if ( perCoreStates[coreId].txnSocket == -1 ) {
-        perror("fatal: failed to create event fd.");
-        assert(false);
-    }
-    struct epoll_event ev1;
-    // TODO. set mode.
-    ev1.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
-    ev1.data.fd = perCoreStates[coreId].txnSocket;
+    // perCoreStates[coreId].txnSocket = eventfd(0, EFD_SEMAPHORE | EFD_NONBLOCK);
+    // if ( perCoreStates[coreId].txnSocket == -1 ) {
+    //     perror("fatal: failed to create event fd.");
+    //     assert(false);
+    // }
+    // struct epoll_event ev1;
+    // // TODO. set mode.
+    // ev1.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
+    // ev1.data.fd = perCoreStates[coreId].txnSocket;
 
-    if(epoll_ctl(epFd, EPOLL_CTL_ADD, perCoreStates[coreId].txnSocket, &ev1)==-1){
-        spdlog::error("epoll_ctl failed, txn socket fd {},  Error {}",
-                perCoreStates[coreId].txnSocket, strerror(errno));
-    }
+    // if(epoll_ctl(epFd, EPOLL_CTL_ADD, perCoreStates[coreId].txnSocket, &ev1)==-1){
+    //     spdlog::error("epoll_ctl failed, txn socket fd {},  Error {}",
+    //             perCoreStates[coreId].txnSocket, strerror(errno));
+    // }
     globals.listenLock.unlock();
 
     map <int, class timer*>::iterator timerItr = perCoreStates[coreId].fdToObjectMap.begin();
@@ -331,118 +476,54 @@ void *serverThread(void *args) {
             if (currentEvents & EPOLLIN) {
                 if (perCoreStates[coreId].isStateManagerSocket(currentSocketId)) {
                     #ifdef STANDALONE
-                    while (true) {
-                        uint8_t retval,command,length;
-                        /*
-                            We've predefined the data format here: first byte is an integer suggesting length.
-                            And the others are the true data.
-                        */
-                       /*
-                            Message format: 
-                                (uint8_t) Type (0 = pause, 1 = continue, 2 = get_state_from_cache, 3 = update_state_to_cache, 4 = txn_finished)
-                                (uint8_t) Body length; 
-                                (void *) Body if neccessary.
-                       */
-                        if (readFromStream(currentSocketId, &command, sizeof(int)) < 0){
+                    uint8_t retval,command,length;
+                    /*
+                        We've predefined the data format here: first byte is an integer suggesting length.
+                        And the others are the true data.
+                    */
+                    /*
+                        Message format: 
+                            (uint8_t) Type (1 = notify_cc_switch, 2 = get_state_from_cache, 3 = update_state_to_cache, 4 = txn_finished)
+                            (uint8_t) Body length; 
+                            (void *) Body if neccessary.
+                    */
+                    if (readFromStream(currentSocketId, &command, sizeof(int)) < 0){
+                        assert(false);
+                    // } else {
+                        // memmove(&pkt_len, pkt.data, sizeof(int) * sizeof(uint8_t));
+                        // retval = readFromStream(currentSocketId, pkt.data, pkt_len);
+                        // pkt.data_ptr = 0;
+                        // pkt.len = retval;
+                        // if (retval < 0) {
+                        //     spdlog::error("Error: Packet from HSS Corrupt, break");
+                        //     break;
+                        // }
+                    }
+                    switch (command) {
+                        case 0: {
                             assert(false);
-                        // } else {
-                            // memmove(&pkt_len, pkt.data, sizeof(int) * sizeof(uint8_t));
-                            // retval = readFromStream(currentSocketId, pkt.data, pkt_len);
-                            // pkt.data_ptr = 0;
-                            // pkt.len = retval;
-                            // if (retval < 0) {
-                            //     spdlog::error("Error: Packet from HSS Corrupt, break");
-                            //     break;
-                            // }
+                            break;
                         }
-                        // Pause.
-                        if (command == 0){
-                            assert(perCoreStates[coreId].isPaused == false);
-                            perCoreStates[coreId].isPaused = true;
-                        } else if (command == 1){
-                            assert(perCoreStates[coreId].isPaused);
-                            perCoreStates[coreId].isPaused = false;
-                        } else if (command == 2){
-                            // Fetch local cache result.
-                            if (readFromStream(currentSocketId, &length, sizeof(uint8_t))<0) assert(false);
-                            uint64_t tupleID;
-                            if (readFromStream(currentSocketId, (uint8_t *)&tupleID, sizeof(uint64_t))<0) assert(false);
-                            if (send_state_from_cache(tupleID, perCoreStates[coreId].txnSocket) <= 0) {
-                                assert(false);
-                            }
-                        } else if (command == 3){
-                            // Fetch local cache result.
-                            if (readFromStream(currentSocketId, &length, sizeof(uint8_t))<0) assert(false);
-                            uint64_t tupleID;
-                            if (readFromStream(currentSocketId, (uint8_t *)&tupleID, sizeof(uint64_t))<0) assert(false);
-                            int value;
-                            if (readFromStream(currentSocketId, (uint8_t *)&value, sizeof(int))<0) assert(false);
-                            if (update_state_to_cache(tupleID, value) <= 0) {
-                                assert(false);
-                            }
-                        } else if (command == 4){
-                            // Txn finished.  
-                            uint64_t txnReqId = 0; 
-                            if (read(currentSocketId, &txnReqId, sizeof(uint64_t)) < 0) {
-                                perror("serverThread.transactions.read");
-                            }
-
-                            // perCoreStates[coreId].txnDoneQueueLock.lock();
-                            // uint64_t txnReqId = perCoreStates[coreId].txnDoneQueue.front(); 
-                            // perCoreStates[coreId].txnDoneQueue.pop();
-                            // perCoreStates[coreId].txnDoneQueueLock.unlock();
-                            assert(COREID(txnReqId) == coreId);
-
-                            // Prepare resources here.
-                            auto ctx = perCoreStates[coreId].packetNumberContextMap[PACKETID(txnReqId)];
-
-                            ConnId connId = ConnId(coreId, ctx->_old_socket());
-                            ctx->_move_next();
-
-                            // TODO. Debug. Set the cache.
-                            // No need to modify to use the cache. Since it's totally inside.
-                            // void *dsMalloc;
-                            // globals.dataStoreLock.lock();
-                            // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-                            //     freeDSPool();
-                            // }
-                            // // cache the state
-                            // dsMalloc = globals.dsMemPoolManager.malloc();
-                            // globals.dsSize++;
-                            // memcpy(dsMalloc, buffer.c_str(), buffer.length());
-                            // // The local datastore is used as cache for reading.
-                            // globals.localDatastore[bufKey] = dsMalloc;
-                            // globals.localDatastoreLens[bufKey] = buffer.length();
-                            // globals.cachedRemoteDatastore[bufKey] = dsMalloc;
-                            // cache_void_list[dsMalloc] = bufKey;
-                            // globals.dataStoreLock.unlock();
-
-                            // TODO. Can receive error here.
-
-                            // _disposalBody(connId, o->reqObjId,
-                            //             perCoreStates[coreId].socketIdReqObjIdToReqObjMap[o->old_socket][o->reqObjId],
-                            //             o->packet_record, o->packet_len, 0);
-                            
-        #ifdef DEBUG
-                            perCoreStates[coreId].monitor.update_latency(3, ctx->_full_ts());
-        #endif
-
-                            _disposalBody(connId, *ctx);
-
-                            // This is allocated when txn triggered. So erase in handle done.
-                            perCoreStates[coreId].packetNumberContextMap.erase(
-                                perCoreStates[coreId].packetNumberContextMap.find(PACKETID(txnReqId))
-                            );
-
-        #ifdef DEBUG
-                            perCoreStates[coreId].monitor.packet_done();
-        #endif
-
-                        } else {
+                        case 1: {
+                            handleCCSwitching(currentSocketId);
+                            break;
+                        } 
+                        case 2: {
+                            handleGetStateFromCache(currentSocketId);
+                            break;
+                        }
+                        case 3: {
+                            updateStateToCache(currentSocketId);
+                            break;
+                        }
+                        case 4: {
+                            handleTxnFinished(currentSocketId, coreId);
+                            break;
+                        }
+                        default: {
                             assert(false);
                         }
                     }
-
                     continue;
                     #else 
                         assert(false);
@@ -1785,12 +1866,12 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int txnIndex, in
     int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
 
     // Use SetByteArrayRegion to copy data into the byte array
-    jbyte data[len];
+    char data[len];
     int offset = 0;
 
     memcpy(data + offset, &ts, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    data[offset++] = jbyte(';');
+    data[offset++] = ';';
 
     memcpy(data + offset, &txnReqId, sizeof(uint64_t));
     assert((txnReqId & 0xfffffff000000000) == 0);
@@ -1813,7 +1894,7 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int txnIndex, in
     int isAbort_i = 0;
     memcpy(data + offset, &isAbort_i, sizeof(int));
     offset += sizeof(int);
-    data[offset] = '\0';
+    data[offset] = '\n';
 
     // Copy the data into the msg byte array
     // auto msg = env->NewByteArray(len);
@@ -2364,6 +2445,16 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
 
     for (auto sa: sas){
         // Find out the state disposal strategy to be used.
+        // Report to pattern monitor.
+        bool has_write = (sa.rw_ == WRITE);
+        assert(write(perCoreStates[connId.coreId].txnSocket, 0, sizeof(int) ));
+        assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
+        assert(write(perCoreStates[connId.coreId].txnSocket, &key, sizeof(int) ));
+        assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
+        assert(write(perCoreStates[connId.coreId].txnSocket, &has_write, sizeof(bool) ));
+        assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
+        assert(write(perCoreStates[connId.coreId].txnSocket, "\n", sizeof(char) ));
+
         switch (globals.tupleIDtoCCMap[(int)(*key)]) {
             case Partition: {
                 // read local and execute the disposal. Read & Write all locally.
@@ -2428,9 +2519,13 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
 
                 // Send to record.
-                assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int)) > 0); // Send key to write.
+                int command = 2;
+                assert(write(perCoreStates[connId.coreId].txnSocket, &command, sizeof(int)) > 0); // Send key to write.
                 assert(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, dsMalloc, sizeof(int)) > 0); // Send content to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, &key, sizeof(int)) > 0); // Send key to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, &dsMalloc, sizeof(int)) > 0); // Send content to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, "\n", 1) > 0);           // Send key to write.
                 globals.dataStoreLock.unlock();
 
                 // Move next.

@@ -4,6 +4,7 @@
 #include "core.hpp"
 
 enum strategy {
+    __NONE__,
     Partition,
     Cache,
     Offloading,
@@ -152,7 +153,7 @@ struct Globals {
     int dsSize;
 
     // locks
-    mutex epollArrayLock, dataStoreLock, listenLock;
+    mutex epollArrayLock, dataStoreLock, listenLock, ccMapLock;
 
     Globals() : listeningSocketFd(-1),
                 onAcceptByServerCallback(),

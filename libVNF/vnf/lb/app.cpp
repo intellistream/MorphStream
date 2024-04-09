@@ -144,7 +144,7 @@ int VNFMain(int argc, char *argv[]){
         // Use defaut.
         perror("VNF Config not provided.");
         // assert(false);
-        path = "/home/kailian/MorphStream/libVNF/vnf/lb/config.csv";
+        path = "/home/kailian/DB4NFV/libVNF/vnf/lb/config.csv";
     } else {
         path = std::string(argv[1]);
     }

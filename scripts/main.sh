@@ -29,7 +29,8 @@ HEADER_INSTALL=/usr/local/include/libvnf/
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 # Executable
-CMAKE=$TMP_DIR/cmake/bin/cmake
+# CMAKE=$TMP_DIR/cmake/bin/cmake
+CMAKE=cmake
 JAR=$MORPH_DIR/morph-clients/morph-clients-0.1.jar
 if [ -x "$CMAKE" ]; then
 	:
