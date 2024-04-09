@@ -10,7 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,15 +84,21 @@ public class MonitorThread implements Runnable {
         }
     }
 
+//instanceID(int) -0
+//target = 0 (int) -1
+//TupleID(int) -2
+//isWrite (bool) -3
 
     private static void updatePatternData(byte[] metaDataByte) {
-        //TODO: Add for loop to iterate over operations in txnData
-        int instanceID = 0; //TODO: Hardcoded
-        int tupleID = 0;
-        int type = 0;
 
-        readCountMap.merge(tupleID, type==0 ? 1 : 0, Integer::sum); //read
-        writeCountMap.merge(tupleID, type==1 ? 1 : 0, Integer::sum); //write
+        List<byte[]> txnData = splitByteArray(metaDataByte, (byte) 59);
+        int instanceID = decodeInt(txnData.get(0), 0);
+        int tupleID = decodeInt(txnData.get(2), 0);
+        boolean isWrite = decodeBoolean(txnData.get(3), 0);
+        System.out.println("Received txn data from instance " + instanceID + ": " + tupleID + ", " + isWrite);
+
+        readCountMap.merge(tupleID, !isWrite ? 1 : 0, Integer::sum); //read
+        writeCountMap.merge(tupleID, isWrite ? 1 : 0, Integer::sum); //write
         Integer currentOwnership = ownershipMap.get(tupleID);
         if (currentOwnership != null && !currentOwnership.equals(instanceID)) {
             conflictCountMap.merge(tupleID, 1, Integer::sum);
@@ -259,7 +267,54 @@ public class MonitorThread implements Runnable {
 
         //TODO: State movement optimizations
 
+    }
 
+    private static boolean decodeBoolean(byte[] bytes, int offset) {
+        return bytes[offset] != 0;
+    }
+
+    private static long decodeLong(byte[] bytes, int offset) {
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
+        }
+        return value;
+    }
+
+    private static int decodeInt(byte[] bytes, int offset) {
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            value |= (bytes[offset + i] & 0xFF) << (i * 8);
+        }
+        return value;
+    }
+
+    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
+        List<byte[]> splitByteArrays = new ArrayList<>();
+        List<Integer> indexes = new ArrayList<>();
+
+        for (int i = 0; i < byteArray.length; i++) {
+            if (byteArray[i] == separator) {
+                indexes.add(i);
+            }
+        }
+
+        int startIndex = 0;
+        for (Integer index : indexes) {
+            byte[] subArray = new byte[index - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
+            splitByteArrays.add(subArray);
+            startIndex = index + 1;
+        }
+
+        // Handling the remaining part after the last occurrence of 59
+        if (startIndex < byteArray.length) {
+            byte[] subArray = new byte[byteArray.length - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
+            splitByteArrays.add(subArray);
+        }
+
+        return splitByteArrays;
     }
 
 }

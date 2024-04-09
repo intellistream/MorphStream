@@ -41,7 +41,7 @@ public class MorphStreamEnv {
     public MorphStreamEnv() {
         try {
             stateManagerSocket = new ServerSocket(stateManagerPort);
-            System.out.println("Server started on port " + stateManagerPort);
+            System.out.println("Server started on port " + stateManagerSocket.getLocalPort());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -66,7 +66,7 @@ public class SocketListener implements Runnable { //A single thread that listens
                     List<byte[]> splitByteArrays = splitByteArray(result, fullSeparator);
                     int target = decodeInt(splitByteArrays.get(1), 0);
 
-                    System.out.println("Received message from port " + instanceID + ": " + new String(buffer, 0, bytesRead));
+                    System.out.println("Received message from port " + instanceID + ": " + new String(buffer, 0, bytesRead) + ", Target = " + target);
 
                     if (target == 0) {
                         monitorQueue.add(result); // Add the concatenated result to the monitor queue
