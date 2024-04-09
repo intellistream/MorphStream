@@ -9,10 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class AdaptiveCCManager {
-    private final LinkedBlockingQueue<byte[]> monitorQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<byte[]> partitionQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<byte[]> cacheQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<byte[]> offloadQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<PartitionData> partitionQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<CacheData> cacheQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<OffloadData> offloadQueue = new LinkedBlockingQueue<>();
     private static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private static final int writeThreadPoolSize = 4; //TODO: Hardcoded
 

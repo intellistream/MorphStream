@@ -9,16 +9,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class SocketListener implements Runnable { //A single thread that listens for incoming messages from other VMs through a single socket
-    private final LinkedBlockingQueue<byte[]> monitorQueue;
-    private final LinkedBlockingQueue<byte[]> partitionQueue;
-    private final LinkedBlockingQueue<byte[]> cacheQueue;
-    private final LinkedBlockingQueue<byte[]> offloadQueue;
+    private final LinkedBlockingQueue<PatternData> monitorQueue;
+    private final LinkedBlockingQueue<PartitionData> partitionQueue;
+    private final LinkedBlockingQueue<CacheData> cacheQueue;
+    private final LinkedBlockingQueue<OffloadData> offloadQueue;
     private static ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues; //round-robin input queues for each executor (combo/bolt)
     private static final int spoutNum = 4; //TODO: Hardcoded
     private int rrIndex = 0;
@@ -27,10 +28,10 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static final byte keySeparator = 58;
     private final ServerSocket stateManagerSocket = MorphStreamEnv.get().stateManagerSocket();
 
-    public SocketListener(LinkedBlockingQueue<byte[]> monitorQueue,
-                          LinkedBlockingQueue<byte[]> partitionQueue,
-                          LinkedBlockingQueue<byte[]> cacheQueue,
-                          LinkedBlockingQueue<byte[]> offloadQueue,
+    public SocketListener(LinkedBlockingQueue<PatternData> monitorQueue,
+                          LinkedBlockingQueue<PartitionData> partitionQueue,
+                          LinkedBlockingQueue<CacheData> cacheQueue,
+                          LinkedBlockingQueue<OffloadData> offloadQueue,
                           ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues) {
         this.monitorQueue = monitorQueue;
         this.partitionQueue = partitionQueue;
@@ -40,7 +41,6 @@ public class SocketListener implements Runnable { //A single thread that listens
     }
 
 
-    @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try (Socket instanceSocket = stateManagerSocket.accept()) {
@@ -50,100 +50,78 @@ public class SocketListener implements Runnable { //A single thread that listens
                 int instanceID = instanceSocket.getPort();
                 MorphStreamEnv.get().addInstanceSocket(instanceID, instanceSocket);
 
+                // Get the input stream to read data from the client
                 InputStream input = instanceSocket.getInputStream();
-                byte[] buffer = new byte[1024]; // Buffer for reading data
-                int bytesRead = input.read(buffer); // Read the message into the buffer
+                byte[] buffer = new byte[100]; // Buffer to hold the read data
+
+                int bytesRead = input.read(buffer);
+                byte[] trimBytes = Arrays.copyOf(buffer, bytesRead);
 
                 if (bytesRead > 0) {
 
-                    // Format: senderPort + ";" + message
-                    String senderPortStr = instanceID + ";";
-                    byte[] senderPortBytes = senderPortStr.getBytes();
-                    byte[] result = new byte[senderPortBytes.length + bytesRead];
-                    System.arraycopy(senderPortBytes, 0, result, 0, senderPortBytes.length);
-                    System.arraycopy(buffer, 0, result, senderPortBytes.length, bytesRead);
-
-                    List<byte[]> splitByteArrays = splitByteArray(result, fullSeparator);
+                    List<byte[]> splitByteArrays = splitByteArray(trimBytes, fullSeparator);
                     int target = decodeInt(splitByteArrays.get(1), 0);
 
                     System.out.println("Received message from port " + instanceID + ": " + new String(buffer, 0, bytesRead) + ", Target = " + target);
 
                     if (target == 0) {
-                        monitorQueue.add(result); // Add the concatenated result to the monitor queue
+                        monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
                     } else if (target == 1) {
-                        partitionQueue.add(result); // Add the concatenated result to the partition queue
+                        partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
                     } else if (target == 2) {
-                        cacheQueue.add(result); // Add the concatenated result to the cache queue
+                        cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
                     } else if (target == 3) {
-                        offloadQueue.add(result); // Add the concatenated result to the offload queue
+                        offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
                     } else if (target == 4) {
-                        tpgQueues.get(rrIndex).add(inputFromStringToTxnVNFEvent(result));
+                        tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
                         rrIndex = (rrIndex + 1) % spoutNum;
                     }
                 }
+
             } catch (IOException e) {
                 System.out.println("Exception occurred when trying to connect to VM2: " + e.getMessage());
             }
         }
     }
 
-    /**
-     * Packet string format (split by ";"):
-     * ts (timestamp or bid, increasing by each request); txnReqID; key(s) (split by ":"); flag; isAbort
-     * */
-    private static TransactionalEvent inputFromStringToTxnVNFEvent(byte[] byteArray) {
-
-        List<byte[]> splitByteArrays = splitByteArray(byteArray, fullSeparator);
-
-//instanceID(int) -0
-//target = 4 (int) -1
-//timeStamp(long) -2
-//txnReqId(long) -3
-//tupleID (int) -4
-//txnIndex(int) -5
-//saIndex(int) -6
-//isAbort(int) -7
-
-        byte[] instanceIDByte = splitByteArrays.get(0);
-        byte[] timestampByte = splitByteArrays.get(2);
-        byte[] reqIDByte = splitByteArrays.get(3);
-        byte[] tupleIDByte = splitByteArrays.get(4);
-        byte[] txnIndexByte = splitByteArrays.get(5);
-        byte[] saIndexByte = splitByteArrays.get(6);
-        byte[] isAbortByte = splitByteArrays.get(7);
-
-        int instanceID = decodeInt(instanceIDByte, 0);
-        long timestamp = decodeLong(timestampByte, 0);
-        long txnReqID = decodeLong(reqIDByte, 0);
-
-        int flag = decodeInt(txnIndexByte, 0);
-        int isAbort = decodeInt(isAbortByte, 0);
-
-
-//        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-//        buffer.clear();
-//        buffer.put(reqIDByte);
-//        buffer.flip();
-//        long txnReqID = buffer.getLong();
-
-        List<byte[]> splitKeyByteArrays = splitByteArray(tupleIDByte, keySeparator);
-        String[] keys = new String[splitKeyByteArrays.size()];
-        for (int i = 0; i < splitKeyByteArrays.size(); i++) {
-            keys[i] = new String(splitKeyByteArrays.get(i), StandardCharsets.US_ASCII);
-        }
-
-        String flagStr = String.valueOf(flag);
-        boolean isAbortBool = isAbort != 0;
-
-        TransactionalVNFEvent txnEvent = new TransactionalVNFEvent(instanceID, timestamp, txnReqID, keys, flagStr, isAbortBool);
-
-        if (createTimestampForEvent) {
-            txnEvent.setOriginTimestamp(System.nanoTime()); //TODO: Remove this, timestamp is created at VNF instances
-        } else {
-            txnEvent.setOriginTimestamp(0L);
-        }
-        return txnEvent;
+    private static PatternData byteToPatternData(int instanceID, List<byte[]> splitByteArrays) {
+        int tupleID = decodeInt(splitByteArrays.get(1), 0);
+        boolean value = decodeBoolean(splitByteArrays.get(2), 0);
+        return new PatternData(instanceID, tupleID, value);
     }
+
+    private static PartitionData byteToPartitionData(int instanceID, List<byte[]> splitByteArrays) {
+        int tupleID = decodeInt(splitByteArrays.get(1), 0);
+        int value = decodeInt(splitByteArrays.get(2), 0);
+        return new PartitionData(instanceID, tupleID, value);
+    }
+
+    private static CacheData byteToCacheData(int instanceID, List<byte[]> splitByteArrays) {
+        int tupleID = decodeInt(splitByteArrays.get(1), 0);
+        int value = decodeInt(splitByteArrays.get(2), 0);
+        return new CacheData(instanceID, tupleID, value);
+    }
+
+    private static OffloadData byteToOffloadData(int instanceID, List<byte[]> splitByteArrays) {
+        long timestamp = decodeLong(splitByteArrays.get(1), 0);
+        long txnReqID = decodeLong(splitByteArrays.get(2), 0);
+        int tupleID = decodeInt(splitByteArrays.get(3), 0);
+        int txnIndex = decodeInt(splitByteArrays.get(4), 0);
+        int saIndex = decodeInt(splitByteArrays.get(5), 0);
+        int isAbort = decodeInt(splitByteArrays.get(6), 0);
+        return new OffloadData(instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort);
+    }
+
+    private static TransactionalEvent byteToTPGData(int instanceID, List<byte[]> splitByteArrays) {
+        long timestamp = decodeLong(splitByteArrays.get(1), 0);
+        long txnReqID = decodeLong(splitByteArrays.get(2), 0);
+        int tupleID = decodeInt(splitByteArrays.get(3), 0);
+        int txnIndex = decodeInt(splitByteArrays.get(4), 0);
+        int saIndex = decodeInt(splitByteArrays.get(5), 0);
+        int isAbort = decodeInt(splitByteArrays.get(6), 0);
+        return new TransactionalVNFEvent(instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort);
+    }
+
 
     private static long decodeLong(byte[] bytes, int offset) {
         long value = 0;
@@ -159,6 +137,10 @@ public class SocketListener implements Runnable { //A single thread that listens
             value |= (bytes[offset + i] & 0xFF) << (i * 8);
         }
         return value;
+    }
+
+    private static boolean decodeBoolean(byte[] bytes, int offset) {
+        return bytes[offset] != 0;
     }
 
     private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {

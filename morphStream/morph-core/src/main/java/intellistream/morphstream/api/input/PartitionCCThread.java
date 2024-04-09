@@ -12,14 +12,14 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class PartitionCCThread implements Runnable {
-    private final BlockingQueue<byte[]> operationQueue;
+    private final BlockingQueue<PartitionData> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
     private static HashMap<Integer, Integer> partitionOwnership = MorphStreamEnv.get().stateInstanceMap(); //Maps each state partition to its current owner VNF instance.
     //TODO: The key should labels partition start index as optimization
 
-    public PartitionCCThread(BlockingQueue<byte[]> operationQueue) {
+    public PartitionCCThread(BlockingQueue<PartitionData> operationQueue) {
         this.operationQueue = operationQueue;
         instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
     }
@@ -32,23 +32,18 @@ public class PartitionCCThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] txnByteArray;
+            PartitionData partitionData;
             try {
-                txnByteArray = operationQueue.take();
+                partitionData = operationQueue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            List<byte[]> splitByteArrays = splitByteArray(txnByteArray, fullSeparator);
-            int instanceID = decodeInt(splitByteArrays.get(0), 0);
-            int tupleID = decodeInt(splitByteArrays.get(2), 0);
-            int value = decodeInt(splitByteArrays.get(3), 0);
-
-            int txnReqID = 0; //TODO: Hardcoded
-            int targetInstanceID = partitionOwnership.get(tupleID);
+            int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
+//            int targetInstanceID = partitionOwnership.get(partitionData.getTupleID() % partitionOwnership.size()); TODO: Consider this
 
             try {
                 OutputStream out = instanceSocketMap.get(targetInstanceID).getOutputStream(); //TODO: Current workloads do not require cross-partition state access
-                String combined =  4 + ";" + txnReqID; //__txn_finished
+                String combined =  4 + ";" + partitionData.getValue(); //__txn_finished
                 byte[] byteArray = combined.getBytes();
                 out.write(byteArray);
                 out.flush();

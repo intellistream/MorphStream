@@ -18,7 +18,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MonitorThread implements Runnable {
-    private final BlockingQueue<byte[]> txnMetaDataQueue;
+    private final BlockingQueue<PatternData> patternDataQueue;
     private static final ConcurrentHashMap<Integer, Integer> readCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> writeCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> ownershipMap = new ConcurrentHashMap<>();
@@ -40,8 +40,8 @@ public class MonitorThread implements Runnable {
     private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
 
 
-    public MonitorThread(BlockingQueue<byte[]> txnMetaDataQueue, int punctuation_interval) {
-        this.txnMetaDataQueue = txnMetaDataQueue;
+    public MonitorThread(BlockingQueue<PatternData> patternDataQueue, int punctuation_interval) {
+        this.patternDataQueue = patternDataQueue;
         instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
         MonitorThread.punctuation_interval = punctuation_interval;
 
@@ -59,13 +59,13 @@ public class MonitorThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] metaDataByte;
+            PatternData patternData;
             try {
-                metaDataByte = txnMetaDataQueue.take();
+                patternData = patternDataQueue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            updatePatternData(metaDataByte);
+            updatePatternData(patternData);
             txnCounter++;
             if (txnCounter % punctuation_interval == 0) {
                 judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
@@ -89,13 +89,11 @@ public class MonitorThread implements Runnable {
 //TupleID(int) -2
 //isWrite (bool) -3
 
-    private static void updatePatternData(byte[] metaDataByte) {
-
-        List<byte[]> txnData = splitByteArray(metaDataByte, (byte) 59);
-        int instanceID = decodeInt(txnData.get(0), 0);
-        int tupleID = decodeInt(txnData.get(2), 0);
-        boolean isWrite = decodeBoolean(txnData.get(3), 0);
-        System.out.println("Received txn data from instance " + instanceID + ": " + tupleID + ", " + isWrite);
+    private static void updatePatternData(PatternData metaDataByte) {
+        
+        int instanceID = metaDataByte.getInstanceID();
+        int tupleID = metaDataByte.getTupleID();
+        boolean isWrite = metaDataByte.getIsWrite();
 
         readCountMap.merge(tupleID, !isWrite ? 1 : 0, Integer::sum); //read
         writeCountMap.merge(tupleID, isWrite ? 1 : 0, Integer::sum); //write

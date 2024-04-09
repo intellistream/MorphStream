@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class CacheCCThread implements Runnable {
-    private final BlockingQueue<byte[]> operationQueue;
+    private final BlockingQueue<CacheData> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
 
-    public CacheCCThread(BlockingQueue<byte[]> operationQueue) {
+    public CacheCCThread(BlockingQueue<CacheData> operationQueue) {
         this.operationQueue = operationQueue;
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     }
@@ -29,22 +29,18 @@ public class CacheCCThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] txnByteArray;
+            CacheData cacheData;
             try {
-                txnByteArray = operationQueue.take();
+                cacheData = operationQueue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            List<byte[]> splitByteArrays = splitByteArray(txnByteArray, fullSeparator);
-            int instanceID = decodeInt(splitByteArrays.get(0), 0);
-            int tupleID = decodeInt(splitByteArrays.get(2), 0);
-            int value = decodeInt(splitByteArrays.get(3), 0);
 
             for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
-                if (entry.getKey() != instanceID) {
+                if (entry.getKey() != cacheData.getInstanceID()) {
                     try {
                         OutputStream out = instanceSocketMap.get(entry.getKey()).getOutputStream();
-                        String combined = 3 + ";" + tupleID + ";" + value; //__update_instance_cache
+                        String combined = 3 + ";" + cacheData.getInstanceID() + ";" + cacheData.getValue(); //__update_instance_cache
                         byte[] byteArray = combined.getBytes();
                         out.write(byteArray);
                         out.flush();

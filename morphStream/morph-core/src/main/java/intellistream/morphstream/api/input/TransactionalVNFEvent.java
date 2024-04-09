@@ -7,19 +7,21 @@ package intellistream.morphstream.api.input;
  */
 
 public class TransactionalVNFEvent extends TransactionalEvent {
-    private String[] keys;
+    private String tupleID;
     private long txnRequestID; //Unique ID for each txn request, encoded by VNF instance
-    private String flag; //E.g., "Deposit" or "Transfer", txnFlag
-    private boolean isAbort = false;
+    private int txnID; //E.g., "txn1", txnID
+    private String saID; //E.g., "Deposit" or "Transfer", txnFlag
+    private boolean isAbort;
     private int instanceID;
 
-    public TransactionalVNFEvent(int instanceID, long bid, long txnRequestID, String[] keys, String flag, boolean isAbort) {
-        super(bid);
+    public TransactionalVNFEvent(int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int isAbort) {
+        super(timestamp);
         this.instanceID = instanceID;
         this.txnRequestID = txnRequestID;
-        this.keys = keys;
-        this.flag = flag;
-        this.isAbort = isAbort;
+        this.tupleID = String.valueOf(tupleID);
+        this.txnID = txnID;
+        this.saID = String.valueOf(saID);
+        this.isAbort = (isAbort == 1);
     }
 
     public TransactionalVNFEvent(long bid) {
@@ -34,15 +36,15 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     }
 
     public void setFlag(String flag) {
-        this.flag = flag;
+        this.saID = flag;
     }
 
-    public String[] getKeys() {
-        return this.keys;
+    public String getTupleID() {
+        return this.tupleID;
     }
     @Override
     public String getKey(int keyIndex) {
-        return this.keys[keyIndex];
+        return this.tupleID;
     }
     @Override
     public long getTxnRequestID() {
@@ -50,7 +52,7 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     }
 
     public String getFlag() {
-        return this.flag;
+        return this.saID;
     }
 
     public boolean isAbort() {
@@ -60,12 +62,10 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        for (String key : keys) {
-            stringBuilder.append(key).append(":");
-        }
+        stringBuilder.append(tupleID).append(":");
         stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
-        stringBuilder.append(flag);
+        stringBuilder.append(saID);
         stringBuilder.append(";");
         stringBuilder.append(isAbort);
         return stringBuilder.toString();

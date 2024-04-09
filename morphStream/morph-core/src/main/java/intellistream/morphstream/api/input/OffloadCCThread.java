@@ -17,14 +17,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class OffloadCCThread implements Runnable {
-    private final BlockingQueue<byte[]> operationQueue;
+    private final BlockingQueue<OffloadData> operationQueue;
     private final ExecutorService offloadExecutor;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
 
-    public OffloadCCThread(BlockingQueue<byte[]> operationQueue, int writeThreadPoolSize) {
+    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize) {
         this.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
@@ -42,27 +42,18 @@ public class OffloadCCThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] txnByteArray;
+            OffloadData offloadData;
             try {
-                txnByteArray = operationQueue.take();
+                offloadData = operationQueue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            System.out.println("txnByteArray: " + txnByteArray);
-            List<byte[]> splitByteArrays = splitByteArray(txnByteArray, fullSeparator);
-            int instanceID = decodeInt(splitByteArrays.get(0), 0);
-            long timeStamp = decodeLong(splitByteArrays.get(2), 0);
-            long txnReqID = decodeLong(splitByteArrays.get(3), 0);
-            int tupleID = decodeInt(splitByteArrays.get(4), 0);
-            int txnIndex = decodeInt(splitByteArrays.get(5), 0);
-            int saIndex = decodeInt(splitByteArrays.get(6), 0);
-            int isAbort = decodeInt(splitByteArrays.get(7), 0);
 
             int txnType = 1; //TODO: Hardcode, 0:R, 1:W
             if (txnType == 1) {
                 try {
-                    OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
-                    String combined =  4 + ";" + txnReqID;
+                    OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+                    String combined =  4 + ";" + offloadData.getTxnReqId();
                     byte[] byteArray = combined.getBytes();
                     out.write(byteArray);
                     out.flush();
@@ -70,13 +61,13 @@ public class OffloadCCThread implements Runnable {
                     throw new RuntimeException(e);
                 }
 
-                offloadExecutor.submit(() -> writeGlobalStates(txnReqID, tupleID, 0)); //TODO: Value is hardcoded
+                offloadExecutor.submit(() -> writeGlobalStates(offloadData.getTxnReqId(), offloadData.getTupleID(), 0)); //TODO: Value is hardcoded
 
             } else if (txnType == 0) {
-                int txnResult = readGlobalStates(txnReqID, txnByteArray);
+                int txnResult = readGlobalStates(offloadData.getTxnReqId(), offloadData.getTupleID());
                 try {
-                    OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
-                    String combined =  4 + ";" + txnReqID + ";" + txnResult; //__txn_finished
+                    OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+                    String combined =  4 + ";" + offloadData.getTxnReqId() + ";" + txnResult; //__txn_finished
                     byte[] byteArray = combined.getBytes();
                     out.write(byteArray);
                     out.flush();
@@ -101,12 +92,11 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    private static int readGlobalStates(long ts, byte[] byteArray) {
+    private static int readGlobalStates(long ts, int tupleID) {
         // Check the latest value from DB global store
         int value;
-        String tupleID = "0";
         try {
-            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(tupleID);
+            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
             value = (int) condition_record.content_.readPreValues(ts).getValues().get(1).getDouble(); //TODO: read the corresponding version, blocking
 
         } catch (DatabaseException e) {
