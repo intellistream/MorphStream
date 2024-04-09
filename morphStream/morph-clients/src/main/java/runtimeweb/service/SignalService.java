@@ -2,7 +2,6 @@ package runtimeweb.service;
 
 import cli.SLClient;
 import cli.WebServer;
-import intellistream.morphstream.api.input.TPGInputListener;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,7 +27,7 @@ public class SignalService extends AbstractService {
      * @return true if the job is stopped successfully, false otherwise
      */
     public Boolean onStopSignal(String jobId) {
-        TPGInputListener.get().insertStopSignal(); // notify spout to pass stop signal downstream
+//        TPGInputListener.get().insertStopSignal(); // notify spout to pass stop signal downstream
         return true;
     }
 

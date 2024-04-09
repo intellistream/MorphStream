@@ -108,7 +108,7 @@ public class SLClient extends Client {
         CliFrontend slClientJob = new CliFrontend("SLClient");
 //        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
         slClientJob.LoadConfiguration(null, args); //TODO: add loadConfig from file
-        slClientJob.prepareStatic();
+//        slClientJob.prepareStatic();
 
         //Initialize transactions for Combo to execute
         HashMap<String, TxnDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
