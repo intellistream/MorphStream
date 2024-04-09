@@ -42,7 +42,13 @@ public class OffloadCCThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] txnByteArray = operationQueue.poll();
+            byte[] txnByteArray;
+            try {
+                txnByteArray = operationQueue.take();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("txnByteArray: " + txnByteArray);
             List<byte[]> splitByteArrays = splitByteArray(txnByteArray, fullSeparator);
             int instanceID = decodeInt(splitByteArrays.get(0), 0);
             long timeStamp = decodeLong(splitByteArrays.get(2), 0);

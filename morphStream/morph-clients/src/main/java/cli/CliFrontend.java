@@ -32,7 +32,7 @@ import static intellistream.morphstream.configuration.Constants.*;
 public class CliFrontend {
     private static final Logger LOG = LoggerFactory.getLogger(CliFrontend.class);
     private String appName = "";
-    private final MorphStreamEnv env;
+    private MorphStreamEnv env;
 
     private final HashMap<String, AbstractBolt> boltMap = new HashMap<>();
     private final HashMap<String, String[]> stateObjectTemplates = new HashMap<>();
@@ -43,16 +43,16 @@ public class CliFrontend {
     public CliFrontend(String appName) throws IOException {
         this.appName = appName;
         env = MorphStreamEnv.get();
-        env.initializeAdaptiveCCManager(); //Separate initialization of adaptive CC manager from MorphStreamEnv constructor
     }
 
-    public void loadConfigStreaming(String[] args) {
+    public void loadConfigStreaming(String[] args) throws IOException {
         try {
             LoadConfiguration(null, args);
             prepareStreaming();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        env.initializeAdaptiveCCManager(); //Separate initialization of adaptive CC manager from MorphStreamEnv constructor
     }
 
     public static double getDoubleField(String stateObjID, String[] txnData) {

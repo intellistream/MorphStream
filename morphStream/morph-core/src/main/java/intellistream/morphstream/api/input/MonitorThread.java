@@ -57,7 +57,12 @@ public class MonitorThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] metaDataByte = txnMetaDataQueue.poll();
+            byte[] metaDataByte;
+            try {
+                metaDataByte = txnMetaDataQueue.take();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             updatePatternData(metaDataByte);
             txnCounter++;
             if (txnCounter % punctuation_interval == 0) {

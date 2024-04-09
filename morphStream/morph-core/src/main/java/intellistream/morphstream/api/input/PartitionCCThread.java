@@ -32,7 +32,12 @@ public class PartitionCCThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] txnByteArray = operationQueue.poll();
+            byte[] txnByteArray;
+            try {
+                txnByteArray = operationQueue.take();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             List<byte[]> splitByteArrays = splitByteArray(txnByteArray, fullSeparator);
             int instanceID = decodeInt(splitByteArrays.get(0), 0);
             int tupleID = decodeInt(splitByteArrays.get(2), 0);

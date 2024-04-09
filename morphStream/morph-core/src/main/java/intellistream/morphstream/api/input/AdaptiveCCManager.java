@@ -17,8 +17,6 @@ public class AdaptiveCCManager {
     private static final int writeThreadPoolSize = 4; //TODO: Hardcoded
 
     public AdaptiveCCManager() {
-        MorphStreamEnv morphStreamEnv = MorphStreamEnv.get();
-        Configuration configuration = morphStreamEnv.configuration();
         int _spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum"); //Number of thread for TPG_CC
         for (int i = 0; i < _spoutNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
