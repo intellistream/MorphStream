@@ -42,6 +42,7 @@ public class MorphStreamFrontend extends Thread{
     private Statistic statistic;
     private String tempInput;
     private TransactionalEvent tempEvent;
+    private ZMsg tempZmsg;
     public MorphStreamFrontend(int threadId, ZContext zContext, RdmaDriverManager rdmaDriverManager, Statistic statistic) {
         this.frontend = zContext.createSocket(SocketType.DEALER);
         this.totalEventToReceive = MorphStreamEnv.get().configuration().getInt("totalEvents") / MorphStreamEnv.get().configuration().getInt("frontendNum");
@@ -54,6 +55,17 @@ public class MorphStreamFrontend extends Thread{
         for (int i = 0; i < workerHosts.length; i++) {
             workIdList.add(i);
         }
+    }
+    public void run(){
+        while (!interrupted() && isRunning) {
+            if (isSending) {
+                invokeFunctionToWorker();
+            }
+            asyncReceiveFunctionOutput();
+        }
+        this.systemEndTime = System.nanoTime();
+        LOG.info("ThreadId : " + threadId + " sendCount: " + sendCount + " receiveCount: " + receiveCount);
+        this.statistic.addThroughput(this.threadId, totalEventToReceive * 1E6 / ((this.systemEndTime - this.systemStartTime)));
     }
 
     public void asyncReceiveFunctionOutput(){
@@ -73,10 +85,10 @@ public class MorphStreamFrontend extends Thread{
         }
     }
     private void invokeFunctionToWorker(){
-        ZMsg msg = ZMsg.recvMsg(frontend, false);
-        if (msg != null) {
+        tempZmsg = ZMsg.recvMsg(frontend, false);
+        if (tempZmsg != null) {
             try {
-                tempInput = msg.getLast().toString();
+                tempInput = tempZmsg.getLast().toString();
                 tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
                 rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getAllKeys()), new FunctionMessage(tempInput));
                 sendCount ++;
@@ -90,17 +102,6 @@ public class MorphStreamFrontend extends Thread{
         }
     }
 
-    public void run(){
-        while (!interrupted() && isRunning) {
-            if (isSending) {
-                invokeFunctionToWorker();
-            }
-            asyncReceiveFunctionOutput();
-        }
-        this.systemEndTime = System.nanoTime();
-        LOG.info("ThreadId : " + threadId + " sendCount: " + sendCount + " receiveCount: " + receiveCount);
-        this.statistic.addThroughput(this.threadId, totalEventToReceive * 1E6 / ((this.systemEndTime - this.systemStartTime)));
-    }
     private int getWorkId(List<String> keys) {
         return this.statistic.add(keys);
     }
