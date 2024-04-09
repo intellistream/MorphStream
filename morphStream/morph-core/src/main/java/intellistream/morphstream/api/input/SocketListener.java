@@ -43,19 +43,21 @@ public class SocketListener implements Runnable { //A single thread that listens
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            try (Socket socket = stateManagerSocket.accept()) {
+            try (Socket instanceSocket = stateManagerSocket.accept()) {
+                System.out.println("Client connected: " + instanceSocket.getRemoteSocketAddress());
 
-                int senderPort = socket.getPort();
-                System.out.println("Connected to port " + senderPort);
+                // Record the client socket
+                int instanceID = instanceSocket.getPort();
+                MorphStreamEnv.get().addInstanceSocket(instanceID, instanceSocket);
 
-                InputStream input = socket.getInputStream();
+                InputStream input = instanceSocket.getInputStream();
                 byte[] buffer = new byte[1024]; // Buffer for reading data
                 int bytesRead = input.read(buffer); // Read the message into the buffer
 
                 if (bytesRead > 0) {
 
                     // Format: senderPort + ";" + message
-                    String senderPortStr = senderPort + ";";
+                    String senderPortStr = instanceID + ";";
                     byte[] senderPortBytes = senderPortStr.getBytes();
                     byte[] result = new byte[senderPortBytes.length + bytesRead];
                     System.arraycopy(senderPortBytes, 0, result, 0, senderPortBytes.length);
@@ -64,7 +66,7 @@ public class SocketListener implements Runnable { //A single thread that listens
                     List<byte[]> splitByteArrays = splitByteArray(result, fullSeparator);
                     int target = decodeInt(splitByteArrays.get(1), 0);
 
-                    System.out.println("Received message from port " + senderPort + ": " + new String(buffer, 0, bytesRead));
+                    System.out.println("Received message from port " + instanceID + ": " + new String(buffer, 0, bytesRead));
 
                     if (target == 0) {
                         monitorQueue.add(result); // Add the concatenated result to the monitor queue

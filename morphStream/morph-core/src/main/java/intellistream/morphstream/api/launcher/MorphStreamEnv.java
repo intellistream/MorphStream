@@ -35,20 +35,13 @@ public class MorphStreamEnv {
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
     private ServerSocket stateManagerSocket;
     private static int stateManagerPort = 12000;
-    private int[] instancePorts = {9090};
-    private final Map<Integer, Socket> instanceSocketMap = new java.util.HashMap<>();
+    private final HashMap<Integer, Socket> socketsToInstances = new java.util.HashMap<>();
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
 
     public MorphStreamEnv() {
-        for (int i = 0; i < instancePorts.length; i++) {
-            try {
-                instanceSocketMap.put(i, new Socket("172.20.0.251", instancePorts[i]));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
         try {
             stateManagerSocket = new ServerSocket(stateManagerPort);
+            System.out.println("Server started on port " + stateManagerPort);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -77,7 +70,10 @@ public class MorphStreamEnv {
         return OM;
     }
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
-    public Map<Integer, Socket> instanceSocketMap() {return instanceSocketMap;}
+    public void addInstanceSocket(Integer instanceID, Socket socket) {
+        socketsToInstances.put(instanceID, socket);
+    }
+    public Map<Integer, Socket> instanceSocketMap() {return socketsToInstances;}
     public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
     public ServerSocket stateManagerSocket() {return stateManagerSocket;}
     public AdaptiveCCManager adaptiveCCManager() {
