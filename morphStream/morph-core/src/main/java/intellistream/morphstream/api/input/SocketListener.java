@@ -46,6 +46,8 @@ public class SocketListener implements Runnable { //A single thread that listens
             try (Socket socket = stateManagerSocket.accept()) {
 
                 int senderPort = socket.getPort();
+                System.out.println("Connected to port " + senderPort);
+
                 InputStream input = socket.getInputStream();
                 byte[] buffer = new byte[1024]; // Buffer for reading data
                 int bytesRead = input.read(buffer); // Read the message into the buffer

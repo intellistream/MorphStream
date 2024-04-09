@@ -32,15 +32,18 @@ import static intellistream.morphstream.configuration.Constants.*;
 public class CliFrontend {
     private static final Logger LOG = LoggerFactory.getLogger(CliFrontend.class);
     private String appName = "";
-    private final MorphStreamEnv env = MorphStreamEnv.get();
+    private final MorphStreamEnv env;
+
     private final HashMap<String, AbstractBolt> boltMap = new HashMap<>();
     private final HashMap<String, String[]> stateObjectTemplates = new HashMap<>();
     private int counter = 0;
     private final int punctuation_interval = MorphStreamEnv.get().configuration().getInt("checkpoint", 2500);
     private final int ccOption = MorphStreamEnv.get().configuration().getInt("CCOption", 0);
 
-    public CliFrontend(String appName) {
+    public CliFrontend(String appName) throws IOException {
         this.appName = appName;
+        env = MorphStreamEnv.get();
+        env.initializeAdaptiveCCManager(); //Separate initialization of adaptive CC manager from MorphStreamEnv constructor
     }
 
     public void loadConfigStreaming(String[] args) {

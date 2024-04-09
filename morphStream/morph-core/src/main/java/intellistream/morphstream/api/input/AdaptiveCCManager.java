@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.configuration.Configuration;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +17,8 @@ public class AdaptiveCCManager {
     private static final int writeThreadPoolSize = 4; //TODO: Hardcoded
 
     public AdaptiveCCManager() {
+        MorphStreamEnv morphStreamEnv = MorphStreamEnv.get();
+        Configuration configuration = morphStreamEnv.configuration();
         int _spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum"); //Number of thread for TPG_CC
         for (int i = 0; i < _spoutNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();

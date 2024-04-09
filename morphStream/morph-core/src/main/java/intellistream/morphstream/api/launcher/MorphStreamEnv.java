@@ -26,7 +26,7 @@ public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
-    private final AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();
+    private AdaptiveCCManager adaptiveCCManager;
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
@@ -40,12 +40,6 @@ public class MorphStreamEnv {
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
 
     public MorphStreamEnv() {
-        try {
-            adaptiveCCManager.initialize();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
         for (int i = 0; i < instancePorts.length; i++) {
             try {
                 instanceSocketMap.put(i, new Socket("172.20.0.251", instancePorts[i]));
@@ -57,6 +51,13 @@ public class MorphStreamEnv {
             stateManagerSocket = new ServerSocket(stateManagerPort);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void initializeAdaptiveCCManager() throws IOException {
+        if (adaptiveCCManager == null) {
+            adaptiveCCManager = new AdaptiveCCManager();
+            adaptiveCCManager.initialize();
         }
     }
 
@@ -79,7 +80,16 @@ public class MorphStreamEnv {
     public Map<Integer, Socket> instanceSocketMap() {return instanceSocketMap;}
     public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
     public ServerSocket stateManagerSocket() {return stateManagerSocket;}
-    public AdaptiveCCManager adaptiveCCManager() {return adaptiveCCManager;}
+    public AdaptiveCCManager adaptiveCCManager() {
+        if (adaptiveCCManager == null) {
+            try {
+                initializeAdaptiveCCManager();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return adaptiveCCManager;
+    }
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();
