@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input.statistic;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +16,8 @@ public class Statistic {
     private int delta;
     private int totalEvents = 0;
     private final ConcurrentHashMap<Integer, Double> frontendIdToThroughput = new ConcurrentHashMap<>();
+    private final DescriptiveStatistics latencyStatistics = new DescriptiveStatistics();
+    private final ConcurrentHashMap<Long, Long> bidToStartTimestamp = new ConcurrentHashMap<>();
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
     private final List<Integer> tempVotes = new ArrayList<>();
     private final Map<Integer, Integer> tempVoteCount = new HashMap<>();
@@ -161,11 +164,24 @@ public class Statistic {
     public void addThroughput(int frontendId, double throughput) {
         frontendIdToThroughput.put(frontendId, throughput);
     }
+    public void addStartTimestamp(long bid, long startTimestamp) {
+        bidToStartTimestamp.put(bid, startTimestamp);
+    }
+    public void addLatency(long bid, long endTimestamp) {
+        long startTimestamp = bidToStartTimestamp.get(bid);
+        latencyStatistics.addValue((endTimestamp - startTimestamp) / 1E6);
+    }
     public double getThroughput() {
         double sum = 0;
         for (Double throughput : frontendIdToThroughput.values()) {
             sum += throughput;
         }
         return sum;
+    }
+    public double getLatency() {
+        return latencyStatistics.getMean();
+    }
+    public double getLatency(double percentile) {
+        return latencyStatistics.getPercentile(percentile);
     }
 }

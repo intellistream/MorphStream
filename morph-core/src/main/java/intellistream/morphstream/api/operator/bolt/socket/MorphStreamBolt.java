@@ -145,7 +145,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 if (Client.class.isAssignableFrom(clientClass)) {
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
                     HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                    udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
+                    udfResultReflect = clientObj.postUDF(event.getBid(),event.getFlag(), stateAccesses);
                 }
                 if (enable_latency_measurement) {
                     latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());

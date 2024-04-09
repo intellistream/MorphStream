@@ -80,6 +80,8 @@ public class MorphStreamDriver extends Thread {
             }
             this.rdmaDriverManager.close();
             LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + "k functions/s");
+            LOG.info("MorphStreamDriver is finished with average latency: " + statistic.getLatency() + "ms");
+            LOG.info("MorphStreamDriver is finished with 99th latency: " + statistic.getLatency(0.99) + "ms");
             System.exit(0);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -47,8 +47,8 @@ public class BankingSystemClient extends Client {
     }
 
     @Override
-    public Result postUDF(String txnName, HashMap<String, StateAccess> stateAccessMap) {
-        Result result = new Result();
+    public Result postUDF(long bid, String txnName, HashMap<String, StateAccess> stateAccessMap) {
+        Result result = new Result(bid);
         for (StateAccess stateAccess : stateAccessMap.values()) {
             if (stateAccess.isAborted()) {
                 String[] abortResult = {"aborted"};

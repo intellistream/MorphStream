@@ -33,7 +33,7 @@ public abstract class Client extends Thread {
     private String driverHost;
     private int driverPort;
     public abstract boolean transactionUDF(StateAccess access);
-    public abstract Result postUDF(String txnFlag, HashMap<String, StateAccess> stateAccessMap);
+    public abstract Result postUDF(long bid, String txnFlag, HashMap<String, StateAccess> stateAccessMap);
     public abstract void defineFunction();
     public ZMQ.Socket getSocket(String address) {
         return sockets.getOrDefault(address, null);

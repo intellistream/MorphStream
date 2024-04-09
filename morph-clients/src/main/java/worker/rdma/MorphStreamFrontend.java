@@ -75,6 +75,8 @@ public class MorphStreamFrontend extends Thread{
                 int length = results.getInt();
                 byte[] bytes = new byte[length];
                 results.get(bytes);
+                String result = new String(bytes);
+                this.statistic.addLatency(Long.parseLong(result), System.nanoTime());
                 receiveCount ++;
                 if (receiveCount == totalEventToReceive) {
                     isRunning = false;
@@ -91,6 +93,7 @@ public class MorphStreamFrontend extends Thread{
                 tempInput = tempZmsg.getLast().toString();
                 tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
                 rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getAllKeys()), new FunctionMessage(tempInput));
+                this.statistic.addStartTimestamp(tempEvent.getBid(), System.nanoTime());
                 sendCount ++;
                 if (sendCount == totalEventToReceive) {
                     rdmaDriverManager.sendFinish(this.threadId);

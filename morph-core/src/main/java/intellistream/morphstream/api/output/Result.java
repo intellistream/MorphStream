@@ -6,7 +6,9 @@ import lombok.Setter;
 
 
 public class Result {
+    private long bid;
     boolean isLast; //Downstream operator - 0: read transactionalEvent; 1: read result
+    boolean isMeasure= true;
     @Getter
     TransactionalEvent transactionalEvent;
     //setXXX
@@ -14,7 +16,8 @@ public class Result {
     @Setter
     Object[] results;
 
-    public Result() {
+    public Result(long bid) {
+        this.bid = bid;
         transactionalEvent = new TransactionalEvent(0);
     }
 
@@ -28,8 +31,12 @@ public class Result {
 
     @Override
     public String toString() {
-        if (isLast) {
+        if (isMeasure) {
+            return Long.toString(bid);
+        } else if (isLast) {
             StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(bid);
+            stringBuilder.append(",");
             for (Object result : results) {
                 stringBuilder.append(result).append(",");
             }
