@@ -16,6 +16,7 @@ import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
 import intellistream.morphstream.common.io.Rdma.Msg.WDRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -98,8 +99,10 @@ public class RdmaDriverManager {
             workerMessageBatchMap.get(workId).add(functionMessage);
             frontendTotalMessageCountMap.put(frontendId, frontendTotalMessageCountMap.get(frontendId) + 1);
         }
+        MeasureTools.DriverPrepareEndTime(frontendId);
         if (frontendTotalMessageCountMap.get(frontendId) >= SOURCE_CONTROL.getInstance().getMessagePerFrontend()) {
             SOURCE_CONTROL.getInstance().driverStartSendMessageBarrier();
+            MeasureTools.DriverRdmaStartSendEventTime(frontendId);
             sendBatch(frontendId);
             frontendTotalBatchCountMap.put(frontendId, frontendTotalBatchCountMap.get(frontendId) + 1);
             if (model_switch(frontendId)) {
@@ -108,6 +111,7 @@ public class RdmaDriverManager {
                 this.statistic.clear();
             }
             SOURCE_CONTROL.getInstance().driverEndSendMessageBarrier();
+            MeasureTools.DriverRdmaEndSendEventTime(frontendId);
         }
     }
     private void sendBatch(int workId) throws Exception {

@@ -93,7 +93,6 @@ public class DependencyLoggingManager implements LoggingManager {
     public void syncRetrieveLogs(RedoLogResult redoLogResult) throws IOException, ExecutionException, InterruptedException {
         this.cpg.addContext(redoLogResult.threadId, new CSContext(redoLogResult.threadId));
         for (int i = 0; i < redoLogResult.redoLogPaths.size(); i++) {
-            MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(redoLogResult.threadId);
             Path walPath = Paths.get(redoLogResult.redoLogPaths.get(i));
             AsynchronousFileChannel afc = AsynchronousFileChannel.open(walPath, READ);
             int fileSize = (int) afc.size();
@@ -113,12 +112,8 @@ public class DependencyLoggingManager implements LoggingManager {
                 this.cpg.addTask(redoLogResult.threadId, new CommandTask(dependencyLog));
             }
             LOG.info("Thread " + redoLogResult.threadId + " has finished reading logs");
-            MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(redoLogResult.threadId);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(redoLogResult.threadId);
-            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(redoLogResult.threadId);
             start_evaluate(this.cpg.threadToCSContextMap.get(redoLogResult.threadId));
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(redoLogResult.threadId);
-            MeasureTools.SCHEDULE_TIME_RECORD(redoLogResult.threadId, 0);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(redoLogResult.threadId);
         }
     }
@@ -133,9 +128,7 @@ public class DependencyLoggingManager implements LoggingManager {
     }
 
     private void INITIALIZE(CSContext context) {
-        MeasureTools.BEGIN_RECOVERY_CONSTRUCT_GRAPH_MEASURE(context.threadId);
         this.cpg.construct_graph(context);
-        MeasureTools.END_RECOVERY_CONSTRUCT_GRAPH_MEASURE(context.threadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.threadId);
     }
 
@@ -150,7 +143,6 @@ public class DependencyLoggingManager implements LoggingManager {
     }
 
     private void PROCESS(CSContext context) {
-        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.threadId);
         CommandTask commandTask = next(context);
         switch (app) {
             case 0:
@@ -164,13 +156,10 @@ public class DependencyLoggingManager implements LoggingManager {
                 SLExecute(commandTask);
                 break;
         }
-        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.threadId);
     }
 
     private void RESET(CSContext context) {
-        MeasureTools.BEGIN_SCHEDULE_WAIT_TIME_MEASURE(context.threadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.threadId);
-        MeasureTools.END_SCHEDULE_WAIT_TIME_MEASURE(context.threadId);
         context.reset();
         this.cpg.reset(context);
     }

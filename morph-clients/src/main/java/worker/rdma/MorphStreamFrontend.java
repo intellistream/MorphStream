@@ -7,7 +7,7 @@ import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CircularMessageBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaDriverManager;
-import lombok.Getter;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,8 +71,11 @@ public class MorphStreamFrontend extends Thread{
 
     public void asyncReceiveFunctionOutput(){
         try {
+            MeasureTools.DriverRdmaStartRecvEventTime(this.threadId);
             ByteBuffer results = getResult();
+            MeasureTools.DriverRdmaEndRecvEventTime(this.threadId);
             if (results != null && results.hasRemaining()) {
+                MeasureTools.DriverFinishStartTime(this.threadId);
                 int length = results.getInt();
                 byte[] bytes = new byte[length];
                 results.get(bytes);
@@ -82,6 +85,7 @@ public class MorphStreamFrontend extends Thread{
                 if (receiveCount == totalEventToReceive) {
                     isRunning = false;
                 }
+                MeasureTools.DriverFinishEndTime(this.threadId);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -91,6 +95,7 @@ public class MorphStreamFrontend extends Thread{
         tempZmsg = ZMsg.recvMsg(frontend, false);
         if (tempZmsg != null) {
             try {
+                MeasureTools.DriverPrepareStartTime(this.threadId);
                 tempInput = tempZmsg.getLast().toString();
                 tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
                 rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getAllKeys()), new FunctionMessage(tempInput));

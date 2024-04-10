@@ -86,7 +86,6 @@ public class CommandLoggingManager implements LoggingManager {
     @Override
     public void syncRetrieveLogs(RedoLogResult redoLogResult) throws IOException, ExecutionException, InterruptedException {
         for (int i = 0; i < redoLogResult.redoLogPaths.size(); i++) {
-            MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(redoLogResult.threadId);
             Path walPath = Paths.get(redoLogResult.redoLogPaths.get(i));
             AsynchronousFileChannel afc = AsynchronousFileChannel.open(walPath, READ);
             int fileSize = (int) afc.size();
@@ -106,20 +105,12 @@ public class CommandLoggingManager implements LoggingManager {
                 this.cpg.addTask(nativeCommandLog);
             }
             LOG.info("Thread " + redoLogResult.threadId + " has finished reading logs");
-            MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(redoLogResult.threadId);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(redoLogResult.threadId);
-            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(redoLogResult.threadId);
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(redoLogResult.threadId);
             if (redoLogResult.threadId == 0) {//Only one thread will redo the command log serially
                 LOG.info("Total tasks: " + this.cpg.tasks.size());
                 start_evaluate();
             }
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(redoLogResult.threadId);
-            MeasureTools.BEGIN_SCHEDULE_WAIT_TIME_MEASURE(redoLogResult.threadId);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(redoLogResult.threadId);
-            MeasureTools.END_SCHEDULE_WAIT_TIME_MEASURE(redoLogResult.threadId);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(redoLogResult.threadId);
-            MeasureTools.SCHEDULE_TIME_RECORD(redoLogResult.threadId, 0);
         }
     }
 

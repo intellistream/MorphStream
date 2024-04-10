@@ -161,13 +161,11 @@ public class ApplicationInputDurabilityHelper extends InputDurabilityHelper {
     }
 
     private void storeInputWithoutCompression(Object[] myevents, long currentOffset, int interval, File inputFile) throws IOException, ExecutionException, InterruptedException {
-        MeasureTools.BEGIN_PERSIST_TIME_MEASURE(this.taskId);
         BufferedWriter EventBufferedWriter = new BufferedWriter(new FileWriter(inputFile, true));
         for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
             EventBufferedWriter.write(myevents[i].toString() + "\n");
         }
         EventBufferedWriter.close();
-        MeasureTools.END_PERSIST_TIME_MEASURE(this.taskId);
     }
 
     private void storeInputWithCompression(Object[] myevents, long currentOffset, int interval, File inputFile) throws IOException, ExecutionException, InterruptedException {

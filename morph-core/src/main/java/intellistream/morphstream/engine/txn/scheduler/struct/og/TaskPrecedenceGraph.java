@@ -140,7 +140,6 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 
     public void firstTimeExploreTPG(Context context) {
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 //        assert context.totalOsToSchedule == ocs.size();
 //        Collection<TableOCs<OperationChain>> tableOCsList = getOperationChains().values();
 //        for (TableOCs<OperationChain> tableOCs : tableOCsList) {//for each table.
@@ -148,16 +147,13 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 //        }
 
         submit(context, threadToOCs.get(threadId));
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(threadId);
     }
 
     private void submit(Context context, Collection<OperationChain> ocs) {
         for (OperationChain oc : ocs) {
             oc.updateFDDependencies();
             if (this.isLogging == LOGOption_path && !oc.getOperations().isEmpty()) {
-                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                 this.threadToPathRecord.get(context.thisThreadId).addNode(oc.getTableName(), oc.primaryKey, oc.getOperations().size());
-                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -245,7 +241,6 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         if (context instanceof OGSContext) {
             if (enable_log) LOG.info("MaxLevel:" + (((OGSContext) context).maxLevel));
         } else if (context instanceof OGNSContext) {
@@ -262,7 +257,6 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else {
             throw new UnsupportedOperationException();
         }
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
     private void resetOC(OperationChain oc) {
@@ -277,7 +271,6 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 
     public void Explore(Context context) {
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 //        assert context.totalOsToSchedule == ocs.size();
 //        Collection<TableOCs<OperationChain>> tableOCsList = getOperationChains().values();
 //        for (TableOCs<OperationChain> tableOCs : tableOCsList) {//for each table.
@@ -285,7 +278,6 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 //        }
 
         Submit(context, threadToOCs.get(threadId));
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
     private void Submit(Context context, Collection<OperationChain> ocs) {
@@ -326,10 +318,8 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 
 
     public void ReExplore(Context context) {
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
 //        assert context.totalOsToSchedule == ocs.size();
         ReSubmit(context, threadToOCs.get(context.thisThreadId));
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
     private void ReSubmit(Context context, Collection<OperationChain> ocs) {

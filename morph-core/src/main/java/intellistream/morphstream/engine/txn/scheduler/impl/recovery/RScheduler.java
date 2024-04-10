@@ -87,7 +87,6 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
 
     @Override
     public void TxnSubmitFinished(Context context, int batchID) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         int txnOpId = 0;
         for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
@@ -119,7 +118,6 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             if (request.condition_keys != null) {
                 inspectDependency(context.groupId, curOC, set_op, request.table_name, request.write_key, request.condition_tables, request.condition_keys);
             }
-            MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         }
     }
 
@@ -164,7 +162,6 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                     continue;
                 }
                 if (op.pdCount.get() == 0) {
-                    MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
                     execute(op, mark_ID, false);
                     if (op.isFailed.get()) {
                         op.operationState = MetaTypes.OperationStateType.ABORTED;
@@ -173,7 +170,6 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                         op.operationState = MetaTypes.OperationStateType.EXECUTED;
                     }
                     oc.level = oc.level + 1;
-                    MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
                 } else {
                     context.wait_op = op;
                     break;

@@ -18,6 +18,7 @@ import intellistream.morphstream.common.io.Rdma.Msg.WDRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.Msg.WWRegionTokenGroup;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.RemoteOperationBatch;
 import lombok.Getter;
 
@@ -145,11 +146,13 @@ public class RdmaWorkerManager implements Serializable {
 
     public void sendResults(int senderThreadId, FunctionMessage functionMessage) throws Exception {
         this.resultBatch.add(senderThreadId, functionMessage);
+        MeasureTools.WorkerFinishEndTime(senderThreadId);
         if (this.resultBatch.getTotalResultCount(senderThreadId) >= SOURCE_CONTROL.getInstance().getResultPerExecutor()) {
             sendResultBatch(senderThreadId);
         }
     }
     public void sendResultBatch(int senderThreadId) throws Exception {
+        MeasureTools.WorkerRdmaSendResultStartTime(senderThreadId);
         SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
         if (senderThreadId == 0 && this.resultBatch.getAllResultCount() > 0 ){
             ByteBuffer byteBuffer = this.resultBatch.buffer();
@@ -193,6 +196,7 @@ public class RdmaWorkerManager implements Serializable {
             latch.await();
         }
         SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
+        MeasureTools.WorkerRdmaSendResultEndTime(senderThreadId);
     }
     public void sendRemoteOperations(int senderThreadId, int receiverWorkerId, FunctionMessage functionMessage) {
         this.remoteOperationBatchMap.get(receiverWorkerId).addMessage(senderThreadId, functionMessage);

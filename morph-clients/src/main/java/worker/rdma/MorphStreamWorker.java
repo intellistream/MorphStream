@@ -50,6 +50,7 @@ public class MorphStreamWorker extends Thread {
             throw new RuntimeException(e);
         }
         MorphStreamEnv.get().DatabaseInitialize();
+        MeasureTools.Initialize(MorphStreamEnv.get().configuration());
     }
     public void registerFunction(HashMap<String, FunctionDAGDescription> functions) {
         this.spout.registerFunction(functions);
@@ -58,7 +59,6 @@ public class MorphStreamWorker extends Thread {
     @Override
     public void run() {
         env.setSpout("functionExecutor", spout, numTasks);
-        MeasureTools.Initialize();
         try {
             runTopologyLocally();
             this.RdmaWorkerManagerJoin();

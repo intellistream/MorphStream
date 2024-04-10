@@ -63,7 +63,6 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
         do {
             Operation next = next(context);
@@ -76,20 +75,15 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
                 break;
             }
         } while (true);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         for (Operation operation : context.batchedOperations) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(operation, mark_ID, false, batchID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
 
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
-            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             NOTIFY(remove, context); // this also covers abort handling logic
-            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
 //        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }

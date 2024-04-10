@@ -39,7 +39,6 @@ public class MorphStreamWorker extends Thread {
         backend.bind("inproc://backend");
         rdmaWorkerManager = new RdmaWorkerManager(false, env.configuration());
         LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is initialized, listening on " + "tcp://" + workerHosts[workerId] + ":" + workerPorts[workerId]);
-
     }
     public void registerFunction(HashMap<String, FunctionDAGDescription> functions) {
         this.spout.registerFunction(functions);
@@ -47,7 +46,7 @@ public class MorphStreamWorker extends Thread {
     @Override
     public void run() {
         env.setSpout("functionExecutor", spout, numTasks);
-        MeasureTools.Initialize();
+        MeasureTools.Initialize(MorphStreamEnv.get().configuration());
         try {
             runTopologyLocally();
         } catch (InterruptedException e) {

@@ -16,6 +16,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Mark
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.engine.txn.transaction.impl.distributed.TxnManagerDistributed;
@@ -146,6 +147,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     protected void Transaction_Post_Process() {
         for (TransactionalEvent event: eventQueue) {
+            MeasureTools.WorkerFinishStartTime(this.thread_Id);
             Result udfResultReflect = null;
             try {
                 //Invoke client defined post-processing UDF using Reflection

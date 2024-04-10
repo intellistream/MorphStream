@@ -12,6 +12,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Mark
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,11 +64,15 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     @Override
     public void nextTuple() throws InterruptedException {
         try {
+            MeasureTools.WorkerRdmaRecvStartEventTime(threadId);
             byte[] msg = getMsg();
+            MeasureTools.WorkerRdmaRecvEndEventTime(threadId);
             if (msg != null) {
+                MeasureTools.WorkerPrepareStartTime(threadId);
                 generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, InputSource.inputFromByteToTxnEvent(msg), System.nanoTime());
                 tuple = new Tuple(this.taskId, context, generalMsg);
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
+                MeasureTools.WorkerPrepareEndTime(threadId);
                 if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                     if (model_switch(counter) && !msgBuffer.hasRemaining()) {
                         marker = new Tuple(this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, counter, myiteration, "punctuation"));

@@ -71,7 +71,6 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
         do {
             Operation next = next(context);
@@ -84,20 +83,15 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
                 break;
             }
         } while (true);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
 //        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(operation, mark_ID, false, batchID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
-            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             NOTIFY(remove, context);
-            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             checkTransactionAbort(remove);
         }
 //        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
@@ -159,9 +153,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
             if (bid == failedOp.bid) {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 if (this.isLogging == LOGOption_path && operation.txnOpId == 0) {
-                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                     this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(operation.bid);
-                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                 }
                 markAny = true;
             }

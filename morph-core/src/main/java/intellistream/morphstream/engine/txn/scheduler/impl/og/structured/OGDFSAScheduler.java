@@ -168,9 +168,7 @@ public class OGDFSAScheduler extends AbstractOGDFSScheduler<OGSAContext> {
             if (bid == failedOp.bid) {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 if (this.isLogging == LOGOption_path && operation.getTxnOpId() == 0) {
-                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                     this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(operation.bid);
-                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                 }
                 markAny = true;
             }

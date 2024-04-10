@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class OperationChain implements Comparable<OperationChain> {
-    @Setter
+    @Setter @Getter
     private DSContext dsContext;
     public final MyList<Operation> operations;
     @Getter

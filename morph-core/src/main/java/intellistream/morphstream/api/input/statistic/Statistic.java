@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input.statistic;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import lombok.Getter;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.util.*;
@@ -16,6 +17,7 @@ public class Statistic {
     private int delta;
     private int totalEvents = 0;
     private final ConcurrentHashMap<Integer, Double> frontendIdToThroughput = new ConcurrentHashMap<>();
+    @Getter
     private final DescriptiveStatistics latencyStatistics = new DescriptiveStatistics();
     private final ConcurrentHashMap<Long, Long> bidToStartTimestamp = new ConcurrentHashMap<>();
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
@@ -184,4 +186,5 @@ public class Statistic {
     public double getLatency(double percentile) {
         return latencyStatistics.getPercentile(percentile);
     }
+
 }

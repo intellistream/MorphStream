@@ -68,7 +68,6 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 //                MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
                 EXPLORE(context);
 //                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-                MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
                 PROCESS(context, mark_ID, batchID);
 //                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
@@ -108,7 +107,6 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
 
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         do {
             Operation next = next(context);
             if (next == null) {
@@ -120,27 +118,20 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
                 break;
             }
         } while (true);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         for (Operation operation : context.batchedOperations) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(operation, mark_ID, false, batchID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
         while (!context.batchedOperations.isEmpty()) {
             Operation remove = context.batchedOperations.remove();
-            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             if (remove.isFailed.get() && !remove.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
                 needAbortHandling = true;
                 if (isLogging == LOGOption_path && remove.txnOpId == 0) {
-                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(threadId);
                     this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(remove.bid);
-                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(threadId);
                 }
             }
             NOTIFY(remove, context);
-            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
     }
 

@@ -10,6 +10,7 @@ import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.apache.log4j.Logger;
@@ -35,9 +36,7 @@ public class RemoteStorageManager extends StorageManager {
     }
 
     public void getOwnershipTable(RdmaWorkerManager rdmaWorkerManager, DSContext context) throws IOException {
-        if (!this.workerSideOwnershipTable.ownershipTableReady.compareAndSet(false, true)) {
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-        } else {
+        if (this.workerSideOwnershipTable.ownershipTableReady.compareAndSet(false, true)) {
             LOG.info("Start to get ownership table");
             while (this.workerSideOwnershipTable.ownershipTableBuffer == null) {
                 this.workerSideOwnershipTable.ownershipTableBuffer = rdmaWorkerManager.getTableBuffer().getOwnershipTable();
@@ -64,8 +63,10 @@ public class RemoteStorageManager extends StorageManager {
                 workerSideOwnershipTable.initTableNameToValueList(tableName);
             }
             LOG.info("Get ownership table");
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        MeasureTools.WorkerRdmaRecvOwnershipTableEndEventTime(context.thisThreadId);
+        MeasureTools.WorkerPrepareCacheStartTime(context.thisThreadId);
         this.loadCache(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (context.thisThreadId == 0) {
@@ -74,6 +75,7 @@ public class RemoteStorageManager extends StorageManager {
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        MeasureTools.WorkerPrepareCacheEndTime(context.thisThreadId);
     }
     public void loadCache(DSContext context) {
        for (String tableName : tableNames) {

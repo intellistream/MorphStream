@@ -161,7 +161,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
      */
     public void firstTimeExploreTPG(Context context) {
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 
         if (context instanceof OPSContext) {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
@@ -182,9 +181,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     context.operations.addAll(oc.getOperations());
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (this.isLogging == LOGOption_path) {
-                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                         this.threadToPathRecord.get(context.thisThreadId).addNode(oc.getTableName(), oc.getPrimaryKey(), oc.getOperations().size());
-                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                     }
                 }
             }
@@ -218,9 +215,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                         head.context.getListener().onRootStart(head);
                     }
                     if (this.isLogging == LOGOption_path) {
-                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                         this.threadToPathRecord.get(context.thisThreadId).addNode(oc.getTableName(), oc.getPrimaryKey(), oc.getOperations().size());
-                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                     }
                 }
             }
@@ -228,7 +223,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             throw new UnsupportedOperationException();
         }
 
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
     public void secondTimeExploreTPG(Context context) {
@@ -239,7 +233,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         if (context instanceof OPSContext) {
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
         } else if (context instanceof OPNSContext) {
@@ -254,7 +247,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else {
             throw new UnsupportedOperationException();
         }
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
     private void resetOp(OperationChain oc) {

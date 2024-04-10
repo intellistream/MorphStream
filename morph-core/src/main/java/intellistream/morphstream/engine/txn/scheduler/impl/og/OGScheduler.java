@@ -173,28 +173,20 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     @Override
     public void PROCESS(Context context, long mark_ID, int batchID) {
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
         OperationChain next = next(context);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
 //            assert !next.getOperations().isEmpty();
             if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
                 NOTIFY(next, context);
-                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
         } else {
 //            if (AppConfig.isCyclic) {
-            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
             next = nextFromBusyWaitQueue(context);
-            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
             if (next != null) {
 //                assert !next.getOperations().isEmpty();
                 if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
                     NOTIFY(next, context);
-                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
                 }
             }
 //            }
@@ -220,9 +212,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             if (isConflicted(context, operationChain, operation)) {
                 return false;
             }
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             if (!operation.isFailed.get() && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
                 operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
             } else {
@@ -280,7 +270,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
     @Override
     public void TxnSubmitFinished(Context context, int batchID) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<Operation> operationGraph = new ArrayList<>();
         int txnOpId = 0;
@@ -296,7 +285,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             headerOperation.addDescendant(set_op);
         }
         // set logical dependencies among all operation in the same transaction
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     private Operation constructOp(List<Operation> operationGraph, Request request) {
@@ -387,7 +375,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         if (isLogging == LOGOption_path) {
             return;
         }
-        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
         if (isLogging == LOGOption_wal) {
             ((LogRecord) operation.logRecord).addUpdate(operation.d_record.content_.readPreValues(operation.bid));
             this.loggingManager.addLogRecord(operation.logRecord);
@@ -415,6 +402,5 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             this.loggingManager.addLogRecord(operation.logRecord);
         }
         operation.isCommit = true;
-        MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
     }
 }

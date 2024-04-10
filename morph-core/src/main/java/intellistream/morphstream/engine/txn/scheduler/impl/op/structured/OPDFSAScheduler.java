@@ -63,7 +63,6 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
         do {
             Operation next = next(context);
@@ -76,21 +75,16 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
                 break;
             }
         } while (true);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
 //        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(operation, mark_ID, false, batchID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
             if (!remove.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
-                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
                 NOTIFY(remove, context); // only notify when the operation is executed
-                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
             checkTransactionAbort(remove);
         }
@@ -152,9 +146,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 notifyChildren(operation, MetaTypes.OperationStateType.ABORTED);
                 if (this.isLogging == LOGOption_path && operation.txnOpId == 0) {
-                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                     this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(operation.bid);
-                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                 }
                 markAny = true;
             }

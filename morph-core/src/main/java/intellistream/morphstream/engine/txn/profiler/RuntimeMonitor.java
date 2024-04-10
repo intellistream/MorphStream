@@ -258,16 +258,7 @@ public class RuntimeMonitor extends Thread {
         double abort_time = 0;
         double construct_time = 0;
         double tracking_time = 0;
-        for (int threadId = 0; threadId < threadNum; threadId++) {
-            explore_time += Metrics.Scheduler_Record.Explore[threadId].getMean();
-//            useful_time += Metrics.Scheduler_Record.Useful[threadId].getMean();
-            abort_time += Metrics.Scheduler_Record.Abort[threadId].getMean();
-            construct_time += Metrics.Scheduler_Record.Construct[threadId].getMean();
-            tracking_time += Metrics.Scheduler_Record.Tracking[threadId].getMean();
-        }
-        useful_time = Metrics.Scheduler_Record.Useful[0].getMean();
         explore_time = explore_time / threadNum;
-//        useful_time = useful_time / threadNum;
         abort_time = abort_time / threadNum;
         construct_time = construct_time / threadNum;
         tracking_time = tracking_time / threadNum;

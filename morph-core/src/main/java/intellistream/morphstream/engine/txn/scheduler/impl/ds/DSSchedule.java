@@ -9,6 +9,7 @@ import intellistream.morphstream.engine.db.storage.datatype.IntDataBox;
 import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
@@ -88,8 +89,10 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public void INITIALIZE(Context context) {
         try {
             //Get ownership table from driver
+            MeasureTools.WorkerRdmaRecvOwnershipTableStartEventTime(context.thisThreadId);
             this.remoteStorageManager.getOwnershipTable(this.rdmaWorkerManager, context);
             //Send remote operations to remote workers
+            MeasureTools.WorkerRdmaRemoteOperationStartEventTime(context.thisThreadId);
             for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
                 if (oc.operations.isEmpty()) {
                     continue;
@@ -110,6 +113,8 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             //Receive remote operations from remote workers
             tpg.setupRemoteOperations(context.receiveRemoteOperations(rdmaWorkerManager));
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            MeasureTools.WorkerRdmaRemoteOperationEndEventTime(context.thisThreadId);
+            MeasureTools.WorkerSetupDependenciesStartEventTime(context.thisThreadId);
             tpg.setupDependencies(context);
             for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
                 if (oc.operations.isEmpty()) {
@@ -120,6 +125,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             }
             LOG.info("Finish initialize: " + context.thisThreadId);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            MeasureTools.WorkerSetupDependenciesEndEventTime(context.thisThreadId);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -128,6 +134,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
         LOG.info("Start evaluation: " + context.thisThreadId);
         INITIALIZE(context);
+        MeasureTools.WorkerExecuteStartEventTime(context.thisThreadId);
         do {
             EXPLORE(context);
             PROCESS(context, mark_ID, batchID);
@@ -135,6 +142,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
         RESET(context);
         LOG.info("Finish evaluation: " + context.thisThreadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        MeasureTools.WorkerExecuteEndEventTime(context.thisThreadId);
     }
     @Override
     public void EXPLORE(Context context) {
@@ -212,6 +220,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                 } else {
                     intDataBox.setInt(value);
                     LOG.info("Read from remote cache with " +  oc.tryTimes + " times");
+                    MeasureTools.WorkerRdmaRound(oc.getDsContext().thisThreadId, oc.tryTimes);
                     oc.tryTimes = 0;
                 }
             }

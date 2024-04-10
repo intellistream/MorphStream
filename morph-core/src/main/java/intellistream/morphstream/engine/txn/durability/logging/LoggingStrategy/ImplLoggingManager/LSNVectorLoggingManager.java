@@ -101,7 +101,6 @@ public class LSNVectorLoggingManager implements LoggingManager {
     public void syncRetrieveLogs(RedoLogResult redoLogResult) throws IOException, ExecutionException, InterruptedException {
         this.cpg.addContext(redoLogResult.threadId, new CSContext(redoLogResult.threadId));
         for (int i = 0; i < redoLogResult.redoLogPaths.size(); i++) {
-            MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(redoLogResult.threadId);
             Path walPath = Paths.get(redoLogResult.redoLogPaths.get(i));
             AsynchronousFileChannel afc = AsynchronousFileChannel.open(walPath, READ);
             int fileSize = (int) afc.size();
@@ -121,12 +120,8 @@ public class LSNVectorLoggingManager implements LoggingManager {
                 this.cpg.addTask(redoLogResult.threadId, lvcLog);
             }
             LOG.info("Thread " + redoLogResult.threadId + " has finished reading logs");
-            MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(redoLogResult.threadId);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(redoLogResult.threadId);
-            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(redoLogResult.threadId);
             start_evaluate(this.cpg.getContext(redoLogResult.threadId));
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(redoLogResult.threadId);
-            MeasureTools.SCHEDULE_TIME_RECORD(redoLogResult.threadId, 0);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(redoLogResult.threadId);
         }
     }
@@ -154,7 +149,6 @@ public class LSNVectorLoggingManager implements LoggingManager {
     }
 
     private void PROCESS(CSContext context) {
-        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.threadId);
         switch (app) {
             case 0:
                 GSExecute(context.readyTask);
@@ -168,14 +162,11 @@ public class LSNVectorLoggingManager implements LoggingManager {
                 break;
         }
         context.scheduledTaskCount++;
-        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.threadId);
         this.cpg.updateGlobalLV(context);
     }
 
     private void RESET(CSContext context) {
-        MeasureTools.BEGIN_SCHEDULE_WAIT_TIME_MEASURE(context.threadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.threadId);
-        MeasureTools.END_SCHEDULE_WAIT_TIME_MEASURE(context.threadId);
         this.cpg.reset(context);
     }
 

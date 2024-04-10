@@ -101,9 +101,7 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
         // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
         operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
         if (isLogging == FaultToleranceConstants.LOGOption_path && operation.getTxnOpId() == 0) {
-            MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
             this.tpg.threadToPathRecord.get(operation.context.thisThreadId).addAbortBid(operation.bid);
-            MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
         }
         // save the abort information and redo the batch.
         needAbortHandling = true;

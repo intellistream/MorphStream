@@ -198,7 +198,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     @Override
     public void TxnSubmitFinished(Context context, int batchID) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         int txnOpId = 0;
         Operation headerOperation = null;
@@ -257,7 +256,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             set_op.addHeader(headerOperation);
             headerOperation.addDescendant(set_op);
         }
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     protected abstract void NOTIFY(Operation operation, Context context);
@@ -304,7 +302,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (isLogging == LOGOption_path) {
             return;
         }
-        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
         if (isLogging == LOGOption_wal) {
             ((LogRecord) operation.logRecord).addUpdate(operation.d_record.content_.readPreValues(operation.bid));
             this.loggingManager.addLogRecord(operation.logRecord);
@@ -332,7 +329,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             this.loggingManager.addLogRecord(operation.logRecord);
         }
         operation.isCommit = true;
-        MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
     }
 
 }

@@ -5,6 +5,7 @@ import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaDriverManager;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
@@ -47,6 +48,7 @@ public class MorphStreamDriver extends Thread {
         workerLatch = MorphStreamEnv.get().workerLatch();
     }
     public void initialize() throws IOException {
+        MeasureTools.Initialize(MorphStreamEnv.get().configuration());
         for (int i = 0; i < numFrontend; i++) {
             frontends.add(new MorphStreamFrontend(i, zContext, rdmaDriverManager, statistic));
         }
@@ -102,7 +104,8 @@ public class MorphStreamDriver extends Thread {
             this.rdmaDriverManager.close();
             LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + " k functions/s");
             LOG.info("MorphStreamDriver is finished with average latency: " + statistic.getLatency() + " ms");
-            LOG.info("MorphStreamDriver is finished with 99th latency: " + statistic.getLatency(0.99) + " ms");
+            LOG.info("MorphStreamDriver is finished with 99th latency: " + statistic.getLatency(99) + " ms");
+            MeasureTools.DRIVER_METRICS_REPORT(numFrontend, statistic.getThroughput(), statistic.getLatencyStatistics());
             System.exit(0);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
