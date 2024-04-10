@@ -25,12 +25,12 @@ function ResetParameters() {
     shuffleType=3
     #Database Configurations
     isRemoteDB=0
-    numberItemsForTables="1000"
-    NUM_ITEMS=1000
+    numberItemsForTables="100000"
+    NUM_ITEMS=100000
     tableNames="accounts"
     keyDataTypesForTables="String"
     valueDataTypesForTables="int"
-    valueNamesForTables="balance"
+    valueNamesForTables="value"
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0

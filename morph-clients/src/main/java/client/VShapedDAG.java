@@ -49,9 +49,9 @@ public class VShapedDAG extends Client {
         FunctionDescription function_1 = new FunctionDescription("function_1", AccessType.WRITE);
         function_1.addStateObjectDescription("stateObject_1", AccessType.WRITE, "accounts", "id1",0);
         FunctionDescription function_2 = new FunctionDescription("function_2", AccessType.WRITE);
-        function_2.addStateObjectDescription("stateObject_2", AccessType.WRITE, "accounts", "id2",0);
+        function_2.addStateObjectDescription("stateObject_2", AccessType.WRITE, "accounts", "id2",1);
         FunctionDescription function_3 = new FunctionDescription("function_3", AccessType.WRITE);
-        function_3.addStateObjectDescription("stateObject_3", AccessType.WRITE, "accounts", "id3",0);
+        function_3.addStateObjectDescription("stateObject_3", AccessType.WRITE, "accounts", "id3",2);
         function_3.addFatherName("function_1");
         function_3.addFatherName("function_2");
         VShapedDAG.addFunctionDescription("function_1", function_1);

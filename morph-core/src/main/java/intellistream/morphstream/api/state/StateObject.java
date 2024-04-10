@@ -2,18 +2,25 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 public class StateObject {
+    @Getter
     private final String name;
+    @Getter
     private final MetaTypes.AccessType type;
+    @Getter
     private final String table;
+    @Getter
     private final String key;
+    @Setter
     private SchemaRecord schemaRecord; //one version of TableRecord
-    private HashMap<String, Integer> fieldNameToIndex; //table field name -> index, field index starts from 1
+    private final HashMap<String, Integer> fieldNameToIndex; //table field name -> index, field index starts from 0
 
     public StateObject(String name, MetaTypes.AccessType type, String table, String key, HashMap<String, Integer> fieldNameToIndex) {
         this.name = name;
@@ -21,24 +28,6 @@ public class StateObject {
         this.table = table;
         this.key = key;
         this.fieldNameToIndex = fieldNameToIndex;
-    }
-
-    public void setSchemaRecord(SchemaRecord schemaRecord) {this.schemaRecord = schemaRecord;}
-
-    public String getName() {
-        return name;
-    }
-
-    public MetaTypes.AccessType getType() {
-        return type;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public String getTable() {
-        return table;
     }
 
     public int getIntValue(String fieldName) {
