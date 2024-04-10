@@ -1,11 +1,10 @@
 package benchmark.rdma;
 
-import client.BankingSystemClient;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import worker.rdma.MorphStreamDriver;
 import worker.rdma.MorphStreamWorker;
 
-public class BankingSystemRdma {
+public class RDMABenchmark {
     public static void main(String[] args) {
         try {
             MorphStreamEnv.get().LoadConfiguration(null, args); //TODO: add loadConfig from file
@@ -13,14 +12,11 @@ public class BankingSystemRdma {
                 MorphStreamDriver driver = new MorphStreamDriver();
                 driver.initialize();
                 driver.start();
-                BankingSystemClient.startClient(new String[]{});
+                driver.startClient();
                 driver.MorphStreamDriverJoin();
             } else {
                 MorphStreamWorker morphStreamWorker = new MorphStreamWorker();
-                MorphStreamEnv.get().setRdmaWorkerManager(morphStreamWorker.getRdmaWorkerManager());
-                BankingSystemClient client = new BankingSystemClient();
-                client.defineFunction();
-                morphStreamWorker.initialize(client.txnDescriptions);
+                morphStreamWorker.initialize();
                 morphStreamWorker.start();
             }
         } catch (Exception e) {

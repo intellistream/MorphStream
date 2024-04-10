@@ -11,7 +11,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Mark
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.*;
@@ -27,13 +27,13 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private static final Logger LOG = LoggerFactory.getLogger(FunctionExecutor.class);
     private String operatorID;
     private ZMQ.Socket worker;
-    private HashMap<String, FunctionDescription> FunctionDescriptionHashMap;
+    private HashMap<String, FunctionDAGDescription> FunctionDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
     public FunctionExecutor(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
         this.operatorID = operatorID;
     }
-    public void registerFunction(HashMap<String, FunctionDescription> functions) {
+    public void registerFunction(HashMap<String, FunctionDAGDescription> functions) {
         this.FunctionDescriptionHashMap = functions;
     }
 

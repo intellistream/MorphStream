@@ -3,11 +3,11 @@ package client;
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
-import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.api.state.StateAccessDescription;
+import intellistream.morphstream.api.state.Function;
+import intellistream.morphstream.api.state.FunctionDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
-import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 
 import java.util.*;
 
@@ -18,39 +18,39 @@ public class BankingSystemClient extends Client {
      * Client-defined customized txn-UDF, which will be executed in Schedulers
      * access.udfResult is the value to be written into schemaRecord
      *
-     * @param access Stores everything bolt needs, including StateObjects updated by Scheduler
+     * @param function Stores everything bolt needs, including StateObjects updated by Scheduler
      * @return true if txn-UDF is executed successfully, false if txn-UDF is aborted
      */
     @Override
-    public boolean transactionUDF(StateAccess access) {
-        String txnName = access.getTxnName();
+    public boolean transactionUDF(Function function) {
+        String txnName = function.getDAGName();
         if (Objects.equals(txnName, "transfer")) {
-            String stateAccessName = access.getStateAccessName();
+            String stateAccessName = function.getFunctionName();
             if (Objects.equals(stateAccessName, "srcTransfer")) {
-                StateObject srcAccountState = access.getStateObject("srcAccountState");
+                StateObject srcAccountState = function.getStateObject("srcAccountState");
                 int srcBalance = srcAccountState.getIntValue("balance");
-                int transferAmount = Integer.parseInt((String) access.getValue("transferAmount"));
-                access.udfResult = srcBalance - transferAmount;
+                int transferAmount = Integer.parseInt((String) function.getValue("transferAmount"));
+                function.udfResult = srcBalance - transferAmount;
             } else if (Objects.equals(stateAccessName, "destTransfer")) {
-                StateObject destAccountState = access.getStateObject("destAccountState");
+                StateObject destAccountState = function.getStateObject("destAccountState");
                 int destBalance = destAccountState.getIntValue("balance");
-                int transferAmount = Integer.parseInt((String) access.getValue("transferAmount"));
-                access.udfResult = destBalance + transferAmount;
+                int transferAmount = Integer.parseInt((String) function.getValue("transferAmount"));
+                function.udfResult = destBalance + transferAmount;
             }
         } else if (Objects.equals(txnName, "deposit")) {
-            StateObject srcAccountState = access.getStateObject("srcAccountState");
+            StateObject srcAccountState = function.getStateObject("srcAccountState");
             int srcBalance = srcAccountState.getIntValue("balance");
-            int depositAmount = Integer.parseInt((String) access.getValue("depositAmount"));
-            access.udfResult = srcBalance + depositAmount;
+            int depositAmount = Integer.parseInt((String) function.getValue("depositAmount"));
+            function.udfResult = srcBalance + depositAmount;
         }
         return true;
     }
 
     @Override
-    public Result postUDF(long bid, String txnName, HashMap<String, StateAccess> stateAccessMap) {
+    public Result postUDF(long bid, String txnName, HashMap<String, Function> FunctionMap) {
         Result result = new Result(bid);
-        for (StateAccess stateAccess : stateAccessMap.values()) {
-            if (stateAccess.isAborted()) {
+        for (Function function : FunctionMap.values()) {
+            if (function.isAborted()) {
                 String[] abortResult = {"aborted"};
                 result.setResults(abortResult);
                 result.setLast(true);
@@ -58,8 +58,8 @@ public class BankingSystemClient extends Client {
             }
         }
         if (Objects.equals(txnName, "transfer")) {
-            StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
-            StateAccess destTransfer = stateAccessMap.get("destTransfer");
+            Function srcTransfer = FunctionMap.get("srcTransfer");
+            Function destTransfer = FunctionMap.get("destTransfer");
             Integer[] stateAccessResults = new Integer[2];
 
             try {
@@ -76,7 +76,7 @@ public class BankingSystemClient extends Client {
 
             result.setResults(stateAccessResults);
         } else if (Objects.equals(txnName, "deposit")) {
-            StateAccess deposit = stateAccessMap.get("deposit");
+            Function deposit = FunctionMap.get("deposit");
             Integer[] stateAccessResults = new Integer[1];
             stateAccessResults[0] = deposit.getStateObject("srcAccountState").getIntValue("balance");
             result.setResults(stateAccessResults);
@@ -88,28 +88,28 @@ public class BankingSystemClient extends Client {
     @Override
     public void defineFunction() {
         //Define transfer function
-        FunctionDescription transferDescriptor = new FunctionDescription("Transfer");
+        FunctionDAGDescription transferDescriptor = new FunctionDAGDescription("Transfer");
         //Define transfer's 1st state accesses
-        StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
+        FunctionDescription srcTransfer = new FunctionDescription("srcTransfer", AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
         srcTransfer.addValueName("transferAmount");
         //Define transfer's 2nd state accesses
-        StateAccessDescription destTransfer = new StateAccessDescription("destTransfer", AccessType.WRITE);
+        FunctionDescription destTransfer = new FunctionDescription("destTransfer", AccessType.WRITE);
         destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", 0);
         destTransfer.addValueName("transferAmount");
         //Add state accesses to transaction
-        transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
-        transferDescriptor.addStateAccess("destTransfer", destTransfer);
+        transferDescriptor.addFunctionDescription("srcTransfer", srcTransfer);
+        transferDescriptor.addFunctionDescription("destTransfer", destTransfer);
         destTransfer.addFatherName("srcTransfer");
         //transferDescriptor.comboFunctionsIntoTransaction(Arrays.asList("srcTransfer", "destTransfer"));
         this.txnDescriptions.put("transfer", transferDescriptor);
 
         //Define deposit transaction
-        FunctionDescription depositDescriptor = new FunctionDescription("Deposit");
-        StateAccessDescription deposit = new StateAccessDescription("deposit", AccessType.WRITE);
+        FunctionDAGDescription depositDescriptor = new FunctionDAGDescription("Deposit");
+        FunctionDescription deposit = new FunctionDescription("deposit", AccessType.WRITE);
         deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
         deposit.addValueName("depositAmount");
-        depositDescriptor.addStateAccess("deposit", deposit);
+        depositDescriptor.addFunctionDescription("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);
     }
 

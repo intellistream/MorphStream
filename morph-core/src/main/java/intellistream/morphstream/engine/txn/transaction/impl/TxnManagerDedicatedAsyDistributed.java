@@ -1,10 +1,9 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecordRef;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
@@ -34,8 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static intellistream.morphstream.configuration.CONTROL.enable_log;
-
 public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerDedicatedAsyDistributed.class);
     protected int thread_count_;
@@ -64,19 +61,19 @@ public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
         }
     }
     @Override
-    public boolean submitStateAccess(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
-        MetaTypes.AccessType accessType = stateAccess.getAccessType();
+    public boolean submitStateAccess(Function function, FunctionContext functionContext) throws DatabaseException {
+        MetaTypes.AccessType accessType = function.getAccessType();
         if (accessType == MetaTypes.AccessType.READ) {
-            return Asy_ReadRecord(stateAccess, functionContext);
+            return Asy_ReadRecord(function, functionContext);
         } else if (accessType == MetaTypes.AccessType.WRITE) {
-            return Asy_WriteRecord(stateAccess, functionContext);
+            return Asy_WriteRecord(function, functionContext);
         } else {
             throw new UnsupportedOperationException("Unsupported access type: " + accessType);
         }
     }
-    private boolean Asy_ReadRecord(StateAccess stateAccess, FunctionContext functionContext) {
+    private boolean Asy_ReadRecord(Function function, FunctionContext functionContext) {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         if (stateObjects.size() != 1) {
             throw new UnsupportedOperationException("Read only supports single read access.");
         }
@@ -88,32 +85,32 @@ public abstract class TxnManagerDedicatedAsyDistributed extends TxnManager {
 
         if (enableGroup) {
             schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context,
-                    new Request(functionContext, accessType, srcTable, srcKey, condition_records, stateAccess));
+                    new Request(functionContext, accessType, srcTable, srcKey, condition_records, function));
         } else {
             scheduler.SubmitRequest(context, new Request(functionContext, accessType, srcTable,
-                    srcKey, condition_records, stateAccess));
+                    srcKey, condition_records, function));
         }
         return false;
     }
-    private boolean Asy_WriteRecord(StateAccess stateAccess, FunctionContext functionContext) {
+    private boolean Asy_WriteRecord(Function function, FunctionContext functionContext) {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
 
         for (StateObject stateObject : stateObjects) {
             condition_records.put(stateObject.getName(), null);
         }
-        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        StateObject writeStateObj = function.getStateObjectToWrite();
         String writeTable = writeStateObj.getTable();
         String writeKey = writeStateObj.getKey();
 
         if (enableGroup) {
             schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context,
                     new Request(functionContext, accessType, writeTable,
-                            writeKey, condition_records, stateAccess));
+                            writeKey, condition_records, function));
         } else {
             scheduler.SubmitRequest(context, new Request(functionContext, accessType, writeTable,
-                    writeKey, condition_records, stateAccess));
+                    writeKey, condition_records, function));
         }
         return false;
     }

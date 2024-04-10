@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.*;
@@ -191,7 +191,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     public abstract boolean CommitTransaction(FunctionContext txn_context, int batchID);
 
     @Override
-    public boolean submitStateAccess(StateAccess stateAccess, FunctionContext functionContext) {
+    public boolean submitStateAccess(Function function, FunctionContext functionContext) {
         throw new UnsupportedOperationException();
     }
 

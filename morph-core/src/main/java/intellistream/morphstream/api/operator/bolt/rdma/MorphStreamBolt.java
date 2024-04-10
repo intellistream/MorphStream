@@ -4,8 +4,8 @@ import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
-import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.api.state.StateAccessDescription;
+import intellistream.morphstream.api.state.Function;
+import intellistream.morphstream.api.state.FunctionDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.state.StateObjectDescription;
 import intellistream.morphstream.api.utils.MetaTypes;
@@ -16,7 +16,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Mark
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import intellistream.morphstream.engine.txn.transaction.context.FunctionContext;
 import intellistream.morphstream.engine.txn.transaction.impl.distributed.TxnManagerDistributed;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
@@ -36,9 +36,9 @@ import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_I
 
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
-    private final HashMap<String, FunctionDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
+    private final HashMap<String, FunctionDAGDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
-    private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
+    private final HashMap<Long, HashMap<String, Function>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
@@ -57,14 +57,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         }
     }
 
-    public MorphStreamBolt(String id, HashMap<String, FunctionDescription> txnDescriptionMap, int fid) {
+    public MorphStreamBolt(String id, HashMap<String, FunctionDAGDescription> txnDescriptionMap, int fid) {
         super(id, LOG, fid);
         this.txnDescriptionMap = txnDescriptionMap;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
-    public MorphStreamBolt(String id, HashMap<String, FunctionDescription> txnDescriptionMap, int fid, AbstractSink sink) {
+    public MorphStreamBolt(String id, HashMap<String, FunctionDAGDescription> txnDescriptionMap, int fid, AbstractSink sink) {
         super(id, LOG, fid);
         this.sink = sink;
         this.isCombo = true;
@@ -100,19 +100,19 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Request_Construct(TransactionalEvent event, FunctionContext functionContext) throws DatabaseException {
-        FunctionDescription functionDescription = txnDescriptionMap.get(event.getFlag());
-        functionContext.setTransactionCombo(functionDescription.getTransactionCombo());
+        FunctionDAGDescription functionDAGDescription = txnDescriptionMap.get(event.getFlag());
+        functionContext.setTransactionCombo(functionDAGDescription.getTransactionCombo());
         //Initialize state access map for each event
         eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(functionContext);
 
         int stateAccessIndex = 0; // index of state access in the txn, used to generate StateAccessID (OperationID)
         //Each event triggers multiple state accesses
-        for (Map.Entry<String, StateAccessDescription> descEntry: functionDescription.getStateAccessDescEntries()) {
+        for (Map.Entry<String, FunctionDescription> descEntry: functionDAGDescription.getFunctionDescEntries()) {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
-            StateAccessDescription stateAccessDesc = descEntry.getValue();
-            StateAccess stateAccess = new StateAccess(event.getBid() + "_" + stateAccessIndex, this.getOperatorID(), event.getFlag(), stateAccessDesc);
+            FunctionDescription stateAccessDesc = descEntry.getValue();
+            Function function = new Function(event.getBid() + "_" + stateAccessIndex, this.getOperatorID(), event.getFlag(), stateAccessDesc);
             stateAccessIndex += 1;
 
             //Each state access involves multiple state objects
@@ -124,20 +124,20 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                         event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex()),
                         tableFieldIndexMap.get(stateObjDesc.getTableName())
                 );
-                stateAccess.addStateObject(stateObjDesc.getName(), stateObject);
+                function.addStateObject(stateObjDesc.getName(), stateObject);
                 //Label writeRecord for easy reference
                 if (stateObjDesc.getType() == MetaTypes.AccessType.WRITE) {
-                    stateAccess.setWriteRecordName(stateObjDesc.getName());
+                    function.setWriteRecordName(stateObjDesc.getName());
                 }
             }
 
             //Each state access involves multiple conditions (values that are not commonly shared among events)
             for (String valueName: stateAccessDesc.getValueNames()) {
-                stateAccess.addValue(valueName, event.getValue(valueName));
+                function.addValue(valueName, event.getValue(valueName));
             }
 
-            eventStateAccessesMap.get(event.getBid()).put(stateAccessName, stateAccess);
-            transactionManager.submitStateAccess(stateAccess, functionContext);
+            eventStateAccessesMap.get(event.getBid()).put(stateAccessName, function);
+            transactionManager.submitStateAccess(function, functionContext);
         }
 
         transactionManager.CommitTransaction(functionContext, currentBatchID);
@@ -149,7 +149,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             Result udfResultReflect = null;
             try {
                 //Invoke client defined post-processing UDF using Reflection
-                HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
+                HashMap<String, Function> stateAccesses = eventStateAccessesMap.get(event.getBid());
                 udfResultReflect = clientObj.postUDF(event.getBid(), event.getFlag(), stateAccesses);
                 if (enable_latency_measurement) {
                     latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());

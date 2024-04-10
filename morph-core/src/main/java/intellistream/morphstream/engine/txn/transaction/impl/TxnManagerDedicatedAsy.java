@@ -1,12 +1,11 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.db.storage.StorageManager;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.db.storage.record.SchemaRecordRef;
-import intellistream.morphstream.engine.db.storage.impl.LocalStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
@@ -162,29 +161,29 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean submitStateAccess(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
-        MetaTypes.AccessType accessType = stateAccess.getAccessType();
+    public boolean submitStateAccess(Function function, FunctionContext functionContext) throws DatabaseException {
+        MetaTypes.AccessType accessType = function.getAccessType();
         if (accessType == MetaTypes.AccessType.READ) {
-            return Asy_ReadRecord(stateAccess, functionContext);
+            return Asy_ReadRecord(function, functionContext);
         } else if (accessType == MetaTypes.AccessType.WRITE) {
-            return Asy_WriteRecord(stateAccess, functionContext);
+            return Asy_WriteRecord(function, functionContext);
         } else if (accessType == MetaTypes.AccessType.WINDOW_READ) {
-            return Asy_WindowReadRecord(stateAccess, functionContext);
+            return Asy_WindowReadRecord(function, functionContext);
         } else if (accessType == MetaTypes.AccessType.WINDOW_WRITE) {
-            return Asy_WindowWriteRecord(stateAccess, functionContext);
+            return Asy_WindowWriteRecord(function, functionContext);
         } else if (accessType == MetaTypes.AccessType.NON_DETER_READ) {
-            return Asy_NonDeterReadRecord(stateAccess, functionContext);
+            return Asy_NonDeterReadRecord(function, functionContext);
         } else if (accessType == MetaTypes.AccessType.NON_DETER_WRITE) {
-            return Asy_NonDeterWriteRecord(stateAccess, functionContext);
+            return Asy_NonDeterWriteRecord(function, functionContext);
         } else {
             throw new UnsupportedOperationException("Unsupported access type: " + accessType);
         }
     }
 
     //If read only, set src key and table to read key, and add this single read access into readRecords.
-    public boolean Asy_ReadRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
+    public boolean Asy_ReadRecord(Function function, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         if (stateObjects.size() != 1) {
             throw new UnsupportedOperationException("Read only supports single read access.");
         }
@@ -201,12 +200,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (readRecord != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, function));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
                 return scheduler.SubmitRequest(context, new Request(functionContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, function));
             }
         } else {
             if (enable_log) log.info("No record is found:" + srcKey);
@@ -214,13 +213,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_WriteRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
+    public boolean Asy_WriteRecord(Function function, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
 
-        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
-        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
+        String[] condition_tables = new String[function.getStateObjects().size()];
+        String[] condition_keys = new String[function.getStateObjects().size()];
 
         for (int i = 0; i < stateObjects.size(); i++) {
             StateObject stateObj = stateObjects.get(i);
@@ -238,7 +237,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             }
         }
 
-        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        StateObject writeStateObj = function.getStateObjectToWrite();
         String writeTable = writeStateObj.getTable();
         String writeKey = writeStateObj.getKey();
         TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
@@ -246,12 +245,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (writeRecord != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, function));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
                 return scheduler.SubmitRequest(context, new Request(functionContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, function));
             }
         } else {
             if (enable_log) log.info("No record is found:" + writeKey);
@@ -259,9 +258,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_WindowReadRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
+    public boolean Asy_WindowReadRecord(Function function, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_READ;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         if (stateObjects.size() != 1) {
             throw new UnsupportedOperationException("Read only supports single read access.");
         }
@@ -278,12 +277,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (readRecord != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, function));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
                 return scheduler.SubmitRequest(context, new Request(functionContext, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, function));
             }
         } else {
             if (enable_log) log.info("No record is found:" + srcKey);
@@ -291,13 +290,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_WindowWriteRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
+    public boolean Asy_WindowWriteRecord(Function function, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_WRITE;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
 
-        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
-        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
+        String[] condition_tables = new String[function.getStateObjects().size()];
+        String[] condition_keys = new String[function.getStateObjects().size()];
 
         for (int i = 0; i < stateObjects.size(); i++) {
             StateObject stateObj = stateObjects.get(i);
@@ -309,7 +308,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
         }
 
-        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        StateObject writeStateObj = function.getStateObjectToWrite();
         String writeTable = writeStateObj.getTable();
         String writeKey = writeStateObj.getKey();
         TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
@@ -317,12 +316,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (writeRecord != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, function));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
                 return scheduler.SubmitRequest(context, new Request(functionContext, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, function));
             }
         } else {
             if (enable_log) log.info("No record is found:" + writeKey);
@@ -330,9 +329,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_NonDeterReadRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
+    public boolean Asy_NonDeterReadRecord(Function function, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_READ;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         if (stateObjects.size() != 1) {
             throw new UnsupportedOperationException("Read only supports single read access.");
         }
@@ -350,12 +349,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (readRecord != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, baseTables, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, function));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
                 return scheduler.SubmitRequest(context, new Request(functionContext, baseTables, accessType, srcTable,
-                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
+                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, function));
             }
         } else {
             if (enable_log) log.info("No record is found:" + srcKey);
@@ -363,14 +362,14 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_NonDeterWriteRecord(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException {
+    public boolean Asy_NonDeterWriteRecord(Function function, FunctionContext functionContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_WRITE;
-        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
+        List<StateObject> stateObjects = new ArrayList<>(function.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
         BaseTable[] baseTables = new BaseTable[stateObjects.size()];
 
-        String[] condition_tables = new String[stateAccess.getStateObjects().size()];
-        String[] condition_keys = new String[stateAccess.getStateObjects().size()];
+        String[] condition_tables = new String[function.getStateObjects().size()];
+        String[] condition_keys = new String[function.getStateObjects().size()];
 
         for (int i = 0; i < stateObjects.size(); i++) {
             StateObject stateObj = stateObjects.get(i);
@@ -383,7 +382,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             baseTables[i] = storageManager_.getTable(stateObjTable);
         }
 
-        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        StateObject writeStateObj = function.getStateObjectToWrite();
         String writeTable = writeStateObj.getTable();
         String writeKey = writeStateObj.getKey();
         TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
@@ -391,12 +390,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (writeRecord != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(functionContext.thread_Id)).SubmitRequest(context, new Request(functionContext, baseTables, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, function));
                 //TODO: Replace with the following code to get scheduler by stage
 //                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
             } else {
                 return scheduler.SubmitRequest(context, new Request(functionContext, baseTables, accessType, writeTable,
-                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, function));
             }
         } else {
             if (enable_log) log.info("No record is found:" + writeKey);

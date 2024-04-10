@@ -60,8 +60,9 @@ public class MorphStreamFrontend extends Thread{
         while (!interrupted() && isRunning) {
             if (isSending) {
                 invokeFunctionToWorker();
+            } else {
+                asyncReceiveFunctionOutput();
             }
-            asyncReceiveFunctionOutput();
         }
         this.systemEndTime = System.nanoTime();
         LOG.info("ThreadId : " + threadId + " sendCount: " + sendCount + " receiveCount: " + receiveCount);

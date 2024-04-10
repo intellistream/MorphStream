@@ -128,7 +128,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
         for (Map.Entry<String, TableRecord> entry : operation.condition_records.entrySet()) {
             SchemaRecord readRecord = entry.getValue().content_.readPreValues(operation.bid);
-            operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
+            operation.function.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
         }
 
         //UDF updates operation.udfResult, which is the value to be written to writeRecord
@@ -137,7 +137,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
             if (Client.class.isAssignableFrom(clientClass)) {
                 Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+                udfSuccess = clientObj.transactionUDF(operation.function);
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException e) {
@@ -149,14 +149,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
                 //Update udf results to writeRecord
-                Object udfResult = operation.stateAccess.udfResult; //value to be written
+                Object udfResult = operation.function.udfResult; //value to be written
                 SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(srcRecord);
                 //TODO: pass in the write object-type, avoid isInstanceOf check
                 tempo_record.getValues().get(1).setDouble((double) udfResult);
                 operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
                 //Assign updated schemaRecord back to stateAccess
-                operation.stateAccess.setUpdatedStateObject(tempo_record);
+                operation.function.setUpdatedStateObject(tempo_record);
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -306,30 +306,30 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         switch (request.accessType) {
             case WRITE_ONLY:
                 set_op = new Operation(false, null, request.write_key, request.table_name, null,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.function);
                 break;
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
                 set_op = new Operation(false, null, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.function);
                 break;
             case READ_WRITE_COND_READ:
             case READ_WRITE_COND_READN:
                 set_op = new Operation(false, null, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.function);
                 break;
             case NON_READ_WRITE_COND_READN:
                 set_op = new Operation(true, request.tables, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.function);
                 break;
             case READ_WRITE_READ:
                 set_op = new Operation(false, null, request.write_key, request.table_name, null,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.function);
                 break;
             case WINDOWED_READ_ONLY:
                 WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                 set_op = new Operation(false, null, request.write_key, request.table_name, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext, request.stateAccess);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext, request.function);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");

@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.ds;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
@@ -31,8 +31,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public <Context extends DSContext> Operation(String pKey, String table_name, FunctionContext txn_context, long bid,
-                                                 CommonMetaTypes.AccessType accessType, Set<String> stateObjectName, StateAccess stateAccess) {
-        super(table_name, stateAccess, null, txn_context, accessType, null, bid, null, pKey);
+                                                 CommonMetaTypes.AccessType accessType, Set<String> stateObjectName, Function function) {
+        super(table_name, function, null, txn_context, accessType, null, bid, null, pKey);
         this.isReference = false;
         for (String name : stateObjectName) {
             this.stateObjectName.add(name);

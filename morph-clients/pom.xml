@@ -87,7 +87,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>benchmark.rdma.BankingSystemRdma</mainClass>
+                            <mainClass>benchmark.rdma.RDMABenchmark</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

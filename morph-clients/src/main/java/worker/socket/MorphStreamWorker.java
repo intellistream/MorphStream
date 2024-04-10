@@ -5,7 +5,7 @@ import intellistream.morphstream.api.operator.spout.socket.FunctionExecutor;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
-import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
@@ -41,7 +41,7 @@ public class MorphStreamWorker extends Thread {
         LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is initialized, listening on " + "tcp://" + workerHosts[workerId] + ":" + workerPorts[workerId]);
 
     }
-    public void registerFunction(HashMap<String, FunctionDescription> functions) {
+    public void registerFunction(HashMap<String, FunctionDAGDescription> functions) {
         this.spout.registerFunction(functions);
     }
     @Override

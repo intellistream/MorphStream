@@ -79,8 +79,8 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public void TxnSubmitFinished(Context context, int batchID) {
         for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
-            Operation operation = new Operation(request.write_key, request.table_name, request.txn_context, bid, request.accessType, request.condition_records.keySet(), request.stateAccess);
-            context.tempOperationMap.put(request.stateAccess.getStateAccessName(), operation);
+            Operation operation = new Operation(request.write_key, request.table_name, request.txn_context, bid, request.accessType, request.condition_records.keySet(), request.function);
+            context.tempOperationMap.put(request.function.getFunctionName(), operation);
         }
         this.tpg.setupOperations(context.tempOperationMap);
     }
@@ -217,21 +217,21 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             }
             dataBoxes.add(intDataBox);
             SchemaRecord readRecord = new SchemaRecord(dataBoxes);
-            operation.stateAccess.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
+            operation.function.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
             //UDF updates operation.udfResult, which is the value to be written to writeRecord
-            boolean udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+            boolean udfSuccess = clientObj.transactionUDF(operation.function);
             AppConfig.randomDelay();//To quantify the overhead of user-defined function
             if (udfSuccess) {
                 if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                         || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                         || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
                     //Update udf results to writeRecord
-                    Object udfResult = operation.stateAccess.udfResult; //value to be written
+                    Object udfResult = operation.function.udfResult; //value to be written
                     oc.setTempValue(udfResult);
                     SchemaRecord tempo_record = new SchemaRecord(readRecord);
                     tempo_record.getValues().get(0).setInt((int) udfResult);
                     //Assign updated schemaRecord back to stateAccess
-                    operation.stateAccess.setUpdatedStateObject(tempo_record);
+                    operation.function.setUpdatedStateObject(tempo_record);
                     //Update State
                     if (oc.isLocalState()) {
                         oc.setTempValue(udfResult);
@@ -241,7 +241,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                 }
                 operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             } else {
-                operation.stateAccess.setAborted();
+                operation.function.setAborted();
                 operation.operationType = MetaTypes.OperationStateType.ABORTED;
                 operation.notifyChildren();
             }

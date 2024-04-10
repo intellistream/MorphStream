@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.struct;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.LogRecord;
 import intellistream.morphstream.engine.txn.durability.struct.Logging.DependencyLog;
@@ -29,17 +29,17 @@ public abstract class AbstractOperation {
     public final long bid;
     //required by READ_WRITE_and Condition.
     public final String pKey;
-    public volatile StateAccess stateAccess; //carries all schemaRecords involved
+    public volatile Function function; //carries all schemaRecords involved
     public volatile HashMap<String, TableRecord> condition_records;//client-defined record name -> TableRecord
     public boolean isCommit = true;//It means that this operation has been added to LoggingManager.
     //required by Write-ahead-logging, Dependency logging, LV logging.
     public LoggingEntry logRecord;
     public WindowDescriptor windowContext;
 
-    public AbstractOperation(String table_name, StateAccess stateAccess, HashMap<String, TableRecord> condition_records,
+    public AbstractOperation(String table_name, Function function, HashMap<String, TableRecord> condition_records,
                              FunctionContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, WindowDescriptor windowContext, String pKey) {
         this.table_name = table_name;
-        this.stateAccess = stateAccess;
+        this.function = function;
         this.condition_records = condition_records;
         this.txn_context = txn_context;
         this.accessType = accessType;
@@ -62,7 +62,7 @@ public abstract class AbstractOperation {
                 conditions = new String[0];
             }
             this.logRecord = new DependencyLog(bid, table_name, d_record.record_.GetPrimaryKey(),
-                    (String) stateAccess.getValue("function"), conditions, stateAccess.getValueMap().toString());
+                    (String) function.getValue("function"), conditions, function.getValueMap().toString());
             this.isCommit = false;
         } else if (loggingRecord_type == LOGOption_wal) {
             this.logRecord = new LogRecord(table_name, bid, d_record.record_.GetPrimaryKey());
@@ -79,7 +79,7 @@ public abstract class AbstractOperation {
                 conditions = new String[0];
             }
             this.logRecord = new LVCLog(bid, table_name, d_record.record_.GetPrimaryKey(),
-                    (String) stateAccess.getValue("function"), conditions, stateAccess.getValueMap().toString());
+                    (String) function.getValue("function"), conditions, function.getValueMap().toString());
             this.isCommit = false;
         } else if (loggingRecord_type == LOGOption_command) {
             String[] conditions;
@@ -94,7 +94,7 @@ public abstract class AbstractOperation {
                 conditions = new String[0];
             }
             this.logRecord = new NativeCommandLog(bid, table_name, d_record.record_.GetPrimaryKey(),
-                    (String) stateAccess.getValue("function"), conditions, stateAccess.getValueMap().toString());
+                    (String) function.getValue("function"), conditions, function.getValueMap().toString());
             this.isCommit = false;
         }
     }

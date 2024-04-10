@@ -9,15 +9,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-public class StateAccess {
+public class Function {
     @Getter
     private final String operationID; //bid + stateAccessIndex
     @Getter
     private final String operatorID; //name of app that a txn belongs to
     @Getter
-    private final String txnName; //name of txn that a stateAccess belongs to
+    private final String DAGName; //name of txn that a stateAccess belongs to
     @Getter
-    private final String stateAccessName;
+    private final String functionName;
     @Getter
     private final List<String> fatherStateAccessNames;
     @Setter @Getter
@@ -30,11 +30,11 @@ public class StateAccess {
     public Object udfResult;
     private boolean isAborted;
 
-    public StateAccess(String operationID, String operatorID, String txnName, StateAccessDescription description) {
+    public Function(String operationID, String operatorID, String DAGName, FunctionDescription description) {
         this.operationID = operationID;
         this.operatorID = operatorID;
-        this.txnName = txnName;
-        stateAccessName = description.getName();
+        this.DAGName = DAGName;
+        functionName = description.getName();
         fatherStateAccessNames = description.getFatherNames();
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();

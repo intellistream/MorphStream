@@ -61,7 +61,7 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
         for (Map.Entry<String, Operation> entry : operationHashMap.entrySet()) {
             String tableName = entry.getValue().table_name;
             //Father setup
-            for (String stateAccessName : entry.getValue().stateAccess.getFatherStateAccessNames()) {
+            for (String stateAccessName : entry.getValue().function.getFatherStateAccessNames()) {
                 entry.getValue().addToFather(operationHashMap.get(stateAccessName));
             }
             //Brother setup

@@ -3,8 +3,8 @@ package intellistream.morphstream.api;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
-import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import intellistream.morphstream.api.state.Function;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
@@ -22,7 +22,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public abstract class Client extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private final Map<String, ZMQ.Socket> sockets = new HashMap<>();
-    public HashMap<String, FunctionDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
+    public HashMap<String, FunctionDAGDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
     protected final ZContext zContext = new ZContext();
     protected BlockingQueue<TransactionalEvent> inputQueue;
     protected int clientId;
@@ -32,8 +32,8 @@ public abstract class Client extends Thread {
     protected int msgCount = 0;
     private String driverHost;
     private int driverPort;
-    public abstract boolean transactionUDF(StateAccess access);
-    public abstract Result postUDF(long bid, String txnFlag, HashMap<String, StateAccess> stateAccessMap);
+    public abstract boolean transactionUDF(Function function);
+    public abstract Result postUDF(long bid, String txnFlag, HashMap<String, Function> FunctionMap);
     public abstract void defineFunction();
     public ZMQ.Socket getSocket(String address) {
         return sockets.getOrDefault(address, null);

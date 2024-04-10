@@ -7,7 +7,7 @@ import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutComboFT;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
-import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +21,10 @@ import static intellistream.morphstream.configuration.Constants.*;
 
 public class ApplicationSpoutComboISC extends AbstractSpoutComboFT {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpoutComboISC.class);
-    private HashMap<String, FunctionDescription> TxnDescriptionHashMap;
+    private HashMap<String, FunctionDAGDescription> TxnDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
     private final String id;
-    public ApplicationSpoutComboISC(String id, HashMap<String, FunctionDescription> txnDescriptionHashMap) throws Exception {
+    public ApplicationSpoutComboISC(String id, HashMap<String, FunctionDAGDescription> txnDescriptionHashMap) throws Exception {
         super(id, LOG, 0);
         this.id = id;
         this.TxnDescriptionHashMap = txnDescriptionHashMap;

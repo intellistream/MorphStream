@@ -1,16 +1,19 @@
 package worker.rdma;
 
+import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.spout.rdma.FunctionExecutor;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
-import intellistream.morphstream.engine.txn.transaction.FunctionDescription;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 
 /**
@@ -30,14 +33,25 @@ public class MorphStreamWorker extends Thread {
         workerId = env.configuration().getInt("workerId", 0);
         this.numTasks = env.configuration().getInt("tthread", 1);
         this.rdmaWorkerManager = new RdmaWorkerManager(false, env.configuration());
+        MorphStreamEnv.get().setRdmaWorkerManager(getRdmaWorkerManager());
         this.spout = new FunctionExecutor("functionExecutor");
         LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is initialized");
     }
-    public void initialize(HashMap<String, FunctionDescription> functions) throws DatabaseException {
-        this.registerFunction(functions);
+    public void initialize() throws DatabaseException {
+        String clientName = MorphStreamEnv.get().configuration().getString("clientClassName");
+        try {
+            Class<?> clazz = Class.forName(clientName);
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+            Client t = (Client) instance;
+            t.defineFunction();
+            this.registerFunction(t.txnDescriptions);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException |
+                 InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
         MorphStreamEnv.get().DatabaseInitialize();
     }
-    public void registerFunction(HashMap<String, FunctionDescription> functions) {
+    public void registerFunction(HashMap<String, FunctionDAGDescription> functions) {
         this.spout.registerFunction(functions);
     }
 

@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
@@ -21,7 +21,7 @@ public interface ITxnManager {
 
     //used by speculative T-Stream.
     void start_evaluate(String operatorID, int batchID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException;
-    boolean submitStateAccess(StateAccess stateAccess, FunctionContext functionContext) throws DatabaseException;
+    boolean submitStateAccess(Function function, FunctionContext functionContext) throws DatabaseException;
 
     boolean InsertRecord(FunctionContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 

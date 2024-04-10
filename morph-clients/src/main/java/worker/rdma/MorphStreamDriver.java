@@ -1,5 +1,7 @@
 package worker.rdma;
 
+import client.BankingSystemClient;
+import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.statistic.Statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaDriverManager;
@@ -10,6 +12,7 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +67,24 @@ public class MorphStreamDriver extends Thread {
         MorphStreamEnv.get().clientLatch().countDown();
         ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
     }
+    public void startClient() {
+        String clientName = MorphStreamEnv.get().configuration().getString("clientClassName");
+        int clientNum = MorphStreamEnv.get().configuration().getInt("clientNum");
+        List<Thread> threads = new ArrayList<>();
+        for (int threadNum = 0; threadNum < clientNum; threadNum++) {
+            try {
+                Class<?> clazz = Class.forName(clientName);
+                Object instance = clazz.getDeclaredConstructor().newInstance();
+                Client t = (Client) instance;
+                t.initialize(threadNum, MorphStreamEnv.get().clientLatch());
+                threads.add(t);
+                t.start();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException |
+                     InvocationTargetException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
     public void MorphStreamDriverJoin() {
         try {
             this.frontends.get(0).join();
@@ -79,9 +100,9 @@ public class MorphStreamDriver extends Thread {
                 Thread.sleep(1000);
             }
             this.rdmaDriverManager.close();
-            LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + "k functions/s");
-            LOG.info("MorphStreamDriver is finished with average latency: " + statistic.getLatency() + "ms");
-            LOG.info("MorphStreamDriver is finished with 99th latency: " + statistic.getLatency(0.99) + "ms");
+            LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + " k functions/s");
+            LOG.info("MorphStreamDriver is finished with average latency: " + statistic.getLatency() + " ms");
+            LOG.info("MorphStreamDriver is finished with 99th latency: " + statistic.getLatency(0.99) + " ms");
             System.exit(0);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

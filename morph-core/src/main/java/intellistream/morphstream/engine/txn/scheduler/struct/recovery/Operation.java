@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.recovery;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
@@ -25,8 +25,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends RSContext> Operation(
             String pKey, Context context, String table_name, FunctionContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
-        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
+            HashMap<String, TableRecord> read_records, Function function) {
+        super(table_name, function, read_records, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
         this.pKey = pKey;
     }

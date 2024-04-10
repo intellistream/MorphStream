@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.io.Serializable;
 import java.util.*;
 
-public class StateAccessDescription implements Serializable {
+public class FunctionDescription implements Serializable {
     @Getter
     private final String name;
     @Getter
@@ -18,7 +18,7 @@ public class StateAccessDescription implements Serializable {
     @Getter
     private final List<String> valueNames;//Condition refers to values that are not commonly-shared among events, but used in txn-UDF
 
-    public StateAccessDescription(String name, AccessType type) {
+    public FunctionDescription(String name, AccessType type) {
         this.name = name;
         accessType = type;
         stateObjDescList = new ArrayList<>();

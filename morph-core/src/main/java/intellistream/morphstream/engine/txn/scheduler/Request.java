@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler;
 
-import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.BaseTable;
@@ -14,21 +14,21 @@ public class Request {
     public final String table_name;
     public final String write_key;
     public final TableRecord d_record;
-    public final StateAccess stateAccess;
+    public final Function function;
     public final String[] condition_tables;
     public final String[] condition_keys;
     public final HashMap<String, TableRecord> condition_records;
     public BaseTable[] tables;
 
-    public Request(StateAccess stateAccess) {
-        this(null, null, null, stateAccess);
+    public Request(Function function) {
+        this(null, null, null, function);
     }
 
     //READY ONLY
     public Request(FunctionContext txn_context,
                    CommonMetaTypes.AccessType accessType,
-                   String table_name, StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, null, null, null, null, null, stateAccess);
+                   String table_name, Function function) {
+        this(txn_context, null, accessType, table_name, null, null, null, null, null, function);
     }
 
     //no column id
@@ -40,8 +40,8 @@ public class Request {
                    String[] condition_tables,
                    String[] condition_keys,
                    HashMap<String, TableRecord> condition_records,
-                   StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, condition_tables, condition_keys, condition_records, stateAccess);
+                   Function function) {
+        this(txn_context, null, accessType, table_name, write_key, d_record, condition_tables, condition_keys, condition_records, function);
     }
 
     //no condition, no ref.
@@ -50,8 +50,8 @@ public class Request {
                    String table_name,
                    String write_key,
                    TableRecord d_record,
-                   StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, null, null, null, stateAccess);
+                   Function function) {
+        this(txn_context, null, accessType, table_name, write_key, d_record, null, null, null, function);
     }
 
     public Request(FunctionContext txn_context,
@@ -63,13 +63,13 @@ public class Request {
                    String[] condition_tables,
                    String[] condition_keys,
                    HashMap<String, TableRecord> condition_records,
-                   StateAccess stateAccess) {
+                   Function function) {
         this.txn_context = txn_context;
         this.accessType = accessType;
         this.table_name = table_name;
         this.write_key = write_key;
         this.d_record = d_record; //record to write to (or read-from if txn only has one read request)
-        this.stateAccess = stateAccess;
+        this.function = function;
         this.condition_tables = condition_tables;
         this.condition_keys = condition_keys;
         this.condition_records = condition_records; //records to read from in write operation
@@ -81,7 +81,7 @@ public class Request {
                    String table_name,
                    String src_key,
                    HashMap<String, TableRecord> condition_records,
-                   StateAccess access) {
+                   Function access) {
         this(txn_context, null, accessType, table_name, src_key, null, null, null, condition_records, access);
     }
 }

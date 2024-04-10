@@ -114,11 +114,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         if (enable_latency_measurement) {
-            String operationID = operation.stateAccess.getOperationID();
+            String operationID = operation.function.getOperationID();
             TPGNode node = new TPGNode(operationID, operation.accessType.toString(), operation.table_name, operation.d_record.record_.GetPrimaryKey());
             for (MetaTypes.DependencyType type : dependencyTypes) {
                 for (Operation child : operation.getChildren(type)) {
-                    TPGEdge edge = new TPGEdge(operationID, child.stateAccess.getOperationID(), type.toString());
+                    TPGEdge edge = new TPGEdge(operationID, child.function.getOperationID(), type.toString());
                 }
             }
         }
@@ -132,29 +132,29 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
         for (Map.Entry<String, TableRecord> entry : operation.condition_records.entrySet()) {
             SchemaRecord readRecord = entry.getValue().content_.readPreValues(operation.bid);
-            operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
+            operation.function.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
         }
 
         //UDF updates operation.udfResult, which is the value to be written to writeRecord
         boolean udfSuccess = false;
-        udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+        udfSuccess = clientObj.transactionUDF(operation.function);
 
         if (udfSuccess) {
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                     || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
                 //Update udf results to writeRecord
-                Object udfResult = operation.stateAccess.udfResult; //value to be written
+                Object udfResult = operation.function.udfResult; //value to be written
                 SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(srcRecord);
                 //TODO: pass in the write object-type, avoid isInstanceOf check
                 tempo_record.getValues().get(1).setDouble((double) udfResult);
                 operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
                 //Assign updated schemaRecord back to stateAccess
-                operation.stateAccess.setUpdatedStateObject(tempo_record);
+                operation.function.setUpdatedStateObject(tempo_record);
             }
         } else {
-            operation.stateAccess.setAborted();
+            operation.function.setAborted();
             operation.isFailed.set(true);
         }
         /**
@@ -209,7 +209,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             switch (request.accessType) {
                 case WRITE_ONLY:
                     set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess);
+                            request.d_record, null, request.function);
                     break;
                 case READ:
                 case WRITE:
@@ -218,24 +218,24 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess);
+                            request.d_record, request.condition_records, request.function);
                     break;
                 case READ_WRITE_READ:
                     set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess);
+                            request.d_record, null, request.function);
                     break;
                 case NON_DETER_READ:
                 case NON_DETER_WRITE:
                 case NON_READ_WRITE_COND_READN:
                     set_op = new Operation(true, request.tables, request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess);
+                            request.d_record, request.condition_records, request.function);
                     break;
                 case WINDOW_READ:
                 case WINDOW_WRITE:
                 case WINDOWED_READ_ONLY:
                     WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                     set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, windowContext, request.stateAccess);
+                            request.d_record, request.condition_records, windowContext, request.function);
                     break;
                 default:
                     throw new UnsupportedOperationException();
@@ -247,8 +247,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
 
             // Update LD
-            String operationID = set_op.stateAccess.getOperationID();
-            String LDParentOperationID = String.valueOf(headerOperation.stateAccess.getOperationID());
+            String operationID = set_op.function.getOperationID();
+            String LDParentOperationID = String.valueOf(headerOperation.function.getOperationID());
             TPGNode node = new TPGNode(operationID, set_op.accessType.toString(), set_op.table_name, set_op.d_record.record_.GetPrimaryKey());
             TPGEdge edge = new TPGEdge(LDParentOperationID, operationID, MetaTypes.DependencyType.LD.toString());
 
