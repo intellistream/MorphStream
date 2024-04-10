@@ -1,5 +1,6 @@
 #!/bin/bash
 source ../dir.sh || exit
+DAGName=$1
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
@@ -8,7 +9,7 @@ function ResetParameters() {
     tthread=8
     clientNum=8
     frontendNum=16
-    clientClassName="client.BankingSystemClient"
+    clientClassName="client. $DAGName"
     #Network Configurations
     isRDMA=1
     driverHost="10.10.10.3"
@@ -34,7 +35,7 @@ function ResetParameters() {
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
-    eventTypes="dag"
+    eventTypes=$DAGName
     tableNameForEvents="accounts"
     keyNumberForEvents="3"
     valueNameForEvents="transferAmount"
