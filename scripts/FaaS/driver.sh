@@ -6,8 +6,8 @@ function ResetParameters() {
     workerId=0
     workerNum=2
     tthread=8
-    clientNum=4
-    frontendNum=4
+    clientNum=8
+    frontendNum=16
     clientClassName="client.BankingSystemClient"
     #Network Configurations
     isRDMA=1
@@ -19,9 +19,9 @@ function ResetParameters() {
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 100 \* $tthread \* $workerNum / $frontendNum`
+    sendMessagePerFrontend=`expr 200 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=2
-    returnResultPerExecutor=`expr 400 \* $frontendNum / $workerNum / $tthread`
+    returnResultPerExecutor=`expr 200 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
     isRemoteDB=0
