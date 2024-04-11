@@ -83,7 +83,7 @@ public class RdmaDriverManager {
                         wdRegionTokenGroup.addRegionTokens(rdmaNode.getRemoteRegionToken(rdmaChannel));
                         workerRdmaChannelMap.put(i, rdmaChannel);
                         workerRegionTokenMap.put(i, wdRegionTokenGroup);
-                        workerMessageBatchMap.put(i, new MessageBatch(MorphStreamEnv.get().configuration().getInt("maxMessageCapacity"), MorphStreamEnv.get().configuration().getInt("tthread")));
+                        workerMessageBatchMap.put(i, new MessageBatch(MorphStreamEnv.get().configuration().getInt("maxMessageCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"), MorphStreamEnv.get().configuration().getInt("frontendNum")));
                     }
                 }
                 workerLatch.countDown();
@@ -95,10 +95,8 @@ public class RdmaDriverManager {
         });
     }
     public void send(int frontendId, int workId, FunctionMessage functionMessage) throws Exception {
-        synchronized (workerMessageBatchMap.get(workId).getWriteLock()) {
-            workerMessageBatchMap.get(workId).add(functionMessage);
-            frontendTotalMessageCountMap.put(frontendId, frontendTotalMessageCountMap.get(frontendId) + 1);
-        }
+        workerMessageBatchMap.get(workId).add(frontendId, functionMessage);
+        frontendTotalMessageCountMap.put(frontendId, frontendTotalMessageCountMap.get(frontendId) + 1);
         MeasureTools.DriverPrepareEndTime(frontendId);
         if (frontendTotalMessageCountMap.get(frontendId) >= SOURCE_CONTROL.getInstance().getMessagePerFrontend()) {
             SOURCE_CONTROL.getInstance().driverStartSendMessageBarrier();
