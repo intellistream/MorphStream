@@ -31,7 +31,7 @@ public class CacheCCThread implements Runnable {
             for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
                 if (entry.getKey() != cacheData.getInstanceID()) {
                     try {
-                        ByteBuffer byteBuffer = ByteBuffer.allocate(18);
+                        ByteBuffer byteBuffer = ByteBuffer.allocate(24);
                         byteBuffer.putInt(3);
                         byteBuffer.putChar(';');
                         byteBuffer.putInt(12);
