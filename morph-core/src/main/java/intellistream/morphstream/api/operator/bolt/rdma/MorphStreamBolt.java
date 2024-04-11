@@ -153,14 +153,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 //Invoke client defined post-processing UDF using Reflection
                 HashMap<String, Function> stateAccesses = eventStateAccessesMap.get(event.getBid());
                 udfResultReflect = clientObj.postUDF(event.getBid(), event.getFlag(), stateAccesses);
-                if (enable_latency_measurement) {
-                    latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
-                }
                 if (!isCombo) {
-                    assert udfResultReflect != null;
                     collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
                 } else {
-                    assert udfResultReflect != null;
                     sink.execute(new Tuple(this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect)));
                 }
             } catch (InterruptedException e) {
