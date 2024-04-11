@@ -201,7 +201,7 @@ public class MeasureTools {
             }
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("Worker Metrics: " + "\n");
-            fileWriter.write("thread_id\t rdmaRecvTime (s)\t prepareTime (s)\t prepareCacheTime (s)\t rdmaRemoteOperationTime (s)\t setupDependenciesTime (s)\t executeTime (s)\t finishTime (s)\n");
+            fileWriter.write("thread_id\t rdmaRecvTime (s)\t prepareTime (s)\t prepareCacheTime (s)\t rdmaRemoteOperationTime (s)\t setupDependenciesTime (s)\t executeTime (s)\t finishTime (s)\t rdmaSendResultTime (s)\n");
             double totalRdmaRecvTime = 0;
             double totalPrepareTime = 0;
             double totalPrepareCacheTime = 0;
@@ -209,6 +209,9 @@ public class MeasureTools {
             double totalSetupDependenciesTime = 0;
             double totalExecuteTime = 0;
             double totalFinishTime = 0;
+            double totalRdmaSendResultTime = 0;
+            double totalRounds = 0;
+            double avgRounds = 0;
             for (int i = 0; i < tthread; i++) {
                 totalRdmaRecvTime = totalRdmaRecvTime + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum();
                 totalPrepareTime = totalPrepareTime + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum();
@@ -217,12 +220,22 @@ public class MeasureTools {
                 totalSetupDependenciesTime = totalSetupDependenciesTime + Metrics.WorkerRuntime.setupDependenciesTimeStatistics[i].getSum();
                 totalExecuteTime = totalExecuteTime + Metrics.WorkerRuntime.executeTimeStatistics[i].getSum();
                 totalFinishTime = totalFinishTime + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum();
-                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareCacheTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaRemoteOperationTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.setupDependenciesTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\n");
+                totalRdmaSendResultTime = totalRdmaSendResultTime + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum();
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareCacheTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaRemoteOperationTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.setupDependenciesTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum() / 1E9 + "\n");
             }
-            double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalPrepareCacheTime + totalRdmaRemoteOperationTime + totalSetupDependenciesTime + totalExecuteTime + totalFinishTime;
+            double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalPrepareCacheTime + totalRdmaRemoteOperationTime + totalSetupDependenciesTime + totalExecuteTime + totalFinishTime + totalRdmaSendResultTime;
             fileWriter.write("Breakdown in percentage: " + "\n");
-            fileWriter.write("RdmaRecv (%)\t Prepare (%)\t PrepareCache (%)\t RdmaRemoteOperation (%)\t SetupDependencies (%)\t Execute (%)\t Finish (%)\n");
-            fileWriter.write(totalRdmaRecvTime / totalWorkerTime + "\t" + totalPrepareTime / totalWorkerTime + "\t" + totalPrepareCacheTime / totalWorkerTime + "\t" + totalRdmaRemoteOperationTime / totalWorkerTime + "\t" + totalSetupDependenciesTime / totalWorkerTime + "\t" + totalExecuteTime / totalWorkerTime + "\t" + totalFinishTime / totalWorkerTime + "\n");
+            fileWriter.write("RdmaRecv (%)\t Prepare (%)\t PrepareCache (%)\t RdmaRemoteOperation (%)\t SetupDependencies (%)\t Execute (%)\t Finish (%)\t RdmaSendResult (%)\n");
+            fileWriter.write(totalRdmaRecvTime / totalWorkerTime + "\t" + totalPrepareTime / totalWorkerTime + "\t" + totalPrepareCacheTime / totalWorkerTime + "\t" + totalRdmaRemoteOperationTime / totalWorkerTime + "\t" + totalSetupDependenciesTime / totalWorkerTime + "\t" + totalExecuteTime / totalWorkerTime + "\t" + totalFinishTime / totalWorkerTime + "\t" + totalRdmaSendResultTime / totalWorkerTime + "\n");
+            fileWriter.write("Communication Rounds: " + "\n");
+            fileWriter.write("thread_id\t Total Rounds\t Avg Rounds\n");
+            for (int i = 0; i < tthread; i++) {
+                totalRounds = totalRounds + Metrics.WorkerRuntime.rdmaRounds[i].getSum();
+                avgRounds = avgRounds + Metrics.WorkerRuntime.rdmaRounds[i].getMean();
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRounds[i].getSum() + "\t" + Metrics.WorkerRuntime.rdmaRounds[i].getMean() + "\n");
+            }
+            fileWriter.write("Total Rounds: " + totalRounds + "\n");
+            fileWriter.write("Avg Rounds: " + avgRounds / tthread + "\n");
             fileWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -232,5 +245,8 @@ public class MeasureTools {
         WriteThroughput(throughput);
         WriteLatency(latencyStatistics);
         WriteDriverMetrics(frontendNumber);
+    }
+    public static void WORKER_METRICS_REPORT(int tthread) {
+        WriteWorkerMetrics(tthread);
     }
 }

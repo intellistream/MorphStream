@@ -7,10 +7,10 @@ function ResetParameters() {
     isDriver=0
     workerId=$Id
     workerNum=2
-    tthread=8
-    clientNum=8
-    frontendNum=16
-    clientClassName="client. $DAGName"
+    tthread=10
+    clientNum=10
+    frontendNum=20
+    clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
     driverHost="10.10.10.3"
@@ -21,14 +21,14 @@ function ResetParameters() {
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 200 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=2
-    returnResultPerExecutor=`expr 200 \* $frontendNum / $workerNum / $tthread`
+    sendMessagePerFrontend=`expr 50 \* $tthread \* $workerNum / $frontendNum`
+    totalBatch=4
+    returnResultPerExecutor=`expr 50 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
-    numberItemsForTables="100000"
-    NUM_ITEMS=100000
+    numberItemsForTables="1000000"
+    NUM_ITEMS=1000000
     tableNames="accounts"
     keyDataTypesForTables="String"
     valueDataTypesForTables="int"

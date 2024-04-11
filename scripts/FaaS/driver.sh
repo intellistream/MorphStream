@@ -6,10 +6,10 @@ function ResetParameters() {
     isDriver=1
     workerId=0
     workerNum=2
-    tthread=8
-    clientNum=8
-    frontendNum=16
-    clientClassName="client. $DAGName"
+    tthread=10
+    clientNum=10
+    frontendNum=20
+    clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
     driverHost="10.10.10.3"
@@ -20,9 +20,9 @@ function ResetParameters() {
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 200 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=2
-    returnResultPerExecutor=`expr 200 \* $frontendNum / $workerNum / $tthread`
+    sendMessagePerFrontend=`expr 50 \* $tthread \* $workerNum / $frontendNum`
+    totalBatch=4
+    returnResultPerExecutor=`expr 50 \* $frontendNum / $workerNum / $tthread`
     shuffleType=3
     #Database Configurations
     isRemoteDB=0
@@ -41,7 +41,7 @@ function ResetParameters() {
     valueNameForEvents="transferAmount"
     eventRatio="100"
     ratioOfMultiPartitionTransactionsForEvents="0"
-    stateAccessSkewnessForEvents="0"
+    stateAccessSkewnessForEvents="50"
     abortRatioForEvents="0"
     isCyclic=0
     isDynamic=1
@@ -164,3 +164,4 @@ function application_runner() {
  runApplication
 }
 application_runner
+rm -rf ${RSTDIR}/inputs/client.$DAGName

@@ -102,7 +102,7 @@ public class MorphStreamDriver extends Thread {
                 Thread.sleep(1000);
             }
             this.rdmaDriverManager.close();
-            LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + " k functions/s");
+            LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + " k DAGs/s");
             LOG.info("MorphStreamDriver is finished with average latency: " + statistic.getLatency() + " ms");
             LOG.info("MorphStreamDriver is finished with 99th latency: " + statistic.getLatency(99) + " ms");
             MeasureTools.DRIVER_METRICS_REPORT(numFrontend, statistic.getThroughput(), statistic.getLatencyStatistics());
