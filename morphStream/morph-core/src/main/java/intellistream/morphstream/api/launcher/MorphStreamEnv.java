@@ -41,7 +41,8 @@ public class MorphStreamEnv {
     public MorphStreamEnv() {
         try {
             InetAddress ipAddr = InetAddress.getLocalHost();
-            stateManagerSocket = new ServerSocket(8080, 50, ipAddr);
+//            stateManagerSocket = new ServerSocket(8080, 50, ipAddr);
+            stateManagerSocket = new ServerSocket(8080);
             System.out.println("Server started on port " + stateManagerSocket.getLocalPort());
         } catch (IOException e) {
             throw new RuntimeException(e);
