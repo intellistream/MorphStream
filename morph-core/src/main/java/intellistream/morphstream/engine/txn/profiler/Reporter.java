@@ -65,8 +65,7 @@ public class Reporter implements Scheduled {
     public void reportLatency() {
         List<Double> latency = new ArrayList<>();
         for (int i = 0; i < tthread; i++) {
-            System.out.println(Metrics.RuntimePerformance.Latency[i]);
-            latency.add(Metrics.RuntimePerformance.Latency[i].getMean());
+
         }
         // get the average of all threads' latency
         double overallLatency = latency.stream().mapToDouble(d -> d).average().orElse(0.0);
@@ -77,7 +76,7 @@ public class Reporter implements Scheduled {
     public void reportThroughput() {
         List<Double> throughput = new ArrayList<>();
         for (int i = 0; i < tthread; i++) {
-            throughput.add(Metrics.RuntimePerformance.Throughput[i].getMean());
+
         }
         // get sum of all threads' throughput
         double overallThroughput = throughput.stream().mapToDouble(d -> d).sum();
