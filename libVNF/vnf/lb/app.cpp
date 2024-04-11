@@ -91,9 +91,11 @@ void app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
     auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
     assert(threadLocal != NULL);
 
+    threadLocal->host = atoi(host);
+
     // Make assignment if is new connection.
     if (isFirst){
-        ctx.Transaction(1).Trigger(connId, ctx, host, false); // Write to host entry about the destination.
+        ctx.Transaction(1).Trigger(connId, ctx, (char *) &threadLocal->host, false); // Write to host entry about the destination.
     } else {
         ctx.Transaction(0).Trigger(connId, ctx, (const char*)&threadLocal->assigned_backend, false); // Rount and count. Record count to the earlier assigned backend count.
     }

@@ -137,22 +137,28 @@ int createClientToDS(int coreId, string remoteIP, int remotePort, enum DataLocat
 }
 
 void handleCCSwitching(int socket) {
+    char sep;
+    assert(read(socket, &sep, sizeof(char)));
     int length;
     assert(read(socket, &length, sizeof(length)));
+    assert(read(socket, &sep, sizeof(char)));
     char buf[length];
     int byte_read = 0;
-    while (byte_read< length) {
+    while (byte_read < length) {
         int bytes = read(socket, buf + byte_read, length - byte_read);
-        assert(bytes);
+        assert(bytes >= 0);
         byte_read += bytes;
     }
+    assert(read(socket, &sep, sizeof(char)));
     // Parsing records
     int index = 0;
     while (index < length) {
         int key, value;
-        sscanf(buf + index, "%d:%d;", &key, &value);
+        memcpy(&key, buf + index , sizeof(int));
+        index += 5;
+        memcpy(&value, buf + index, sizeof(int));
         // Do something with key and value
-        index = strcspn(buf + index, ";") + 1; // Move index to next record
+        index += 5;
         // Push to local.
         // cache the state
         globals.ccMapLock.lock();
@@ -185,56 +191,64 @@ void handleCCSwitching(int socket) {
 }
 
 void updateStateToCache(int socket) {
+    char sep;
+    assert(read(socket, &sep, sizeof(char)));
     int length;
     assert(read(socket, &length, sizeof(length)));
+    assert(read(socket, &sep, sizeof(char)));
     char buf[length];
     int byte_read = 0;
     while (byte_read< length) {
         int bytes = read(socket, buf + byte_read, length - byte_read);
-        assert(bytes);
+        assert(bytes >= 0);
         byte_read += bytes;
     }
     // Parsing records
     int index = 0;
     while (index < length) {
         int key, value;
-        sscanf(buf + index, "%d:%d;", &key, &value);
-        // Do something with key and value
-        index = strcspn(buf + index, ";") + 1; // Move index to next record
         // Push to local.
+        memcpy(&key, buf + index , sizeof(int));
+        index += 5;
         // cache the state
         globals.dataStoreLock.lock();
-        auto dsMalloc = globals.dsMemPoolManager.malloc();
-        globals.dsSize++;
-        memcpy(dsMalloc, (void *)&key, sizeof(int));
+        // auto dsMalloc = globals.dsMemPoolManager.malloc();
+        // globals.dsSize++;
+        // memcpy(dsMalloc, (void *)&key, sizeof(int));
         if (globals.localDatastore.find(key) == globals.localDatastore.end()) {
-            globals.dsMemPoolManager.free(globals.localDatastore[key]);
+            assert(false);
+        } else {
+            // globals.dsMemPoolManager.free(globals.localDatastore[key]);
         }
         // The local datastore is used as cache for reading.
-        globals.localDatastore[key] = dsMalloc;
-        globals.localDatastoreLens[key] = sizeof(int);
+        auto ds = globals.localDatastore[key];
+        memcpy(ds, buf + index, sizeof(int));
+        // globals.localDatastoreLens[key] = sizeof(int);
         // cache_void_list[dsMalloc] = bufKey;
         globals.dataStoreLock.unlock();
+        index += 5;
     }
 }
 
 void handleGetStateFromCache(int socket) {
+    char sep;
+    assert(read(socket, &sep, sizeof(char)));
     int length;
     assert(read(socket, &length, sizeof(length)));
+    assert(read(socket, &sep, sizeof(char)));
     char buf[length];
     int byte_read = 0;
     while (byte_read< length) {
         int bytes = read(socket, buf + byte_read, length - byte_read);
-        assert(bytes);
+        assert(bytes >= 0);
         byte_read += bytes;
     }
     // Parsing records
     int index = 0;
     while (index < length) {
         int key;
-        sscanf(buf + index, "%d;", &key);
-        // Do something with key and value
-        index = strcspn(buf + index, ";") + 1; // Move index to next record
+        memcpy(&key, buf + index , sizeof(int));
+        index += 5;
         // cache the state
         globals.dataStoreLock.lock();
         if (globals.localDatastore.find(key) == globals.localDatastore.end()) {
@@ -242,12 +256,16 @@ void handleGetStateFromCache(int socket) {
         }
         // The local datastore is used as cache for reading.
         assert(write(socket, (void *)globals.localDatastore[key], sizeof(int)));
+        char sep = ';';
+        assert(write(socket, &sep, sizeof(char)));
         globals.dataStoreLock.unlock();
     }
 }
 
 void handleTxnFinished(int socket, int coreId){
     // Txn finished.  
+    char sep;
+    assert(read(socket, &sep, sizeof(char)));
     uint64_t txnReqId = 0; 
     if (read(socket, &txnReqId, sizeof(uint64_t)) < 0) {
         perror("serverThread.transactions.read");
@@ -501,11 +519,11 @@ void *serverThread(void *args) {
                     }
                     switch (command) {
                         case 0: {
-                            assert(false);
+                            handleCCSwitching(currentSocketId);
                             break;
                         }
                         case 1: {
-                            handleCCSwitching(currentSocketId);
+                            assert(false);
                             break;
                         } 
                         case 2: {
@@ -910,7 +928,15 @@ void vnf::startEventLoop() {
     spdlog::info("Datastore Memory Pool Size: {}", globals.dsMemPoolBlock.size());
     globals.dataStoreLock.lock();
     globals.dsMemPoolManager.add_block(&globals.dsMemPoolBlock.front(), globals.dsMemPoolBlock.size(), 256);
+    // Init local data store.
+    for (int i = 0 ; i< 10000; i += 1){
+        auto dsMalloc = globals.dsMemPoolManager.malloc();
+        memset(dsMalloc, 0, sizeof(int)); // Init as 0.
+        globals.localDatastore[i] = dsMalloc;
+        globals.tupleIDtoCCMap[i] = Cache;
+    }
     globals.dataStoreLock.unlock();
+
 
     auto *servers = new pthread_t[userConfig->MAX_CORES];
     auto *arguments = new struct ServerPThreadArgument[userConfig->MAX_CORES + 1];
@@ -2431,12 +2457,6 @@ uint64_t Context::_full_ts()
 
 void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char *key, bool isAbort ) const
 { 
-    // Reset when transaction handle done.
-    ctx._set_wait_txn_callback();
-
-    ctx._set_txn_idx(txnIndex);
-    ctx.NextApp(ctx.AppIdx(), ctx.ReturnValue());
-    ctx._set_old_socket(connId.socketId);  
 
     // Create a new event blocking fd.
     if (uint64_t(ctx.reqObj()) == 0){
@@ -2447,9 +2467,10 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
         // Find out the state disposal strategy to be used.
         // Report to pattern monitor.
         bool has_write = (sa.rw_ == WRITE);
-        assert(write(perCoreStates[connId.coreId].txnSocket, 0, sizeof(int) ));
+        int zero = 0;
+        assert(write(perCoreStates[connId.coreId].txnSocket, &zero, sizeof(int) ));
         assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
-        assert(write(perCoreStates[connId.coreId].txnSocket, &key, sizeof(int) ));
+        assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int) ));
         assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
         assert(write(perCoreStates[connId.coreId].txnSocket, &has_write, sizeof(bool) ));
         assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
@@ -2458,47 +2479,48 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
         switch (globals.tupleIDtoCCMap[(int)(*key)]) {
             case Partition: {
                 // read local and execute the disposal. Read & Write all locally.
+                globals.dataStoreLock.lock();
                 auto tmp = globals.localDatastore[*(uint64_t *)key];
-                auto len = globals.localDatastoreLens[*(uint64_t *)key];
+                globals.dataStoreLock.unlock();
                 // Call callback.
                 assert(ctx.AppIdx() != -1);
                 // Call actual sa udf.
-                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, len);
-                int abortion = (ctx.ReturnValue())? 1: 0;
-                // TODO. Abortion not handled here.
+                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, sizeof(int));
+                if (has_write) {
+                    int abortion = (ctx.ReturnValue())? 1: 0;
+                    // TODO. Abortion not handled here.
 
-                // Write back.
-                globals.dataStoreLock.lock();
-                if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-                    freeDSPool();
+                    // Write back.
+                    globals.dataStoreLock.lock();
+                    // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+                    //     freeDSPool();
+                    // }
+                    void *dsMalloc;
+                    if (globals.keyExistsInLocalDatastore((int)*key)) {
+                        dsMalloc = globals.localDatastore[(int)*key];
+                    } else {
+                        dsMalloc = globals.dsMemPoolManager.malloc();
+                        globals.dsSize++;
+                    }
+                    memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
+                    globals.localDatastore[(int)*key] = dsMalloc;
+                    // globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
+                    globals.dataStoreLock.unlock();
                 }
-                void *dsMalloc;
-                if (globals.keyExistsInLocalDatastore((int)*key)) {
-                    dsMalloc = globals.localDatastore[(int)*key];
-                } else {
-                    dsMalloc = globals.dsMemPoolManager.malloc();
-                    globals.dsSize++;
-                }
-                memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
-                globals.localDatastore[(int)*key] = dsMalloc;
-                globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
-                globals.dataStoreLock.unlock();
 
-                // Move next.
-                ctx._move_next();
-                _disposalBody(connId, ctx);
                 break;
             }
             case Cache:{
                 // Execute locally, and send result with update.
                 // read local and execute the disposal. Read & Write all locally.
+                globals.dataStoreLock.lock();
                 auto tmp = globals.localDatastore[*(uint64_t *)key];
-                auto len = globals.localDatastoreLens[*(uint64_t *)key];
+                globals.dataStoreLock.unlock();
                 // Call callback.
                 // TODO.
                 assert(ctx.AppIdx() != -1);
                 // Call actual sa udf.
-                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, len);
+                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, sizeof(int));
                 int abortion = (ctx.ReturnValue())? 1: 0;
                 // TODO. Abortion not handled here.
 
@@ -2522,21 +2544,24 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 int command = 2;
                 assert(write(perCoreStates[connId.coreId].txnSocket, &command, sizeof(int)) > 0); // Send key to write.
                 assert(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, &key, sizeof(int)) > 0); // Send key to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int)) > 0); // Send key to write.
                 assert(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, &dsMalloc, sizeof(int)) > 0); // Send content to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, dsMalloc, sizeof(int)) > 0); // Send content to write.
+                assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
                 assert(write(perCoreStates[connId.coreId].txnSocket, "\n", 1) > 0);           // Send key to write.
                 globals.dataStoreLock.unlock();
-
-                // Move next.
-                ctx._move_next();
-                _disposalBody(connId, ctx);
                 break;
             }
             // Offloading and TPG are just sending the request.
             case Offloading:{}
             case TPG:{}
             default:{  
+                // Reset when transaction handle done.
+                ctx._set_wait_txn_callback();
+                ctx._set_txn_idx(txnIndex);
+                ctx.NextApp(ctx.AppIdx(), ctx.ReturnValue());
+                ctx._set_old_socket(connId.socketId);  
+
                 // Register call back parameters in the context.
                 perCoreStates[connId.coreId].packetNumberContextMap[ctx._ts_low_32b()] = &ctx;
 

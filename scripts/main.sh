@@ -273,7 +273,7 @@ setup_normal() {
 	else
 		cd "$TMP_DIR"
 		git clone https://github.com/gabime/spdlog.git
-		cd spdlog && $CMAKE . && make -j4
+		cd spdlog && $CMAKE . && make -j8
 		# apt spdlog version is too old.
 		if [[ -f include/spdlog/spdlog.h ]]; then
 			cp -r include/spdlog "$HEADER/"

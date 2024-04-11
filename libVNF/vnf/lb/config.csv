@@ -4,7 +4,7 @@ coreNumbers,1
 dataStoreSocketPath,/home/kailian/libVNF/vnf/tmp/
 dataStoreFileNames,1
 dataStoreIP,127.0.0.1
-dataStorePort,12000
+dataStorePort,9000
 serverIP,127.0.0.1
 serverPort,9090
 reuseMode,1
