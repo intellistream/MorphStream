@@ -31,7 +31,6 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
-import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
@@ -67,7 +66,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler"));
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, MorphStreamEnv.get().configuration().getInt("NUM_ITEMS"), this.context.getThisComponent().getNumTasks(), config.getString("scheduler"));
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
