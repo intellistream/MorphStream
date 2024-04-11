@@ -26,8 +26,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static final byte msgSeparator = 10;
     private static final int PORT = 8080;
     private final ServerSocket serverSocket = MorphStreamEnv.get().stateManagerSocket();
-    private static final int THREAD_POOL_SIZE = 10;
-
+    private static final int THREAD_POOL_SIZE = 4; //TODO: Hardcoded
 
 
     public SocketListener(LinkedBlockingQueue<PatternData> monitorQueue,
