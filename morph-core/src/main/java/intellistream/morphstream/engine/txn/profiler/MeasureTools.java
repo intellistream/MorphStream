@@ -187,6 +187,47 @@ public class MeasureTools {
             throw new RuntimeException(e);
         }
     }
+    public static void WriteWorkerMetrics(int tthread) {
+        try {
+            File file = new File(MetricsDirectory + "driver.txt");
+            file.mkdirs();
+            if (file.exists()) {
+                try {
+                    file.delete();
+                    file.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
+            fileWriter.write("Worker Metrics: " + "\n");
+            fileWriter.write("thread_id\t rdmaRecvTime (s)\t prepareTime (s)\t prepareCacheTime (s)\t rdmaRemoteOperationTime (s)\t setupDependenciesTime (s)\t executeTime (s)\t finishTime (s)\n");
+            double totalRdmaRecvTime = 0;
+            double totalPrepareTime = 0;
+            double totalPrepareCacheTime = 0;
+            double totalRdmaRemoteOperationTime = 0;
+            double totalSetupDependenciesTime = 0;
+            double totalExecuteTime = 0;
+            double totalFinishTime = 0;
+            for (int i = 0; i < tthread; i++) {
+                totalRdmaRecvTime = totalRdmaRecvTime + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum();
+                totalPrepareTime = totalPrepareTime + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum();
+                totalPrepareCacheTime = totalPrepareCacheTime + Metrics.WorkerRuntime.prepareCacheTimeStatistics[i].getSum();
+                totalRdmaRemoteOperationTime = totalRdmaRemoteOperationTime + Metrics.WorkerRuntime.rdmaRemoteOperationTimeStatistics[i].getSum();
+                totalSetupDependenciesTime = totalSetupDependenciesTime + Metrics.WorkerRuntime.setupDependenciesTimeStatistics[i].getSum();
+                totalExecuteTime = totalExecuteTime + Metrics.WorkerRuntime.executeTimeStatistics[i].getSum();
+                totalFinishTime = totalFinishTime + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum();
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareCacheTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaRemoteOperationTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.setupDependenciesTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\n");
+            }
+            double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalPrepareCacheTime + totalRdmaRemoteOperationTime + totalSetupDependenciesTime + totalExecuteTime + totalFinishTime;
+            fileWriter.write("Breakdown in percentage: " + "\n");
+            fileWriter.write("RdmaRecv (%)\t Prepare (%)\t PrepareCache (%)\t RdmaRemoteOperation (%)\t SetupDependencies (%)\t Execute (%)\t Finish (%)\n");
+            fileWriter.write(totalRdmaRecvTime / totalWorkerTime + "\t" + totalPrepareTime / totalWorkerTime + "\t" + totalPrepareCacheTime / totalWorkerTime + "\t" + totalRdmaRemoteOperationTime / totalWorkerTime + "\t" + totalSetupDependenciesTime / totalWorkerTime + "\t" + totalExecuteTime / totalWorkerTime + "\t" + totalFinishTime / totalWorkerTime + "\n");
+            fileWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static void DRIVER_METRICS_REPORT(int frontendNumber, double throughput, DescriptiveStatistics latencyStatistics) {
         WriteThroughput(throughput);
         WriteLatency(latencyStatistics);
