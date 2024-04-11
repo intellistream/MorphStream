@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.launcher;
 
-import intellistream.morphstream.api.input.FileDataGenerator;
-import intellistream.morphstream.api.input.TPGInputListener;
+import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
@@ -17,6 +16,9 @@ import intellistream.morphstream.engine.txn.db.Database;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,27 +27,32 @@ public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
-    private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
-    private final TPGInputListener inputSource = new TPGInputListener();
+    private AdaptiveCCManager adaptiveCCManager;
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
-//    private int[] instancePorts = {11001, 11002, 11003, 11004};
-    private int[] instancePorts = {9090};
-    private final Map<Integer, Socket> instanceSocketMap = new java.util.HashMap<>();
+    private ServerSocket stateManagerSocket;
+    private final HashMap<Integer, Socket> socketsToInstances = new java.util.HashMap<>();
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
 
     public MorphStreamEnv() {
-        inputSource.initialize();
-        for (int i = 0; i < instancePorts.length; i++) {
-            try {
-                instanceSocketMap.put(i, new Socket("172.20.0.251", instancePorts[i]));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            InetAddress ipAddr = InetAddress.getLocalHost();
+//            stateManagerSocket = new ServerSocket(8080, 50, ipAddr);
+            stateManagerSocket = new ServerSocket(8080);
+            System.out.println("Server started on port " + stateManagerSocket.getLocalPort());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void initializeAdaptiveCCManager() throws IOException {
+        if (adaptiveCCManager == null) {
+            adaptiveCCManager = new AdaptiveCCManager();
+            adaptiveCCManager.initialize();
         }
     }
 
@@ -64,11 +71,23 @@ public class MorphStreamEnv {
     public OptimizationManager OM() {
         return OM;
     }
-    public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitializer databaseInitializer() {return databaseInitializer;}
-    public TPGInputListener inputSource() {return inputSource;}
-    public Map<Integer, Socket> instanceSocketMap() {return instanceSocketMap;}
+    public void addInstanceSocket(Integer instanceID, Socket socket) {
+        socketsToInstances.put(instanceID, socket);
+    }
+    public Map<Integer, Socket> instanceSocketMap() {return socketsToInstances;}
     public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
+    public ServerSocket stateManagerSocket() {return stateManagerSocket;}
+    public AdaptiveCCManager adaptiveCCManager() {
+        if (adaptiveCCManager == null) {
+            try {
+                initializeAdaptiveCCManager();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return adaptiveCCManager;
+    }
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();

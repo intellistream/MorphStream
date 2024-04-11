@@ -10,13 +10,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MonitorThread implements Runnable {
-    private final BlockingQueue<byte[]> txnMetaDataQueue;
+    private final BlockingQueue<PatternData> patternDataQueue;
     private static final ConcurrentHashMap<Integer, Integer> readCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> writeCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> ownershipMap = new ConcurrentHashMap<>();
@@ -38,8 +40,8 @@ public class MonitorThread implements Runnable {
     private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
 
 
-    public MonitorThread(BlockingQueue<byte[]> txnMetaDataQueue, int punctuation_interval) {
-        this.txnMetaDataQueue = txnMetaDataQueue;
+    public MonitorThread(BlockingQueue<PatternData> patternDataQueue, int punctuation_interval) {
+        this.patternDataQueue = patternDataQueue;
         instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
         MonitorThread.punctuation_interval = punctuation_interval;
 
@@ -57,8 +59,13 @@ public class MonitorThread implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] metaDataByte = txnMetaDataQueue.poll();
-            updatePatternData(metaDataByte);
+            PatternData patternData;
+            try {
+                patternData = patternDataQueue.take();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            updatePatternData(patternData);
             txnCounter++;
             if (txnCounter % punctuation_interval == 0) {
                 judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
@@ -77,15 +84,19 @@ public class MonitorThread implements Runnable {
         }
     }
 
+//instanceID(int) -0
+//target = 0 (int) -1
+//TupleID(int) -2
+//isWrite (bool) -3
 
-    private static void updatePatternData(byte[] metaDataByte) {
-        //TODO: Add for loop to iterate over operations in txnData
-        int instanceID = 0; //TODO: Hardcoded
-        int tupleID = 0;
-        int type = 0;
+    private static void updatePatternData(PatternData metaDataByte) {
+        
+        int instanceID = metaDataByte.getInstanceID();
+        int tupleID = metaDataByte.getTupleID();
+        boolean isWrite = metaDataByte.getIsWrite();
 
-        readCountMap.merge(tupleID, type==0 ? 1 : 0, Integer::sum); //read
-        writeCountMap.merge(tupleID, type==1 ? 1 : 0, Integer::sum); //write
+        readCountMap.merge(tupleID, !isWrite ? 1 : 0, Integer::sum); //read
+        writeCountMap.merge(tupleID, isWrite ? 1 : 0, Integer::sum); //write
         Integer currentOwnership = ownershipMap.get(tupleID);
         if (currentOwnership != null && !currentOwnership.equals(instanceID)) {
             conflictCountMap.merge(tupleID, 1, Integer::sum);
@@ -254,7 +265,54 @@ public class MonitorThread implements Runnable {
 
         //TODO: State movement optimizations
 
+    }
 
+    private static boolean decodeBoolean(byte[] bytes, int offset) {
+        return bytes[offset] != 0;
+    }
+
+    private static long decodeLong(byte[] bytes, int offset) {
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
+        }
+        return value;
+    }
+
+    private static int decodeInt(byte[] bytes, int offset) {
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            value |= (bytes[offset + i] & 0xFF) << (i * 8);
+        }
+        return value;
+    }
+
+    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
+        List<byte[]> splitByteArrays = new ArrayList<>();
+        List<Integer> indexes = new ArrayList<>();
+
+        for (int i = 0; i < byteArray.length; i++) {
+            if (byteArray[i] == separator) {
+                indexes.add(i);
+            }
+        }
+
+        int startIndex = 0;
+        for (Integer index : indexes) {
+            byte[] subArray = new byte[index - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
+            splitByteArrays.add(subArray);
+            startIndex = index + 1;
+        }
+
+        // Handling the remaining part after the last occurrence of 59
+        if (startIndex < byteArray.length) {
+            byte[] subArray = new byte[byteArray.length - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
+            splitByteArrays.add(subArray);
+        }
+
+        return splitByteArrays;
     }
 
 }

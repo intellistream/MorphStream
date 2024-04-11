@@ -3,7 +3,6 @@ package cli;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import commonStorage.RequestTemplates;
-import intellistream.morphstream.api.input.TPGInputListener;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
@@ -33,42 +32,27 @@ import static intellistream.morphstream.configuration.Constants.*;
 public class CliFrontend {
     private static final Logger LOG = LoggerFactory.getLogger(CliFrontend.class);
     private String appName = "";
-    private final MorphStreamEnv env = MorphStreamEnv.get();
+    private MorphStreamEnv env;
+
     private final HashMap<String, AbstractBolt> boltMap = new HashMap<>();
     private final HashMap<String, String[]> stateObjectTemplates = new HashMap<>();
     private int counter = 0;
     private final int punctuation_interval = MorphStreamEnv.get().configuration().getInt("checkpoint", 2500);
     private final int ccOption = MorphStreamEnv.get().configuration().getInt("CCOption", 0);
 
-    public CliFrontend(String appName) {
+    public CliFrontend(String appName) throws IOException {
         this.appName = appName;
+        env = MorphStreamEnv.get();
     }
 
-    public void loadConfigStatic(String[] args) {
-        try {
-            LoadConfiguration(null, args);
-            prepareStatic();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void loadConfigStatic(String configPath, String[] args) throws IOException {
-        try {
-            LoadConfiguration(configPath, args);
-            prepareStatic();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void loadConfigStreaming(String[] args) {
+    public void loadConfigStreaming(String[] args) throws IOException {
         try {
             LoadConfiguration(null, args);
             prepareStreaming();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        env.initializeAdaptiveCCManager(); //Separate initialization of adaptive CC manager from MorphStreamEnv constructor
     }
 
     public static double getDoubleField(String stateObjID, String[] txnData) {
@@ -154,43 +138,9 @@ public class CliFrontend {
 
     public void prepareStreaming() {
         env.DatabaseInitialize();
-        env.inputSource().initializeStreaming(TPGInputListener.InputSourceType.JNI, MorphStreamEnv.get().configuration().getInt("spoutNum"));
+//        env.inputSource().initializeStreaming(MorphStreamEnv.get().configuration().getInt("spoutNum"));
     }
 
-    public void prepareStatic() throws IOException {
-        env.DatabaseInitialize();
-        if (env.configuration().getInt("inputSourceType", 0) == 0) { //read input as string
-            String inputFile = env.configuration().getString("inputFilePath");
-            File file = new File(inputFile);
-            if (file.exists()) {
-                LOG.info("Data already exists.. skipping data generation...");
-                env.fileDataGenerator().prepareInputData(true);
-            } else {
-                String fileName = env.fileDataGenerator().prepareInputData(false);
-                env.configuration().put("inputFilePath", fileName);
-            }
-            if (env.fileDataGenerator().getTranToDecisionConf() != null && env.fileDataGenerator().getTranToDecisionConf().size() != 0){
-                StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:env.fileDataGenerator().getTranToDecisionConf()){
-                    stringBuilder.append(decision);
-                    stringBuilder.append(";");
-                }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                env.configuration().put("WorkloadConfig",stringBuilder.toString()); //For each workload, how many TD/LD/PD
-            }
-            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), TPGInputListener.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
-        } else if (env.configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
-            String inputFile = env.configuration().getString("inputFilePath");
-            File file = new File(inputFile);
-            if (file.exists()) {
-                LOG.info("Data already exists.. skipping data generation...");
-            } else {
-                String fileName = env.fileDataGenerator().prepareInputData(false);
-                env.configuration().put("inputFilePath", fileName);
-            }
-            env.inputSource().initializeStatic(env.configuration().getString("inputFilePath"), TPGInputListener.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
-        }
-    }
     public void start() throws InterruptedException {
 //        MeasureTools.Initialize();
         runTopologyLocally();

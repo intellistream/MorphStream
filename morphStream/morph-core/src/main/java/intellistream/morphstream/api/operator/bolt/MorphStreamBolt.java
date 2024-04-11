@@ -37,7 +37,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private final Map<Integer, Socket> instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
+    private final Map<Integer, Socket> instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
 
     public MorphStreamBolt(String id, int fid) {

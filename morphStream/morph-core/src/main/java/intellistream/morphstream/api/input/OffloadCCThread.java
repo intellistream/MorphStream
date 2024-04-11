@@ -1,47 +1,59 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class OffloadCCThread implements Runnable {
-    private final BlockingQueue<byte[]> operationQueue;
+    private final BlockingQueue<OffloadData> operationQueue;
     private final ExecutorService offloadExecutor;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private static final byte fullSeparator = 59;
+    private static final byte keySeparator = 58;
 
-    public OffloadCCThread(BlockingQueue<byte[]> operationQueue, int writeThreadPoolSize) {
+    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize) {
         this.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     }
 
+//instanceID(int) -0
+//target = 4 (int) -1
+//timeStamp(long) -2
+//txnReqId(long) -3
+//tupleID (int) -4
+//txnIndex(int) -5
+//saIndex(int) -6
+//isAbort(int) -7
 
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            byte[] txnByteArray = operationQueue.poll();
-            int instanceID = 0;
-            long txnReqID = 0;
+            OffloadData offloadData;
+            try {
+                offloadData = operationQueue.take();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
             int txnType = 1; //TODO: Hardcode, 0:R, 1:W
             if (txnType == 1) {
                 try {
-                    OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
-                    String combined =  4 + ";" + txnReqID;
+                    OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+                    String combined =  4 + ";" + offloadData.getTxnReqId();
                     byte[] byteArray = combined.getBytes();
                     out.write(byteArray);
                     out.flush();
@@ -49,31 +61,27 @@ public class OffloadCCThread implements Runnable {
                     throw new RuntimeException(e);
                 }
 
-                offloadExecutor.submit(() -> writeGlobalStates(txnReqID, txnByteArray));
+                offloadExecutor.submit(() -> writeGlobalStates(offloadData.getTxnReqId(), offloadData.getTupleID(), 0)); //TODO: Value is hardcoded
 
             } else if (txnType == 0) {
-                synchronized (this) { //TODO: Consider replace lock with MVCC
-                    int txnResult = readGlobalStates(txnReqID, txnByteArray);
-                    try {
-                        OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
-                        String combined =  4 + ";" + txnReqID + ";" + txnResult; //__txn_finished
-                        byte[] byteArray = combined.getBytes();
-                        out.write(byteArray);
-                        out.flush();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                int txnResult = readGlobalStates(offloadData.getTxnReqId(), offloadData.getTupleID());
+                try {
+                    OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+                    String combined =  4 + ";" + offloadData.getTxnReqId() + ";" + txnResult; //__txn_finished
+                    byte[] byteArray = combined.getBytes();
+                    out.write(byteArray);
+                    out.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
     }
 
-    private static void writeGlobalStates(long ts, byte[] byteArray) {
-        String tableID = "table";
-        String tupleID = "0"; //TODO: Hardcoded
-        int value = 0;
+    private static void writeGlobalStates(long ts, int tupleID, int value) {
+        String tableID = "table"; //TODO: Hardcoded
         try {
-            TableRecord condition_record = storageManager.getTable(tableID).SelectKeyRecord(tupleID);
+            TableRecord condition_record = storageManager.getTable(tableID).SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord srcRecord = condition_record.content_.readPreValues(ts);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);
             tempo_record.getValues().get(1).setInt(value);
@@ -84,12 +92,11 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    private static int readGlobalStates(long ts, byte[] byteArray) {
+    private static int readGlobalStates(long ts, int tupleID) {
         // Check the latest value from DB global store
         int value;
-        String tupleID = "0";
         try {
-            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(tupleID);
+            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
             value = (int) condition_record.content_.readPreValues(ts).getValues().get(1).getDouble(); //TODO: read the corresponding version, blocking
 
         } catch (DatabaseException e) {
@@ -154,5 +161,49 @@ public class OffloadCCThread implements Runnable {
 //        } else {
 //            throw new RuntimeException();
 //        }
+    }
+
+    private static long decodeLong(byte[] bytes, int offset) {
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
+        }
+        return value;
+    }
+
+    private static int decodeInt(byte[] bytes, int offset) {
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            value |= (bytes[offset + i] & 0xFF) << (i * 8);
+        }
+        return value;
+    }
+
+    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
+        List<byte[]> splitByteArrays = new ArrayList<>();
+        List<Integer> indexes = new ArrayList<>();
+
+        for (int i = 0; i < byteArray.length; i++) {
+            if (byteArray[i] == separator) {
+                indexes.add(i);
+            }
+        }
+
+        int startIndex = 0;
+        for (Integer index : indexes) {
+            byte[] subArray = new byte[index - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
+            splitByteArrays.add(subArray);
+            startIndex = index + 1;
+        }
+
+        // Handling the remaining part after the last occurrence of 59
+        if (startIndex < byteArray.length) {
+            byte[] subArray = new byte[byteArray.length - startIndex];
+            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
+            splitByteArrays.add(subArray);
+        }
+
+        return splitByteArrays;
     }
 }
