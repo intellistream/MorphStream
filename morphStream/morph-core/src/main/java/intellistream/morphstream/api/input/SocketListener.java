@@ -1,88 +1,133 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.configuration.CONTROL;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 public class SocketListener implements Runnable { //A single thread that listens for incoming messages from other VMs through a single socket
-    private final LinkedBlockingQueue<PatternData> monitorQueue;
-    private final LinkedBlockingQueue<PartitionData> partitionQueue;
-    private final LinkedBlockingQueue<CacheData> cacheQueue;
-    private final LinkedBlockingQueue<OffloadData> offloadQueue;
+    private static LinkedBlockingQueue<PatternData> monitorQueue;
+    private static LinkedBlockingQueue<PartitionData> partitionQueue;
+    private static LinkedBlockingQueue<CacheData> cacheQueue;
+    private static LinkedBlockingQueue<OffloadData> offloadQueue;
     private static ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues; //round-robin input queues for each executor (combo/bolt)
     private static final int spoutNum = 4; //TODO: Hardcoded
-    private int rrIndex = 0;
-    private static final boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     private static final byte fullSeparator = 59;
-    private static final byte keySeparator = 58;
-    private final ServerSocket stateManagerSocket = MorphStreamEnv.get().stateManagerSocket();
+    private static final byte msgSeparator = 10;
+    private static final int PORT = 8080;
+    private final ServerSocket serverSocket = MorphStreamEnv.get().stateManagerSocket();
+    private static final int THREAD_POOL_SIZE = 10;
+
+
 
     public SocketListener(LinkedBlockingQueue<PatternData> monitorQueue,
                           LinkedBlockingQueue<PartitionData> partitionQueue,
                           LinkedBlockingQueue<CacheData> cacheQueue,
                           LinkedBlockingQueue<OffloadData> offloadQueue,
                           ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues) {
-        this.monitorQueue = monitorQueue;
-        this.partitionQueue = partitionQueue;
-        this.cacheQueue = cacheQueue;
-        this.offloadQueue = offloadQueue;
+        SocketListener.monitorQueue = monitorQueue;
+        SocketListener.partitionQueue = partitionQueue;
+        SocketListener.cacheQueue = cacheQueue;
+        SocketListener.offloadQueue = offloadQueue;
         SocketListener.tpgQueues = tpgQueues;
     }
 
 
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            try (Socket instanceSocket = stateManagerSocket.accept()) {
-                System.out.println("Client connected: " + instanceSocket.getRemoteSocketAddress());
 
-                // Record the client socket
-                int instanceID = instanceSocket.getPort();
-                MorphStreamEnv.get().addInstanceSocket(instanceID, instanceSocket);
+            System.out.println("Server is listening on port " + PORT);
+            ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
-                // Get the input stream to read data from the client
-                InputStream input = instanceSocket.getInputStream();
-                byte[] buffer = new byte[100]; // Buffer to hold the read data
+            try {
+                while (true) {
+                    Socket clientSocket = serverSocket.accept();
+                    int instanceID = clientSocket.getPort();
+                    System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
 
-                int bytesRead = input.read(buffer);
-                byte[] trimBytes = Arrays.copyOf(buffer, bytesRead);
+                    MorphStreamEnv.get().addInstanceSocket(instanceID, clientSocket);
+                    executorService.submit(new ClientHandler(clientSocket, instanceID));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
-                if (bytesRead > 0) {
 
-                    List<byte[]> splitByteArrays = splitByteArray(trimBytes, fullSeparator);
-                    int target = decodeInt(splitByteArrays.get(1), 0);
 
-                    System.out.println("Received message from port " + instanceID + ": " + new String(buffer, 0, bytesRead) + ", Target = " + target);
+    private static class ClientHandler implements Runnable {
+        private final Socket clientSocket;
+        private final int instanceID;
+        private int rrIndex = 0;
 
-                    if (target == 0) {
-                        monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
-                    } else if (target == 1) {
-                        partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
-                    } else if (target == 2) {
-                        cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
-                    } else if (target == 3) {
-                        offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
-                    } else if (target == 4) {
-                        tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
-                        rrIndex = (rrIndex + 1) % spoutNum;
+        public ClientHandler(Socket socket, int instanceID) {
+            this.clientSocket = socket;
+            this.instanceID = instanceID;
+        }
+
+        @Override
+        public void run() {
+            try (InputStream input = clientSocket.getInputStream()) { //TODO: Optimize this, avoid manual buffer management
+
+                // Buffer to hold the read data
+                List<Byte> messageBuffer = new ArrayList<>();
+                int readByte;
+
+                while ((readByte = input.read()) != -1) {
+                    if (readByte == msgSeparator) {
+                        // Convert the messageBuffer to byte[]
+                        byte[] message = new byte[messageBuffer.size()];
+                        for (int i = 0; i < message.length; i++) {
+                            message[i] = messageBuffer.get(i);
+                        }
+                        System.out.println("Received from " + clientSocket.getRemoteSocketAddress() + ": " + new String(message));
+
+                        List<byte[]> splitByteArrays = splitByteArray(message, fullSeparator);
+                        int target = decodeInt(splitByteArrays.get(0), 0);
+
+                        if (target == 0) {
+                            monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
+                        } else if (target == 1) {
+                            partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
+                        } else if (target == 2) {
+                            cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
+                        } else if (target == 3) {
+                            offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
+                        } else if (target == 4) {
+                            tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
+                            rrIndex = (rrIndex + 1) % spoutNum;
+                        }
+
+                        // Clear the buffer for the next message
+                        messageBuffer.clear();
+                    } else {
+                        messageBuffer.add((byte) readByte);
                     }
                 }
 
             } catch (IOException e) {
-                System.out.println("Exception occurred when trying to connect to VM2: " + e.getMessage());
+                System.out.println("Exception in client handler: " + e.getMessage());
+            } finally {
+                try {
+                    clientSocket.close();
+                } catch (IOException e) {
+                    System.out.println("Error closing client socket: " + e.getMessage());
+                }
             }
         }
     }
+
 
     private static PatternData byteToPatternData(int instanceID, List<byte[]> splitByteArrays) {
         int tupleID = decodeInt(splitByteArrays.get(1), 0);
