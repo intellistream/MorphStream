@@ -17,6 +17,7 @@ import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -34,13 +35,13 @@ public class MorphStreamEnv {
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
     private ServerSocket stateManagerSocket;
-    private static int stateManagerPort = 12000;
     private final HashMap<Integer, Socket> socketsToInstances = new java.util.HashMap<>();
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
 
     public MorphStreamEnv() {
         try {
-            stateManagerSocket = new ServerSocket(stateManagerPort);
+            InetAddress ipAddr = InetAddress.getLocalHost();
+            stateManagerSocket = new ServerSocket(8080, 50, ipAddr);
             System.out.println("Server started on port " + stateManagerSocket.getLocalPort());
         } catch (IOException e) {
             throw new RuntimeException(e);
