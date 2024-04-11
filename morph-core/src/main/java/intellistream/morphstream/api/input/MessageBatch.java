@@ -21,6 +21,10 @@ public class MessageBatch {
         this.buffer_size = buffer_size;
         this.receiverThreads = receiverThreads;
         this.senderThreads = senderThreads;
+        for (int i = 0; i < senderThreads; i++) {
+            msgs.put(i, new ArrayList<>());
+            encoded_Lengths.put(i, 0);
+        }
     }
     public void add(int senderThread, FunctionMessage msg) {
         if (msg == null)
