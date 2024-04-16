@@ -12,35 +12,26 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 public class OffloadCCThread implements Runnable {
     private final BlockingQueue<OffloadData> operationQueue;
     private final ExecutorService offloadExecutor;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-    private static final byte fullSeparator = 59;
-    private static final byte keySeparator = 58;
+    private final HashMap<Integer, Integer> saTypeMap = new HashMap<>();
 
-    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize) {
+    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize, HashMap<Integer, Integer> saTypeMap) {
         this.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
+        this.saTypeMap.putAll(saTypeMap);
     }
-
-//instanceID(int) -0
-//target = 4 (int) -1
-//timeStamp(long) -2
-//txnReqId(long) -3
-//tupleID (int) -4
-//txnIndex(int) -5
-//saIndex(int) -6
-//isAbort(int) -7
 
     @Override
     public void run() {
@@ -52,25 +43,28 @@ public class OffloadCCThread implements Runnable {
                 throw new RuntimeException(e);
             }
 
-            int txnType = 1; //TODO: Hardcode, 0:R, 1:W
-            if (txnType == 1) {
+            OutputStream out;
+            int saType = saTypeMap.get(offloadData.getSaIndex());
+
+            if (saType == 1) { //Immediate acknowledge write
                 try {
-                    OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+                    out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
                     String combined =  4 + ";" + offloadData.getTxnReqId();
                     byte[] byteArray = combined.getBytes();
                     out.write(byteArray);
                     out.flush();
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+                offloadExecutor.submit(() -> offloadUDF(offloadData));
 
-                offloadExecutor.submit(() -> writeGlobalStates(offloadData.getTxnReqId(), offloadData.getTupleID(), 0)); //TODO: Value is hardcoded
-
-            } else if (txnType == 0) {
-                int txnResult = readGlobalStates(offloadData.getTxnReqId(), offloadData.getTupleID());
+            } else if (saType == 0 || saType == 2) { //TODO: Consider separating read (from DB) and read-write (execute UDF)?
                 try {
-                    OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
-                    String combined =  4 + ";" + offloadData.getTxnReqId() + ";" + txnResult; //__txn_finished
+                    offloadExecutor.submit(() -> offloadUDF(offloadData));
+
+                    out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+                    String combined =  4 + ";" + offloadData.getTxnReqId();
                     byte[] byteArray = combined.getBytes();
                     out.write(byteArray);
                     out.flush();
@@ -81,36 +75,8 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    private static void writeGlobalStates(long ts, int tupleID, int value) {
-        String tableID = "table"; //TODO: Hardcoded
-        try {
-            TableRecord condition_record = storageManager.getTable(tableID).SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord srcRecord = condition_record.content_.readPreValues(ts);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-            tempo_record.getValues().get(1).setInt(value);
-            condition_record.content_.updateMultiValues(-1, 0, true, tempo_record);
+    private static void offloadUDF(OffloadData offloadData) {
 
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static int readGlobalStates(long ts, int tupleID) {
-        // Check the latest value from DB global store
-        int value;
-        try {
-            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
-            value = (int) condition_record.content_.readPreValues(ts).getValues().get(1).getDouble(); //TODO: read the corresponding version, blocking
-
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
-        }
-        return value;
-    }
-
-    private static void readWriteGlobalStates(OffloadData offloadData) { //TODO: Specify Read-only, write-only or read-write?
-
-        int instanceID = offloadData.getInstanceID();
         long timeStamp = offloadData.getTimeStamp();
         long txnReqId = offloadData.getTxnReqId();
         int tupleID = offloadData.getTupleID();
@@ -120,8 +86,11 @@ public class OffloadCCThread implements Runnable {
         try {
             TableRecord tableRecord = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Add table name
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-            int readValue = (int) readRecord.getValues().get(1).getDouble();
+            while (readRecord == null) {
+                readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
+            }
 
+            int readValue = (int) readRecord.getValues().get(1).getDouble();
             ByteBuffer byteBuffer = ByteBuffer.allocate(1);
             byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
             byteBuffer.putInt(readValue);

@@ -85,45 +85,8 @@ public class FastSLClient extends Client {
 
         System.out.println(sfc);
 
-        // Parse. Exampled Json:
-        // {
-        //     "apps" : [
-        //         {
-        //             "name" : "SLApp",
-        //             "transactions" : [
-        //                 {
-        //                 "StateAccesses" : [
-        //                     {
-        //                         "consistency_requirement" : "",
-        //                         "fieldTableIndex" : 1,
-        //                         "keyIndexInEvent" : 0,
-        //                         "stateName" : "deposit_sa",
-        //                         "type" : "write"
-        //                     }
-        //                 ]
-        //                 },
-        //                 {
-        //                 "StateAccesses" : [
-        //                     {
-        //                         "consistency_requirement" : "",
-        //                         "fieldTableIndex" : 1,
-        //                         "keyIndexInEvent" : 0,
-        //                         "stateName" : "src_transfer_sa",
-        //                         "type" : "write"
-        //                     },
-        //                     {
-        //                         "consistency_requirement" : "",
-        //                         "fieldTableIndex" : 1,
-        //                         "keyIndexInEvent" : 1,
-        //                         "stateName" : "dst_transfer_sa",
-        //                         "type" : "write"
-        //                     }
-        //                 ]
-        //                 }
-        //             ]
-        //         }
-        //     ]
-        // }
+
+
 
         fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
         fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");
@@ -142,16 +105,13 @@ public class FastSLClient extends Client {
 
         fastSLClient.registerOperator("fastSLClient", txnIDs, 0, 4);
 
-//        Thread libVNFThread = new Thread(() -> {
-//            VNF_JNI.__VNFThread(0, null);
-//        });
-//
-//        // Start the thread
-//        libVNFThread.start();
 
         // Start all 4 CC strategies
         AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();
         adaptiveCCManager.initialize();
+
+        //TODO: Update the decomposed SA UDF to manager
+
 
         fastSLClient.start();
     }
