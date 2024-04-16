@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
+import java.util.HashMap;
 
 import static cli.CliFrontend.*;
 
@@ -24,57 +25,6 @@ public class FastSLClient extends Client {
      * 3 onwards: stateObj1's field (each stateObj specifies 1 field of 1 TableRecord, assume txnData already contains retrieved field)
      * ...
      */
-    public byte[] execute_txn_udf(String saID, byte[] saBytes) {
-        String[] saData = decodeStringArray(saBytes);
-        if (saID == "srcTransfer") {
-            double srcBalance = getDoubleField("srcAccountBalance", saData);
-            if (srcBalance > 100) {
-                setDoubleField("srcAccountBalance", srcBalance - 100, saData);
-            } else {
-                abortTxn(saData); //an example of abort txn at application-level
-            }
-        } else if (saID == "destTransfer") {
-            double srcBalance = getDoubleField("srcAccountBalance", saData);
-            double destBalance = getDoubleField("destAccountBalance", saData);
-            if (srcBalance > 100) {
-                setDoubleField("destAccountBalance", destBalance + 100, saData);
-            } else {
-                abortTxn(saData);
-            }
-        } else if (saID == "deposit") {
-            double srcBalance = getDoubleField("srcAccountBalance", saData);
-            setDoubleField("srcAccountBalance", srcBalance + 100, saData);
-        } else {
-            abortTxn(saData);
-        }
-        return encodeStringArray(saData);
-    }
-
-    // Method to encode string array into byte stream (for testing)
-    public static byte[] encodeStringArray(String[] stringArray) {
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-            objectOutputStream.writeObject(stringArray);
-            return byteArrayOutputStream.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // Method to decode byte stream into string array (for testing)
-    public static String[] decodeStringArray(byte[] bytes) {
-        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
-            Object object = objectInputStream.readObject();
-            if (object instanceof String[]) {
-                return (String[]) object;
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 
     public static void main(String[] args) throws Exception {
         CliFrontend fastSLClient = new CliFrontend("FastSLClient");
@@ -83,25 +33,19 @@ public class FastSLClient extends Client {
         NativeInterface VNF_JNI = new NativeInterface();
         String[] param = {""};
         String sfcJSON = VNF_JNI.__init_SFC(1, param);
+        String cleanedJson = cleanupJson(sfcJSON);
+        System.out.println(cleanedJson);
+        VNFJsonClass vnfJsonClass = null;
 
-        System.out.println(sfcJSON);
-
-        ObjectMapper mapper = new ObjectMapper();
         try {
-            VNFJsonClass root = mapper.readValue(sfcJSON, VNFJsonClass.class);
-            // Now you can work with the data, for example:
-            root.getApps().forEach(app -> {
-                System.out.println("App name: " + app.getName());
-                app.getTransactions().forEach(transaction -> {
-                    transaction.getStateAccesses().forEach(stateAccess -> {
-                        System.out.println("Table Name: " + stateAccess.getTableName());
-                    });
-                });
-            });
+            ObjectMapper mapper = new ObjectMapper();
+            vnfJsonClass = mapper.readValue(cleanedJson, VNFJsonClass.class);
+            System.out.println("Deserialized data: " + vnfJsonClass.getApps().get(0).getName());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        //TODO: Integrate the deserialized JSON data with the rest of the system
 
         fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
         fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");
@@ -120,14 +64,53 @@ public class FastSLClient extends Client {
 
         fastSLClient.registerOperator("fastSLClient", txnIDs, 0, 4);
 
-
         // Start all 4 CC strategies
         AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();
         adaptiveCCManager.initialize();
 
-        //TODO: Update the decomposed SA UDF to manager
+        for (App app : vnfJsonClass.getApps()) {
+            for (Transaction txn : app.getTransactions()) {
+                for (StateAccess sa : txn.getStateAccesses()) {
+                    switch (sa.getType()) {
+                        case "read":
+                            adaptiveCCManager.updateSATypeMap(Integer.parseInt(sa.getTableName()), 0);
+                            break;
+                        case "write":
+                            adaptiveCCManager.updateSATypeMap(Integer.parseInt(sa.getTableName()), 1);
+                            break;
+                        case "read-write":
+                            adaptiveCCManager.updateSATypeMap(Integer.parseInt(sa.getTableName()), 2);
+                            break;
+                    }
+                }
+            }
+        }
 
 
         fastSLClient.start();
+    }
+
+
+
+    public static String cleanupJson(String messyJson) {
+        // Step 1: Remove all newline characters and excessive spaces.
+        String cleaned = messyJson.replaceAll("\\s+", " ");
+
+        // Step 2: Attempt to concatenate broken strings correctly.
+        cleaned = cleaned.replace(" , ", ",");
+        cleaned = cleaned.replace(", ", ",");
+        cleaned = cleaned.replace(" ,", ",");
+
+        // Step 3: Handle misplaced quotation marks and commas.
+        cleaned = cleaned.replace("\" ,\"", "\",\"");
+        cleaned = cleaned.replace("\" , \"", "\",\"");
+
+        // Step 4: Remove leading and trailing spaces for all array and object brackets.
+        cleaned = cleaned.replace("[ ", "[");
+        cleaned = cleaned.replace(" ]", "]");
+        cleaned = cleaned.replace("{ ", "{");
+        cleaned = cleaned.replace(" }", "}");
+
+        return cleaned;
     }
 }
