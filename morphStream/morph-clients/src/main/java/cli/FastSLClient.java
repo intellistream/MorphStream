@@ -7,6 +7,7 @@ import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
 
@@ -81,11 +82,25 @@ public class FastSLClient extends Client {
 
         NativeInterface VNF_JNI = new NativeInterface();
         String[] param = {""};
-        String sfc = VNF_JNI.__init_SFC(1, param);
+        String sfcJSON = VNF_JNI.__init_SFC(1, param);
 
-        System.out.println(sfc);
+        System.out.println(sfcJSON);
 
-
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            VNFJsonClass root = mapper.readValue(sfcJSON, VNFJsonClass.class);
+            // Now you can work with the data, for example:
+            root.getApps().forEach(app -> {
+                System.out.println("App name: " + app.getName());
+                app.getTransactions().forEach(transaction -> {
+                    transaction.getStateAccesses().forEach(stateAccess -> {
+                        System.out.println("Table Name: " + stateAccess.getTableName());
+                    });
+                });
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 
         fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
