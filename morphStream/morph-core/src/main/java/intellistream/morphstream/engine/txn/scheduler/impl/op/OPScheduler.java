@@ -127,7 +127,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int isAbort = -1;
         int udfResult = -1;
 
-        byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
+        //TODO: Add txnIndex as well, simplify saData into a single write value
+
+        byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), 0, readBytes, readValues.length);
         isAbort = decodeInt(saResultBytes, 0);
         udfResult = decodeInt(saResultBytes, 4);
 

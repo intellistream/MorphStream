@@ -35,18 +35,10 @@ public class FastSLClient extends Client {
         String sfcJSON = VNF_JNI.__init_SFC(1, param);
         String cleanedJson = cleanupJson(sfcJSON);
         System.out.println(cleanedJson);
-        VNFJsonClass vnfJsonClass = null;
+        VNFJsonClass vnfJsonClass;
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            vnfJsonClass = mapper.readValue(cleanedJson, VNFJsonClass.class);
-            System.out.println("Deserialized data: " + vnfJsonClass.getApps().get(0).getName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         //TODO: Integrate the deserialized JSON data with the rest of the system
-
         fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
         fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");
         String[] srcTransferStateObjs = {"srcAccountBalance"};
@@ -68,22 +60,39 @@ public class FastSLClient extends Client {
         AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();
         adaptiveCCManager.initialize();
 
-        for (App app : vnfJsonClass.getApps()) {
-            for (Transaction txn : app.getTransactions()) {
-                for (StateAccess sa : txn.getStateAccesses()) {
-                    switch (sa.getType()) {
-                        case "read":
-                            adaptiveCCManager.updateSATypeMap(Integer.parseInt(sa.getTableName()), 0);
-                            break;
-                        case "write":
-                            adaptiveCCManager.updateSATypeMap(Integer.parseInt(sa.getTableName()), 1);
-                            break;
-                        case "read-write":
-                            adaptiveCCManager.updateSATypeMap(Integer.parseInt(sa.getTableName()), 2);
-                            break;
+
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            vnfJsonClass = mapper.readValue(cleanedJson, VNFJsonClass.class);
+
+            // Manually assign txnID and saID
+            for (App app : vnfJsonClass.getApps()) {
+                int txnIndex = 0;
+                for (Transaction txn : app.getTransactions()) {
+                    txn.setTxnID(txnIndex++);
+                    int saIndex = 0;
+                    for (StateAccess sa : txn.getStateAccesses()) {
+                        sa.setSaID(saIndex++);
+                        switch (sa.getType()) {
+                            case "read":
+                                adaptiveCCManager.updateSATypeMap(saIndex, 0);
+                                break;
+                            case "write":
+                                adaptiveCCManager.updateSATypeMap(saIndex, 1);
+                                break;
+                            case "read-write":
+                                adaptiveCCManager.updateSATypeMap(saIndex, 2);
+                                break;
+                        }
+                        adaptiveCCManager.updateSATableNameMap(saIndex, sa.getTableName());
                     }
                 }
             }
+            System.out.println("Deserialized data: " + vnfJsonClass.getApps().get(0).getName());
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
 

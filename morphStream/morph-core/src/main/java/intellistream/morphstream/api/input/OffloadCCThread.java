@@ -25,12 +25,14 @@ public class OffloadCCThread implements Runnable {
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, Integer> saTypeMap = new HashMap<>();
+    private final HashMap<Integer, String> saTableNameMap = new HashMap<>();
 
-    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize, HashMap<Integer, Integer> saTypeMap) {
+    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize, HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap) {
         this.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
         this.saTypeMap.putAll(saTypeMap);
+        this.saTableNameMap.putAll(saTableNameMap);
     }
 
     @Override
@@ -75,7 +77,7 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    private static void offloadUDF(OffloadData offloadData) {
+    private void offloadUDF(OffloadData offloadData) {
 
         long timeStamp = offloadData.getTimeStamp();
         long txnReqId = offloadData.getTxnReqId();
@@ -84,11 +86,8 @@ public class OffloadCCThread implements Runnable {
         int saIndex = offloadData.getSaIndex();
 
         try {
-            TableRecord tableRecord = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Add table name
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-            while (readRecord == null) {
-                readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
-            }
+            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
+            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
 
             int readValue = (int) readRecord.getValues().get(1).getDouble();
             ByteBuffer byteBuffer = ByteBuffer.allocate(1);
@@ -97,7 +96,7 @@ public class OffloadCCThread implements Runnable {
             byte[] readBytes = byteBuffer.array();
             int udfResult = -1;
 
-            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, saIndex, readBytes, 1); //TODO: Add txnIndex as well?
+            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, txnIndex, saIndex, readBytes, 1); //TODO: Add txnIndex as well?op
             udfResult = decodeInt(saResultBytes, 4);
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);

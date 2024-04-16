@@ -16,6 +16,7 @@ public class AdaptiveCCManager {
     private static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private static final int writeThreadPoolSize = 4; //TODO: Hardcoded
     private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
+    private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
 
     public AdaptiveCCManager() {
         int _spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum"); //Number of thread for TPG_CC
@@ -28,13 +29,16 @@ public class AdaptiveCCManager {
     public void updateSATypeMap(int saID, int saType) {
         saTypeMap.put(saID, saType);
     }
+    public void updateSATableNameMap(int saID, String tableName) {
+        saTableNameMap.put(saID, tableName);
+    }
 
     public void initialize() throws IOException {
         Thread listenerThread = new Thread(new SocketListener(monitorQueue, partitionQueue, cacheQueue, offloadQueue, tpgQueues));
         Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 100));
         Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue));
         Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
-        Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap));
+        Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap));
 
         listenerThread.start();
         monitorThread.start();

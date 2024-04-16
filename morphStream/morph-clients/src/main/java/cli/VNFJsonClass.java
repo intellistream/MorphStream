@@ -39,6 +39,8 @@ class App {
 class Transaction {
     @JsonProperty("StateAccesses")
     private List<StateAccess> stateAccesses;
+    @JsonProperty("txnID")
+    private int txnID; // Added field for transaction ID
 
     public List<StateAccess> getStateAccesses() {
         return stateAccesses;
@@ -46,6 +48,14 @@ class Transaction {
 
     public void setStateAccesses(List<StateAccess> stateAccesses) {
         this.stateAccesses = stateAccesses;
+    }
+
+    public int getTxnID() {
+        return txnID;
+    }
+
+    public void setTxnID(int txnID) {
+        this.txnID = txnID;
     }
 }
 
@@ -62,6 +72,8 @@ class StateAccess {
     private int maxEntries;
     @JsonProperty("type")
     private String type;
+    @JsonProperty("saID")
+    private int saID; // Added field for StateAccess ID
 
     public String getTableName() {
         return tableName;
@@ -109,5 +121,13 @@ class StateAccess {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public int getSaID() {
+        return saID;
+    }
+
+    public void setSaID(int saID) {
+        this.saID = saID;
     }
 }
