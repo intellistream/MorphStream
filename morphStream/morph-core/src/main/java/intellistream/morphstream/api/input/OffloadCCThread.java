@@ -5,10 +5,13 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -105,70 +108,37 @@ public class OffloadCCThread implements Runnable {
         return value;
     }
 
-    private static void readWriteGlobalStates(long ts, byte[] byteArray) { //TODO: Add support for read-write SAs
-//        timeStamp(long) +
-//txnReqId(long) +
-//tupleID (int) +
-//txnIndex(int) +
-//saIndex(int) +
-//isAbort(int);
+    private static void readWriteGlobalStates(OffloadData offloadData) { //TODO: Specify Read-only, write-only or read-write?
 
-        int txnReqID = 0;
-        int tupleID = 0;
-        int txnIndex = 0;
-        int saIndex = 0;
-        int isAbort = 0;
+        int instanceID = offloadData.getInstanceID();
+        long timeStamp = offloadData.getTimeStamp();
+        long txnReqId = offloadData.getTxnReqId();
+        int tupleID = offloadData.getTupleID();
+        int txnIndex = offloadData.getTxnIndex();
+        int saIndex = offloadData.getSaIndex();
 
-//        //stateAccess: saID, type, writeObjIndex, [table name, key's value, field index in table, access type] * N
-//        int[] readValues = new int[operation.condition_records.size()]; //<stateObj field value> * N
-//
-//        int saIndex = 0;
-//        for (TableRecord tableRecord : operation.condition_records) {
-//            int stateFieldIndex = Integer.parseInt(operation.stateAccess[3 + saIndex * 4 + 2]);
-//            SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
-//            readValues[saIndex] = (int) readRecord.getValues().get(stateFieldIndex).getDouble();
-//            saIndex++;
-//        }
-//
-//        ByteBuffer byteBuffer = ByteBuffer.allocate(readValues.length * 4);
-//        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-//        for (int value : readValues) {
-//            byteBuffer.putInt(value);
-//        }
-//        byte[] readBytes = byteBuffer.array();
-//        int isAbort = -1;
-//        int udfResult = -1;
-//
-//        byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
-//        isAbort = decodeInt(saResultBytes, 0);
-//        udfResult = decodeInt(saResultBytes, 4);
-//
-//        if (isAbort == 0) { //txn is not aborted
-//            if (operation.accessType == CommonMetaTypes.AccessType.WRITE
-//                    || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
-//                    || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
-//                //Update udf results to writeRecord
-//                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-//                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-//                tempo_record.getValues().get(1).setDouble(udfResult);
-//                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
-//            } else {
-//                throw new UnsupportedOperationException();
-//            }
-//        } else if (isAbort == 1) {
-//            operation.stateAccess[1] = "true"; //pass isAbort back to bolt
-//            operation.isFailed.set(true);
-//        } else {
-//            throw new RuntimeException();
-//        }
-    }
+        try {
+            TableRecord tableRecord = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Add table name
+            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+            int readValue = (int) readRecord.getValues().get(1).getDouble();
 
-    private static long decodeLong(byte[] bytes, int offset) {
-        long value = 0;
-        for (int i = 0; i < 8; i++) {
-            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
+            ByteBuffer byteBuffer = ByteBuffer.allocate(1);
+            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            byteBuffer.putInt(readValue);
+            byte[] readBytes = byteBuffer.array();
+            int udfResult = -1;
+
+            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, saIndex, readBytes, 1); //TODO: Add txnIndex as well?
+            udfResult = decodeInt(saResultBytes, 4);
+
+            SchemaRecord tempo_record = new SchemaRecord(readRecord);
+            tempo_record.getValues().get(1).setInt(udfResult);
+            tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
         }
-        return value;
+
     }
 
     private static int decodeInt(byte[] bytes, int offset) {
@@ -179,31 +149,4 @@ public class OffloadCCThread implements Runnable {
         return value;
     }
 
-    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
-        List<byte[]> splitByteArrays = new ArrayList<>();
-        List<Integer> indexes = new ArrayList<>();
-
-        for (int i = 0; i < byteArray.length; i++) {
-            if (byteArray[i] == separator) {
-                indexes.add(i);
-            }
-        }
-
-        int startIndex = 0;
-        for (Integer index : indexes) {
-            byte[] subArray = new byte[index - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
-            splitByteArrays.add(subArray);
-            startIndex = index + 1;
-        }
-
-        // Handling the remaining part after the last occurrence of 59
-        if (startIndex < byteArray.length) {
-            byte[] subArray = new byte[byteArray.length - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
-            splitByteArrays.add(subArray);
-        }
-
-        return splitByteArrays;
-    }
 }

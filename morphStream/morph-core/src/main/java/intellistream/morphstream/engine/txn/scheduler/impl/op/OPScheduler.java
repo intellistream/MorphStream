@@ -140,8 +140,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 SchemaRecord tempo_record = new SchemaRecord(srcRecord);
                 tempo_record.getValues().get(1).setDouble(udfResult);
                 operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
-            } else {
-                throw new UnsupportedOperationException();
             }
         } else if (isAbort == 1) {
             operation.stateAccess[1] = "true"; //pass isAbort back to bolt
