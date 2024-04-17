@@ -24,6 +24,13 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         this.isAbort = (isAbort == 1);
     }
 
+//timeStamp(long) +
+//txnReqId(long) +
+//tupleID (int) +
+//txnIndex(int) +
+//saIndex(int) +
+//isAbort(int);
+
     public TransactionalVNFEvent(long bid) {
         super(bid);
     }

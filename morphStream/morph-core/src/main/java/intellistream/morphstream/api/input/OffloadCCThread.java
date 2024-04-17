@@ -82,7 +82,6 @@ public class OffloadCCThread implements Runnable {
         long timeStamp = offloadData.getTimeStamp();
         long txnReqId = offloadData.getTxnReqId();
         int tupleID = offloadData.getTupleID();
-        int txnIndex = offloadData.getTxnIndex();
         int saIndex = offloadData.getSaIndex();
 
         try {
@@ -96,7 +95,7 @@ public class OffloadCCThread implements Runnable {
             byte[] readBytes = byteBuffer.array();
             int udfResult = -1;
 
-            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, txnIndex, saIndex, readBytes, 1); //TODO: Add txnIndex as well?op
+            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, saIndex, readBytes, 1);
             udfResult = decodeInt(saResultBytes, 4);
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);

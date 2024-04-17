@@ -1,7 +1,6 @@
 package cli;
 
 import intellistream.morphstream.api.Client;
-// import intellistream.morphstream.common.io.ByteIO.InputWithDecompression.NativeDataInputView;
 
 import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
@@ -9,10 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.*;
-import java.util.HashMap;
-
-import static cli.CliFrontend.*;
 
 public class FastSLClient extends Client {
     private static final Logger log = LoggerFactory.getLogger(FastSLClient.class);
@@ -25,10 +20,9 @@ public class FastSLClient extends Client {
      * 3 onwards: stateObj1's field (each stateObj specifies 1 field of 1 TableRecord, assume txnData already contains retrieved field)
      * ...
      */
-
     public static void main(String[] args) throws Exception {
-        CliFrontend fastSLClient = new CliFrontend("FastSLClient");
-        fastSLClient.loadConfigStreaming(args);
+        CliFrontend vnfClient = new CliFrontend("FastSLClient");
+        vnfClient.loadConfigStreaming(args);
 
         NativeInterface VNF_JNI = new NativeInterface();
         String[] param = {""};
@@ -37,30 +31,9 @@ public class FastSLClient extends Client {
         System.out.println(cleanedJson);
         VNFJsonClass vnfJsonClass;
 
-
-        //TODO: Integrate the deserialized JSON data with the rest of the system
-        fastSLClient.registerStateObject("srcAccountBalance", "accounts", 0, 1, "WRITE");
-        fastSLClient.registerStateObject("destAccountBalance", "accounts", 1, 1, "WRITE");
-        String[] srcTransferStateObjs = {"srcAccountBalance"};
-        String[] destTransferStateObjs = {"srcAccountBalance", "destAccountBalance"};
-
-        fastSLClient.registerStateAccess("0", srcTransferStateObjs, null, "WRITE"); //deposit
-        fastSLClient.registerStateAccess("1", srcTransferStateObjs, null, "WRITE"); //srcTransfer
-        fastSLClient.registerStateAccess("2", destTransferStateObjs, null, "WRITE"); //destTransfer
-        String[] transferStateAccessIDs = {"1", "2"};
-        String[] depositStateAccessIDs = {"0"};
-
-        fastSLClient.registerTxn("0", depositStateAccessIDs);
-        fastSLClient.registerTxn("1", transferStateAccessIDs);
-        String[] txnIDs = {"transfer", "deposit"};
-
-        fastSLClient.registerOperator("fastSLClient", txnIDs, 0, 4);
-
         // Start all 4 CC strategies
         AdaptiveCCManager adaptiveCCManager = new AdaptiveCCManager();
         adaptiveCCManager.initialize();
-
-
 
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -68,11 +41,15 @@ public class FastSLClient extends Client {
 
             // Manually assign txnID and saID
             for (App app : vnfJsonClass.getApps()) {
+                vnfClient.registerOperator(app.getName(), 4); //TODO: Control parallelism via JSON
+
                 int txnIndex = 0;
                 for (Transaction txn : app.getTransactions()) {
                     txn.setTxnID(txnIndex++);
                     int saIndex = 0;
                     for (StateAccess sa : txn.getStateAccesses()) {
+                        vnfClient.registerStateAccess(String.valueOf(saIndex), sa.getType(), sa.getTableName());
+
                         sa.setSaID(saIndex++);
                         switch (sa.getType()) {
                             case "read":
@@ -95,8 +72,7 @@ public class FastSLClient extends Client {
             e.printStackTrace();
         }
 
-
-        fastSLClient.start();
+        vnfClient.start();
     }
 
 
