@@ -8,8 +8,10 @@ import random
 import csv
 from collections import defaultdict
 import threading
+import os
 
 data = {
+    "Command": "generate",
     "Sender": {
         "connections": 100,
         "firstSent": 500,
@@ -31,12 +33,12 @@ data = {
         "report": {
             "interval_s": 1,
             "warning_latency_ms": 500,
-            "location": "./history"
+            "location": "history"
         }
     },
     "Generator": {
         "count_millions": 1,
-        "location": "./send_to"
+        "location": "send_to"
     }
 }
 
@@ -81,6 +83,9 @@ class DataGenerator:
         self.record_count = record_count
 
     def generate_csv_records(self, file_path):
+        # file_path = ${PythonScriptDir}/filePath
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, file_path)
         with open(file_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             for _ in range(self.record_count):
@@ -93,6 +98,7 @@ class DataGenerator:
                 writer.writerow([self.record_config._record_id, host, is_first, protocol, data_length, is_random, thread_idx])
                 self.generated_records.append((host, is_first, protocol, data_length, is_random))
                 self.record_config._record_id += 1
+        return self
 
     def generate_statistics(self):
         host_count = len(self.record_config.host_records)
@@ -106,6 +112,8 @@ class DataGenerator:
         return host_count, records_per_host, protocol_distribution
 
     def save_statistics(self, file_path, host_count, records_per_host, protocol_distribution):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, file_path)
         with open(file_path, 'w') as file:
             file.write("Statistics about the generated batch:\n")
             file.write(f"Number of unique hosts: {host_count}\n")
@@ -122,6 +130,7 @@ import csv
 import os
 import socket
 import time
+import signal
 
 class Sender:
     def __init__(self, ip_address, port):
@@ -227,9 +236,11 @@ class Sender:
         self.save_history(self_csv_file)
 
 
-def generate_handler(config):
-    print(f"Generating {config.count} data points...")
-    # Here you can save the generated file at config.file_path
+def generate_handler():
+    print("Generating data points...")
+    g = DataGenerator(data["Generator"]["count_millions"] * 1000000).generate_csv_records(data["Generator"]["location"] + ".csv")
+    host_count, records_per_host, protocol_distribution = g.generate_statistics()
+    g.save_statistics(data["Generator"]["location"] + ".txt", host_count, records_per_host, protocol_distribution)
 
 def send_handler():
     threads = []
@@ -245,19 +256,16 @@ def send_handler():
     for thread in threads:
         thread.join()
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Testbench sender')
-    parser.add_argument('command', choices=['generate', 'send'], nargs='?', default='generate', help='Command to execute')
-    parser.add_argument('--count', type=int, help='Number of data points for generation')
-    parser.add_argument('--file-path', type=str, default='data.json', help='Path to save or read data file')
-    return parser.parse_args()
+def handle_sigint(signum, frame):
+    print("Exiting gracefully...")
+    # Add any cleanup code here if needed
+    exit(0)
 
 def main():
-    args = parse_arguments()
-    if args.command == 'generate':
+    signal.signal(signal.SIGINT, handle_sigint)
+    if data["Command"] == "generate":
         generate_handler()
-    elif args.command == 'send':
+    else:
         send_handler()
 
-if __name__ == "__main__":
-    main()
+main()
