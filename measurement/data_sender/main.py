@@ -11,20 +11,21 @@ import threading
 import os
 
 data = {
-    "Command": "generate",
+    "Command": "send",
+    # "Command": "generate",
     "Sender": {
-        "connections": 100,
+        "connections": 1,
         "firstSent": 500,
         "window_size": 500,
         "instances": [
-            {
-                "IP": "172.20.0.251",
-                "port": 9000
-            },
-            {
-                "IP": "127.0.0.1",
-                "port": 9000
-            },
+            # {
+            #     "IP": "172.20.0.251",
+            #     "port": 9000
+            # },
+            # {
+            #     "IP": "127.0.0.1",
+            #     "port": 9000
+            # },
             {
                 "IP": "127.0.0.1",
                 "port": 9000
@@ -141,16 +142,7 @@ class Sender:
         self.record_status = {}
         self.sent_cnt = 0
         self.received_cnt = 0
-        self.max_connections = 100
-
-    def read_csv_files(self, directory):
-        csv_files = []
-        for filename in os.listdir(directory):
-            if filename.endswith(".csv"):
-                csv_files.append(os.path.join(directory, filename))
-        if not csv_files:
-            raise FileNotFoundError("No CSV files found in the directory.")
-        return csv_files
+        self.max_connections = data["Sender"]["connections"]
 
     def connect_to_server(self):
         while len(self.connections) < self.max_connections:
@@ -160,6 +152,7 @@ class Sender:
                 self.connections.append(connection)
                 print(f"Connection {len(self.connections)}: Successfully connected to {self.ip_address}:{self.port}")
             except Exception as e:
+                print(f"Connection failed {len(self.connections)}: {e}")
                 time.sleep(1)
                 continue
 
@@ -167,23 +160,23 @@ class Sender:
         with open(csv_file, 'r') as file:
             reader = csv.reader(file)
             self.records = list(reader)
-            self.record_status = {int(r.split(',')[0]): (0, 0) for r in self.records}
+            self.record_status = {int(r[0]): (0, 0) for r in self.records}
 
         for connection in self.connections:
             cnt = self.sent_cnt
-            self.sent_cnt += 500
-            batch = self.records[cnt:cnt+500]
+            self.sent_cnt += data["Sender"]["firstSent"]
+            batch = self.records[cnt:cnt+data["Sender"]["firstSent"]]
             for r in batch:
-                self.record_status[int(r.split(',')[0])] = (time.time_ns(), 0)
-                connection.sendall((r + '\n').encode())
+                self.record_status[int(r[0])] = (time.time_ns(), 0)
+                connection.sendall((",".join(r) + '\n').encode())
         
         while True:
             buffer = bytearray()
             for connection in self.connections:
                 try:
-                    data = connection.recv(4096)
-                    if data:
-                        buffer += data
+                    rcv = connection.recv(4096)
+                    if rcv:
+                        buffer += rcv
                         while b'\n' in buffer:
                             index = buffer.index(b'\n')
                             response = buffer[:index].decode()
@@ -192,8 +185,8 @@ class Sender:
                             cnt = self.sent_cnt
                             self.sent_cnt += 1
                             r = self.records[cnt]
-                            self.record_status[int(r.split(',')[0])] = (time.time_ns(), 0)
-                            content = (r +'\n').encode()
+                            self.record_status[int(r[0])] = (time.time_ns(), 0)
+                            content = (",".join(r) +'\n').encode()
                             connection.sendall(content)
                             # remove from buffer.
                             buffer = buffer[index+1:]
@@ -218,22 +211,20 @@ class Sender:
                 writer.writerow([sent, received])
 
     def send_csv_files(self):
-        csv_files = self.read_csv_files()
+        csv_file = data["Generator"]["location"] + ".csv"
         self.connect_to_server()
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_file = os.path.join(script_dir, csv_file)
 
-        # Find the csv file that ends with the current IP address
-        self_ip = socket.gethostbyname(socket.gethostname())
-        self_csv_file = next((file for file in csv_files if file.endswith(f"_{self.ip_address}.csv")), None)
+        # # Find the csv file that ends with the current IP address
+        # self_ip = socket.gethostbyname(socket.gethostname())
+        # self_csv_file = next((file for file in csv_files if file.endswith(f"_{self.ip_address}.csv")), None)
 
-        if self_csv_file is None:
-            print(f"No CSV file found for IP {self.ip_address}")
-            return
-
-        self.records_sent.clear()
-        self.records_received.clear()
-        self.records_sent.append(self_csv_file)
-        self.send_records(self_csv_file)
-        self.save_history(self_csv_file)
+        # if self_csv_file is None:
+        #     print(f"No CSV file found for IP {self.ip_address}")
+        #     return
+        self.send_records(csv_file)
+        self.save_history(csv_file)
 
 
 def generate_handler():
@@ -244,6 +235,7 @@ def generate_handler():
 
 def send_handler():
     threads = []
+    assert(len(data["Sender"]["instances"]) == 1) # Only designed for 1 instance for now.
     for instance in data["Sender"]["instances"]:
         ip = instance["IP"]
         port = instance["port"]
