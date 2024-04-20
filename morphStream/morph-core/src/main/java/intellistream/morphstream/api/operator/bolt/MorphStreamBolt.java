@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -26,37 +25,26 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
-import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
 
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
-    private final HashMap<String, String[]> txnTemplates; //Transaction flag -> state access IDs. E.g. "transfer" -> {"srcTransfer", "destTransfer"}
     private final HashMap<String, String[]> saTemplates; //State access ID -> state objects.
     private final ArrayDeque<TransactionalVNFEvent> eventQueue;//Transactional events deque
-    private final HashMap<Long, HashMap<String, String[]>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
-    private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
     private final Map<Integer, Socket> instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
-    private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false); //Push post results to: true -> c/c++ native function, false -> Output collector
 
     public MorphStreamBolt(String id, int fid) {
         super(id, LOG, fid);
-        txnTemplates = RequestTemplates.sharedTxnTemplates;
         saTemplates = RequestTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
-        eventStateAccessesMap = new HashMap<>();
-        tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
     public MorphStreamBolt(String id, int fid, AbstractSink sink) {
         super(id, LOG, fid);
         this.sink = sink;
         this.isCombo = true;
-        txnTemplates = RequestTemplates.sharedTxnTemplates;
         saTemplates = RequestTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
-        eventStateAccessesMap = new HashMap<>();
-        tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
@@ -85,25 +73,18 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Request_Construct(TransactionalVNFEvent event, TxnContext txnContext) throws DatabaseException {
-        String[] saIDs = txnTemplates.get(event.getFlag());
-//        eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
 
-        for (String saID : saIDs) {
-            String[] stateAccess = saTemplates.get(saID).clone();
+        //TODO: Note that here we bypass the transaction encapsulation, because the inputs are stateAccess UDF requests
 
-            // Pass event data (value of key) to state access
-            for (int i = 3; i < stateAccess.length; i += 4) {
-//                String tableName = stateAccess[i];
-                String keyIndex = stateAccess[i + 1];
-                String key = event.getKey(Integer.parseInt(keyIndex)); //only valid for VNFEvent
-                stateAccess[i + 1] = key;
-                // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
-            }
-            // txn-UDF and post-UDF needs a shared data structure to pass txn results to post-UDF. TODO: Improve this
-//            eventStateAccessesMap.get(event.getBid()).put(saID, stateAccess);
-            transactionManager.submitStateAccess(stateAccess, txnContext);
-        }
+        String[] saData = new String[4]; //saID, saType, tableName, tupleID
+        String[] saTemplate = saTemplates.get(event.getFlag()); //saID, saType, tableName
+        saData[0] = saTemplate[0];
+        saData[1] = saTemplate[1];
+        saData[2] = saTemplate[2];
+        saData[3] = event.getTupleID();
+
+        transactionManager.submitStateAccess(saData, txnContext);
 
         transactionManager.CommitTransaction(txnContext);
         eventQueue.add(event);
@@ -136,7 +117,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 Transaction_Post_Process();
             }
             eventQueue.clear();
-            eventStateAccessesMap.clear();
             if (isCombo) {
                 sink.execute(in);
             }

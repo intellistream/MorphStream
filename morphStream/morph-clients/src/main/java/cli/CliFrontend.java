@@ -17,30 +17,19 @@ import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.*;
 
-/**
- * TODO: Implementation of a simple command line frontend for executing programs.
- * TODO: This class should be the receiving end of system, it waits for new app from clients, and perform system initialization.
- */
+
 public class CliFrontend {
     private static final Logger LOG = LoggerFactory.getLogger(CliFrontend.class);
     private String appName = "";
     private MorphStreamEnv env;
 
-    private final HashMap<String, AbstractBolt> boltMap = new HashMap<>();
-    private final HashMap<String, String[]> stateObjectTemplates = new HashMap<>();
-    private int counter = 0;
-    private final int punctuation_interval = MorphStreamEnv.get().configuration().getInt("checkpoint", 2500);
-    private final int ccOption = MorphStreamEnv.get().configuration().getInt("CCOption", 0);
-
-    public CliFrontend(String appName) throws IOException {
+    public CliFrontend(String appName) {
         this.appName = appName;
         env = MorphStreamEnv.get();
     }
@@ -55,47 +44,12 @@ public class CliFrontend {
         env.initializeAdaptiveCCManager(); //Separate initialization of adaptive CC manager from MorphStreamEnv constructor
     }
 
-    public static double getDoubleField(String stateObjID, String[] txnData) {
-        String saID = txnData[0]; //saId determines which saNameToIndex map to refer to
-        int readFieldIndex = RequestTemplates.saDataNameToIndex.get(saID).get(stateObjID);
-        return Double.parseDouble(txnData[readFieldIndex]);
-    }
-
-    public static void setDoubleField(String stateObjID, double value, String[] saData) {
-        saData[2] = Double.toString(value);
-    }
-
-    public static void abortTxn(String[] txnData) {
-        txnData[1] = "true";
-    }
-
-    public void registerStateObject(String stateObjID, String stateID, int keyIndexInEvent, int fieldTableIndex, String type) {
-        stateObjectTemplates.put(stateObjID, new String[]{stateID, Integer.toString(keyIndexInEvent), Integer.toString(fieldTableIndex), type});
-    }
-
-    public void registerStateAccess(String stateAccessID, String[] stateObjectIDs, String[] valueNames, String type) {
-
-        String[] stateAccessTemplate = new String[3 + stateObjectIDs.length * 4]; //saID, saType, writeKeyIndex, N*[tableName, keyIndex, fieldIndex, saType]
-        stateAccessTemplate[0] = stateAccessID;
-        stateAccessTemplate[1] = type;
-        RequestTemplates.saDataNameToIndex.put(stateAccessID, new HashMap<>());
-        int templateIndex = 3;
-        int saIndex = 3; //indexes in saData, the first 3 are: saID, txnAbortFlag, saResult, the rest are all stateObject fields read from table
-
-        for (String stateObjectID : stateObjectIDs) {
-            String[] stateObjectTemplate = stateObjectTemplates.get(stateObjectID);
-            stateAccessTemplate[templateIndex] = stateObjectTemplate[0]; //table name
-            stateAccessTemplate[templateIndex + 1] = stateObjectTemplate[1]; //key index in event
-            stateAccessTemplate[templateIndex + 2] = stateObjectTemplate[2]; //field index in table
-            stateAccessTemplate[templateIndex + 3] = stateObjectTemplate[3]; //state access type
-            RequestTemplates.saDataNameToIndex.get(stateAccessID).put(stateObjectID, saIndex);
-            if (stateObjectTemplate[3].equals("WRITE")) {
-                stateAccessTemplate[2] = String.valueOf(templateIndex); //indicating this state object is to be written during state access
-            }
-            templateIndex += 4;
-            saIndex++;
-        }
-        RequestTemplates.sharedSATemplates.put(stateAccessID, stateAccessTemplate);
+    public void registerStateAccess(String saID, String saType, String tableName) {
+        String[] saTemplate = new String[3]; //saID, saType, tableName
+        saTemplate[0] = saID;
+        saTemplate[1] = saType;
+        saTemplate[2] = tableName;
+        RequestTemplates.sharedSATemplates.put(saID, saTemplate);
     }
 
     public void registerTxn(String txnID, String[] stateAccessIDs) {
@@ -105,11 +59,8 @@ public class CliFrontend {
     /**
      * Register a new operator to the system. This combines both operator (VNF) creation and topology node registration
     * */
-    public void registerOperator(String operatorID, String[] txnIDs, int stage, int parallelism) {
-        RequestTemplates.sharedOperatorTemplates.put(operatorID, txnIDs);
+    public void registerOperator(String operatorID, int parallelism) {
         try {
-//            AbstractBolt bolt = setBolt(operatorID, parallelism, stage);
-//            boltMap.put(operatorID, bolt); //TODO: Extract bolt logic from SASpout for optimization
             SACombo operator = new SACombo(operatorID);
             env.setSpout(operatorID, operator, parallelism);
 

@@ -1,7 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.op;
 
 
-import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
@@ -127,6 +126,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int isAbort = -1;
         int udfResult = -1;
 
+        //TODO: Simplify saData into a single write value
+
         byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
         isAbort = decodeInt(saResultBytes, 0);
         udfResult = decodeInt(saResultBytes, 4);
@@ -140,8 +141,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 SchemaRecord tempo_record = new SchemaRecord(srcRecord);
                 tempo_record.getValues().get(1).setDouble(udfResult);
                 operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
-            } else {
-                throw new UnsupportedOperationException();
             }
         } else if (isAbort == 1) {
             operation.stateAccess[1] = "true"; //pass isAbort back to bolt

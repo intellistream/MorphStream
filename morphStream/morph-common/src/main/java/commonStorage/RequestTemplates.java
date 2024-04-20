@@ -9,7 +9,6 @@ public class RequestTemplates {
      * "<perEventValueName>": <index> *N
      */
     public static HashMap<String, HashMap<String, Integer>> saDataNameToIndex = new HashMap<>();
-    public static HashMap<String, String[]> sharedOperatorTemplates = new HashMap<>(); //op -> txns
     public static HashMap<String, String[]> sharedTxnTemplates = new HashMap<>(); //txn -> state accesses
     /**
      * Maps stateAccessID to stateAccessTemplate

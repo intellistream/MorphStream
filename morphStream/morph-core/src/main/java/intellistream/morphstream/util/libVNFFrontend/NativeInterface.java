@@ -7,7 +7,7 @@ public class NativeInterface {
     public native String __init_SFC(int argc, String[] argv);
 
     // Native method declaration for _callBack
-    public static native byte[] _execute_sa_udf(long txnReqId, int saFlag, byte[] saData, int length);
+    public static native byte[] _execute_sa_udf(long txnReqId, int saIndex, byte[] saData, int length);
 
     // Load the native library when the class is initialized
     static {
