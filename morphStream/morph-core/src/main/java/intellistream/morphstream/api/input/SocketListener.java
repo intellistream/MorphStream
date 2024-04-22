@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -64,7 +65,6 @@ public class SocketListener implements Runnable { //A single thread that listens
     }
 
 
-
     private static class ClientHandler implements Runnable {
         private final Socket clientSocket;
         private final int instanceID;
@@ -77,49 +77,64 @@ public class SocketListener implements Runnable { //A single thread that listens
 
         @Override
         public void run() {
-            try (InputStream input = clientSocket.getInputStream()) { //TODO: Optimize this, avoid manual buffer management
-
+            try (InputStream input = clientSocket.getInputStream()) {
                 // Buffer to hold the read data
                 List<Byte> messageBuffer = new ArrayList<>();
                 int readByte;
 
-                while ((readByte = input.read()) != -1) {
-                    if (readByte == msgSeparator) {
-                        // Convert the messageBuffer to byte[]
-                        byte[] message = new byte[messageBuffer.size()];
-                        for (int i = 0; i < message.length; i++) {
-                            message[i] = messageBuffer.get(i);
+                while (true) {  // Changed from while ((readByte = input.read()) != -1)
+                    try {
+                        if ((readByte = input.read()) != -1) {
+                            // Normal reading process
+                            if (readByte == msgSeparator) {
+                                // Convert the messageBuffer to byte[]
+                                byte[] message = new byte[messageBuffer.size()];
+                                for (int i = 0; i < message.length; i++) {
+                                    message[i] = messageBuffer.get(i);
+                                }
+                                System.out.println("Received from " + clientSocket.getRemoteSocketAddress() + ": " + new String(message));
+
+                                List<byte[]> splitByteArrays = splitByteArray(message, fullSeparator);
+                                int target = decodeInt(splitByteArrays.get(0), 0);
+
+                                if (target == 0) {
+                                    monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
+                                } else if (target == 1) {
+                                    partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
+                                } else if (target == 2) {
+                                    cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
+                                } else if (target == 3) {
+                                    offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
+                                } else if (target == 4) {
+                                    tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
+                                    rrIndex = (rrIndex + 1) % spoutNum;
+                                }
+                                // Clear the buffer for the next message
+                                messageBuffer.clear();
+                            } else {
+                                messageBuffer.add((byte) readByte);
+                            }
+                        } else {
+                            // -1 returned from read indicates client has closed the connection properly
+                            System.out.println("Client has closed the connection: " + clientSocket.getRemoteSocketAddress());
+                            break;
                         }
-                        System.out.println("Received from " + clientSocket.getRemoteSocketAddress() + ": " + new String(message));
-
-                        List<byte[]> splitByteArrays = splitByteArray(message, fullSeparator);
-                        int target = decodeInt(splitByteArrays.get(0), 0);
-
-                        if (target == 0) {
-                            monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
-                        } else if (target == 1) {
-                            partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
-                        } else if (target == 2) {
-                            cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
-                        } else if (target == 3) {
-                            offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
-                        } else if (target == 4) {
-                            tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
-                            rrIndex = (rrIndex + 1) % spoutNum;
-                        }
-
-                        // Clear the buffer for the next message
-                        messageBuffer.clear();
-                    } else {
-                        messageBuffer.add((byte) readByte);
+                    } catch (SocketException se) {
+                        // Specific handling for socket related exceptions
+                        System.out.println("Socket exception (likely connection reset by client): " + se.getMessage());
+                        break;
+                    } catch (IOException ie) {
+                        // General I/O exceptions
+                        System.out.println("IOException during communication: " + ie.getMessage());
+                        break;
                     }
                 }
-
             } catch (IOException e) {
-                System.out.println("Exception in client handler: " + e.getMessage());
+                System.out.println("Exception when setting up input stream: " + e.getMessage());
             } finally {
                 try {
                     clientSocket.close();
+                    System.out.println("Closed client socket.");
                 } catch (IOException e) {
                     System.out.println("Error closing client socket: " + e.getMessage());
                 }
