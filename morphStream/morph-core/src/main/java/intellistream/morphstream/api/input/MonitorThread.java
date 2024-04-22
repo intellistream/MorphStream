@@ -164,6 +164,7 @@ public class MonitorThread implements Runnable {
     private static void syncStateFromLocalToRemote(int instanceID, int tupleID) {
         try {
             Socket socket = instanceSocketMap.get(instanceID);
+            System.out.println("Monitor sending state sync to instance " + instanceID + " for tuple: " + tupleID);
             // Send GET request to instance
             byte[] requestMessage = (2 + ";" + 1 + ";" + tupleID).getBytes();
             OutputStream output = socket.getOutputStream();

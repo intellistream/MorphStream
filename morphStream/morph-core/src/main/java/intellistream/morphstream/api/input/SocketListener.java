@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class SocketListener implements Runnable { //A single thread that listens for incoming messages from other VMs through a single socket
@@ -93,26 +94,32 @@ public class SocketListener implements Runnable { //A single thread that listens
                                 for (int i = 0; i < message.length; i++) {
                                     message[i] = messageBuffer.get(i);
                                 }
-                                System.out.println("Received from " + clientSocket.getRemoteSocketAddress() + ": " + new String(message));
+//                                System.out.println("Received from " + clientSocket.getRemoteSocketAddress() + ": " + new String(message));
 
-                                List<byte[]> splitByteArrays = splitByteArray(message, fullSeparator);
-                                int target = decodeInt(splitByteArrays.get(0), 0);
+                                if (message.length == 1) {
+                                    System.out.println("Error: reading invalid message: " + message[0]);
+                                    System.out.println("Total requests received: " + requestCounter);
+                                } else {
+                                    List<byte[]> splitByteArrays = splitByteArray(message, fullSeparator);
+                                    int target = decodeInt(splitByteArrays.get(0), 0);
 
-                                if (target == 0) {
-                                    monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
-                                } else if (target == 1) {
-                                    partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
-                                } else if (target == 2) {
-                                    cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
-                                } else if (target == 3) {
-                                    offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
-                                } else if (target == 4) {
-                                    tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
-                                    rrIndex = (rrIndex + 1) % spoutNum;
+                                    if (target == 0) {
+                                        monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
+                                    } else if (target == 1) {
+                                        partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
+                                    } else if (target == 2) {
+                                        cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
+                                    } else if (target == 3) {
+                                        offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
+                                    } else if (target == 4) {
+                                        tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
+                                        rrIndex = (rrIndex + 1) % spoutNum;
+                                    }
+                                    // Clear the buffer for the next message
+                                    messageBuffer.clear();
+                                    requestCounter++;
                                 }
-                                // Clear the buffer for the next message
-                                messageBuffer.clear();
-                                requestCounter++;
+
                             } else {
                                 messageBuffer.add((byte) readByte);
                             }
@@ -125,23 +132,31 @@ public class SocketListener implements Runnable { //A single thread that listens
                     } catch (SocketException se) {
                         // Specific handling for socket related exceptions
                         System.out.println("Socket exception (likely connection reset by client): " + se.getMessage());
+                        System.out.println("Total request received: " + requestCounter);
                         break;
                     } catch (IOException ie) {
                         // General I/O exceptions
                         System.out.println("IOException during communication: " + ie.getMessage());
+                        System.out.println("Total request received: " + requestCounter);
                         break;
                     }
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.out.println("Exception when setting up input stream: " + e.getMessage());
-            } finally {
-                try {
-                    clientSocket.close();
-                    System.out.println("Closed client socket.");
-                } catch (IOException e) {
-                    System.out.println("Error closing client socket: " + e.getMessage());
-                }
+                System.out.println("Exception type: " + e.getClass().getName());
+                e.printStackTrace();
+                System.out.println("Total request received: " + requestCounter);
             }
+//            finally {
+//                try {
+//                    clientSocket.close();
+//                    System.out.println("Closed client socket.");
+//                    System.out.println("Total request received: " + requestCounter);
+//                } catch (IOException e) {
+//                    System.out.println("Error closing client socket: " + e.getMessage());
+//                    System.out.println("Total request received: " + requestCounter);
+//                }
+//            }
         }
     }
 
@@ -193,13 +208,35 @@ public class SocketListener implements Runnable { //A single thread that listens
         return value;
     }
 
+//    private static int decodeInt(byte[] bytes, int offset) {
+//        int value = 0;
+//        for (int i = 0; i < 4; i++) {
+//            value |= (bytes[offset + i] & 0xFF) << (i * 8);
+//        }
+//        return value;
+//    }
+
     private static int decodeInt(byte[] bytes, int offset) {
+        if (bytes == null) {
+            throw new IllegalArgumentException("Byte array is null");
+        }
+        if (offset < 0 || offset + 4 > bytes.length) {
+            throw new IllegalArgumentException("Offset and length must be valid for the given byte array - offset: " + offset + ", array length: " + bytes.length);
+        }
+
         int value = 0;
-        for (int i = 0; i < 4; i++) {
-            value |= (bytes[offset + i] & 0xFF) << (i * 8);
+        try {
+            for (int i = 0; i < 4; i++) {
+                value |= (bytes[offset + i] & 0xFF) << (i * 8);
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            // This should never happen due to the checks above
+            System.err.println("Unexpected ArrayIndexOutOfBoundsException: " + e.getMessage());
+            throw new IllegalArgumentException("Array index out of bound caught, this should not happen with proper offset and length checks.", e);
         }
         return value;
     }
+
 
     private static boolean decodeBoolean(byte[] bytes, int offset) {
         return bytes[offset] != 0;

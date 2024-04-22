@@ -35,7 +35,7 @@ public class AdaptiveCCManager {
 
     public void initialize() throws IOException {
         Thread listenerThread = new Thread(new SocketListener(monitorQueue, partitionQueue, cacheQueue, offloadQueue, tpgQueues));
-        Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 100));
+        Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
         Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue));
         Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
         Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap));
