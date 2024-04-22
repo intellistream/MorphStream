@@ -69,6 +69,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         private final Socket clientSocket;
         private final int instanceID;
         private int rrIndex = 0;
+        private int packetCounter = 0;
 
         public ClientHandler(Socket socket, int instanceID) {
             this.clientSocket = socket;
@@ -114,9 +115,11 @@ public class SocketListener implements Runnable { //A single thread that listens
                             } else {
                                 messageBuffer.add((byte) readByte);
                             }
+                            packetCounter++;
                         } else {
                             // -1 returned from read indicates client has closed the connection properly
                             System.out.println("Client has closed the connection: " + clientSocket.getRemoteSocketAddress());
+                            System.out.println("Total packets received: " + packetCounter);
                             break;
                         }
                     } catch (SocketException se) {
