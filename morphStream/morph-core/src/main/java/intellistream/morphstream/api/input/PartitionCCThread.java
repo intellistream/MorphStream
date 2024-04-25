@@ -24,11 +24,6 @@ public class PartitionCCThread implements Runnable {
         instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
     }
 
-// instanceID(int) -0
-// target = 2 (int) -1
-//tupleID(int) -2
-//Content(int) -3
-
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {

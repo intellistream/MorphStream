@@ -48,9 +48,9 @@ public class OffloadCCThread implements Runnable {
             OutputStream out;
             int saType = saTypeMap.get(offloadData.getSaIndex());
 
-            if (saType == 1) { //Immediate acknowledge write
+            if (saType == 1) {
                 try {
-                    out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+                    out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream(); //Immediate acknowledge write
                     String combined =  4 + ";" + offloadData.getTxnReqId();
                     byte[] byteArray = combined.getBytes();
                     out.write(byteArray);
@@ -59,25 +59,46 @@ public class OffloadCCThread implements Runnable {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                offloadExecutor.submit(() -> offloadUDF(offloadData));
+                offloadExecutor.submit(() -> offloadWrite(offloadData));
 
             } else if (saType == 0 || saType == 2) { //TODO: Consider separating read (from DB) and read-write (execute UDF)?
-                try {
-                    offloadExecutor.submit(() -> offloadUDF(offloadData));
-
-                    out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
-                    String combined =  4 + ";" + offloadData.getTxnReqId();
-                    byte[] byteArray = combined.getBytes();
-                    out.write(byteArray);
-                    out.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                offloadExecutor.submit(() -> offloadRead(offloadData)); //Put read into the same FIFO queue as offloaded writes, waiting for prior writes to finish
             }
         }
     }
 
-    private void offloadUDF(OffloadData offloadData) {
+    private void offloadWrite(OffloadData offloadData) {
+
+        long timeStamp = offloadData.getTimeStamp();
+        long txnReqId = offloadData.getTxnReqId();
+        int tupleID = offloadData.getTupleID();
+        int saIndex = offloadData.getSaIndex();
+
+        try {
+            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
+            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+
+            int readValue = (int) readRecord.getValues().get(1).getDouble();
+            ByteBuffer byteBuffer = ByteBuffer.allocate(1);
+            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            byteBuffer.putInt(readValue);
+            byte[] readBytes = byteBuffer.array();
+            int udfResult = -1;
+
+            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, saIndex, readBytes, 1);
+            udfResult = decodeInt(saResultBytes, 4);
+
+            SchemaRecord tempo_record = new SchemaRecord(readRecord);
+            tempo_record.getValues().get(1).setInt(udfResult);
+            tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void offloadRead(OffloadData offloadData) {
 
         long timeStamp = offloadData.getTimeStamp();
         long txnReqId = offloadData.getTxnReqId();
@@ -102,7 +123,13 @@ public class OffloadCCThread implements Runnable {
             tempo_record.getValues().get(1).setInt(udfResult);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
-        } catch (DatabaseException e) {
+            OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
+            String combined =  4 + ";" + offloadData.getTxnReqId();
+            byte[] byteArray = combined.getBytes();
+            out.write(byteArray);
+            out.flush();
+
+        } catch (DatabaseException | IOException e) {
             throw new RuntimeException(e);
         }
 
