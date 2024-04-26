@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.input;
 
+import intellistream.morphstream.api.input.simVNF.SimVNF;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.IOException;
@@ -13,7 +14,7 @@ public class AdaptiveCCManager {
     private final LinkedBlockingQueue<PartitionData> partitionQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<CacheData> cacheQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<OffloadData> offloadQueue = new LinkedBlockingQueue<>();
-    private static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
+    public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private static final int writeThreadPoolSize = 4; //TODO: Hardcoded
     private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
     private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
@@ -39,6 +40,10 @@ public class AdaptiveCCManager {
         Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue));
         Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
         Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap));
+
+        //TODO: For manager-only testing
+        SimVNF simVNF = new SimVNF();
+        simVNF.startSimVNF();
 
         listenerThread.start();
         monitorThread.start();

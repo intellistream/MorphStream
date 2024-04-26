@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 
 
 public class OffloadCCThread implements Runnable {
-    private final BlockingQueue<OffloadData> operationQueue;
+    private static BlockingQueue<OffloadData> operationQueue;
     private final ExecutorService offloadExecutor;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
@@ -28,11 +28,19 @@ public class OffloadCCThread implements Runnable {
     private final HashMap<Integer, String> saTableNameMap = new HashMap<>();
 
     public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize, HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap) {
-        this.operationQueue = operationQueue;
+        OffloadCCThread.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
         this.saTypeMap.putAll(saTypeMap);
         this.saTableNameMap.putAll(saTableNameMap);
+    }
+
+    public static void submitOffloadReq(OffloadData offloadData) {
+        try {
+            operationQueue.put(offloadData);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

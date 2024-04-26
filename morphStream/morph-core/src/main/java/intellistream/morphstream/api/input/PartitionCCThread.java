@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class PartitionCCThread implements Runnable {
-    private final BlockingQueue<PartitionData> operationQueue;
+    private static BlockingQueue<PartitionData> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
@@ -20,8 +20,16 @@ public class PartitionCCThread implements Runnable {
     //TODO: The key should labels partition start index as optimization
 
     public PartitionCCThread(BlockingQueue<PartitionData> operationQueue) {
-        this.operationQueue = operationQueue;
+        PartitionCCThread.operationQueue = operationQueue;
         instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
+    }
+
+    public static void submitPartitionRequest(PartitionData partitionData) {
+        try {
+            operationQueue.put(partitionData);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

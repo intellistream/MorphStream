@@ -10,12 +10,20 @@ import java.util.concurrent.BlockingQueue;
 import java.nio.ByteBuffer;
 
 public class CacheCCThread implements Runnable {
-    private final BlockingQueue<CacheData> operationQueue;
+    private static BlockingQueue<CacheData> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
 
     public CacheCCThread(BlockingQueue<CacheData> operationQueue) {
-        this.operationQueue = operationQueue;
+        CacheCCThread.operationQueue = operationQueue;
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
+    }
+
+    public static void submitReplicationRequest(CacheData cacheData) {
+        try {
+            operationQueue.put(cacheData);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
