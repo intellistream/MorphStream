@@ -37,19 +37,22 @@ public class VNFSenderThread implements Runnable {
     private int ccStrategy;
     private int stateStartID; //local partition starting tupleID
     private int stateEndID; //local partition ending tupleID
+    private int stateRange; //entire state space
     private int stateDefaultValue = 0;
     private HashMap<Integer, Integer> localStateMap = new HashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = AdaptiveCCManager.tpgQueues;
     private int requestCounter = 0;
     private int numSpouts = 4;
+    private int lineCounter = 0;
 
-    public VNFSenderThread(int instanceID, int ccStrategy, int stateStartID, int stateEndID, String csvFilePath) {
+    public VNFSenderThread(int instanceID, int ccStrategy, int stateStartID, int stateEndID, int stateRange, String csvFilePath) {
         this.instanceID = instanceID;
         this.ccStrategy = ccStrategy;
         this.stateStartID = stateStartID;
         this.stateEndID = stateEndID;
+        this.stateRange = stateRange;
         this.csvFilePath = csvFilePath;
-        for (int i = stateStartID; i <= stateEndID; i++) {
+        for (int i = 0; i <= stateRange; i++) {
             localStateMap.put(i, stateDefaultValue);
         }
     }
@@ -61,17 +64,18 @@ public class VNFSenderThread implements Runnable {
             reader = new BufferedReader(new FileReader(csvFilePath));
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);  // Process the line or do something with it
                 String[] parts = line.split(",");
                 int reqID = Integer.parseInt(parts[0]);
                 int tupleID = Integer.parseInt(parts[1]);
                 int type = Integer.parseInt(parts[2]);
                 VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, System.currentTimeMillis());
 
+                lineCounter++;
+
                 if (ccStrategy == 0) { // Partition
                     if (tupleID >= stateStartID && tupleID <= stateEndID) {
                         vnfFunction(tupleID, type, 0);
-                        SimVNF.vnfReceiverThreadMap.get(instanceID).submitFinishedRequest(request);
+                        VNFThreadManager.getReceiver(instanceID).submitFinishedRequest(request);
 
                     } else {
                         PartitionCCThread.submitPartitionRequest(new PartitionData(tupleID, instanceID, 0));
@@ -80,7 +84,7 @@ public class VNFSenderThread implements Runnable {
                 } else if (ccStrategy == 1) { // Replication
                     if (type == 0) { // read
                         vnfFunction(tupleID, type, 0);
-                        SimVNF.vnfReceiverThreadMap.get(instanceID).submitFinishedRequest(request);
+                        VNFThreadManager.getReceiver(instanceID).submitFinishedRequest(request);
 
                     } else if (type == 1) { // write
                         CacheCCThread.submitReplicationRequest(new CacheData(tupleID, instanceID, 0));
@@ -95,6 +99,7 @@ public class VNFSenderThread implements Runnable {
                 }
 
             }
+            System.out.println("Instance " + instanceID + " processed " + lineCounter + " requests.");
         } catch (IOException e) {
             System.err.println("Error reading from file: " + e.getMessage());
         } finally {
@@ -109,16 +114,21 @@ public class VNFSenderThread implements Runnable {
     }
 
     private int vnfFunction(int tupleID, int type, int value) {
-        if (type == 0) {
-            return localStateMap.get(tupleID);
-        } else if (type == 1) {
-            localStateMap.put(tupleID, value);
-            return 0;
-        } else if (type == 2) {
-            int readValue = localStateMap.get(tupleID);
-            localStateMap.put(tupleID, readValue);
-            return readValue;
-        } else {
+        try {
+            if (type == 0) {
+                return localStateMap.get(tupleID);
+            } else if (type == 1) {
+                localStateMap.put(tupleID, value);
+                return 0;
+            } else if (type == 2) {
+                int readValue = localStateMap.get(tupleID);
+                localStateMap.put(tupleID, readValue);
+                return readValue;
+            } else {
+                return -1;
+            }
+        } catch (Exception e) {
+            System.err.println("Error in VNF function: " + e.getMessage());
             return -1;
         }
     }

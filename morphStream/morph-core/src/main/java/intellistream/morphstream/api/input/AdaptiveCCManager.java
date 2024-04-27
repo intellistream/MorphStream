@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.input;
 
-import intellistream.morphstream.api.input.simVNF.SimVNF;
+import intellistream.morphstream.api.input.simVNF.VNFThreadManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class AdaptiveCCManager {
         Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap));
 
         //TODO: For manager-only testing
-        SimVNF simVNF = new SimVNF();
+        VNFThreadManager simVNF = new VNFThreadManager();
         simVNF.startSimVNF();
 
         listenerThread.start();

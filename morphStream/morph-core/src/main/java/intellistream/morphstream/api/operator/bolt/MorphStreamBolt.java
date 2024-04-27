@@ -1,15 +1,14 @@
 package intellistream.morphstream.api.operator.bolt;
 
 import commonStorage.RequestTemplates;
-import intellistream.morphstream.api.Client;
+import communication.dao.VNFRequest;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.TransactionalVNFEvent;
+import intellistream.morphstream.api.input.simVNF.VNFThreadManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
-import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
@@ -93,15 +92,18 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     protected void Transaction_Post_Process() {
         for (TransactionalVNFEvent event : eventQueue) {
             int instanceID = event.getInstanceID();
-            try {
-                OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
-                String combined =  4 + ";" + event.getTxnRequestID();
-                byte[] byteArray = combined.getBytes();
-                out.write(byteArray);
-                out.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+//            try {
+                VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(), Integer.parseInt(event.getTupleID()), 1, event.getBid()); //TODO: Optimization
+                VNFThreadManager.getReceiver(event.getInstanceID()).submitFinishedRequest(request);
+
+//                OutputStream out = instanceSocketMap.get(instanceID).getOutputStream();
+//                String combined =  4 + ";" + event.getTxnRequestID();
+//                byte[] byteArray = combined.getBytes();
+//                out.write(byteArray);
+//                out.flush();
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
         }
     }
 
