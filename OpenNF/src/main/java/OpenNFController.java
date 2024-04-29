@@ -1,8 +1,6 @@
 import java.util.concurrent.*;
 
 // SFC: input source -> VNF1 -> controllerThread1 -> VNF1 -> VNF2 -> controllerThread2 -> VNF2 -> VNF3 -> controllerThread3 -> VNF3 -> output sink
-// TODO: This is a simulation of OpenNFController's functionality on cross-flow state sharing (paper section 5.2.2),
-//  we also need to reproduce its Move() mechanism in paper section 5.1 in the following weeks. Plan well.
 public class OpenNFController {
     private int vnfNum;
     private int vnfParallelism;

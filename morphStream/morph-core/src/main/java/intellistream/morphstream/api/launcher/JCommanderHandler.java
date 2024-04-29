@@ -241,7 +241,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
     public String dataDirectory = "morphStream/data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 10000;
+    public int totalEvents = 40000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +

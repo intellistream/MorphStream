@@ -9,10 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+
 
 public class FastSLClient extends Client {
     private static final Logger log = LoggerFactory.getLogger(FastSLClient.class);
-    private static final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
 
     /**
      * saData contains:
@@ -27,6 +31,7 @@ public class FastSLClient extends Client {
         CliFrontend vnfClient = new CliFrontend("FastSLClient");
         vnfClient.loadConfigStreaming(args);
 
+        boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
         if (serveRemoteVNF) {
             NativeInterface VNF_JNI = new NativeInterface();
             String[] param = {""};
@@ -79,11 +84,71 @@ public class FastSLClient extends Client {
             vnfClient.start();
 
         } else {
+            // A hardcoded overall-performance measurement latch
+            MorphStreamEnv.get().simVNFLatch = new CountDownLatch(MorphStreamEnv.get().configuration().getInt("vnfInstanceNum"));
+            Thread monitorThread = new Thread(() -> {
+                try {
+                    MorphStreamEnv.get().simVNFLatch.await();
+                    double overallThroughput = MorphStreamEnv.get().adaptiveCCManager().joinVNFInstances();
+                    System.out.println("All VNF instances have completed processing.");
+                    System.out.println("Overall throughput: " + overallThroughput + " events/second");
+                    writeToCSV(MorphStreamEnv.get().adaptiveCCManager().getPattern(), MorphStreamEnv.get().adaptiveCCManager().getCCStrategy(), overallThroughput);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            monitorThread.start();
+
             // Start all 4 CC strategies
             AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
             vnfClient.registerOperator("sim_vnf", 4);
-            adaptiveCCManager.startSimVNF(); //TODO: Hardcoded with initial timeout of 5 seconds to wait for TPG threads to be ready
+            adaptiveCCManager.startVNFInstances(); //TODO: Hardcoded with initial timeout of 5 seconds to wait for TPG threads to be ready
+
             vnfClient.start();
+        }
+    }
+
+
+    public static void writeToCSV(String pattern, String ccStrategy, double throughput) {
+        // Path where the directory and file will be created
+        String baseDirectory = "morphStream/scripts/nfvWorkload/experiments/pre_study";
+        String directoryPath = String.format("%s/pattern_%s", baseDirectory, pattern);
+        String filePath = String.format("%s/strategy_%s.csv", directoryPath, ccStrategy);
+
+        // Ensure directory exists
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return; // Stop further processing if unable to create the directory
+            }
+        }
+
+        // Create a File object to represent the path
+        File file = new File(filePath);
+
+        // Check if the file exists, and delete it if it does
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return; // Stop further processing if unable to delete the file
+            }
+        }
+
+        // Using try-with-resources to handle file closing
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            // Create the line of data to write
+            String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
+
+            // Write the line to the file
+            fileWriter.write(lineToWrite);
+
+            // Feedback to know operation was successful
+            System.out.println("Data written to CSV file successfully.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
         }
     }
 

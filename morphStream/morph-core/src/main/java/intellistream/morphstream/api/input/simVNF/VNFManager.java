@@ -7,7 +7,7 @@ public class VNFManager {
     private int stateStartID = 0;
     private int parallelism;
     private int stateRange;
-    private int requestCounter;
+    private int totalRequests;
     private String patternString = "loneOperative";
 //    private String pattern = "sharedReaders";
 //    private String pattern = "sharedWriters";
@@ -16,9 +16,12 @@ public class VNFManager {
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
     private static HashMap<Integer, VNFReceiverThread> receiverMap = new HashMap<>();
     private static HashMap<Integer, Thread> receiverThreadMap = new HashMap<>();
+    private int totalRequestCounter = 0;
+    private long overallStartTime = Long.MAX_VALUE;
+    private long overallEndTime = Long.MIN_VALUE;
 
-    public VNFManager(int requestCounter, int parallelism, int stateRange, int ccStrategy, int pattern) {
-        this.requestCounter = requestCounter;
+    public VNFManager(int totalRequests, int parallelism, int stateRange, int ccStrategy, int pattern) {
+        this.totalRequests = totalRequests;
         this.parallelism = parallelism;
         this.stateRange = stateRange;
         this.ccStrategy = stateStartID;
@@ -33,7 +36,7 @@ public class VNFManager {
             senderMap.put(i, sender);
             senderThreadMap.put(i, senderThread);
 
-            VNFReceiverThread receiver = new VNFReceiverThread(i, requestCounter/parallelism);
+            VNFReceiverThread receiver = new VNFReceiverThread(i, totalRequests /parallelism);
             Thread receiverThread = new Thread(receiver);
             receiverMap.put(i, receiver);
             receiverThreadMap.put(i, receiverThread);
@@ -46,16 +49,32 @@ public class VNFManager {
     public static HashMap<Integer, VNFSenderThread> getSenderMap() {
         return senderMap;
     }
-
     public static VNFReceiverThread getReceiver(int id) {
         return receiverMap.get(id);
     }
 
-    public void startSimVNF() {
+    public void startVNFInstances() {
         for (int i = 0; i < parallelism; i++) {
             senderThreadMap.get(i).start();
             receiverThreadMap.get(i).start();
         }
+    }
+
+    public double joinVNFInstances() {
+        for (int i = 0; i < parallelism; i++) {
+            try {
+                senderThreadMap.get(i).join();
+                receiverThreadMap.get(i).join();
+                totalRequestCounter += receiverMap.get(i).getActualRequestCount();
+                overallStartTime = Math.min(overallStartTime, receiverMap.get(i).getStartTime());
+                overallEndTime = Math.max(overallEndTime, receiverMap.get(i).getEndTime());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        long overallDuration = overallEndTime - overallStartTime;
+        double overallThroughput = totalRequestCounter / (overallDuration / 1E9);
+        return overallThroughput;
     }
 
     private String patternTranslator(int pattern) {

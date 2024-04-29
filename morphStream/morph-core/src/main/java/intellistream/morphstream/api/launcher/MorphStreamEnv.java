@@ -22,6 +22,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
@@ -37,6 +38,7 @@ public class MorphStreamEnv {
     private ServerSocket stateManagerSocket;
     private final HashMap<Integer, Socket> socketsToInstances = new java.util.HashMap<>();
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
+    public CountDownLatch simVNFLatch;
 
     public MorphStreamEnv() {
         try {
