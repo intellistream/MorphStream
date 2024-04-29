@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.List;
+
 /**
  * The configuration of a job
  */
@@ -16,5 +18,5 @@ import lombok.ToString;
 @NoArgsConstructor
 public class JobConfiguration {
     private String name;
-    private OperatorDescription operatorDescription;
+    private List<OperatorDescription> operatorDescription;
 }

@@ -16,6 +16,33 @@ export class CodeEditorComponent implements AfterViewInit {
   job = '';
   parallelism = 4;
   code = `import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor'`;
+  description =
+    '{\n' +
+    '    "name": "jobName",\n' +
+    '    "operatorDescription": [\n' +
+    '        {\n' +
+    '            "name": "operatorName",\n' +
+    '            "stateAccessDescription": [\n' +
+    '                {\n' +
+    '                    "name": "stateName",\n' +
+    '                    "accessType": "read / write",\n' +
+    '                    "stateObjectDescription": [\n' +
+    '                        {\n' +
+    '                            "name": "stateObjectName",\n' +
+    '                            "accessType": "read / write",\n' +
+    '                            "tableName": "tableName",\n' +
+    '                            "keyName": "keyName",\n' +
+    '                            "valueName": "objectValueName",\n' +
+    '                            "keyIndex": 0\n' +
+    '                        }\n' +
+    '                    ],\n' +
+    '                    "valueName": "valueName"\n' +
+    '                }\n' +
+    '            ]\n' +
+    '        }\n' +
+    '    ]\n' +
+    '}\n';
+
   isSubmittingNewJob = false;
   submitForm: FormGroup<{
     job: FormControl<string>;
