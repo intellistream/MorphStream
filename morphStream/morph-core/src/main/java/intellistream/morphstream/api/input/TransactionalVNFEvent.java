@@ -11,11 +11,13 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     private long txnRequestID; //Unique ID for each txn request, encoded by VNF instance
     private int txnID; //E.g., "txn1", txnID
     private String saID; //E.g., "Deposit" or "Transfer", txnFlag
+    private int saType; // 0: Read, 1: Write, 2: RW
     private boolean isAbort;
     private int instanceID;
 
-    public TransactionalVNFEvent(int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int isAbort) {
+    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int isAbort) {
         super(timestamp);
+        this.saType = saType;
         this.instanceID = instanceID;
         this.txnRequestID = txnRequestID;
         this.tupleID = String.valueOf(tupleID);
@@ -23,13 +25,6 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         this.saID = String.valueOf(saID);
         this.isAbort = (isAbort == 1);
     }
-
-//timeStamp(long) +
-//txnReqId(long) +
-//tupleID (int) +
-//txnIndex(int) +
-//saIndex(int) +
-//isAbort(int);
 
     public TransactionalVNFEvent(long bid) {
         super(bid);
@@ -64,6 +59,12 @@ public class TransactionalVNFEvent extends TransactionalEvent {
 
     public boolean isAbort() {
         return isAbort;
+    }
+    public void setSaType(int saType) {
+        this.saType = saType;
+    }
+    public int getSaType() {
+        return this.saType;
     }
 
     @Override

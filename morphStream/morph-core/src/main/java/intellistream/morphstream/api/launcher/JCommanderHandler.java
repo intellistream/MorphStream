@@ -118,14 +118,16 @@ public class JCommanderHandler {
      * Workload tuning configurations
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
+    public String application = "SimVNF";
+//    public String application = "StreamLedger";
 //    public String application = "SHJ";
 //    public String application = "GrepSum";
 //    public String application = "WindowedGrepSum";
 //    public String application = "OnlineBiding";
 //    public String application = "TollProcessing";
     @Parameter(names = {"--operatorIDs"}, description = "Unique identifiers for operators")
-    public String operatorIDs = "sl";
+    public String operatorIDs = "sim_vnf";
+//    public String operatorIDs = "sl";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
@@ -211,15 +213,15 @@ public class JCommanderHandler {
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "accounts,bookEntries";
+    public String tableNames = "testTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "4500,4500"; // 10000,10000
+    public String numberItemsForTables = "10000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
-    public String keyDataTypesForTables = "string,string";
+    public String keyDataTypesForTables = "string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
-    public String valueDataTypesForTables = "double,double";
+    public String valueDataTypesForTables = "int";
     @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
-    public String valueNamesForTables = "balance,balance";
+    public String valueNamesForTables = "vnfValue";
 
 
 
@@ -274,7 +276,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
     public String operatorThreadNum = "4";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 50;//checkpoint per thread.
+    public int checkpoint_interval = 100;//checkpoint per thread.
 
 
 
@@ -305,9 +307,28 @@ public class JCommanderHandler {
      * Client configurations
      */
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
-//    public String clientClassName = "cli.SLClient";
     public String clientClassName = "cli.FastSLClient";
 
+
+    /**
+     * TransNFV Specific configurations
+     */
+    @Parameter(names = {"--serveRemoteVNF"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
+    public boolean serveRemoteVNF = false;
+    @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
+    public int vnfInstanceNum = 4;
+    @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
+    public int offloadCCThreadNum = 4;
+    @Parameter(names = {"--rRatioSharedReaders"}, description = "Read ratio for shared readers pattern")
+    public int rRatioSharedReaders = 80;
+    @Parameter(names = {"--wRatioSharedWriters"}, description = "Write ratio for shared writers pattern")
+    public int wRatioSharedWriters = 80;
+    @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
+    public int rwRatioMutualInteractive = 80;
+    @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy")
+    public int ccStrategy = 0;
+    @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
+    public int workloadPattern = 0;
 
 
     public JCommanderHandler() {}
@@ -504,6 +525,16 @@ public class JCommanderHandler {
         } else {
             config.put("cleanUp",true);
         }
+
+        /* TransNFV workload configurations */
+        config.put("serveRemoteVNF", serveRemoteVNF);
+        config.put("vnfInstanceNum", vnfInstanceNum);
+        config.put("offloadCCThreadNum", offloadCCThreadNum);
+        config.put("rRatioSharedReaders", rRatioSharedReaders);
+        config.put("wRatioSharedWriters", wRatioSharedWriters);
+        config.put("rwRatioMutualInteractive", rwRatioMutualInteractive);
+        config.put("ccStrategy", ccStrategy);
+        config.put("workloadPattern", workloadPattern);
 
         configSystem(config);
     }

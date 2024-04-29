@@ -159,9 +159,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     @Override
     public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
         String accessType = stateAccess[1];
-        if (accessType == "READ") {
+        if (accessType == "READ" || accessType.equals("0")) {
             return Asy_ReadRecord(stateAccess, txnContext);
-        } else if (accessType == "WRITE") {
+        } else if (accessType == "WRITE" || accessType.equals("1") || accessType.equals("2")) {
             return Asy_WriteRecord(stateAccess, txnContext);
         } else if (accessType == "WINDOW_READ") {
             return Asy_WindowReadRecord(stateAccess, txnContext);
@@ -180,8 +180,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public boolean Asy_ReadRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
         // saData: saID, saType, tableName, tupleID
-        String saID = saData[0];
-        String saType = saData[1];
         String tableName = saData[2];
         String tupleID = saData[3];
 
@@ -194,6 +192,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (tupleRecord != null) {
 
             //TODO: Optimize data passing, no need to pass saData again.
+            condition_records.add(tupleRecord);
 
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, tableName,
@@ -211,8 +210,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public boolean Asy_WriteRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
         // saData: saID, saType, tableName, tupleID
-        String saID = saData[0];
-        String saType = saData[1];
         String tableName = saData[2];
         String tupleID = saData[3];
 
@@ -225,6 +222,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (tupleRecord != null) {
 
             //TODO: Optimize data passing, no need to pass saData again.
+            condition_records.add(tupleRecord);
 
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, tableName,

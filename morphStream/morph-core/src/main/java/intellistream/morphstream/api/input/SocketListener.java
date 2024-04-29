@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class SocketListener implements Runnable { //A single thread that listens for incoming messages from other VMs through a single socket
@@ -23,12 +22,12 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static LinkedBlockingQueue<CacheData> cacheQueue;
     private static LinkedBlockingQueue<OffloadData> offloadQueue;
     private static ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues; //round-robin input queues for each executor (combo/bolt)
-    private static final int spoutNum = 4; //TODO: Hardcoded
+    private static final int tpgThreadNum = MorphStreamEnv.get().configuration().getInt("tthread");
     private static final byte fullSeparator = 59;
     private static final byte msgSeparator = 10;
     private static final int PORT = 8080;
     private final ServerSocket serverSocket = MorphStreamEnv.get().stateManagerSocket();
-    private static final int THREAD_POOL_SIZE = 4; //TODO: Hardcoded
+    private static final int socketHandlerThreadNum = 4; //TODO: Hardcoded
 
 
     public SocketListener(LinkedBlockingQueue<PatternData> monitorQueue,
@@ -48,7 +47,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         while (!Thread.currentThread().isInterrupted()) {
 
             System.out.println("Server is listening on port " + PORT);
-            ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+            ExecutorService executorService = Executors.newFixedThreadPool(socketHandlerThreadNum);
 
             try {
                 while (true) {
@@ -87,9 +86,7 @@ public class SocketListener implements Runnable { //A single thread that listens
                 while (true) {  // Changed from while ((readByte = input.read()) != -1)
                     try {
                         if ((readByte = input.read()) != -1) {
-                            // Normal reading process
                             if (readByte == msgSeparator) {
-                                // Convert the messageBuffer to byte[]
                                 byte[] message = new byte[messageBuffer.size()];
                                 for (int i = 0; i < message.length; i++) {
                                     message[i] = messageBuffer.get(i);
@@ -113,7 +110,7 @@ public class SocketListener implements Runnable { //A single thread that listens
                                         offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
                                     } else if (target == 4) {
                                         tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
-                                        rrIndex = (rrIndex + 1) % spoutNum;
+                                        rrIndex = (rrIndex + 1) % tpgThreadNum;
                                     }
                                     // Clear the buffer for the next message
                                     messageBuffer.clear();
@@ -147,16 +144,16 @@ public class SocketListener implements Runnable { //A single thread that listens
                 e.printStackTrace();
                 System.out.println("Total request received: " + requestCounter);
             }
-//            finally {
-//                try {
-//                    clientSocket.close();
-//                    System.out.println("Closed client socket.");
-//                    System.out.println("Total request received: " + requestCounter);
-//                } catch (IOException e) {
-//                    System.out.println("Error closing client socket: " + e.getMessage());
-//                    System.out.println("Total request received: " + requestCounter);
-//                }
-//            }
+            finally {
+                try {
+                    clientSocket.close();
+                    System.out.println("Closed client socket.");
+                    System.out.println("Total request received: " + requestCounter);
+                } catch (IOException e) {
+                    System.out.println("Error closing client socket: " + e.getMessage());
+                    System.out.println("Total request received: " + requestCounter);
+                }
+            }
         }
     }
 
@@ -170,7 +167,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static PartitionData byteToPartitionData(int instanceID, List<byte[]> splitByteArrays) {
         int tupleID = decodeInt(splitByteArrays.get(1), 0);
         int value = decodeInt(splitByteArrays.get(2), 0);
-        return new PartitionData(instanceID, tupleID, value);
+        return new PartitionData(-1,-1,instanceID, tupleID, value);
     }
 
     private static CacheData byteToCacheData(int instanceID, List<byte[]> splitByteArrays) {
@@ -186,7 +183,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         int txnIndex = decodeInt(splitByteArrays.get(4), 0);
         int saIndex = decodeInt(splitByteArrays.get(5), 0);
         int isAbort = decodeInt(splitByteArrays.get(6), 0);
-        return new OffloadData(instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort);
+        return new OffloadData(instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort, -1);
     }
 
     private static TransactionalEvent byteToTPGData(int instanceID, List<byte[]> splitByteArrays) {
@@ -196,7 +193,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         int txnIndex = decodeInt(splitByteArrays.get(4), 0);
         int saIndex = decodeInt(splitByteArrays.get(5), 0);
         int isAbort = decodeInt(splitByteArrays.get(6), 0);
-        return new TransactionalVNFEvent(instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort);
+        return new TransactionalVNFEvent(-1, instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort);
     }
 
 

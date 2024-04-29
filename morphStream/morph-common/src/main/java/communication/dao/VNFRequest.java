@@ -1,13 +1,12 @@
 package communication.dao;
 
 public class VNFRequest {
-//    (reqID, instanceID, tupleID, type)
     private int reqID;
     private int instanceID;
     private int tupleID;
-    private int type;
-    private long createTime;
-    private long finishTime;
+    private int type; // 0: read, 1: write, 2: read-write
+    private long createTime; // Time when the request is created by the instance
+    private long finishTime; // Time when the finished request is received by the instance
 
     public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime) {
         this.reqID = reqID;

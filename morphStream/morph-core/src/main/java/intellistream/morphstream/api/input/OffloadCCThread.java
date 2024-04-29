@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.simVNF.VNFThreadManager;
+import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class OffloadCCThread implements Runnable {
@@ -28,9 +29,14 @@ public class OffloadCCThread implements Runnable {
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, Integer> saTypeMap = new HashMap<>();
     private final HashMap<Integer, String> saTableNameMap = new HashMap<>();
+    private AtomicInteger requestCount = new AtomicInteger(0);
+    private final int expRequestCount;
+    private final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
 
-    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize, HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap) {
+    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize,
+                           HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap, int expRequestCount) {
         OffloadCCThread.operationQueue = operationQueue;
+        this.expRequestCount = expRequestCount;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
         this.saTypeMap.putAll(saTypeMap);
@@ -47,39 +53,60 @@ public class OffloadCCThread implements Runnable {
 
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            OffloadData offloadData;
-            try {
-                offloadData = operationQueue.take();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+
+        if (serveRemoteVNF) {
+            OutputStream out;
+            while (!Thread.currentThread().isInterrupted()) {
+                OffloadData offloadData;
+                try {
+                    offloadData = operationQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                int saType = saTypeMap.get(offloadData.getSaIndex());
+//                int saType = offloadData.getSaType();
+
+                if (saType == 1) {
+                    try {
+                        out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream(); //Immediate acknowledge write
+                        String combined =  4 + ";" + offloadData.getTxnReqId();
+                        byte[] byteArray = combined.getBytes();
+                        out.write(byteArray);
+                        out.flush();
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    offloadExecutor.submit(() -> offloadWrite(offloadData));
+
+                } else if (saType == 0 || saType == 2) {
+                    offloadExecutor.submit(() -> offloadRead(offloadData));
+                }
             }
 
-            OutputStream out;
-            int saType = saTypeMap.get(offloadData.getSaIndex());
+        } else {
+            while (!Thread.currentThread().isInterrupted()) {
+                OffloadData offloadData;
+                try {
+                    offloadData = operationQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                int saType = offloadData.getSaType();
 
-            if (saType == 1) {
-//                try {
-                    VNFRequest request = new VNFRequest((int) offloadData.getTxnReqId(), offloadData.getInstanceID(), offloadData.getTupleID(), 1, offloadData.getTimeStamp()); //TODO: Optimization
-                    VNFThreadManager.getReceiver(offloadData.getInstanceID()).submitFinishedRequest(request);
+                if (saType == 1) {
+                    VNFRequest request = new VNFRequest((int) offloadData.getTxnReqId(), offloadData.getInstanceID(),
+                            offloadData.getTupleID(), 1, offloadData.getTimeStamp());
+                    VNFManager.getReceiver(offloadData.getInstanceID()).submitFinishedRequest(request);
+                    offloadExecutor.submit(() -> simOffloadWrite(offloadData));
 
-//                    out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream(); //Immediate acknowledge write
-//                    String combined =  4 + ";" + offloadData.getTxnReqId();
-//                    byte[] byteArray = combined.getBytes();
-//                    out.write(byteArray);
-//                    out.flush();
-
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//                offloadExecutor.submit(() -> offloadWrite(offloadData));
-                offloadExecutor.submit(() -> simOffloadWrite(offloadData));
-
-            } else if (saType == 0 || saType == 2) { //TODO: Consider separating read (from DB) and read-write (execute UDF)?
-//                offloadExecutor.submit(() -> offloadRead(offloadData));
-                offloadExecutor.submit(() -> simOffloadRead(offloadData));
+                } else if (saType == 0 || saType == 2) {
+                    offloadExecutor.submit(() -> simOffloadRead(offloadData));
+                }
             }
         }
+
+
     }
 
     private void offloadWrite(OffloadData offloadData) {
@@ -154,13 +181,12 @@ public class OffloadCCThread implements Runnable {
 
         long timeStamp = offloadData.getTimeStamp();
         int tupleID = offloadData.getTupleID();
-        int saIndex = offloadData.getSaIndex();
 
         try {
-            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
+            TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
 
-            int readValue = (int) readRecord.getValues().get(1).getDouble();
+            int readValue = readRecord.getValues().get(1).getInt();
             int udfResult = simUDF(readValue);
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
@@ -170,6 +196,11 @@ public class OffloadCCThread implements Runnable {
         } catch (DatabaseException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+        if (requestCount.incrementAndGet() == expRequestCount) {
+            System.out.println("Offload CC completed all " + expRequestCount + " requests.");
+        }
+
+//        System.out.println("Offload write completed.");
 
     }
 
@@ -178,14 +209,13 @@ public class OffloadCCThread implements Runnable {
         long timeStamp = offloadData.getTimeStamp();
         long txnReqId = offloadData.getTxnReqId();
         int tupleID = offloadData.getTupleID();
-        int saIndex = offloadData.getSaIndex();
         int instanceID = offloadData.getInstanceID();
 
         try {
-            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
+            TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
 
-            int readValue = (int) readRecord.getValues().get(1).getDouble();
+            int readValue = readRecord.getValues().get(1).getInt();
             int udfResult = simUDF(readValue);
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
@@ -193,11 +223,17 @@ public class OffloadCCThread implements Runnable {
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
             VNFRequest request = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp); //TODO: Optimization
-            VNFThreadManager.getReceiver(instanceID).submitFinishedRequest(request);
+            VNFManager.getReceiver(instanceID).submitFinishedRequest(request);
 
         } catch (DatabaseException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+        if (requestCount.incrementAndGet() == expRequestCount) {
+            System.out.println("Offload CC completed all " + expRequestCount + " requests.");
+        }
+
+//        System.out.println("Offload read completed.");
 
     }
 

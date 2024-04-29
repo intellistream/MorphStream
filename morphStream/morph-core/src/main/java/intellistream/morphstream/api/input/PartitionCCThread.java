@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.input;
 
+import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.IOException;
@@ -16,11 +18,13 @@ public class PartitionCCThread implements Runnable {
     private final Map<Integer, Socket> instanceSocketMap;
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
-    private static HashMap<Integer, Integer> partitionOwnership = MorphStreamEnv.get().stateInstanceMap(); //Maps each state partition to its current owner VNF instance.
+    private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance.
+    private static final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
     //TODO: The key should labels partition start index as optimization
 
-    public PartitionCCThread(BlockingQueue<PartitionData> operationQueue) {
+    public PartitionCCThread(BlockingQueue<PartitionData> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
         PartitionCCThread.operationQueue = operationQueue;
+        PartitionCCThread.partitionOwnership = partitionOwnership;
         instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
     }
 
@@ -34,24 +38,56 @@ public class PartitionCCThread implements Runnable {
 
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            PartitionData partitionData;
-            try {
-                partitionData = operationQueue.take();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
-//            int targetInstanceID = partitionOwnership.get(partitionData.getTupleID() % partitionOwnership.size()); TODO: Consider this
 
-            try {
-                OutputStream out = instanceSocketMap.get(targetInstanceID).getOutputStream(); //TODO: Current workloads do not require cross-partition state access
-                String combined =  4 + ";" + partitionData.getValue(); //__txn_finished
-                byte[] byteArray = combined.getBytes();
-                out.write(byteArray);
-                out.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        if (serveRemoteVNF) {
+            while (!Thread.currentThread().isInterrupted()) {
+                PartitionData partitionData;
+                try {
+                    partitionData = operationQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
+
+                try {
+                    //TODO: Add LOCK-based cross-partition state access here
+
+                } catch (NullPointerException e) {
+                    throw new RuntimeException(e);
+                }
+
+                try {
+                    OutputStream out = instanceSocketMap.get(targetInstanceID).getOutputStream(); //TODO: Current workloads do not require cross-partition state access
+                    String combined =  4 + ";" + partitionData.getValue(); //__txn_finished
+                    byte[] byteArray = combined.getBytes();
+                    out.write(byteArray);
+                    out.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        } else {
+            while (!Thread.currentThread().isInterrupted()) {
+                PartitionData partitionData;
+                try {
+                    partitionData = operationQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
+
+                // Simulating cross-partition state access
+                try {
+                    int targetPartitionState = VNFManager.getSender(targetInstanceID).readLocalState(partitionData.getTupleID());
+                    VNFManager.getSender(partitionData.getInstanceID()).writeLocalState(partitionData.getTupleID(), targetPartitionState);
+                    //TODO: Add locking here
+
+                } catch (NullPointerException e) {
+                    throw new RuntimeException(e);
+                }
+                VNFRequest request = new VNFRequest((int) partitionData.getTxnReqId(), partitionData.getInstanceID(), partitionData.getTupleID(), 1, partitionData.getTimeStamp()); //TODO: Optimization
+                VNFManager.getReceiver(partitionData.getInstanceID()).submitFinishedRequest(request);
             }
         }
     }

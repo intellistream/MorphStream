@@ -29,9 +29,13 @@ public class VNFReceiverThread implements Runnable {
 
     private int instanceID;
     private final BlockingQueue<VNFRequest> requestQueue;
+    private int expRequestCount;
+    private int receivedRequestCount = 0;
+    private long endTime;
 
-    public VNFReceiverThread(int instanceID) {
+    public VNFReceiverThread(int instanceID, int requestCount) {
         this.instanceID = instanceID;
+        this.expRequestCount = requestCount;
         this.requestQueue = new LinkedBlockingQueue<>();
     }
 
@@ -45,14 +49,28 @@ public class VNFReceiverThread implements Runnable {
 
     @Override
     public void run() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("VNF receiver instance " + instanceID + " started.");
         while (!Thread.currentThread().isInterrupted()) {
             VNFRequest request;
             try {
                 request = requestQueue.take();
                 request.setFinishTime(System.currentTimeMillis());
+                receivedRequestCount++;
                 //TODO: Store processed request into a file, or use performance calculate tool to compute overall throughput and latency
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            }
+            if (receivedRequestCount == expRequestCount) {
+                endTime = System.nanoTime();
+                long startTime = VNFManager.getSenderMap().get(instanceID).getStartTime();
+                long durationNano = endTime - startTime;
+                System.out.println("VNF receiver instance " + instanceID + " processed all " + expRequestCount + " requests with throughput " + (10000 / (durationNano / 1E9)) + " events/second");
+                break;
             }
         }
     }

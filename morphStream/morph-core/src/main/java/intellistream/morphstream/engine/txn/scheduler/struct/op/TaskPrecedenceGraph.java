@@ -77,7 +77,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         for (Vector<Operation> ops : this.NonOperations.values()) {
             ops.clear();
         }
-        if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
+//        if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
     public void initTPG(int offset) {
@@ -200,7 +200,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             }
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             ((OPSContext) context).maxLevel = maxLevel; // scatter
-            if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
+//            if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
         } else if (context instanceof OPNSContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {

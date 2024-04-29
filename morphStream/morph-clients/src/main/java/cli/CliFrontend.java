@@ -89,7 +89,7 @@ public class CliFrontend {
 
     public void prepareStreaming() {
         env.DatabaseInitialize();
-//        env.inputSource().initializeStreaming(MorphStreamEnv.get().configuration().getInt("spoutNum"));
+//        env.inputSource().initializeStreaming(MorphStreamEnv.get().configuration().getInt("tthread"));
     }
 
     public void start() throws InterruptedException {
