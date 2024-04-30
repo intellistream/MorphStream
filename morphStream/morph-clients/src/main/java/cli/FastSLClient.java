@@ -112,8 +112,8 @@ public class FastSLClient extends Client {
     public static void writeToCSV(String pattern, String ccStrategy, double throughput) {
         // Path where the directory and file will be created
         String baseDirectory = "morphStream/scripts/nfvWorkload/experiments/pre_study";
-        String directoryPath = String.format("%s/pattern_%s", baseDirectory, pattern);
-        String filePath = String.format("%s/strategy_%s.csv", directoryPath, ccStrategy);
+        String directoryPath = String.format("%s/%s", baseDirectory, pattern);
+        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
 
         // Ensure directory exists
         File dir = new File(directoryPath);
