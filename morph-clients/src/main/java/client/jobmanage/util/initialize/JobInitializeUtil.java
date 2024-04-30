@@ -3,10 +3,7 @@ package client.jobmanage.util.initialize;
 import client.jobmanage.util.Util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.Job;
-import dao.config.JobConfiguration;
-import dao.config.StateAccessDescription;
-import dao.config.StateObjectDescription;
-import dao.config.TransactionDescription;
+import dao.config.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
@@ -74,14 +71,8 @@ public class JobInitializeUtil {
         return true;
     }
 
-    /**
-     * Concatenate the code
-     *
-     * @param code       code
-     * @param configFile config file
-     * @return concatenated code
-     */
-    public static String preprocessedCode(String code, MultipartFile configFile) {
+    public static String preprocessedCode(String code, String description) {
+        // convert string description to a multipart file
         StringBuilder startJobCodeBuilder = new StringBuilder();
 
         // add necessary imports if not exists
@@ -118,7 +109,7 @@ public class JobInitializeUtil {
         ObjectMapper objectMapper = new ObjectMapper();
         JobConfiguration jobConfiguration;
         try {
-            jobConfiguration = objectMapper.readValue(configFile.getInputStream(), JobConfiguration.class);
+            jobConfiguration = objectMapper.readValue(description, JobConfiguration.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -130,32 +121,37 @@ public class JobInitializeUtil {
         startJobCodeBuilder.append("        job.prepare();\n");
         startJobCodeBuilder.append("        HashMap<String, TxnDescription> txnDescriptions = new HashMap<>();\n");
 
-        for (TransactionDescription txnDesc : jobConfiguration.getOperatorDescription().getTransactionDescription()) {
-            startJobCodeBuilder.append("        TxnDescription ").append(txnDesc.getName()).append("Descriptor = new TxnDescription();\n");
-            for (StateAccessDescription stateAccessDescription : txnDesc.getStateAccessDescription()) {
-                startJobCodeBuilder.append("        StateAccessDescription ").append(stateAccessDescription.getName())
-                        .append(" = new StateAccessDescription(\"").append(stateAccessDescription.getName())
-                        .append("\", AccessType.").append(stateAccessDescription.getAccessType().toUpperCase()).append(");\n");
-                for (StateObjectDescription stateObjectDescription : stateAccessDescription.getStateObjectDescription()) {
-                    startJobCodeBuilder.append("        ").append(stateAccessDescription.getName()).append(".addStateObjectDescription(\"")
-                            .append(stateObjectDescription.getName()).append("\", ").append("AccessType.")
-                            .append(stateObjectDescription.getAccessType().toUpperCase()).append(", ")
-                            .append("\"").append(stateObjectDescription.getTableName()).append("\", ")
-                            .append("\"").append(stateObjectDescription.getKeyName()).append("\", ")
-                            .append("\"").append(stateObjectDescription.getValueName()).append("\", ")
-                            .append(stateObjectDescription.getKeyIndex()).append(");\n");
+        for (OperatorDescription opDesc: jobConfiguration.getOperatorDescription()) {
+            startJobCodeBuilder.append("        txnDescriptions.clear();\n");
+            for (TransactionDescription txnDesc: opDesc.getTransactionDescription()) {
+                startJobCodeBuilder.append("        TxnDescription ").append(txnDesc.getName()).append("Descriptor = new TxnDescription();\n");
+                for (StateAccessDescription stateAccessDescription : txnDesc.getStateAccessDescription()) {
+                    startJobCodeBuilder.append("        StateAccessDescription ").append(stateAccessDescription.getName())
+                            .append(" = new StateAccessDescription(\"").append(stateAccessDescription.getName())
+                            .append("\", AccessType.").append(stateAccessDescription.getAccessType().toUpperCase()).append(");\n");
+                    for (StateObjectDescription stateObjectDescription : stateAccessDescription.getStateObjectDescription()) {
+                        startJobCodeBuilder.append("        ").append(stateAccessDescription.getName()).append(".addStateObjectDescription(\"")
+                                .append(stateObjectDescription.getName()).append("\", ").append("AccessType.")
+                                .append(stateObjectDescription.getAccessType().toUpperCase()).append(", ")
+                                .append("\"").append(stateObjectDescription.getTableName()).append("\", ")
+                                .append("\"").append(stateObjectDescription.getKeyName()).append("\", ")
+                                .append("\"").append(stateObjectDescription.getValueName()).append("\", ")
+                                .append(stateObjectDescription.getKeyIndex()).append(");\n");
+                    }
+                    startJobCodeBuilder.append("        ").append(stateAccessDescription.getName()).append(".addValueName(\"")
+                            .append(stateAccessDescription.getValueName()).append("\");\n");
+                    startJobCodeBuilder.append("        ").append(txnDesc.getName()).append("Descriptor.addStateAccess(\"")
+                            .append(stateAccessDescription.getName()).append("\", ").append(stateAccessDescription.getName()).append(");\n");
                 }
-                startJobCodeBuilder.append("        ").append(stateAccessDescription.getName()).append(".addValueName(\"")
-                        .append(stateAccessDescription.getValueName()).append("\");\n");
-                startJobCodeBuilder.append("        ").append(txnDesc.getName()).append("Descriptor.addStateAccess(\"")
-                        .append(stateAccessDescription.getName()).append("\", ").append(stateAccessDescription.getName()).append(");\n");
+                startJobCodeBuilder.append("        txnDescriptions.put(\"").append(txnDesc.getName()).append("\", ")
+                        .append(txnDesc.getName()).append("Descriptor);\n\n");
             }
-            startJobCodeBuilder.append("        txnDescriptions.put(\"").append(txnDesc.getName()).append("\", ")
-                    .append(txnDesc.getName()).append("Descriptor);\n\n");
+            startJobCodeBuilder.append("        job,setSpoutCombo(opDesc.getName(), txnDescriptions, 4);\n");
+            startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{opDesc.getName()});\n");
         }
 
-        startJobCodeBuilder.append("        job.setSpoutCombo(jobConfiguration.getOperatorDescription().getName(), txnDescriptions, 4);\n");
-        startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{jobConfiguration.getOperatorDescription().getName()});\n");
+//        startJobCodeBuilder.append("        job.setSpoutCombo(jobConfiguration.getOperatorDescription().getName(), txnDescriptions, 4);\n");
+//        startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{jobConfiguration.getOperatorDescription().getName()});\n");
         startJobCodeBuilder.append("        try {\n");
         startJobCodeBuilder.append("            job.run();\n");
         startJobCodeBuilder.append("        } catch (InterruptedException ex) {\n");
@@ -170,6 +166,23 @@ public class JobInitializeUtil {
         startJobCodeBuilder.append("}");
 
         return startJobCodeBuilder.toString();
+    }
+
+    /**
+     * Concatenate the code
+     *
+     * @param code       code
+     * @param configFile config file
+     * @return concatenated code
+     */
+    public static String preprocessedCode(String code, MultipartFile configFile) {
+        String description = "";
+        try {
+            description = new String(configFile.getBytes());
+        } catch (IOException e) {
+            log.error("Error in reading config file: " + e.getMessage());
+        }
+        return preprocessedCode(code, description);
     }
 
     /**

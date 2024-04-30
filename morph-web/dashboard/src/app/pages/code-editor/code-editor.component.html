@@ -50,7 +50,7 @@
         <nz-col nzSpan="24">
           <nz-form-item>
             <nz-form-label nzSpan="6" nzRequired>name</nz-form-label>
-            <nz-form-control nzSpan="18" nzErrorTip="input the job name!">
+            <nz-form-control nzSpan="18" nzErrorTip="the job name is required!">
               <input nz-input [(ngModel)]="job" placeholder="Job" formControlName="job" style="width: 100%">
             </nz-form-control>
           </nz-form-item>
@@ -74,18 +74,18 @@
               <ng-template #unCheckedTemplate><span nz-icon nzType="close"></span></ng-template>
             </nz-form-control>
           </nz-form-item>
-          <nz-form-item>
-            <nz-form-label nzSpan="6" nzRequired>descriptions</nz-form-label>
-            <nz-form-control nzSpan="18">
-              <nz-upload nzListType="text" [nzCustomRequest]="dummyRequestHandler"
-                         nzShowButton="true" nzLimit="1" [(nzFileList)]="fileList"
-                         nzAccept=".json" (nzChange)="handleFileChange($event)">
-                <button nz-button>
-                  <i nz-icon nzType="upload"></i><span>Upload</span>
-                </button>
-              </nz-upload>
-            </nz-form-control>
-          </nz-form-item>
+<!--          <nz-form-item>-->
+<!--            <nz-form-label nzSpan="6" nzRequired>descriptions</nz-form-label>-->
+<!--            <nz-form-control nzSpan="18">-->
+<!--              <nz-upload nzListType="text" [nzCustomRequest]="dummyRequestHandler"-->
+<!--                         nzShowButton="true" nzLimit="1" [(nzFileList)]="fileList"-->
+<!--                         nzAccept=".json" (nzChange)="handleFileChange($event)">-->
+<!--                <button nz-button>-->
+<!--                  <i nz-icon nzType="upload"></i><span>Upload</span>-->
+<!--                </button>-->
+<!--              </nz-upload>-->
+<!--            </nz-form-control>-->
+<!--          </nz-form-item>-->
         </nz-col>
       </nz-row>
     </form>

@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 import client.jobmanage.util.initialize.JobInitializeUtil;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.IOException;
 
 @Service
 public class SignalService {
@@ -47,6 +44,27 @@ public class SignalService {
         return true;
     }
 
+    public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code, String description) {
+        boolean initialized = JobInitializeUtil.initialize(jobName, parallelism); // initialize the job
+        if (!initialized) {
+            return false;
+        }
+
+        code = JobInitializeUtil.preprocessedCode(code, description);
+        JobInitializeUtil.saveCode(code, String.valueOf(JobSeekUtil.getJobIdByName(jobName)), jobName);
+
+        if (startNow) {
+            try {
+                JobCallingUtil.compileJobByName(jobName);
+                JobCallingUtil.startJobByName(jobName);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Submit a job
      * @param jobName job name
@@ -57,34 +75,18 @@ public class SignalService {
      */
     public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code, MultipartFile configFile) {
         // save the config file
-        try {
-            LOG.info("File uploaded: " + configFile.getOriginalFilename());
-            String fileName = configFile.getOriginalFilename();
-            Path path = Paths.get("./" + fileName); // TODO: Change the path to the correct location
-            Files.copy(configFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            LOG.error("Failed to upload the file", e);
-        }
-        // TODO: analyze code and generate job
+        LOG.info("File uploaded: " + configFile.getOriginalFilename());
 
         boolean initialized = JobInitializeUtil.initialize(jobName, parallelism); // initialize the job
         if (!initialized) {
             return false;
         }
 
-        // save the code after job is initialized
-        code = JobInitializeUtil.preprocessedCode(code, configFile);
-        JobInitializeUtil.saveCode(code, String.valueOf(JobSeekUtil.getJobIdByName(jobName)), jobName);
-
-        if (startNow) {
-            try {
-//                SLClient.startJob(new String[]{}); // start the job
-                JobCallingUtil.compileJobByName(jobName);
-                JobCallingUtil.startJobByName(jobName);
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+        try {
+            String description = new String(configFile.getBytes());
+            onSubmitSignal(jobName, parallelism, startNow, code, description);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read the config file");
         }
         return true;
     }

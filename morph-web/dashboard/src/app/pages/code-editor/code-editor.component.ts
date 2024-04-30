@@ -1,7 +1,7 @@
 import {AfterViewInit, Component} from '@angular/core';
 
 import 'codemirror/mode/clike/clike';
-import {AbstractControl, FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
+import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
 import {CodeEditorService} from "./code-editor.service";
 import {NzMessageService} from "ng-zorro-antd/message";
 import {NzUploadFile} from "ng-zorro-antd/upload";
@@ -48,7 +48,7 @@ export class CodeEditorComponent implements AfterViewInit {
     job: FormControl<string>;
     parallelism: FormControl<number>;
     startNow: FormControl<boolean>;
-    configFile: FormControl;
+    // configFile: FormControl;
   }>;
   fileList: NzUploadFile[] = [];
 
@@ -60,13 +60,17 @@ export class CodeEditorComponent implements AfterViewInit {
       job: ['', [Validators.required]],
       parallelism: [4, [Validators.required]],
       startNow: [false, [Validators.required]],
-      configFile: [null, [Validators.required, (control: AbstractControl): { [key: string]: any } | null => {
-        return control.value instanceof File ? null : {invalid: true};
-      }]]
+      // configFile: [null, [Validators.required, (control: AbstractControl): { [key: string]: any } | null => {
+      //   return control.value instanceof File ? null : {invalid: true};
+      // }]]
     });
   }
 
   submitNewJob() {
+    const description = JSON.parse(this.description);
+    if (description.name !== undefined && description.name !== "") {
+      this.job = description.name;
+    }
     this.isSubmittingNewJob = true;
   }
 
@@ -76,7 +80,11 @@ export class CodeEditorComponent implements AfterViewInit {
 
   confirmSubmit() {
     if (this.submitForm.valid) {
-      this.codeEditorService.submitNewJob(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code, this.fileList[0]).subscribe(res => {
+      // this.codeEditorService.submitNewJobByConfigFile(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code, this.fileList[0]).subscribe(res => {
+      //   this.message.success(`Job ${this.submitForm.value.job} is submitted successfully`);
+      //   this.isSubmittingNewJob = false;
+      // });
+      this.codeEditorService.submitNewJobByDescription(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code, this.description).subscribe(res => {
         this.message.success(`Job ${this.submitForm.value.job} is submitted successfully`);
         this.isSubmittingNewJob = false;
       });

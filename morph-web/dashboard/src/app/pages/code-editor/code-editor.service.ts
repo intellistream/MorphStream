@@ -10,7 +10,7 @@ export class CodeEditorService {
   constructor(private http: HttpClient) {
   }
 
-  public submitNewJob(job: string, parallelism: number, startNow: boolean, code: string, configFile: NzUploadFile): Observable<any> {
+  public submitNewJobByConfigFile(job: string, parallelism: number, startNow: boolean, code: string, configFile: NzUploadFile): Observable<any> {
     const formData = new FormData();
     formData.append('jobName', job);
     formData.append('parallelism', parallelism.toString());
@@ -19,7 +19,18 @@ export class CodeEditorService {
     // @ts-ignore
     formData.append('configFile', configFile.originFileObj, configFile.name);
 
-    return this.http.post(`http://localhost:8080/api/signal/submit/job`, formData);
+    return this.http.post(`http://localhost:8080/api/signal/submit/job_config`, formData);
+  }
+
+  public submitNewJobByDescription(job: string, parallelism: number, startNow: boolean, code: string, description: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('jobName', job);
+    formData.append('parallelism', parallelism.toString());
+    formData.append('startNow', startNow.toString());
+    formData.append('code', code);
+    formData.append('description', description);
+
+    return this.http.post(`http://localhost:8080/api/signal/submit/job_description`, formData);
   }
 
   public uploadConfigFile(item: any): Observable<any> {

@@ -39,9 +39,15 @@ public class SignalController {
         return new ResponseEntity<>(signalService.onStopSignal(jobId), HttpStatus.OK);
     }
 
-    @PostMapping("/submit/job")
+    @PostMapping("/submit/job_config")
     public ResponseEntity<Boolean> onSubmitJobSignal(@RequestParam String jobName, @RequestParam int parallelism, @RequestParam boolean startNow,
                                                      @RequestParam String code, @RequestParam MultipartFile configFile) {
         return new ResponseEntity<>(signalService.onSubmitSignal(jobName, parallelism, startNow, code, configFile), HttpStatus.OK);
+    }
+
+    @PostMapping("/submit/job_description")
+    public ResponseEntity<Boolean> onSubmitJobSignal(@RequestParam String jobName, @RequestParam int parallelism, @RequestParam boolean startNow,
+                                                     @RequestParam String code, @RequestParam String description) {
+        return new ResponseEntity<>(signalService.onSubmitSignal(jobName, parallelism, startNow, code, description), HttpStatus.OK);
     }
 }
