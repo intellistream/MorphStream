@@ -45,7 +45,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public int isLogging;// Used by fault tolerance
     private native boolean nativeTxnUDF(String operatorID, StateAccess stateAccess);
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
-    private final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF", false);
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.

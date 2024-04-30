@@ -31,7 +31,7 @@ public class FastSLClient extends Client {
         CliFrontend vnfClient = new CliFrontend("FastSLClient");
         vnfClient.loadConfigStreaming(args);
 
-        boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
+        boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
         if (serveRemoteVNF) {
             NativeInterface VNF_JNI = new NativeInterface();
             String[] param = {""};

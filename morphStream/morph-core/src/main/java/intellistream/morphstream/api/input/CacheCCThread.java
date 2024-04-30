@@ -14,7 +14,7 @@ import java.util.concurrent.BlockingQueue;
 public class CacheCCThread implements Runnable {
     private static BlockingQueue<CacheData> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
-    private final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
     public CacheCCThread(BlockingQueue<CacheData> operationQueue) {
         CacheCCThread.operationQueue = operationQueue;

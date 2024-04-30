@@ -4,7 +4,7 @@ package intellistream.morphstream.util.libVNFFrontend;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 public class NativeInterface {
-    private static final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
     // Native method declaration for __init_SFC
     public native String __init_SFC(int argc, String[] argv);

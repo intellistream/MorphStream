@@ -11,7 +11,7 @@ function ResetParameters() {
   rootFilePath="/home/shuhao/jjzhao/data"
   totalEvents=40000
 
-  serveRemoteVNF=false
+  serveRemoteVNF=0
   vnfInstanceNum=4
   offloadCCThreadNum=4
   rRatioSharedReaders=80
@@ -21,26 +21,8 @@ function ResetParameters() {
   workloadPattern=0
 }
 
-
-#@Parameter(names = {"--serveRemoteVNF"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
- #    public boolean serveRemoteVNF = false;
- #    @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
- #    public int vnfInstanceNum = 4;
- #    @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
- #    public int offloadCCThreadNum = 4;
- #    @Parameter(names = {"--rRatioSharedReaders"}, description = "Read ratio for shared readers pattern")
- #    public int rRatioSharedReaders = 80;
- #    @Parameter(names = {"--wRatioSharedWriters"}, description = "Write ratio for shared writers pattern")
- #    public int wRatioSharedWriters = 80;
- #    @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
- #    public int rwRatioMutualInteractive = 80;
- #    @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy")
- #    public int ccStrategy = 0;
- #    @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
- #    public int workloadPattern = 0;
-
 function runTStream() {
-  echo "java -Xms300g -Xmx300g -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms20g -Xmx80g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -59,7 +41,7 @@ function runTStream() {
           --ccStrategy $ccStrategy \
           --workloadPattern $workloadPattern
           "
-  java -Xms300g -Xmx300g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms20g -Xmx80g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
@@ -80,6 +62,7 @@ function runTStream() {
 }
 
 function baselinePattern() {
+  ResetParameters
   for workloadPattern in 0 1 2 3
   do
     for ccStrategy in 0 1 2 3

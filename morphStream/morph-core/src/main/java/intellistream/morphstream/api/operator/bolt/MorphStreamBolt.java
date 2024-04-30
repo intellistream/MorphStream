@@ -34,7 +34,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final int boltThreadCount = MorphStreamEnv.get().configuration().getInt("tthread");
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int expRequestCount = totalRequests / boltThreadCount;
-    private final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
     private int requestCounter;
 
     public MorphStreamBolt(String id, int fid) {

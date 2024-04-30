@@ -19,7 +19,7 @@ public class PartitionCCThread implements Runnable {
     private static final byte fullSeparator = 59;
     private static final byte keySeparator = 58;
     private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance.
-    private static final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
     //TODO: The key should labels partition start index as optimization
 
     public PartitionCCThread(BlockingQueue<PartitionData> operationQueue, HashMap<Integer, Integer> partitionOwnership) {

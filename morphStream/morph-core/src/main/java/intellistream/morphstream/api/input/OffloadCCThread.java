@@ -31,7 +31,7 @@ public class OffloadCCThread implements Runnable {
     private final HashMap<Integer, String> saTableNameMap = new HashMap<>();
     private AtomicInteger requestCount = new AtomicInteger(0);
     private final int expRequestCount;
-    private final boolean serveRemoteVNF = MorphStreamEnv.get().configuration().getBoolean("serveRemoteVNF");
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
     public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize,
                            HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap, int expRequestCount) {
