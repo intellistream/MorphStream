@@ -2,7 +2,7 @@ import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 
 import {JobInformationService} from "./job-information.service";
 import {Job} from "../../dto/Job";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 
 import * as d3 from 'd3';
 import {
@@ -14,6 +14,7 @@ import {
 import {Batch} from "../../dto/Batch";
 import {FormControl, FormGroup, NonNullableFormBuilder, Validators} from "@angular/forms";
 import {NzMessageService} from "ng-zorro-antd/message";
+import {NzModalService} from "ng-zorro-antd/modal";
 
 @Component({
   selector: 'app-application-information',
@@ -88,7 +89,9 @@ export class JobInformationComponent implements OnInit {
   constructor(private route: ActivatedRoute,
               private jobInformationService: JobInformationService,
               private fb: NonNullableFormBuilder,
-              private message: NzMessageService) {
+              private message: NzMessageService,
+              private modal: NzModalService,
+              private router: Router) {
     this.batchForm = this.fb.group({
       batch: ['', [Validators.required]],
       operator: ['', [Validators.required]]
@@ -512,5 +515,35 @@ export class JobInformationComponent implements OnInit {
   onCheckBoxChanged(newValue: boolean) {
     this.realTimePerformanceBoxChecked = newValue;
     this.startBatchOptionDisabled = newValue;
+  }
+
+  onDeleteTrigger() {
+    this.modal.confirm({
+      nzTitle: 'Are you sure to delete this job?',
+      nzContent: '<b>This operation cannot be undone.</b>',
+      nzOkText: 'Yes',
+      nzOkType: 'primary',
+      nzOkDanger: true,
+      nzCancelText: 'No',
+      nzStyle: {'top': '30%'}, // style="top: 20%"
+      nzOnOk: () => {
+        this.onDelete();
+      },
+      nzOnCancel: () => {}
+    })
+  }
+
+  /**
+   * Callback when the job is deleted
+   */
+  onDelete() {
+    this.jobInformationService.deleteJob(this.job.jobId).subscribe(success => {
+      if (success) {
+        console.log("delete job successfully");
+        this.message.success("Delete Job Successfully");
+        // redirect to the overview page
+        this.router.navigate(['/overview']);
+      }
+    });
   }
 }

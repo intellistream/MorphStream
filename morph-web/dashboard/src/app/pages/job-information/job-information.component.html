@@ -21,15 +21,13 @@
         <nz-descriptions id="job-description" nzBordered>
           <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{job?.nthreads}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Status" nzSpan="1"><nz-tag [nzColor]="this.jobStarted?'#2db7f5':'#cd201f'">{{this.jobStarted?"running":"stopped"}}</nz-tag></nz-descriptions-item>
-<!--          <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>-->
-<!--          <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>-->
           <nz-descriptions-item nzTitle="Number of Operators" nzSpan="2">{{job?.operators?.length}}</nz-descriptions-item>
-<!--          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{job?.duration}}</nz-descriptions-item>-->
           <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{runtimeDuration}} seconds</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Create Time" nzSpan="2">{{job?.startTime}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Operation" nzSpan="1">
             <button nz-button nzType="primary" [disabled]="this.jobStarted" style="margin-right: 20px" (click)="onStart()"><span nz-icon nzType="poweroff" nzTheme="outline"></span>Start</button>
             <button nz-button nzType="primary" [disabled]="!this.jobStarted" style="margin-right: 20px" (click)="onStop()"><span nz-icon nzType="stop" nzTheme="outline"></span>Stop</button>
+            <button nz-button nzType="primary" style="margin-right: 20px" nzDanger (click)="onDeleteTrigger()"><span nz-icon nzType="delete" nzTheme="outline"></span>Delete</button>
           </nz-descriptions-item>
         </nz-descriptions>
       </nz-col>

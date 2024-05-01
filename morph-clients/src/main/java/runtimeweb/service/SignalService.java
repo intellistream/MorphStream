@@ -90,4 +90,9 @@ public class SignalService {
         }
         return true;
     }
+
+    public Boolean onDeleteSignal(String jobId) {
+        JobSeekUtil.removeJob(jobId);
+        return true;
+    }
 }

@@ -33,4 +33,8 @@ export class JobInformationService {
   public getAllBatches(jobId: string, operatorId: string): Observable<Batch[]> {
     return this.http.get<Batch[]>(`http://localhost:8080/batchInfo/get/all/${jobId}/${operatorId}`);
   }
+
+  public deleteJob(jobId: string): Observable<boolean> {
+    return this.http.delete<boolean>(`http://localhost:8080/api/signal/delete/${jobId}`);
+  }
 }

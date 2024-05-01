@@ -55,4 +55,8 @@ public class JobManager {
     public Batch getBatchById(String jobId, String operatorId, String batchId) {
         return JobSeekUtil.getBatchById(jobId, operatorId, batchId);
     }
+
+    public void removeJob(String jobId) {
+        JobSeekUtil.removeJob(jobId);
+    }
 }

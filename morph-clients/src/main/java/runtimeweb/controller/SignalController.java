@@ -35,7 +35,7 @@ public class SignalController {
      * @return True if the job is stopped successfully, False otherwise
      */
     @PostMapping("/stop/{jobId}")
-    public ResponseEntity<Boolean> onStopSignal(String jobId) {
+    public ResponseEntity<Boolean> onStopSignal(@PathVariable("jobId") String jobId) {
         return new ResponseEntity<>(signalService.onStopSignal(jobId), HttpStatus.OK);
     }
 
@@ -49,5 +49,10 @@ public class SignalController {
     public ResponseEntity<Boolean> onSubmitJobSignal(@RequestParam String jobName, @RequestParam int parallelism, @RequestParam boolean startNow,
                                                      @RequestParam String code, @RequestParam String description) {
         return new ResponseEntity<>(signalService.onSubmitSignal(jobName, parallelism, startNow, code, description), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/delete/{jobId}")
+    public ResponseEntity<Boolean> onDeleteJobSignal(@PathVariable("jobId") String jobId) {
+        return new ResponseEntity<>(signalService.onDeleteSignal(jobId), HttpStatus.OK);
     }
 }

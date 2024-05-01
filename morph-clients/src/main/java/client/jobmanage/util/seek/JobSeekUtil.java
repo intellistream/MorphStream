@@ -153,4 +153,57 @@ public class JobSeekUtil {
         }
         return null;
     }
+
+    public static void removeJob(String jobId) {
+        // remove job includes removing job info, batches and compile files
+        // remove job info
+        log.info("Removing job: " + jobId);
+        File jobInfoFile = new File(String.format("%s/%s.json", Util.jobInfoDirectory, jobId));
+        if (Util.validateFile(jobInfoFile)) {
+            if (jobInfoFile.delete()) {
+                log.info("Job info file is deleted!");
+            } else {
+                log.info("Failed to delete job info file!");
+            }
+        }
+        // remove batches
+        File jobBatchDirectory = new File(String.format("%s/%s", Util.jobInfoDirectory, jobId));
+        if (Util.validateAndMakeDirectory(jobBatchDirectory)) {
+            File[] batchFiles = jobBatchDirectory.listFiles();
+            if (batchFiles != null) {
+                for (File batchFile : batchFiles) {
+                    if (batchFile.delete()) {
+                        log.info("Batch file is deleted!");
+                    } else {
+                        log.info("Failed to delete batch file!");
+                    }
+                }
+            }
+            if (jobBatchDirectory.delete()) {
+                log.info("Job batch directory is deleted!");
+            } else {
+                log.info("Failed to delete job batch directory!");
+            }
+        }
+
+        // remove compile files
+        File jobCompileDirectory = new File(String.format("%s/%s", Util.jobCompileDirectory, jobId));
+        if (Util.validateAndMakeDirectory(jobCompileDirectory)) {
+            File[] compileFiles = jobCompileDirectory.listFiles();
+            if (compileFiles != null) {
+                for (File compileFile : compileFiles) {
+                    if (compileFile.delete()) {
+                        log.info("Compile file is deleted!");
+                    } else {
+                        log.info("Failed to delete compile file!");
+                    }
+                }
+            }
+            if (jobCompileDirectory.delete()) {
+                log.info("Job compile directory is deleted!");
+            } else {
+                log.info("Failed to delete job compile directory!");
+            }
+        }
+    }
 }
