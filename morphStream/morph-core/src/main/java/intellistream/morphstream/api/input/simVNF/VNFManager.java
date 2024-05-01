@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.input.simVNF;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
+
 import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
 
@@ -21,6 +23,7 @@ public class VNFManager {
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
     public VNFManager(int totalRequests, int parallelism, int stateRange, int ccStrategy, int pattern) {
         this.totalRequests = totalRequests;
@@ -29,9 +32,15 @@ public class VNFManager {
         this.ccStrategy = stateStartID;
         this.patternString = patternTranslator(pattern);
         finishBarrier = new CyclicBarrier(parallelism);
+        String rootPath;
+        if (serveRemoteVNF) {
+            rootPath = "/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload/pattern_files";
+        } else {
+            rootPath = "morphStream/scripts/nfvWorkload/pattern_files";
+        }
 
         for (int i = 0; i < parallelism; i++) {
-            String csvFilePath = String.format("morphStream/scripts/nfvWorkload/pattern_files/%s/instance_%d.csv", patternString, i);
+            String csvFilePath = String.format(rootPath + "/%s/instance_%d.csv", patternString, i);
             int stateGap = stateRange / parallelism;
             VNFSenderThread sender = new VNFSenderThread(i, ccStrategy,
                     stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange, csvFilePath);
