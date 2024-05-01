@@ -136,9 +136,11 @@ public class CliFrontend {
     public void listenToStop() throws InterruptedException {
         executorThread sinkThread = env.OM().getEM().getSinkThread();
 
-        // Start all 4 CC strategies
-        AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
-        adaptiveCCManager.startVNFInstances();
+        // Start simulated VNF instances
+        if (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0) {
+            AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
+            adaptiveCCManager.startVNFInstances();
+        }
 
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
         env.OM().join();
