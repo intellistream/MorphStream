@@ -64,7 +64,7 @@ public class DatabaseInitializer {
     public void configure_db(){
         configuration = MorphStreamEnv.get().configuration();
         tableNames = configuration.getString("tableNames","table1,table2").split(",");
-        totalThreads = configuration.getInt("loadDBThreadNum", 4);
+        totalThreads = configuration.getInt("tthread", 4);
         spinlock = new SpinLock[totalThreads];
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));

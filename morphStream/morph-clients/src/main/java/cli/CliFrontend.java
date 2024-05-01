@@ -137,7 +137,7 @@ public class CliFrontend {
         executorThread sinkThread = env.OM().getEM().getSinkThread();
 
         // Start simulated VNF instances
-        if (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0) {
+        if (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") == 0) {
             AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
             adaptiveCCManager.startVNFInstances();
         }

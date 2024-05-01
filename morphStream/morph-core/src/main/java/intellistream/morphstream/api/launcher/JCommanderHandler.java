@@ -270,9 +270,9 @@ public class JCommanderHandler {
 
     //System configure
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
+    public int tthread = 8;// default total execution threads
     @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
-    public int spoutNum = 4;// number of spout threads
+    public int spoutNum = 8;// number of spout threads
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
     public String operatorThreadNum = "4";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")

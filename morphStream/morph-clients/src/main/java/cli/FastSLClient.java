@@ -99,8 +99,9 @@ public class FastSLClient extends Client {
             });
             monitorThread.start();
 
-            vnfClient.registerOperator("sim_vnf", 4);
-            vnfClient.start(); //TODO: This will continuously run until TPG threads receive stop signals
+            int tpgThreads = MorphStreamEnv.get().configuration().getInt("tthread");
+            vnfClient.registerOperator("sim_vnf", tpgThreads);
+            vnfClient.start(); //This will continuously run until TPG threads receive stop signals
         }
     }
 
