@@ -313,6 +313,8 @@ public class JCommanderHandler {
     /**
      * TransNFV Specific configurations
      */
+    @Parameter(names = {"--nfvWorkloadPath"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
+    public String nfvWorkloadPath = "morphStream/scripts/nfvWorkload/pattern_files";
     @Parameter(names = {"--serveRemoteVNF"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
     public int serveRemoteVNF = 0;
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
@@ -527,6 +529,7 @@ public class JCommanderHandler {
         }
 
         /* TransNFV workload configurations */
+        config.put("nfvWorkloadPath", nfvWorkloadPath);
         config.put("serveRemoteVNF", serveRemoteVNF);
         config.put("vnfInstanceNum", vnfInstanceNum);
         config.put("offloadCCThreadNum", offloadCCThreadNum);

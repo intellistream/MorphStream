@@ -11,10 +11,7 @@ public class VNFManager {
     private int parallelism;
     private int stateRange;
     private int totalRequests;
-    private String patternString = "loneOperative";
-//    private String pattern = "sharedReaders";
-//    private String pattern = "sharedWriters";
-//    private String pattern = "mutualInteractive";
+    private String patternString;
     private static HashMap<Integer, VNFSenderThread> senderMap = new HashMap<>();
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
     private static HashMap<Integer, VNFReceiverThread> receiverMap = new HashMap<>();
@@ -32,12 +29,7 @@ public class VNFManager {
         this.ccStrategy = stateStartID;
         this.patternString = patternTranslator(pattern);
         finishBarrier = new CyclicBarrier(parallelism);
-        String rootPath;
-        if (serveRemoteVNF) {
-            rootPath = "/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload/pattern_files";
-        } else {
-            rootPath = "morphStream/scripts/nfvWorkload/pattern_files";
-        }
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
 
         for (int i = 0; i < parallelism; i++) {
             String csvFilePath = String.format(rootPath + "/%s/instance_%d.csv", patternString, i);

@@ -11,6 +11,7 @@ function ResetParameters() {
   rootFilePath="/home/shuhao/jjzhao/data"
   totalEvents=40000
 
+  nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload/pattern_files"
   serveRemoteVNF=0
   vnfInstanceNum=4
   offloadCCThreadNum=4
@@ -32,6 +33,7 @@ function runTStream() {
           --complexity $complexity \
           --rootFilePath $rootFilePath \
           --totalEvents $totalEvents \
+          --nfvWorkloadPath $nfvWorkloadPath \
           --serveRemoteVNF $serveRemoteVNF \
           --vnfInstanceNum $vnfInstanceNum \
           --offloadCCThreadNum $offloadCCThreadNum \
@@ -51,6 +53,7 @@ function runTStream() {
     --complexity $complexity \
     --rootFilePath $rootFilePath \
     --totalEvents $totalEvents \
+    --nfvWorkloadPath $nfvWorkloadPath \
     --serveRemoteVNF $serveRemoteVNF \
     --vnfInstanceNum $vnfInstanceNum \
     --offloadCCThreadNum $offloadCCThreadNum \
