@@ -28,13 +28,11 @@ public class OffloadCCThread implements Runnable {
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, Integer> saTypeMap = new HashMap<>();
     private final HashMap<Integer, String> saTableNameMap = new HashMap<>();
-    private final int expRequestCount;
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
     public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize,
-                           HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap, int expRequestCount) {
+                           HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap) {
         OffloadCCThread.operationQueue = operationQueue;
-        this.expRequestCount = expRequestCount;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
         this.saTypeMap.putAll(saTypeMap);
@@ -83,6 +81,7 @@ public class OffloadCCThread implements Runnable {
                 } else if (saType == 0 || saType == 2) {
                     offloadExecutor.submit(() -> offloadRead(offloadData));
                 }
+
             }
 
         } else {
@@ -111,7 +110,6 @@ public class OffloadCCThread implements Runnable {
                 }
             }
         }
-
 
     }
 
@@ -233,7 +231,8 @@ public class OffloadCCThread implements Runnable {
     }
 
     private int simUDF(int tupleValue) throws InterruptedException {
-        Thread.sleep(10);
+//        Thread.sleep(10);
+        //TODO: Simulate UDF better
         return tupleValue;
     }
 

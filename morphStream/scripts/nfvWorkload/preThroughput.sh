@@ -11,7 +11,7 @@ function ResetParameters() {
   rootFilePath="/home/shuhao/jjzhao/data"
   totalEvents=40000
 
-  nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload/pattern_files"
+  nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload"
   serveRemoteVNF=0
   vnfInstanceNum=4
   offloadCCThreadNum=4

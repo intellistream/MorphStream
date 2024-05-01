@@ -31,7 +31,7 @@ public class VNFManager {
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
 
         for (int i = 0; i < parallelism; i++) {
-            String csvFilePath = String.format(rootPath + "/%s/instance_%d.csv", patternString, i);
+            String csvFilePath = String.format(rootPath + "/pattern_files/%s/instance_%d.csv", patternString, i);
             int stateGap = stateRange / parallelism;
             VNFSenderThread sender = new VNFSenderThread(i, ccStrategy,
                     stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange, csvFilePath, senderBarrier);
