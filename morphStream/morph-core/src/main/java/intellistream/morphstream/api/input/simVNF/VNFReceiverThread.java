@@ -74,20 +74,14 @@ public class VNFReceiverThread implements Runnable {
             VNFRequest request;
             try {
                 request = requestQueue.take();
-                request.setFinishTime(System.currentTimeMillis());
-                actualRequestCount++;
-                //TODO: Store processed request into a file, or use performance calculate tool to compute overall throughput and latency
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            if (actualRequestCount == expRequestCount) {
-                endTime = System.nanoTime();
-                startTime = VNFManager.getSenderMap().get(instanceID).getStartTime();
-                long durationNano = endTime - startTime;
-                System.out.println("VNF receiver " + instanceID + " processed all " + expRequestCount + " requests with throughput " + (actualRequestCount / (durationNano / 1E9)) + " events/second");
-                MorphStreamEnv.get().simVNFLatch.countDown();
 
-                try {
+                if (actualRequestCount == expRequestCount) { // Stop signal indicated by VNF sender thread
+                    endTime = System.nanoTime();
+                    startTime = VNFManager.getSenderMap().get(instanceID).getStartTime();
+                    long durationNano = endTime - startTime;
+                    System.out.println("VNF receiver " + instanceID + " processed all " + actualRequestCount + " requests with throughput " + (actualRequestCount / (durationNano / 1E9)) + " events/second");
+                    MorphStreamEnv.get().simVNFLatch.countDown();
+
                     int arrivedIndex = finishBarrier.await();
                     if (arrivedIndex == 0) {
                         System.out.println("All VNF receivers have finished processing requests, sending stop signals...");
@@ -99,12 +93,19 @@ public class VNFReceiverThread implements Runnable {
                             tpgQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, instanceID, -1, 0, 0, 0, 0, 0));
                         }
                     }
-                } catch (InterruptedException | BrokenBarrierException e) {
-                    throw new RuntimeException(e);
+                    break;
+
+                } else {
+                    request.setFinishTime(System.currentTimeMillis());
+                    actualRequestCount++;
+//                    System.out.println("VNF receiver " + instanceID + " processed request " + actualRequestCount);
+                    //TODO: Record request finish time into a performance calculator tool
                 }
 
-                break;
+            } catch (InterruptedException | BrokenBarrierException e) {
+                throw new RuntimeException(e);
             }
+
         }
     }
 }

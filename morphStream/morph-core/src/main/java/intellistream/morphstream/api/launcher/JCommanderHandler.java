@@ -328,9 +328,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy")
-    public int ccStrategy = 0;
+    public int ccStrategy = 3;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 0;
+    public int workloadPattern = 3;
 
 
     public JCommanderHandler() {}

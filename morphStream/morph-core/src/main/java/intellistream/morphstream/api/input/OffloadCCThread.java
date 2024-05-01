@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class OffloadCCThread implements Runnable {
@@ -29,7 +28,6 @@ public class OffloadCCThread implements Runnable {
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, Integer> saTypeMap = new HashMap<>();
     private final HashMap<Integer, String> saTableNameMap = new HashMap<>();
-    private AtomicInteger requestCount = new AtomicInteger(0);
     private final int expRequestCount;
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
@@ -65,6 +63,7 @@ public class OffloadCCThread implements Runnable {
                 }
                 if (offloadData.getTimeStamp() == -1) {
                     System.out.println("Offload CC received stop signal.");
+                    offloadExecutor.shutdownNow();
                     break; // stop signal received
                 }
                 int saType = saTypeMap.get(offloadData.getSaIndex());
@@ -96,6 +95,7 @@ public class OffloadCCThread implements Runnable {
                 }
                 if (offloadData.getTimeStamp() == -1) {
                     System.out.println("Offload CC received stop signal.");
+                    offloadExecutor.shutdownNow();
                     break; // stop signal received
                 }
                 int saType = offloadData.getSaType();
@@ -202,9 +202,6 @@ public class OffloadCCThread implements Runnable {
         } catch (DatabaseException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-        if (requestCount.incrementAndGet() == expRequestCount) {
-            System.out.println("Offload CC completed all " + expRequestCount + " requests.");
-        }
 
     }
 
@@ -232,12 +229,6 @@ public class OffloadCCThread implements Runnable {
         } catch (DatabaseException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-
-        if (requestCount.incrementAndGet() == expRequestCount) {
-            System.out.println("Offload CC completed all " + expRequestCount + " requests.");
-        }
-
-//        System.out.println("Offload read completed.");
 
     }
 

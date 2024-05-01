@@ -9,7 +9,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CyclicBarrier;
 
 public class VNFSenderThread implements Runnable {
     private int instanceID;
@@ -19,6 +21,7 @@ public class VNFSenderThread implements Runnable {
     private int statePartitionEnd;
     private int stateRange; //entire state space
     private int stateDefaultValue = 0;
+    private final CyclicBarrier finishBarrier;
     private HashMap<Integer, Integer> localStateMap = new HashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = AdaptiveCCManager.tpgQueues;
     private final int numSpouts = MorphStreamEnv.get().configuration().getInt("tthread");
@@ -26,13 +29,14 @@ public class VNFSenderThread implements Runnable {
     private int lineCounter = 0;
     private long startTime;
 
-    public VNFSenderThread(int instanceID, int ccStrategy, int statePartitionStart, int statePartitionEnd, int stateRange, String csvFilePath) {
+    public VNFSenderThread(int instanceID, int ccStrategy, int statePartitionStart, int statePartitionEnd, int stateRange, String csvFilePath, CyclicBarrier finishBarrier) {
         this.instanceID = instanceID;
         this.ccStrategy = ccStrategy;
         this.statePartitionStart = statePartitionStart;
         this.statePartitionEnd = statePartitionEnd;
         this.stateRange = stateRange;
         this.csvFilePath = csvFilePath;
+        this.finishBarrier = finishBarrier;
         for (int i = 0; i <= stateRange; i++) {
             localStateMap.put(i, stateDefaultValue);
         }
@@ -75,7 +79,7 @@ public class VNFSenderThread implements Runnable {
                         //TODO: Consider adding a delay here to simulate synchronization check
                         VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, System.currentTimeMillis()));
 
-                    } else if (type == 1) { // write
+                    } else if (type == 1 || type == 2) { // write
                         vnfFunction(tupleID, type, 0);
                         CacheCCThread.submitReplicationRequest(new CacheData(0, tupleID, instanceID, 0));
                         VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, System.currentTimeMillis()));
@@ -88,10 +92,20 @@ public class VNFSenderThread implements Runnable {
                     tpgQueues.get(requestCounter % numSpouts).offer(new TransactionalVNFEvent(type, instanceID, System.currentTimeMillis(), reqID, tupleID, 0, 0, 0));
                     requestCounter++;
                 }
-
             }
+
             System.out.println("Sender instance " + instanceID + " processed " + lineCounter + " requests.");
-        } catch (IOException e) {
+            Thread.sleep(1000);
+            int arrivedIndex = finishBarrier.await();
+
+            if (arrivedIndex == 0) { // Notify all receivers for the end of workload
+                int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+                for (int i=0; i<vnfInstanceNum; i++) {
+                    VNFManager.getReceiver(i).submitFinishedRequest(new VNFRequest(0, instanceID, 0, 0, -1));
+                }
+            }
+
+        } catch (IOException | InterruptedException | BrokenBarrierException e) {
             System.err.println("Error reading from file: " + e.getMessage());
         } finally {
             try {

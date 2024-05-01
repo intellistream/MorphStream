@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
 
 public class VNFManager {
-    private int ccStrategy = 2;
     private int stateStartID = 0;
     private int parallelism;
     private int stateRange;
@@ -16,7 +15,6 @@ public class VNFManager {
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
     private static HashMap<Integer, VNFReceiverThread> receiverMap = new HashMap<>();
     private static HashMap<Integer, Thread> receiverThreadMap = new HashMap<>();
-    private CyclicBarrier finishBarrier;
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
@@ -26,21 +24,22 @@ public class VNFManager {
         this.totalRequests = totalRequests;
         this.parallelism = parallelism;
         this.stateRange = stateRange;
-        this.ccStrategy = stateStartID;
         this.patternString = patternTranslator(pattern);
-        finishBarrier = new CyclicBarrier(parallelism);
+
+        CyclicBarrier senderBarrier = new CyclicBarrier(parallelism);
+        CyclicBarrier receiverBarrier = new CyclicBarrier(parallelism);
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
 
         for (int i = 0; i < parallelism; i++) {
             String csvFilePath = String.format(rootPath + "/%s/instance_%d.csv", patternString, i);
             int stateGap = stateRange / parallelism;
             VNFSenderThread sender = new VNFSenderThread(i, ccStrategy,
-                    stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange, csvFilePath);
+                    stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange, csvFilePath, senderBarrier);
             Thread senderThread = new Thread(sender);
             senderMap.put(i, sender);
             senderThreadMap.put(i, senderThread);
 
-            VNFReceiverThread receiver = new VNFReceiverThread(i, totalRequests /parallelism, finishBarrier);
+            VNFReceiverThread receiver = new VNFReceiverThread(i, totalRequests /parallelism, receiverBarrier);
             Thread receiverThread = new Thread(receiver);
             receiverMap.put(i, receiver);
             receiverThreadMap.put(i, receiverThread);
