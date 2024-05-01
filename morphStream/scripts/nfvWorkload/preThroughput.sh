@@ -4,9 +4,9 @@ function ResetParameters() {
   app="nfv_test"
   checkpointInterval=100
   tthread=4
-  scheduler="OG_BFS_A"
-  defaultScheduler="OG_BFS_A"
-  complexity=10000
+  scheduler="OP_BFS_A"
+  defaultScheduler="OP_BFS_A"
+  complexity=0
   NUM_ITEMS=10000
   rootFilePath="/home/shuhao/jjzhao/data"
   totalEvents=40000
