@@ -4,7 +4,7 @@ import os
 import shutil
 
 class PatternGenerator:
-    def __init__(self, tuple_range=1000, instance_count=4, request_count=10000, type_zero_probability=0.8, type_one_probability=0.8, type_two_probability=0.8):
+    def __init__(self, tuple_range=10000, instance_count=4, request_count=100000, type_zero_probability=0.8, type_one_probability=0.8, type_two_probability=0.8):
         self.tuple_range = tuple_range
         self.instance_count = instance_count
         self.request_count = request_count

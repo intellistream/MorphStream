@@ -9,7 +9,7 @@ function ResetParameters() {
   complexity=0
   NUM_ITEMS=10000
   rootFilePath="/home/shuhao/jjzhao/data"
-  totalEvents=40000
+  totalEvents=400000
 
   nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload"
   serveRemoteVNF=0

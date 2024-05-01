@@ -3,6 +3,7 @@ package cli;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import commonStorage.RequestTemplates;
+import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
@@ -134,6 +135,11 @@ public class CliFrontend {
 
     public void listenToStop() throws InterruptedException {
         executorThread sinkThread = env.OM().getEM().getSinkThread();
+
+        // Start all 4 CC strategies
+        AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
+        adaptiveCCManager.startVNFInstances();
+
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
         env.OM().join();
         env.OM().getEM().exist();

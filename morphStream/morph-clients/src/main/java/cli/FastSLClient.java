@@ -99,12 +99,8 @@ public class FastSLClient extends Client {
             });
             monitorThread.start();
 
-            // Start all 4 CC strategies
-            AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
             vnfClient.registerOperator("sim_vnf", 4);
-            adaptiveCCManager.startVNFInstances(); //TODO: Hardcoded with initial timeout of 5 seconds to wait for TPG threads to be ready
-
-            vnfClient.start();
+            vnfClient.start(); //TODO: This will continuously run until TPG threads receive stop signals
         }
     }
 

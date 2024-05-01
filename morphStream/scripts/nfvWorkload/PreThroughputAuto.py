@@ -40,5 +40,5 @@ def read_and_plot(root_directory):
     plt.show()
 
 if __name__ == '__main__':
-    root_directory = "morphStream/scripts/nfvWorkload/experiments/pre_study"
+    root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload/experiments/pre_study"
     read_and_plot(root_directory)

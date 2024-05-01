@@ -50,12 +50,12 @@ public class VNFSenderThread implements Runnable {
             throw new RuntimeException(e);
         }
         System.out.println("VNF sender instance " + instanceID + " started.");
-        startTime = System.nanoTime();
 
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(csvFilePath));
             String line;
+            startTime = System.nanoTime();
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 int reqID = Integer.parseInt(parts[0]);
