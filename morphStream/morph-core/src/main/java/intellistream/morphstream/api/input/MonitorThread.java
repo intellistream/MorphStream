@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.input;
 
+import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -18,7 +20,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MonitorThread implements Runnable {
-    private final BlockingQueue<PatternData> patternDataQueue;
+    private static BlockingQueue<PatternData> patternDataQueue;
     private static final ConcurrentHashMap<Integer, Integer> readCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> writeCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> ownershipMap = new ConcurrentHashMap<>();
@@ -38,6 +40,7 @@ public class MonitorThread implements Runnable {
     private static final Map<Integer, InputStream> instanceInputStreams = new HashMap<>();
     private static final Map<Integer, OutputStream> instanceOutputStreams = new HashMap<>();
     private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
 
     public MonitorThread(BlockingQueue<PatternData> patternDataQueue, int punctuation_interval) {
@@ -55,15 +58,27 @@ public class MonitorThread implements Runnable {
         }
     }
 
+    public static void submitPatternData(PatternData patternData) {
+        try {
+            patternDataQueue.put(patternData);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public void run() {
+
         while (!Thread.currentThread().isInterrupted()) {
             PatternData patternData;
             try {
                 patternData = patternDataQueue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            }
+            if (patternData.getTimeStamp() == -1) {
+                System.out.println("Pattern monitor thread received stop signal");
+                break;
             }
             updatePatternData(patternData);
             txnCounter++;
@@ -82,6 +97,7 @@ public class MonitorThread implements Runnable {
                 statesPattern_34_to_2.clear();
             }
         }
+
     }
 
 //instanceID(int) -0

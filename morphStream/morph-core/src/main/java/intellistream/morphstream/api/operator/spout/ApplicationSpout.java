@@ -48,17 +48,11 @@ public class ApplicationSpout extends AbstractSpout {
                         collector.emit(bid, marker);
                     }
                 }
-            } else { //control signals
-                if (Objects.equals(event.getFlag(), "pause")) {
-                    marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "pause"));
-                    collector.emit(bid, marker);
-                }
-            }
-
-            if (inputQueue.isEmpty()) { //TODO: Refactor this part, remove the_end, use stopEvent indicator
+            } else { //stop signal arrives, stop the current spout thread
+                System.out.println("TPG thread " + this.taskId + " received stop signal.");
                 SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                 SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
-                getContext().stop_running();
+                getContext().stop_running(); //stop itself
             }
         }
     }

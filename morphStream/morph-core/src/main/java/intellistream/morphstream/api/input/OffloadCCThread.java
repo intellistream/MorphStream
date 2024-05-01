@@ -63,9 +63,11 @@ public class OffloadCCThread implements Runnable {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                if (offloadData.getTimeStamp() == -1) {
+                    System.out.println("Offload CC received stop signal.");
+                    break; // stop signal received
+                }
                 int saType = saTypeMap.get(offloadData.getSaIndex());
-//                int saType = offloadData.getSaType();
-
                 if (saType == 1) {
                     try {
                         out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream(); //Immediate acknowledge write
@@ -91,6 +93,10 @@ public class OffloadCCThread implements Runnable {
                     offloadData = operationQueue.take();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
+                }
+                if (offloadData.getTimeStamp() == -1) {
+                    System.out.println("Offload CC received stop signal.");
+                    break; // stop signal received
                 }
                 int saType = offloadData.getSaType();
 
@@ -199,8 +205,6 @@ public class OffloadCCThread implements Runnable {
         if (requestCount.incrementAndGet() == expRequestCount) {
             System.out.println("Offload CC completed all " + expRequestCount + " requests.");
         }
-
-//        System.out.println("Offload write completed.");
 
     }
 

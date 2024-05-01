@@ -39,6 +39,10 @@ public class CacheCCThread implements Runnable {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                if (cacheData.getTimestamp() == -1) {
+                    System.out.println("Cache CC thread received stop signal");
+                    break;
+                }
 
                 for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
                     if (entry.getKey() != cacheData.getInstanceID()) {
@@ -71,6 +75,10 @@ public class CacheCCThread implements Runnable {
                     cacheData = operationQueue.take();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
+                }
+                if (cacheData.getTimestamp() == -1) {
+                    System.out.println("Cache CC thread received stop signal");
+                    break;
                 }
 
                 // Simulating state update synchronization to other instances

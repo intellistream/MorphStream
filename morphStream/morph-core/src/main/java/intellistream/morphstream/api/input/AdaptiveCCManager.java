@@ -25,6 +25,7 @@ public class AdaptiveCCManager {
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
     private final int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
+    private final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
 
     public AdaptiveCCManager() {
@@ -47,13 +48,15 @@ public class AdaptiveCCManager {
     }
 
     public void initialize() throws IOException {
-        Thread listenerThread = new Thread(new SocketListener(monitorQueue, partitionQueue, cacheQueue, offloadQueue, tpgQueues));
+        if (serveRemoteVNF) {
+            Thread listenerThread = new Thread(new SocketListener(monitorQueue, partitionQueue, cacheQueue, offloadQueue, tpgQueues));
+            listenerThread.start();
+        }
         Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
         Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
         Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap, totalRequests/vnfInstanceNum));
 
-        listenerThread.start();
         monitorThread.start();
         partitionCCThread.start();
         cacheCCThread.start();

@@ -161,7 +161,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static PatternData byteToPatternData(int instanceID, List<byte[]> splitByteArrays) {
         int tupleID = decodeInt(splitByteArrays.get(1), 0);
         boolean value = decodeBoolean(splitByteArrays.get(2), 0);
-        return new PatternData(instanceID, tupleID, value);
+        return new PatternData(0, instanceID, tupleID, value);
     }
 
     private static PartitionData byteToPartitionData(int instanceID, List<byte[]> splitByteArrays) {
@@ -173,7 +173,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static CacheData byteToCacheData(int instanceID, List<byte[]> splitByteArrays) {
         int tupleID = decodeInt(splitByteArrays.get(1), 0);
         int value = decodeInt(splitByteArrays.get(2), 0);
-        return new CacheData(instanceID, tupleID, value);
+        return new CacheData(0, instanceID, tupleID, value);
     }
 
     private static OffloadData byteToOffloadData(int instanceID, List<byte[]> splitByteArrays) {
@@ -183,7 +183,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         int txnIndex = decodeInt(splitByteArrays.get(4), 0);
         int saIndex = decodeInt(splitByteArrays.get(5), 0);
         int isAbort = decodeInt(splitByteArrays.get(6), 0);
-        return new OffloadData(instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort, -1);
+        return new OffloadData(timestamp, instanceID, txnReqID, tupleID, txnIndex, saIndex, isAbort, -1);
     }
 
     private static TransactionalEvent byteToTPGData(int instanceID, List<byte[]> splitByteArrays) {

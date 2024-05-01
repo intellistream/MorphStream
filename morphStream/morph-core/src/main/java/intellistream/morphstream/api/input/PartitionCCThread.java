@@ -47,6 +47,10 @@ public class PartitionCCThread implements Runnable {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                if (partitionData.getTimeStamp() == -1) {
+                    System.out.println("Partition CC thread received stop signal");
+                    break;
+                }
                 int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
 
                 try {
@@ -74,6 +78,10 @@ public class PartitionCCThread implements Runnable {
                     partitionData = operationQueue.take();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
+                }
+                if (partitionData.getTimeStamp() == -1) {
+                    System.out.println("Partition CC thread received stop signal");
+                    break;
                 }
                 int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
 

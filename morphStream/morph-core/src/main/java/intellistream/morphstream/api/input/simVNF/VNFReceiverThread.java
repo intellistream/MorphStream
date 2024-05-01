@@ -1,10 +1,10 @@
 package intellistream.morphstream.api.input.simVNF;
 
 import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 public class VNFReceiverThread implements Runnable {
     //    Four parallel instances, each maintaining:
@@ -28,16 +28,19 @@ public class VNFReceiverThread implements Runnable {
 //Record system time into request object
 //Finally use a performance calculator tool to compute overall throughput and latency
 
-    private int instanceID;
+    private final int instanceID;
     private final BlockingQueue<VNFRequest> requestQueue;
+    private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = AdaptiveCCManager.tpgQueues;
+    private final CyclicBarrier finishBarrier;
     private final int expRequestCount;
     private int actualRequestCount = 0;
     private long startTime;
     private long endTime;
 
-    public VNFReceiverThread(int instanceID, int expRequestCount) {
+    public VNFReceiverThread(int instanceID, int expRequestCount, CyclicBarrier finishBarrier) {
         this.instanceID = instanceID;
         this.expRequestCount = expRequestCount;
+        this.finishBarrier = finishBarrier;
         this.requestQueue = new LinkedBlockingQueue<>();
     }
 
@@ -81,8 +84,25 @@ public class VNFReceiverThread implements Runnable {
                 endTime = System.nanoTime();
                 startTime = VNFManager.getSenderMap().get(instanceID).getStartTime();
                 long durationNano = endTime - startTime;
-                System.out.println("VNF receiver instance " + instanceID + " processed all " + expRequestCount + " requests with throughput " + (actualRequestCount / (durationNano / 1E9)) + " events/second");
+                System.out.println("VNF receiver " + instanceID + " processed all " + expRequestCount + " requests with throughput " + (actualRequestCount / (durationNano / 1E9)) + " events/second");
                 MorphStreamEnv.get().simVNFLatch.countDown();
+
+                try {
+                    int arrivedIndex = finishBarrier.await();
+                    if (arrivedIndex == 0) {
+                        System.out.println("All VNF receivers have finished processing requests, sending stop signals...");
+                        MonitorThread.submitPatternData(new PatternData(-1, instanceID, 0, false));
+                        PartitionCCThread.submitPartitionRequest(new PartitionData(-1, 0, instanceID, 0, 0));
+                        CacheCCThread.submitReplicationRequest(new CacheData(-1, 0, instanceID, 0));
+                        OffloadCCThread.submitOffloadReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0));
+                        for (int tpgQueueIndex = 0; tpgQueueIndex < tpgQueues.size(); tpgQueueIndex++) {
+                            tpgQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, instanceID, -1, 0, 0, 0, 0, 0));
+                        }
+                    }
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    throw new RuntimeException(e);
+                }
+
                 break;
             }
         }

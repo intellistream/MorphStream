@@ -10,7 +10,7 @@ public class OffloadData {
     private final int isAbort;
     private final int saType;
 
-    public OffloadData(int instanceID, long timeStamp, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType) {
+    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType) {
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.timeStamp = timeStamp;

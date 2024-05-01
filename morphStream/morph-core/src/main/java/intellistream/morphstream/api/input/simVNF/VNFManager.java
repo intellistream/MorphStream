@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input.simVNF;
 
 import java.util.HashMap;
+import java.util.concurrent.CyclicBarrier;
 
 public class VNFManager {
     private int ccStrategy = 2;
@@ -16,6 +17,7 @@ public class VNFManager {
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
     private static HashMap<Integer, VNFReceiverThread> receiverMap = new HashMap<>();
     private static HashMap<Integer, Thread> receiverThreadMap = new HashMap<>();
+    private CyclicBarrier finishBarrier;
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
@@ -26,6 +28,7 @@ public class VNFManager {
         this.stateRange = stateRange;
         this.ccStrategy = stateStartID;
         this.patternString = patternTranslator(pattern);
+        finishBarrier = new CyclicBarrier(parallelism);
 
         for (int i = 0; i < parallelism; i++) {
             String csvFilePath = String.format("morphStream/scripts/nfvWorkload/pattern_files/%s/instance_%d.csv", patternString, i);
@@ -36,7 +39,7 @@ public class VNFManager {
             senderMap.put(i, sender);
             senderThreadMap.put(i, senderThread);
 
-            VNFReceiverThread receiver = new VNFReceiverThread(i, totalRequests /parallelism);
+            VNFReceiverThread receiver = new VNFReceiverThread(i, totalRequests /parallelism, finishBarrier);
             Thread receiverThread = new Thread(receiver);
             receiverMap.put(i, receiver);
             receiverThreadMap.put(i, receiverThread);

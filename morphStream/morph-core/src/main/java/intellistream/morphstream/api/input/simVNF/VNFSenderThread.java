@@ -77,12 +77,12 @@ public class VNFSenderThread implements Runnable {
 
                     } else if (type == 1) { // write
                         vnfFunction(tupleID, type, 0);
-                        CacheCCThread.submitReplicationRequest(new CacheData(tupleID, instanceID, 0));
+                        CacheCCThread.submitReplicationRequest(new CacheData(0, tupleID, instanceID, 0));
                         VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, System.currentTimeMillis()));
                     }
 
                 } else if (ccStrategy == 2) { // Offload
-                    OffloadCCThread.submitOffloadReq(new OffloadData(instanceID, System.currentTimeMillis(), reqID, tupleID, 0, 0, 0, type));
+                    OffloadCCThread.submitOffloadReq(new OffloadData(System.currentTimeMillis(), instanceID, reqID, tupleID, 0, 0, 0, type));
 
                 } else if (ccStrategy == 3) { // TPG
                     tpgQueues.get(requestCounter % numSpouts).offer(new TransactionalVNFEvent(type, instanceID, System.currentTimeMillis(), reqID, tupleID, 0, 0, 0));
