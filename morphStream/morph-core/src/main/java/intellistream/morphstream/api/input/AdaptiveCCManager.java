@@ -55,7 +55,7 @@ public class AdaptiveCCManager {
         Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
         Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
-        Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap, totalRequests/vnfInstanceNum));
+        Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap));
 
         monitorThread.start();
         partitionCCThread.start();
