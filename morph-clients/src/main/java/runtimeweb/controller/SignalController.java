@@ -24,7 +24,7 @@ public class SignalController {
      * @return True if the job is started successfully, False otherwise
      */
     @PostMapping("/start/{jobId}")
-    public ResponseEntity<Boolean> onStartSignal(String jobId) {
+    public ResponseEntity<Boolean> onStartSignal(@PathVariable("jobId") String jobId) {
         return new ResponseEntity<>(signalService.onStartSignal(jobId), HttpStatus.OK);
     }
 

@@ -145,8 +145,8 @@ public class JobInitializeUtil {
                 startJobCodeBuilder.append("        txnDescriptions.put(\"").append(txnDesc.getName()).append("\", ")
                         .append(txnDesc.getName()).append("Descriptor);\n\n");
             }
-            startJobCodeBuilder.append("        job,setSpoutCombo(opDesc.getName(), txnDescriptions, 4);\n");
-            startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{opDesc.getName()});\n");
+            startJobCodeBuilder.append("        job.setSpoutCombo(\"").append(opDesc.getName()).append("\", txnDescriptions, 4);\n");
+            startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{\"").append(opDesc.getName()).append("\"});\n");
         }
 
 //        startJobCodeBuilder.append("        job.setSpoutCombo(jobConfiguration.getOperatorDescription().getName(), txnDescriptions, 4);\n");
@@ -195,12 +195,23 @@ public class JobInitializeUtil {
     public static void saveCode(String code, String jobId, String jobName) {
         String fileName = String.format("%s/%s/%s.java", Util.jobCompileDirectory, jobId, jobName);
         Path path = Paths.get(fileName);
-        if (!Files.exists(path)) {
+        Path directoryPath = path.getParent();
+        if (!Files.exists(directoryPath)) {
             try {
-                Files.createDirectories(path);
+                Files.createDirectories(directoryPath);
             } catch (IOException e) {
                 log.error("Error in creating file: " + e.getMessage());
             }
+        }
+
+        if (!Files.exists(path)) {
+            try {
+                Files.createFile(path);
+            } catch (IOException e) {
+                log.error("Error in creating file: " + e.getMessage());
+            }
+        } else {
+            log.info("File already exists: " + path);
         }
 
         try {

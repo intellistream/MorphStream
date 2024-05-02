@@ -29,9 +29,13 @@ public class SignalService {
 //        JobInitializeUtil.initialize(jobId); // initialize the job
         JobPrepareUtil.prepare(jobId); // prepare the job
         // TODO: start job based on job id
+        LOG.info("Job started: " + jobId);
         try {
-            SLClient.startJob(new String[]{}); // start the job
+            JobCallingUtil.compileJobById(Integer.parseInt(jobId)); // compile the job
+            JobCallingUtil.startJobById(Integer.parseInt(jobId)); // start the job
+//            SLClient.startJob(new String[]{}); // start the job
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
         return true;

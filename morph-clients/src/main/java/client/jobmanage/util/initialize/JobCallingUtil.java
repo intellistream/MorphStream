@@ -2,6 +2,8 @@ package client.jobmanage.util.initialize;
 
 import client.jobmanage.util.Util;
 import client.jobmanage.util.seek.JobSeekUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -9,6 +11,7 @@ import java.io.File;
  * JobCallingUtil is used to compile, start a job
  */
 public class JobCallingUtil {
+    private static final Logger LOG = LoggerFactory.getLogger(JobCallingUtil.class);
     /**
      * Compile a job by job id
      * @param jobId job id
@@ -21,6 +24,7 @@ public class JobCallingUtil {
 
         if (!Util.validateFile(jobCode)) {
             // job code does not exist
+            LOG.error("Job code does not exist");
             return;
         }
 
@@ -44,6 +48,7 @@ public class JobCallingUtil {
         Integer jobId = JobSeekUtil.getJobIdByName(jobName);
         if (jobId == null) {
             // job does not exist
+            LOG.error("Job does not exist");
             return;
         }
         compileJobById(jobId);
@@ -61,6 +66,7 @@ public class JobCallingUtil {
 
         if (!Util.validateFile(new File(jobClassPath))) {
             // job class does not exist
+            LOG.error("Job class does not exist");
             return;
         }
 
@@ -74,9 +80,11 @@ public class JobCallingUtil {
 
         // start the job
         try {
+            LOG.info("Starting job: " + jobName);
             Process process = Runtime.getRuntime().exec(runningCommand);
              process.waitFor();  // wait for the process to finish
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Failed to start job: " + e.getMessage());
         }
     }
