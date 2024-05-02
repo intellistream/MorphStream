@@ -4,6 +4,9 @@ import client.impl.SLClient;
 import client.jobmanage.util.initialize.JobCallingUtil;
 import client.jobmanage.util.initialize.JobPrepareUtil;
 import client.jobmanage.util.seek.JobSeekUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dao.config.JobConfiguration;
 import intellistream.morphstream.api.input.InputSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,12 +48,23 @@ public class SignalService {
     }
 
     public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code, String description) {
-        boolean initialized = JobInitializeUtil.initialize(jobName, parallelism); // initialize the job
-        if (!initialized) {
+        JobConfiguration jobConfiguration;
+        LOG.info("Job submitted: " + jobName);
+
+        try {
+            jobConfiguration = new ObjectMapper().readValue(description, JobConfiguration.class);
+        } catch (JsonProcessingException e) {
+            LOG.error("Failed to parse the job configuration");
             return false;
         }
 
-        code = JobInitializeUtil.preprocessedCode(code, description);
+        boolean initialized = JobInitializeUtil.initialize(jobName, parallelism, jobConfiguration); // initialize the job
+        if (!initialized) {
+            LOG.error("Failed to initialize the job");
+            return false;
+        }
+
+        code = JobInitializeUtil.preprocessedCode(code, jobConfiguration);
         JobInitializeUtil.saveCode(code, String.valueOf(JobSeekUtil.getJobIdByName(jobName)), jobName);
 
         if (startNow) {
@@ -76,11 +90,6 @@ public class SignalService {
     public Boolean onSubmitSignal(String jobName, int parallelism, boolean startNow, String code, MultipartFile configFile) {
         // save the config file
         LOG.info("File uploaded: " + configFile.getOriginalFilename());
-
-        boolean initialized = JobInitializeUtil.initialize(jobName, parallelism); // initialize the job
-        if (!initialized) {
-            return false;
-        }
 
         try {
             String description = new String(configFile.getBytes());

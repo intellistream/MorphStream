@@ -20,4 +20,10 @@ public class Operator {
     private String explorationStrategy;
     private String schedulingGranularity;
     private String abortHandling;
+
+    public Operator(String id, String name, int numOfInstances) {
+        this.id = id;
+        this.name = name;
+        this.numOfInstances = numOfInstances;
+    }
 }

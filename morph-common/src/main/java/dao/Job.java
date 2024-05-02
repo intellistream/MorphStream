@@ -36,7 +36,7 @@ public class Job {
     private OverallTimeBreakdown overallTimeBreakdown;
     private SchedulerTimeBreakdown schedulerTimeBreakdown;
 
-    public Job(int JobId, String name, int nThreads) {
+    public Job(int JobId, String name, int nThreads, ArrayList<Operator> operators) {
         this.jobId = JobId;
         this.name = name;
         this.nThreads = nThreads;
@@ -54,7 +54,7 @@ public class Job {
         this.nCore = 0;
         this.periodicalThroughput = new ArrayList<>();
         this.periodicalLatency = new ArrayList<>();
-        this.operators = new ArrayList<>();
+        this.operators = operators;
         this.overallTimeBreakdown = new OverallTimeBreakdown(0, 0, 0, 0);
         this.schedulerTimeBreakdown = new SchedulerTimeBreakdown(0, 0, 0, 0, 0);
     }

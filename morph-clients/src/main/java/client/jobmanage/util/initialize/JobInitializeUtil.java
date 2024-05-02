@@ -3,6 +3,7 @@ package client.jobmanage.util.initialize;
 import client.jobmanage.util.Util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.Job;
+import dao.Operator;
 import dao.config.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ public class JobInitializeUtil {
      * @param jobName the name of the job
      * @return true if the job is initialized successfully, false otherwise
      */
-    public static boolean initialize(String jobName, int parallelism) {
+    public static boolean initialize(String jobName, int parallelism, JobConfiguration jobConfiguration) {
         // create jobInfo directory if not exists
         if (!Util.validateAndMakeDirectory(Util.jobInfoDirectory) || !Util.validateAndMakeDirectory(Util.jobCompileDirectory)) {
             return false;
@@ -59,7 +60,13 @@ public class JobInitializeUtil {
         Util.validateAndMakeDirectory(jobCompileFolder);
 
         // create jobInfo json file for new job
-        Job job = new Job(jobId, jobName, parallelism);
+        ArrayList<Operator> operators = new ArrayList<>();
+        for (OperatorDescription operatorDescription : jobConfiguration.getOperatorDescription()) {
+            Operator operator = new Operator(String.valueOf(jobConfiguration.getOperatorDescription().indexOf(operatorDescription)), operatorDescription.getName(), parallelism);
+            operators.add(operator);
+        }
+
+        Job job = new Job(jobId, jobName, parallelism, operators);
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
@@ -71,7 +78,7 @@ public class JobInitializeUtil {
         return true;
     }
 
-    public static String preprocessedCode(String code, String description) {
+    public static String preprocessedCode(String code, JobConfiguration jobConfiguration) {
         // convert string description to a multipart file
         StringBuilder startJobCodeBuilder = new StringBuilder();
 
@@ -105,14 +112,6 @@ public class JobInitializeUtil {
         }
 
         startJobCodeBuilder.append("\n");
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        JobConfiguration jobConfiguration;
-        try {
-            jobConfiguration = objectMapper.readValue(description, JobConfiguration.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
 
         startJobCodeBuilder.append("    public static void startJob(String[] args) throws Exception {\n");
         startJobCodeBuilder.append("        CliFrontend job = CliFrontend.getOrCreate().appName(\"")
@@ -177,12 +176,14 @@ public class JobInitializeUtil {
      */
     public static String preprocessedCode(String code, MultipartFile configFile) {
         String description = "";
+        JobConfiguration jobConfiguration = null;
         try {
             description = new String(configFile.getBytes());
+            jobConfiguration = new ObjectMapper().readValue(description, JobConfiguration.class);
         } catch (IOException e) {
-            log.error("Error in reading config file: " + e.getMessage());
+            log.error("Error in reading description: " + e.getMessage());
         }
-        return preprocessedCode(code, description);
+        return preprocessedCode(code, jobConfiguration);
     }
 
     /**

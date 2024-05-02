@@ -539,8 +539,7 @@ export class JobInformationComponent implements OnInit {
   onDelete() {
     this.jobInformationService.deleteJob(this.job.jobId).subscribe(success => {
       if (success) {
-        console.log("delete job successfully");
-        this.message.success("Delete Job Successfully");
+        this.message.success("Delete Job: " + this.job.name + " Successfully");
         // redirect to the overview page
         this.router.navigate(['/overview']);
       }

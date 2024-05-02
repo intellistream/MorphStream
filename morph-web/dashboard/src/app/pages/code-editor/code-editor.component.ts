@@ -22,21 +22,26 @@ export class CodeEditorComponent implements AfterViewInit {
     '    "operatorDescription": [\n' +
     '        {\n' +
     '            "name": "operatorName",\n' +
-    '            "stateAccessDescription": [\n' +
+    '            "transactionDescription": [\n' +
     '                {\n' +
-    '                    "name": "stateName",\n' +
-    '                    "accessType": "read / write",\n' +
-    '                    "stateObjectDescription": [\n' +
+    '                    "name": "transactionName",\n' +
+    '                    "stateAccessDescription": [\n' +
     '                        {\n' +
-    '                            "name": "stateObjectName",\n' +
+    '                            "name": "stateName",\n' +
     '                            "accessType": "read / write",\n' +
-    '                            "tableName": "tableName",\n' +
-    '                            "keyName": "keyName",\n' +
-    '                            "valueName": "objectValueName",\n' +
-    '                            "keyIndex": 0\n' +
+    '                            "stateObjectDescription": [\n' +
+    '                                {\n' +
+    '                                    "name": "stateObjectName",\n' +
+    '                                    "accessType": "read / write",\n' +
+    '                                    "tableName": "tableName",\n' +
+    '                                    "keyName": "keyName",\n' +
+    '                                    "valueName": "objectValueName",\n' +
+    '                                    "keyIndex": 0\n' +
+    '                                }\n' +
+    '                            ],\n' +
+    '                            "valueName": "valueName"\n' +
     '                        }\n' +
-    '                    ],\n' +
-    '                    "valueName": "valueName"\n' +
+    '                    ]\n' +
     '                }\n' +
     '            ]\n' +
     '        }\n' +

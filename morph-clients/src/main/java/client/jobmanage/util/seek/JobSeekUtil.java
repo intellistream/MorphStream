@@ -157,7 +157,6 @@ public class JobSeekUtil {
     public static void removeJob(String jobId) {
         // remove job includes removing job info, batches and compile files
         // remove job info
-        log.info("Removing job: " + jobId);
         File jobInfoFile = new File(String.format("%s/%s.json", Util.jobInfoDirectory, jobId));
         if (Util.validateFile(jobInfoFile)) {
             if (jobInfoFile.delete()) {
