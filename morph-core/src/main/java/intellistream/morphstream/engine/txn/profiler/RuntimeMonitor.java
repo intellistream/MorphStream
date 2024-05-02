@@ -53,7 +53,11 @@ public class RuntimeMonitor extends Thread {
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Batch>> batchedData = new ConcurrentHashMap<>();
-    private final String dataPath = "data/jobs";
+    private static String dataPath = "data/jobs/info";
+
+    public static void setDataPath(String path) {
+        dataPath = path;
+    }
 
     public static RuntimeMonitor get() {
         return runtimeMonitor;
@@ -289,7 +293,7 @@ public class RuntimeMonitor extends Thread {
                 opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
 
         try {
-            File directory = new File(String.format("%s/%s/%s", dataPath, "3", operatorID));
+            File directory = new File(String.format("%s/%s", dataPath, operatorID));
             if (!directory.exists()) {
                 if (directory.mkdirs()) {
                     Log.info("Directory created successfully.");
@@ -300,8 +304,7 @@ public class RuntimeMonitor extends Thread {
             }
             batchedData.putIfAbsent(operatorID, new ConcurrentHashMap<>());
             batchedData.get(operatorID).put(latestBatchID, batch);
-//            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, latestBatchID)), batchRuntimeData);
-            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, "3", operatorID, latestBatchID)), batch);
+            objectMapper.writeValue(new File(String.format("%s/%s/%d.json", dataPath, operatorID, latestBatchID)), batch);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -1,6 +1,5 @@
 package runtimeweb.service;
 
-import client.impl.SLClient;
 import client.jobmanage.util.initialize.JobCallingUtil;
 import client.jobmanage.util.initialize.JobPrepareUtil;
 import client.jobmanage.util.seek.JobSeekUtil;
@@ -62,14 +61,14 @@ public class SignalService {
             return false;
         }
 
-        boolean initialized = JobInitializeUtil.initialize(jobName, parallelism, jobConfiguration); // initialize the job
-        if (!initialized) {
+        Integer jobId = JobInitializeUtil.initialize(jobName, parallelism, jobConfiguration); // initialize the job
+        if (jobId == null) {
             LOG.error("Failed to initialize the job");
             return false;
         }
 
-        code = JobInitializeUtil.preprocessedCode(code, jobConfiguration);
-        JobInitializeUtil.saveCode(code, String.valueOf(JobSeekUtil.getJobIdByName(jobName)), jobName);
+        code = JobInitializeUtil.preprocessedCode(code, String.valueOf(jobId), jobConfiguration);
+        JobInitializeUtil.saveCode(code, String.valueOf(jobId), jobName);
 
         if (startNow) {
             try {

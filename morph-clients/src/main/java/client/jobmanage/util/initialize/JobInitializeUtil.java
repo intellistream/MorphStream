@@ -30,10 +30,10 @@ public class JobInitializeUtil {
      * @param jobName the name of the job
      * @return true if the job is initialized successfully, false otherwise
      */
-    public static boolean initialize(String jobName, int parallelism, JobConfiguration jobConfiguration) {
+    public static Integer initialize(String jobName, int parallelism, JobConfiguration jobConfiguration) {
         // create jobInfo directory if not exists
         if (!Util.validateAndMakeDirectory(Util.jobInfoDirectory) || !Util.validateAndMakeDirectory(Util.jobCompileDirectory)) {
-            return false;
+            return null;
         }
 
         int jobId = generateJobId();
@@ -43,7 +43,7 @@ public class JobInitializeUtil {
         Path jobFile = Paths.get(jobFileName);
         if (Files.exists(jobFile)) {
             log.error("Job JSON file already exists.");
-            return false;
+            return null;
         } else {
             try {
                 Files.createFile(jobFile);
@@ -75,16 +75,17 @@ public class JobInitializeUtil {
         } catch (IOException e) {
             log.error("Error in creating Job JSON file: " + e.getMessage());
         }
-        return true;
+        return jobId;
     }
 
-    public static String preprocessedCode(String code, JobConfiguration jobConfiguration) {
+    public static String preprocessedCode(String code, String jobId, JobConfiguration jobConfiguration) {
         // convert string description to a multipart file
         StringBuilder startJobCodeBuilder = new StringBuilder();
 
         // add necessary imports if not exists
         List<String> necessaryImports = new ArrayList<String>(){{
             add("import client.CliFrontend;");
+            add("import client.Configuration;");
             add("import intellistream.morphstream.api.Client;");
             add("import intellistream.morphstream.api.state.StateAccess;");
             add("import intellistream.morphstream.api.output.Result;");
@@ -148,6 +149,7 @@ public class JobInitializeUtil {
             startJobCodeBuilder.append("        job.setSpoutCombo(\"").append(opDesc.getName()).append("\", txnDescriptions, 4);\n");
             startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{\"").append(opDesc.getName()).append("\"});\n");
         }
+        startJobCodeBuilder.append("        RuntimeMonitor.setDataPath(Configuration.JOB_INFO_PATH + \"/").append(jobId).append("\");\n");
 
 //        startJobCodeBuilder.append("        job.setSpoutCombo(jobConfiguration.getOperatorDescription().getName(), txnDescriptions, 4);\n");
 //        startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{jobConfiguration.getOperatorDescription().getName()});\n");
@@ -174,7 +176,7 @@ public class JobInitializeUtil {
      * @param configFile config file
      * @return concatenated code
      */
-    public static String preprocessedCode(String code, MultipartFile configFile) {
+    public static String preprocessedCode(String code, String jobId, MultipartFile configFile) {
         String description = "";
         JobConfiguration jobConfiguration = null;
         try {
@@ -183,7 +185,7 @@ public class JobInitializeUtil {
         } catch (IOException e) {
             log.error("Error in reading description: " + e.getMessage());
         }
-        return preprocessedCode(code, jobConfiguration);
+        return preprocessedCode(code, jobId, jobConfiguration);
     }
 
     /**

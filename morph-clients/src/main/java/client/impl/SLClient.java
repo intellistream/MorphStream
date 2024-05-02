@@ -1,6 +1,7 @@
 package client.impl;
 
 import client.CliFrontend;
+import client.Configuration;
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
@@ -143,6 +144,7 @@ public class SLClient extends Client {
         slClientJob.setSpoutCombo("sl", txnDescriptions, 4);
         // create an array of operator IDs for monitoring
         RuntimeMonitor.setOperatorIDs(new String[]{"sl"});
+        RuntimeMonitor.setDataPath(Configuration.JOB_INFO_PATH + "/-1");
 
         //TODO: let client determine number of DB loader threads, and update in config, then pass to DBInitializer
         //TODO: loadDBThreadNum = total threads of all stateful operators (bolts)
