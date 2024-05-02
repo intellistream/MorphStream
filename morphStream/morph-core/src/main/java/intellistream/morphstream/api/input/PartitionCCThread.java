@@ -88,14 +88,13 @@ public class PartitionCCThread implements Runnable {
                 // Simulating cross-partition state access
                 try {
                     int targetPartitionState = VNFManager.getSender(targetInstanceID).readLocalState(partitionData.getTupleID());
-                    VNFManager.getSender(partitionData.getInstanceID()).writeLocalState(partitionData.getTupleID(), targetPartitionState);
+                    VNFManager.getSender(targetInstanceID).writeLocalState(partitionData.getTupleID(), targetPartitionState);
                     //TODO: Add locking here
+                    partitionData.getSenderResponseQueue().add(1);
 
                 } catch (NullPointerException e) {
                     throw new RuntimeException(e);
                 }
-                VNFRequest request = new VNFRequest((int) partitionData.getTxnReqId(), partitionData.getInstanceID(), partitionData.getTupleID(), 1, partitionData.getTimeStamp()); //TODO: Optimization
-                VNFManager.getReceiver(partitionData.getInstanceID()).submitFinishedRequest(request);
             }
         }
     }

@@ -7,11 +7,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.*;
 
 public class VNFSenderThread implements Runnable {
     private int instanceID;
@@ -22,8 +18,10 @@ public class VNFSenderThread implements Runnable {
     private int stateRange; //entire state space
     private int stateDefaultValue = 0;
     private final CyclicBarrier finishBarrier;
-    private HashMap<Integer, Integer> localStateMap = new HashMap<>();
+    private ConcurrentHashMap<Integer, Integer> localStateMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = AdaptiveCCManager.tpgQueues;
+    private BlockingQueue<SyncData> managerSyncQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<Integer> managerResponseQueue = new LinkedBlockingQueue<>();
     private final int numSpouts = MorphStreamEnv.get().configuration().getInt("tthread");
     private int requestCounter = 0;
     private int lineCounter = 0;
@@ -44,13 +42,6 @@ public class VNFSenderThread implements Runnable {
 
     @Override
     public void run() {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        System.out.println("VNF sender instance " + instanceID + " started.");
-
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(csvFilePath));
@@ -64,29 +55,48 @@ public class VNFSenderThread implements Runnable {
 
                 lineCounter++;
 
-                if (ccStrategy == 0) { // Partition
+                if (ccStrategy == 0) { // local state access
+                    long timestamp = System.currentTimeMillis();
                     if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
                         vnfFunction(tupleID, type, 0);
-                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, System.currentTimeMillis()));
+                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
 
-                    } else { //Let partition manager handle the request
-                        PartitionCCThread.submitPartitionRequest(new PartitionData(System.currentTimeMillis(), reqID, instanceID, tupleID, 0));
+                    } else { // cross-partition state access
+                        PartitionCCThread.submitPartitionRequest(new PartitionData(timestamp, reqID, instanceID, tupleID, 0, managerResponseQueue));
+                        int response = managerResponseQueue.take(); // Wait for response from StateManager
+                        if (response == 1) {
+                            VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                        } else {
+                            System.err.println("Error in processing cross-partition request to tuple: " + tupleID);
+                        }
                     }
 
                 } else if (ccStrategy == 1) { // Replication
+                    long timestamp = System.currentTimeMillis();
                     if (type == 0) { // read
+                        if (!managerSyncQueue.isEmpty()) {
+                            processAllQueueItems();
+                        }
                         vnfFunction(tupleID, type, 0);
-                        //TODO: Consider adding a delay here to simulate synchronization check
-                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, System.currentTimeMillis()));
+                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
 
                     } else if (type == 1 || type == 2) { // write
                         vnfFunction(tupleID, type, 0);
-                        CacheCCThread.submitReplicationRequest(new CacheData(0, tupleID, instanceID, 0));
-                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, System.currentTimeMillis()));
+                        CacheCCThread.submitReplicationRequest(new CacheData(timestamp, tupleID, instanceID, 0, managerResponseQueue));
+                        int response = managerResponseQueue.take(); // Wait for response from StateManager
+                        if (response == 1) {
+                            VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                        } else {
+                            System.err.println("Error in sync updates to instance caches: " + tupleID);
+                        }
                     }
 
                 } else if (ccStrategy == 2) { // Offload
-                    OffloadCCThread.submitOffloadReq(new OffloadData(System.currentTimeMillis(), instanceID, reqID, tupleID, 0, 0, 0, type));
+                    long timestamp = System.currentTimeMillis();
+                    OffloadCCThread.submitOffloadReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type, managerResponseQueue));
+                    if (type != 1) {
+                        int response = managerResponseQueue.take(); // Wait for response from StateManager
+                    }
 
                 } else if (ccStrategy == 3) { // TPG
                     tpgQueues.get(requestCounter % numSpouts).offer(new TransactionalVNFEvent(type, instanceID, System.currentTimeMillis(), reqID, tupleID, 0, 0, 0));
@@ -135,6 +145,23 @@ public class VNFSenderThread implements Runnable {
         } catch (Exception e) {
             System.err.println("Error in VNF function: " + e.getMessage());
             return -1;
+        }
+    }
+
+    private void processAllQueueItems() throws InterruptedException {
+        while (!managerSyncQueue.isEmpty()) {
+            SyncData data = managerSyncQueue.take();  // Block if necessary until an item is available
+            int tupleID = data.getTupleID();
+            int value = data.getValue();
+            localStateMap.put(tupleID, value);
+        }
+    }
+
+    public void submitSyncData(SyncData data) {
+        try {
+            managerSyncQueue.put(data);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

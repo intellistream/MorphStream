@@ -15,6 +15,7 @@ function ResetParameters() {
   serveRemoteVNF=0
   vnfInstanceNum=4
   offloadCCThreadNum=4
+  offloadLockNum=1000
   rRatioSharedReaders=80
   wRatioSharedWriters=80
   rwRatioMutualInteractive=80
@@ -37,6 +38,7 @@ function runTStream() {
           --serveRemoteVNF $serveRemoteVNF \
           --vnfInstanceNum $vnfInstanceNum \
           --offloadCCThreadNum $offloadCCThreadNum \
+          --offloadLockNum $offloadLockNum \
           --rRatioSharedReaders $rRatioSharedReaders \
           --wRatioSharedWriters $wRatioSharedWriters \
           --rwRatioMutualInteractive $rwRatioMutualInteractive \
@@ -57,6 +59,7 @@ function runTStream() {
     --serveRemoteVNF $serveRemoteVNF \
     --vnfInstanceNum $vnfInstanceNum \
     --offloadCCThreadNum $offloadCCThreadNum \
+    --offloadLockNum $offloadLockNum \
     --rRatioSharedReaders $rRatioSharedReaders \
     --wRatioSharedWriters $wRatioSharedWriters \
     --rwRatioMutualInteractive $rwRatioMutualInteractive \

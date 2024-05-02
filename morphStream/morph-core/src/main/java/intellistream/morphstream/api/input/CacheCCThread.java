@@ -84,10 +84,11 @@ public class CacheCCThread implements Runnable {
                 // Simulating state update synchronization to other instances
                 for (Map.Entry<Integer, VNFSenderThread> entry : VNFManager.getSenderMap().entrySet()) {
                     if (entry.getKey() != cacheData.getInstanceID()) {
-                        int updateValue = cacheData.getValue();
-                        entry.getValue().writeLocalState(cacheData.getTupleID(), updateValue);
+                        SyncData syncData = new SyncData(cacheData.getTimestamp(), cacheData.getTupleID(), cacheData.getValue());
+                        entry.getValue().submitSyncData(syncData);
                     }
                 }
+                cacheData.getSenderResponseQueue().add(1);
             }
         }
     }

@@ -4,14 +4,14 @@ import os
 import shutil
 
 class PatternGenerator:
-    def __init__(self, tuple_range=10000, instance_count=4, request_count=100000, type_zero_probability=0.8, type_one_probability=0.8, type_two_probability=0.8):
+    def __init__(self, tuple_range=10000, instance_count=4, request_count=100000, pattern_1_prob=0.8, pattern_2_prob=1, pattern_3_prob=0.8):
         self.tuple_range = tuple_range
         self.instance_count = instance_count
         self.request_count = request_count
         self.base_dir = os.path.join(os.getcwd(), 'pattern_files')
-        self.type_zero_probability = type_zero_probability  # Probability for type 0 in sharedReaders pattern
-        self.type_one_probability = type_one_probability    # Probability for type 1 in sharedWriters pattern
-        self.type_two_probability = type_two_probability    # Probability for type 2 in mutualInteractive pattern
+        self.type_zero_probability = pattern_1_prob  # Probability for type 0 in sharedReaders pattern
+        self.type_one_probability = pattern_2_prob    # Probability for type 1 in sharedWriters pattern
+        self.type_two_probability = pattern_3_prob    # Probability for type 2 in mutualInteractive pattern
 
     def generate_files(self):
         # Remove existing files and directories before creating new ones
@@ -98,5 +98,5 @@ class PatternGenerator:
 # Usage
 if __name__ == "__main__":
     # Example instantiation with a specific probability for type 0 in sharedReaders
-    generator = PatternGenerator(type_zero_probability=0.8)
+    generator = PatternGenerator(pattern_1_prob=0.8)
     generator.generate_files()

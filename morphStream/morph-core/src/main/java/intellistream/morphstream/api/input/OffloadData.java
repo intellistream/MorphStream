@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.input;
 
+import java.util.concurrent.BlockingQueue;
+
 public class OffloadData {
     private final int instanceID;
     private final long timeStamp;
@@ -9,6 +11,7 @@ public class OffloadData {
     private final int saIndex;
     private final int isAbort;
     private final int saType;
+    private final BlockingQueue<Integer> senderResponseQueue;
 
     public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType) {
         this.instanceID = instanceID;
@@ -19,6 +22,19 @@ public class OffloadData {
         this.saIndex = saIndex;
         this.isAbort = isAbort;
         this.saType = saType;
+        this.senderResponseQueue = null;
+    }
+
+    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType, BlockingQueue<Integer> senderResponseQueue) {
+        this.instanceID = instanceID;
+        this.tupleID = tupleID;
+        this.timeStamp = timeStamp;
+        this.txnReqId = txnReqId;
+        this.txnIndex = txnIndex;
+        this.saIndex = saIndex;
+        this.isAbort = isAbort;
+        this.saType = saType;
+        this.senderResponseQueue = senderResponseQueue;
     }
 
     public int getInstanceID() {
@@ -51,5 +67,9 @@ public class OffloadData {
 
     public int getSaType() {
         return saType;
+    }
+
+    public BlockingQueue<Integer> getSenderResponseQueue() {
+        return senderResponseQueue;
     }
 }

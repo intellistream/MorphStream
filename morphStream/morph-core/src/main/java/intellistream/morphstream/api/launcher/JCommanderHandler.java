@@ -313,7 +313,7 @@ public class JCommanderHandler {
     /**
      * TransNFV Specific configurations
      */
-    @Parameter(names = {"--nfvWorkloadPath"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
+    @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
     public String nfvWorkloadPath = "morphStream/scripts/nfvWorkload";
     @Parameter(names = {"--serveRemoteVNF"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
     public int serveRemoteVNF = 0;
@@ -321,6 +321,8 @@ public class JCommanderHandler {
     public int vnfInstanceNum = 4;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int offloadCCThreadNum = 4;
+    @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
+    public int offloadLockNum = 1000;
     @Parameter(names = {"--rRatioSharedReaders"}, description = "Read ratio for shared readers pattern")
     public int rRatioSharedReaders = 80;
     @Parameter(names = {"--wRatioSharedWriters"}, description = "Write ratio for shared writers pattern")
@@ -533,6 +535,7 @@ public class JCommanderHandler {
         config.put("serveRemoteVNF", serveRemoteVNF);
         config.put("vnfInstanceNum", vnfInstanceNum);
         config.put("offloadCCThreadNum", offloadCCThreadNum);
+        config.put("offloadLockNum", offloadLockNum);
         config.put("rRatioSharedReaders", rRatioSharedReaders);
         config.put("wRatioSharedWriters", wRatioSharedWriters);
         config.put("rwRatioMutualInteractive", rwRatioMutualInteractive);
