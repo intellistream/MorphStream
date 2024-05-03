@@ -27,7 +27,6 @@ public class SignalService {
     public Boolean onStartSignal(String jobId) {
 //        JobInitializeUtil.initialize(jobId); // initialize the job
         JobPrepareUtil.prepare(jobId); // prepare the job
-        // TODO: start job based on job id
         LOG.info("Job started: " + jobId);
         try {
             JobCallingUtil.compileJobById(Integer.parseInt(jobId)); // compile the job

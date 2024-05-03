@@ -197,7 +197,7 @@ export class JobInformationComponent implements OnInit {
    */
   update() {
     this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl'].toString()).subscribe(res => {
-      if (res) {
+      if (res.batchId != -1) {
         res = this.transformTime(res);
         this.batchOptions.push({
           value: this.operatorLatestBatchNum['sl'].toString(),
@@ -246,7 +246,7 @@ export class JobInformationComponent implements OnInit {
   submitBatchStatisticForm(): void {
     if (this.batchForm.valid) {
       this.jobInformationService.getBatchById(this.job.jobId, "sl", this.batchForm.controls.batch.value).subscribe(res => {
-        if (res) {
+        if (res.batchId != -1) {
           res = this.transformTime(res);
           this.statisticBatch = res;
           this.statisticBatch.batchDuration = parseFloat((this.statisticBatch.batchDuration / 10**6).toFixed(1)); // ms
@@ -267,7 +267,7 @@ export class JobInformationComponent implements OnInit {
   submitTpgForm(): void {
     if (this.tpgForm.valid) {
       this.jobInformationService.getBatchById(this.job.jobId, "sl", this.tpgForm.controls.batch.value).subscribe(res => {
-        if (res) {
+        if (res.batchId != -1) {
           this.tpgBatch = res;
           this.tpgNodes = [];
           this.tpgLinks = [];

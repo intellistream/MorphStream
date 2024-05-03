@@ -30,6 +30,13 @@ public class Batch {
     private SchedulerTimeBreakdown schedulerTimeBreakdown;
     private String scheduler;
     private List<TPGNode> tpg;
+
+    public static Batch errorBatch() {
+        Batch batch = new Batch();
+        batch.setBatchId(-1);
+        return batch;
+    }
+
     public Batch(String jobId, String operatorID, double throughput,
                  double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
                  double accumulativeLatency, double accumulativeThroughput,

@@ -30,6 +30,9 @@ public class BatchInfoController {
     @GetMapping("/get/{jobId}/{batchId}/{operatorId}")
     public ResponseEntity<Batch> getBatchById(@PathVariable("jobId") String jobId, @PathVariable("operatorId") String operatorId, @PathVariable("batchId") String batchId) {
         Batch batch = batchInfoService.findBatchById(jobId, operatorId, batchId);
+        if (batch == null) {
+            return new ResponseEntity<>(Batch.errorBatch(), org.springframework.http.HttpStatus.OK);
+        }
         return new ResponseEntity<>(batch, org.springframework.http.HttpStatus.OK);
     }
 }
