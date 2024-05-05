@@ -4,6 +4,7 @@ import client.jobmanage.util.Util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.Batch;
 import dao.Job;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,19 +169,10 @@ public class JobSeekUtil {
         // remove batches
         File jobBatchDirectory = new File(String.format("%s/%s", Util.jobInfoDirectory, jobId));
         if (Util.validateAndMakeDirectory(jobBatchDirectory)) {
-            File[] batchFiles = jobBatchDirectory.listFiles();
-            if (batchFiles != null) {
-                for (File batchFile : batchFiles) {
-                    if (batchFile.delete()) {
-                        log.info("Batch file is deleted!");
-                    } else {
-                        log.info("Failed to delete batch file!");
-                    }
-                }
-            }
-            if (jobBatchDirectory.delete()) {
+            try {
+                FileUtils.deleteDirectory(jobBatchDirectory);
                 log.info("Job batch directory is deleted!");
-            } else {
+            } catch (IOException e) {
                 log.info("Failed to delete job batch directory!");
             }
         }
