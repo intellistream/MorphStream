@@ -15,6 +15,8 @@ public class Util {
 
     public static final File compileDependencyDirectory = new File(String.format("%s", Configuration.COMPILE_DEPENDENCY_PATH));
 
+    public static final File tempDirectory = new File(String.format("%s", Configuration.TEMP_PATH));
+
     /**
      * Util method that check the validity of a directory
      * @param directory the directory to be validated

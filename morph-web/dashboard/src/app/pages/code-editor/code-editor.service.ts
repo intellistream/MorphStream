@@ -33,6 +33,15 @@ export class CodeEditorService {
     return this.http.post(`http://localhost:8080/api/signal/submit/job_description`, formData);
   }
 
+  public onConfirmSubmitFiles(files: NzUploadFile[], parallelism: number, startNow: boolean): Observable<any> {
+    const formData = new FormData();
+    const fileNames = files.map(file => file.name);
+    formData.append('files', fileNames.toString());
+    formData.append('parallelism', parallelism.toString());
+    formData.append('startNow', startNow.toString());
+    return this.http.post(`http://localhost:8080/api/signal/submit/confirm_files`, formData);
+  }
+
   public uploadConfigFile(item: any): Observable<any> {
     return new Observable((observer: Observer<any>) => {
       const formData = new FormData();

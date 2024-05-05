@@ -2,6 +2,7 @@ package runtimeweb.service;
 
 import client.jobmanage.util.initialize.JobCallingUtil;
 import client.jobmanage.util.initialize.JobPrepareUtil;
+import client.jobmanage.util.initialize.JobUploadUtil;
 import client.jobmanage.util.seek.JobSeekUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -105,5 +106,41 @@ public class SignalService {
     public Boolean onDeleteSignal(String jobId) {
         JobSeekUtil.removeJob(jobId);
         return true;
+    }
+
+    public Boolean onSubmitFileSignal(MultipartFile file) throws IOException {
+        String fileName = file.getOriginalFilename();
+        if (fileName == null) {
+            LOG.error("Failed to get the file name");
+            return false;
+        }
+        return JobUploadUtil.onJobUpload(file);
+    }
+    public Boolean onConfirmFilesSubmitSignal(String[] fileNames, int parallelism, boolean startNow) {
+        if (fileNames == null || fileNames.length != 2) {
+            return false;
+        }
+
+        for (String fileName : fileNames) {
+            // check if the files are uploaded
+            if (!JobUploadUtil.isUploaded(fileName)) {
+                return false;
+            }
+        }
+
+        String jobName = "";
+        String code = "";
+        String description = "";
+        // read the files (.java and .json)
+        for (String fileName : fileNames) {
+            if (fileName.endsWith(".java")) {
+                code = JobUploadUtil.readFile(fileName);
+            } else if (fileName.endsWith(".json")) {
+                description = JobUploadUtil.readFile(fileName);
+            }
+        }
+        jobName = fileNames[0].substring(0, fileNames[0].length() - 5);
+        JobUploadUtil.clear();
+        return onSubmitSignal(jobName, parallelism, startNow, code, description);
     }
 }

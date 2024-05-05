@@ -64,6 +64,7 @@ export class CodeEditorComponent implements AfterViewInit {
     '}\n';
 
   isSubmittingNewJob = false;
+  isSubmittingFiles = false;
   submitForm: FormGroup<{
     job: FormControl<string>;
     parallelism: FormControl<number>;
@@ -80,9 +81,6 @@ export class CodeEditorComponent implements AfterViewInit {
       job: ['', [Validators.required]],
       parallelism: [4, [Validators.required]],
       startNow: [false, [Validators.required]],
-      // configFile: [null, [Validators.required, (control: AbstractControl): { [key: string]: any } | null => {
-      //   return control.value instanceof File ? null : {invalid: true};
-      // }]]
     });
   }
 
@@ -98,7 +96,7 @@ export class CodeEditorComponent implements AfterViewInit {
     this.isSubmittingNewJob = false;
   }
 
-  confirmSubmit() {
+  onConfirmSubmit() {
     if (this.submitForm.valid) {
       // this.codeEditorService.submitNewJobByConfigFile(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code, this.fileList[0]).subscribe(res => {
       //   this.message.success(`Job ${this.submitForm.value.job} is submitted successfully`);
@@ -119,6 +117,27 @@ export class CodeEditorComponent implements AfterViewInit {
         this.message.error('Please upload a description file');
       }
     }
+  }
+
+  onSubmitFiles() {
+    this.isSubmittingFiles = true;
+  }
+
+  onCancelSubmitFiles() {
+    this.isSubmittingFiles = false;
+    this.fileList = [];
+  }
+
+  onConfirmSubmitFiles() {
+    this.isSubmittingFiles = false;
+    this.codeEditorService.onConfirmSubmitFiles(this.fileList, this.parallelism, false).subscribe(res => {
+      if (res) {
+        this.message.success('Files are submitted successfully');
+      } else {
+        this.message.error('Failed to submit files');
+      }
+      this.fileList = [];
+    });
   }
 
   dummyRequestHandler = (item: any): Subscription => {
