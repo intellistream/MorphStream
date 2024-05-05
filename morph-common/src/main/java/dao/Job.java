@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,12 +39,17 @@ public class Job {
     private SchedulerTimeBreakdown schedulerTimeBreakdown;
 
     public Job(int JobId, String name, int nThreads, ArrayList<Operator> operators) {
+        // get current time
+        LocalDateTime currentTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedTime = currentTime.format(formatter);
+
         this.jobId = JobId;
         this.name = name;
         this.nThreads = nThreads;
         this.cpu = "NA";
         this.ram = "NA";
-        this.startTime = "NA";
+        this.startTime = formattedTime;
         this.duration = "NA";
         this.isRunning = false;
         this.nEvents = 0;

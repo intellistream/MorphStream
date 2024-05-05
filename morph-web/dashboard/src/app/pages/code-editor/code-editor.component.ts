@@ -15,10 +15,25 @@ import {Subscription} from "rxjs";
 export class CodeEditorComponent implements AfterViewInit {
   job = '';
   parallelism = 4;
-  code = `import { NzCodeEditorModule } from 'ng-zorro-antd/code-editor'`;
+  code = 'public class Job extends Clients {\n' +
+    '    @Override\n' +
+    '    public boolean transactionUDF(StateAccess access) {\n' +
+    '        boolean isSuccess = true;\n' +
+    '        // Your code here\n' +
+    '        return isSuccess;\n' +
+    '    }\n' +
+    '\n' +
+    '    @Override\n' +
+    '    public Result postUDF(String txnName, HashMap<String, StateAccess> stateAccessMap) {\n' +
+    '        Result result = new Result();\n' +
+    '        // Your code here\n' +
+    '        return result;\n' +
+    '    }\n' +
+    '}';
+
   description =
     '{\n' +
-    '    "name": "jobName",\n' +
+    '    "name": "Job",\n' +
     '    "operatorDescription": [\n' +
     '        {\n' +
     '            "name": "operatorName",\n' +

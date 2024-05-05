@@ -45,7 +45,7 @@
             <th>Name</th>
             <th>Working Threads</th>
             <th>Create Time</th>
-            <th>Duration</th>
+<!--            <th>Duration</th>-->
             <th>Status</th>
           </tr>
         </thead>
@@ -54,7 +54,7 @@
             <td><a [routerLink]="['/job', application.jobId]"><b>{{application.name}}</b></a></td>
             <td>{{application.nthreads}}</td>
             <td>{{application.startTime}}</td>
-            <td>{{application.duration}} s</td>
+<!--            <td>{{application.duration}} s</td>-->
             <td><nz-tag [nzColor]="application.isRunning?'#2db7f5':'#cd201f'">{{application.isRunning?"running":"stopped"}}</nz-tag></td>
           </tr>
         </tbody>
