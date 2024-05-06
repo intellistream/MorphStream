@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,6 +37,12 @@ public class OffloadCCThread implements Runnable {
     private static final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each tuple to its lock partition
     private static int requestCounter = 0;
+    private final ReentrantLock globalLock = new ReentrantLock();
+    private final Condition nextEventCondition = globalLock.newCondition();
+    private int watermark = 0;
+
+    private boolean doStatePartitioning = false;
+
 
     public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize,
                            HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap) {
@@ -78,6 +85,7 @@ public class OffloadCCThread implements Runnable {
                     offloadExecutor.shutdownNow();
                     break; // stop signal received
                 }
+                offloadData.setLogicalTimeStamp(requestCounter++);
                 int saType = saTypeMap.get(offloadData.getSaIndex());
                 if (saType == 1) {
                     try {
@@ -109,8 +117,10 @@ public class OffloadCCThread implements Runnable {
                 if (offloadData.getTimeStamp() == -1) {
                     System.out.println("Offload CC received stop signal. Total requests: " + requestCounter);
                     offloadExecutor.shutdownNow();
-                    break; // stop signal received
+                    break;
                 }
+                requestCounter++;
+                offloadData.setLogicalTimeStamp(requestCounter);
                 int saType = offloadData.getSaType();
                 if (saType == 1) {
                     offloadData.getSenderResponseQueue().add(1); //Immediate acknowledge write
@@ -118,13 +128,17 @@ public class OffloadCCThread implements Runnable {
                             offloadData.getTupleID(), 1, offloadData.getTimeStamp());
                     VNFManager.getReceiver(offloadData.getInstanceID()).submitFinishedRequest(request);
                 }
-                offloadExecutor.submit(() -> processWithLock(offloadData));
-                requestCounter++;
+
+                if (doStatePartitioning) {
+                    offloadExecutor.submit(() -> processWithPartitionLock(offloadData));
+                } else {
+                    offloadExecutor.submit(() -> processWithGlobalLock(offloadData));
+                }
             }
         }
     }
 
-    private void processWithLock(OffloadData offloadData) {
+    private void processWithPartitionLock(OffloadData offloadData) { //TODO: Ordering needs to be guaranteed
         int tupleID = offloadData.getTupleID();
         int saType = offloadData.getSaType();
         Lock lock = partitionLocks.get(partitionOwnership.get(tupleID));
@@ -139,6 +153,43 @@ public class OffloadCCThread implements Runnable {
             lock.unlock();
         }
     }
+
+    public void processWithGlobalLock(OffloadData offloadData) {
+        boolean processed = false;
+        while (!processed) {
+            // Check if this event is the next to be processed
+            if (offloadData.getLogicalTimeStamp() == watermark + 1) {
+                globalLock.lock();
+                try {
+                    if (offloadData.getLogicalTimeStamp() == watermark + 1) {
+                        int saType = offloadData.getSaType();
+                        if (saType == 1) {
+                            simOffloadWrite(offloadData);
+                        } else if (saType == 0 || saType == 2) {
+                            simOffloadRead(offloadData);
+                        }
+                        watermark++;
+                        nextEventCondition.signalAll();  // Notify other waiting threads
+                        processed = true;  // Mark as processed to break the loop
+                    }
+                } finally {
+                    globalLock.unlock();  // Always release the lock
+                }
+            } else {
+                globalLock.lock();
+                try {
+                    while (offloadData.getLogicalTimeStamp() != watermark + 1) {
+                        nextEventCondition.await();
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    globalLock.unlock();
+                }
+            }
+        }
+    }
+
 
     private void offloadWrite(OffloadData offloadData) {
 

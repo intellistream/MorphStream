@@ -332,7 +332,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy")
     public int ccStrategy = 3;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 3;
+    public int workloadPattern = 2;
 
 
     public JCommanderHandler() {}

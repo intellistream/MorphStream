@@ -11,6 +11,7 @@ public class OffloadData {
     private final int saIndex;
     private final int isAbort;
     private final int saType;
+    private int logicalTimeStamp;
     private final BlockingQueue<Integer> senderResponseQueue;
 
     public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType) {
@@ -71,5 +72,11 @@ public class OffloadData {
 
     public BlockingQueue<Integer> getSenderResponseQueue() {
         return senderResponseQueue;
+    }
+    public int getLogicalTimeStamp() {
+        return logicalTimeStamp;
+    }
+    public void setLogicalTimeStamp(int logicalTimeStamp) {
+        this.logicalTimeStamp = logicalTimeStamp;
     }
 }
