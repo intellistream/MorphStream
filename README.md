@@ -31,7 +31,7 @@ If you use MorphStream in your paper, please cite our work.
   Scheduling for Scalable Transactional Stream Processing on Multicores, SIGMOD, 2023
 * **[ICDE]** Jianjun Zhao*, Haikun Liu, Shuhao Zhang, Zhuohui Duan, Xiaofei Liao, Hai Jin, Yu Zhang. Fast Parallel Recovery for Transactional Stream Processing on Multicores, ICDE, 2024
 * **[ICDE]** Siqi Xiang*, Zhonghao Yang*, Shuhao Zhang, Jianjun Zhao, Yancan Mao. MorphStream: Scalable Processing of Transactions over Streams, ICDE (Demo), 2024
-
+* **[VLDBJ]** Zhang, S., Soto, J. & Markl, V. A survey on transactional stream processing. The VLDB Journal 33, 451–479 (2024).
 ```
 @inproceedings{9101749,
 	title        = {Towards Concurrent Stateful Stream Processing on Multicore Processors},
