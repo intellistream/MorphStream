@@ -189,7 +189,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "accounts,bookEntries";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "4500,4500"; // 10000,10000
+    public String numberItemsForTables = "10000,10000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string,string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
