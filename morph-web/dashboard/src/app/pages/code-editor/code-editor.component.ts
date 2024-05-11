@@ -14,7 +14,6 @@ import {Subscription} from "rxjs";
 })
 export class CodeEditorComponent implements AfterViewInit {
   job = '';
-  parallelism = 4;
   code = 'public class Job extends Clients {\n' +
     '    @Override\n' +
     '    public boolean transactionUDF(StateAccess access) {\n' +
@@ -67,7 +66,7 @@ export class CodeEditorComponent implements AfterViewInit {
   isSubmittingFiles = false;
   submitForm: FormGroup<{
     job: FormControl<string>;
-    parallelism: FormControl<number>;
+    // parallelism: FormControl<number>;
     startNow: FormControl<boolean>;
     // configFile: FormControl;
   }>;
@@ -79,7 +78,7 @@ export class CodeEditorComponent implements AfterViewInit {
   constructor(private fb: NonNullableFormBuilder, private codeEditorService: CodeEditorService, private message: NzMessageService) {
     this.submitForm = this.fb.group({
       job: ['', [Validators.required]],
-      parallelism: [4, [Validators.required]],
+      // parallelism: [4, [Validators.required]],
       startNow: [false, [Validators.required]],
     });
   }
@@ -102,7 +101,7 @@ export class CodeEditorComponent implements AfterViewInit {
       //   this.message.success(`Job ${this.submitForm.value.job} is submitted successfully`);
       //   this.isSubmittingNewJob = false;
       // });
-      this.codeEditorService.submitNewJobByDescription(this.submitForm.value.job!, this.submitForm.value.parallelism!, this.submitForm.value.startNow!, this.code, this.description).subscribe(res => {
+      this.codeEditorService.submitNewJobByDescription(this.submitForm.value.job!, 4, this.submitForm.value.startNow!, this.code, this.description).subscribe(res => {
         this.message.success(`Job ${this.submitForm.value.job} is submitted successfully`);
         this.isSubmittingNewJob = false;
       });
@@ -130,7 +129,7 @@ export class CodeEditorComponent implements AfterViewInit {
 
   onConfirmSubmitFiles() {
     this.isSubmittingFiles = false;
-    this.codeEditorService.onConfirmSubmitFiles(this.fileList, this.parallelism, false).subscribe(res => {
+    this.codeEditorService.onConfirmSubmitFiles(this.fileList, 4, false).subscribe(res => {
       if (res) {
         this.message.success('Files are submitted successfully');
       } else {

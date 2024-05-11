@@ -62,11 +62,11 @@ public class JobInitializeUtil {
         // create jobInfo json file for new job
         ArrayList<Operator> operators = new ArrayList<>();
         for (OperatorDescription operatorDescription : jobConfiguration.getOperatorDescription()) {
-            Operator operator = new Operator(String.valueOf(jobConfiguration.getOperatorDescription().indexOf(operatorDescription)), operatorDescription.getName(), parallelism);
+            Operator operator = new Operator(String.valueOf(jobConfiguration.getOperatorDescription().indexOf(operatorDescription)), operatorDescription.getName(), jobConfiguration.getParallelism());
             operators.add(operator);
         }
 
-        Job job = new Job(jobId, jobName, parallelism, operators);
+        Job job = new Job(jobId, jobName, jobConfiguration.getParallelism(), operators);
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
