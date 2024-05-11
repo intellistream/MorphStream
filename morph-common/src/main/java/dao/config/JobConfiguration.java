@@ -18,5 +18,9 @@ import java.util.List;
 @NoArgsConstructor
 public class JobConfiguration {
     private String name;
+    private List<Table> tables;
+    private Event event;
+    private int totalEvents;
+    private int checkpointInterval;
     private List<OperatorDescription> operatorDescription;
 }

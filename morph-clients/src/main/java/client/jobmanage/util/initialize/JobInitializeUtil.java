@@ -162,7 +162,56 @@ public class JobInitializeUtil {
         startJobCodeBuilder.append("    }\n");
 
         startJobCodeBuilder.append("    public static void main(String[] args) throws Exception {\n");
-        startJobCodeBuilder.append("        startJob(args);\n");
+
+        // change jcommandhandler's parameters
+        List<Table> tables = jobConfiguration.getTables();
+        StringBuilder tableNames = new StringBuilder();
+        StringBuilder numberItemsForTables = new StringBuilder();
+        StringBuilder keyDataTypesForTables = new StringBuilder();
+        StringBuilder valueDataTypesForTables = new StringBuilder();
+        StringBuilder valueNamesForTables = new StringBuilder();
+        for (Table table : tables) {
+            tableNames.append(table.getName()).append(",");
+            numberItemsForTables.append(table.getNumItems()).append(",");
+            keyDataTypesForTables.append(table.getKeyType()).append(",");
+            valueDataTypesForTables.append(table.getValueType()).append(",");
+            valueNamesForTables.append(table.getValueName()).append(",");
+        }
+        tableNames.deleteCharAt(tableNames.length() - 1);
+        numberItemsForTables.deleteCharAt(numberItemsForTables.length() - 1);
+        keyDataTypesForTables.deleteCharAt(keyDataTypesForTables.length() - 1);
+        valueDataTypesForTables.deleteCharAt(valueDataTypesForTables.length() - 1);
+        valueNamesForTables.deleteCharAt(valueNamesForTables.length() - 1);
+        String args = String.format("new String[]{\"--tableNames\", \"%s\", " +
+                "\"--numberItemsForTables\", \"%s\", " +
+                "\"--keyDataTypesForTables\", \"%s\", " +
+                "\"--valueDataTypesForTables\", \"%s\", " +
+                "\"--valueNamesForTables\", \"%s\", " +
+                "\"--totalEvents\", \"%s\", " +
+                "\"--checkpoint_interval\", \"%s\", " +
+                "\"--eventTypes\", \"%s\", " +
+                "\"--tableNameForEvents\", \"%s\", " +
+                "\"--keyNumberForEvents\", \"%s\", " +
+                "\"--valueNameForEvents\", \"%s\", " +
+                "\"--eventRatio\", \"%s\", " +
+                "\"--operatorIDs\", \"%s\"" +
+                "}",
+                tableNames,
+                numberItemsForTables,
+                keyDataTypesForTables,
+                valueDataTypesForTables,
+                valueNamesForTables,
+                jobConfiguration.getTotalEvents(),
+                jobConfiguration.getCheckpointInterval(),
+                jobConfiguration.getEvent().getEventTypes(),
+                jobConfiguration.getEvent().getTableNameForEvents(),
+                jobConfiguration.getEvent().getKeyNumberForEvents(),
+                jobConfiguration.getEvent().getValueForEvents(),
+                jobConfiguration.getEvent().getEventRatio(),
+                jobConfiguration.getOperatorDescription().get(0).getName()
+        );
+
+        startJobCodeBuilder.append("        startJob(").append(args).append(");\n");
         startJobCodeBuilder.append("    }\n");
         startJobCodeBuilder.append("}");
 
