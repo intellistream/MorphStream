@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Properties;
 
 import static intellistream.morphstream.engine.txn.content.LVTStreamContent.LVTSTREAM_CONTENT;
@@ -114,14 +115,14 @@ public class JCommanderHandler {
      * Workload tuning configurations
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
+//    public String application = "StreamLedger";
 //    public String application = "SHJ";
-//    public String application = "GrepSum";
+    public String application = "GrepSum";
 //    public String application = "WindowedGrepSum";
 //    public String application = "OnlineBiding";
 //    public String application = "TollProcessing";
     @Parameter(names = {"--operatorIDs"}, description = "Unique identifiers for operators")
-    public String operatorIDs = "sl";
+    public String operatorIDs = "gs";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
@@ -185,17 +186,32 @@ public class JCommanderHandler {
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 100_00;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
-    public int loadDBThreadNum = 4;//number of partitions in each table
+    public int loadDBThreadNum = 8;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "accounts,bookEntries";
+    public String tableNames = "microTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "10000,10000"; // 10000,10000
+    public String numberItemsForTables = "10000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
-    public String keyDataTypesForTables = "string,string";
+    public String keyDataTypesForTables = "string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
-    public String valueDataTypesForTables = "double,double";
+    public String valueDataTypesForTables = "double";
     @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
-    public String valueNamesForTables = "balance,balance";
+    public String valueNamesForTables = "value";
+
+//    @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
+//    public int NUM_ITEMS = 100_00;//number of records in each table
+//    @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
+//    public int loadDBThreadNum = 8;//number of partitions in each table
+//    @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
+//    public String tableNames = "accounts,bookEntries";
+//    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
+//    public String numberItemsForTables = "10000,10000"; // 10000,10000
+//    @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
+//    public String keyDataTypesForTables = "string,string";
+//    @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
+//    public String valueDataTypesForTables = "double,double";
+//    @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
+//    public String valueNamesForTables = "balance,balance";
 
 
 
@@ -215,7 +231,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
     public String dataDirectory = "data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 10000;
+    public int totalEvents = 100000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
@@ -226,31 +242,49 @@ public class JCommanderHandler {
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging";
     //OP_BFS -> OP_NS -> OP_NS_A -> OP_NS -> OP_BFS -> OP_NS -> OP_NS_A -> OP_NS
     @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
-    public String eventTypes = "transfer;deposit";
+    public String eventTypes = "gsTransaction";
     @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
-    public String tableNameForEvents = "accounts,bookEntries;accounts,bookEntries";
+    public String tableNameForEvents = "microTable";
     @Parameter(names = {"--keyNumberForEvents"}, description = "number of keys for each type of event, split by ;")
-    public String keyNumberForEvents = "2,2;1,1"; //transfer: {account:2(src,dest). bookEntries:2(src,dest)}; deposit: {account:1(src), bookEntries:1(src)}
+    public String keyNumberForEvents = "5"; //transfer: {account:2(src,dest). bookEntries:2(src,dest)}; deposit: {account:1(src), bookEntries:1(src)}
     @Parameter(names = {"--valueNameForEvents"}, description = "value names for each type of event, split by ;")
-    public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
+    public String valueNameForEvents = "value";
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
-    public String eventRatio = "50,50";
+    public String eventRatio = "100";
     @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
-    public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
+    public String ratioOfMultiPartitionTransactionsForEvents = "1";
     @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
-    public String stateAccessSkewnessForEvents = "0,0";
+    public String stateAccessSkewnessForEvents = "0";
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
-    public String abortRatioForEvents = "0,0";
+    public String abortRatioForEvents = "0";
+
+//    @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
+//    public String eventTypes = "transfer;deposit";
+//    @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
+//    public String tableNameForEvents = "accounts,bookEntries;accounts,bookEntries";
+//    @Parameter(names = {"--keyNumberForEvents"}, description = "number of keys for each type of event, split by ;")
+//    public String keyNumberForEvents = "2,2;1,1"; //transfer: {account:2(src,dest). bookEntries:2(src,dest)}; deposit: {account:1(src), bookEntries:1(src)}
+//    @Parameter(names = {"--valueNameForEvents"}, description = "value names for each type of event, split by ;")
+//    public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
+//    @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
+//    public String eventRatio = "50,50";
+//    @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
+//    public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
+//    @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
+//    public String stateAccessSkewnessForEvents = "0,0";
+//    @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
+//    public String abortRatioForEvents = "0,0";
+
 
     //System configure
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
+    public int tthread = 8;// default total execution threads
     @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
-    public int spoutNum = 4;// number of spout threads
+    public int spoutNum = 8;// number of spout threads
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
-    public String operatorThreadNum = "4";// number of threads for each operator
+    public String operatorThreadNum = "8";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 2500;//checkpoint per thread.
+    public int checkpoint_interval = 1250;//checkpoint per thread.
 
 
 
@@ -296,10 +330,12 @@ public class JCommanderHandler {
         return properties;
     }
 
+//    public void updateCfg(Configuration config) {
+//        config
+//    }
+
     public void initializeCfg(Configuration config) {
         assert config != null;
-        /* Client configurations */
-        config.put("clientClassName", clientClassName);
 
         /* System configurations */
         config.put("CCOption", CCOption);
@@ -374,6 +410,12 @@ public class JCommanderHandler {
         config.put("shiftRate", shiftRate);
         config.put("phaseNum", phaseNum);
 
+        /* Client configurations */
+        if (Objects.equals(operatorIDs, "sl")) {
+            config.put("clientClassName", "client.impl.SLClient");
+        } else if (Objects.equals(operatorIDs, "gs")) {
+            config.put("clientClassName", "client.impl.GSClient");
+        }
 
         /* Fault tolerance configurations */
         config.put("FTOption", FTOption);
@@ -436,7 +478,7 @@ public class JCommanderHandler {
         /* Input configurations */
         config.put("rootPath", rootPath);
         config.put("inputFileType", inputFileType);
-        config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt"));
+        config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs/"+operatorIDs+"/events.txt"));
         config.put("inputFileName", inputFileName);
         config.put("dataDirectory", dataDirectory);
         config.put("totalEvents", totalEvents);

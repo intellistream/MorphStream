@@ -3,6 +3,7 @@ package client.impl;
 import client.CliFrontend;
 import client.Configuration;
 import intellistream.morphstream.api.Client;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
@@ -141,7 +142,7 @@ public class SLClient extends Client {
         txnDescriptions.put("deposit", depositDescriptor);
 
         //Define topology
-        slClientJob.setSpoutCombo("sl", txnDescriptions, 4);
+        slClientJob.setSpoutCombo("sl", txnDescriptions, MorphStreamEnv.get().configuration().getInt("tthread"));
         // create an array of operator IDs for monitoring
         RuntimeMonitor.setOperatorIDs(new String[]{"sl"});
         RuntimeMonitor.setDataPath(Configuration.JOB_INFO_PATH + "/-1");

@@ -69,7 +69,7 @@ public class RuntimeMonitor extends Thread {
 
     public static void Initialize() {
         for (String operatorID : operatorIDs) {
-            operatorThreadNumMap.put(operatorID, MorphStreamEnv.get().configuration().getInt("threadNumOf_" + operatorID, 4));
+            operatorThreadNumMap.put(operatorID, MorphStreamEnv.get().configuration().getInt("tthread"));
             operatorBatchNumMap.put(operatorID, 1);
             opEmptyLongArrays.put(operatorID, new long[operatorThreadNumMap.get(operatorID)]);
 
