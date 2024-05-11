@@ -112,9 +112,9 @@ export class JobInformationComponent implements OnInit {
         this.operatorGraphData.nodes.push({id: "spout", label: "Spout", instance: 1});
         // add operators to operator graph
         for (let i = 0; i < this.job.operators.length; i++) {
-          this.operatorLatestBatchNum["sl"] = 1;  // initialize the latest batch number
-          this.operatorAccumulativeLatency["sl"] = 0;  // initialize the accumulative latency
-          this.operatorAccumulativeThroughput["sl"] = 0;  // initialize the accumulative throughput
+          this.operatorLatestBatchNum[this.job.operators[i].name] = 1;  // initialize the latest batch number
+          this.operatorAccumulativeLatency[this.job.operators[i].name] = 0;  // initialize the accumulative latency
+          this.operatorAccumulativeThroughput[this.job.operators[i].name] = 0;  // initialize the accumulative throughput
           this.operatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name, instance: this.job.operators[i].numOfInstances});
           if (i > 0) {
             this.operatorGraphData.edges.push({v: this.job.operators[i - 1].id, w: this.job.operators[i].id});
@@ -139,11 +139,11 @@ export class JobInformationComponent implements OnInit {
    * Get historical data of the job
    */
   getHistoricalData() {
-    this.jobInformationService.getAllBatches(this.job.jobId, 'sl').subscribe(res => {
+    this.jobInformationService.getAllBatches(this.job.jobId, this.job.operators[0].name).subscribe(res => {
       res.sort((a, b) => {
         return a.batchId - b.batchId;
       });
-      this.operatorLatestBatchNum['sl'] = res.length + 1;
+      this.operatorLatestBatchNum[this.job.operators[0].name] = res.length + 1;
       for (let batch of res) {
         batch = this.transformTime(batch);
         this.batchOptions.push({
@@ -152,8 +152,8 @@ export class JobInformationComponent implements OnInit {
         });
         this.throughputAndLatency[0].series.push({name: `batch${batch.batchId}`, value: parseFloat((batch.throughput / 10 ** 3).toFixed(1))});
         this.throughputAndLatency[1].series.push({name: `batch${batch.batchId}`, value: batch.avgLatency});
-        this.operatorAccumulativeLatency['sl'] = batch.accumulativeLatency;
-        this.operatorAccumulativeThroughput['sl'] = batch.accumulativeThroughput;
+        this.operatorAccumulativeLatency[this.job.operators[0].name] = batch.accumulativeLatency;
+        this.operatorAccumulativeThroughput[this.job.operators[0].name] = batch.accumulativeThroughput;
         this.runtimeDuration += batch.batchDuration;
         this.updateOnShowingThroughputAndLatency();
       }
@@ -166,8 +166,8 @@ export class JobInformationComponent implements OnInit {
    */
   updateOnShowingThroughputAndLatency() {
     if (this.realTimePerformanceBoxChecked) {
-      if (this.operatorLatestBatchNum['sl'] - this.throughputLatencyGraphSize + 1 > 0) {
-        this.throughputLatencyStartBatch = this.operatorLatestBatchNum['sl'] - this.throughputLatencyGraphSize + 1;
+      if (this.operatorLatestBatchNum[this.job.operators[0].name] - this.throughputLatencyGraphSize + 1 > 0) {
+        this.throughputLatencyStartBatch = this.operatorLatestBatchNum[this.job.operators[0].name] - this.throughputLatencyGraphSize + 1;
         this.onShowingThroughputAndLatency[0].series = this.throughputAndLatency[0].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
         this.onShowingThroughputAndLatency[1].series = this.throughputAndLatency[1].series.slice(this.throughputLatencyStartBatch - 1, this.throughputLatencyStartBatch + this.throughputLatencyGraphSize - 1);
       } else {
@@ -196,17 +196,17 @@ export class JobInformationComponent implements OnInit {
    * Update the runtime data
    */
   update() {
-    this.jobInformationService.getBatchById(this.job.jobId, 'sl', this.operatorLatestBatchNum['sl'].toString()).subscribe(res => {
+    this.jobInformationService.getBatchById(this.job.jobId, this.job.operators[0].name, this.operatorLatestBatchNum[this.job.operators[0].name].toString()).subscribe(res => {
       if (res.batchId != -1) {
         res = this.transformTime(res);
         this.batchOptions.push({
-          value: this.operatorLatestBatchNum['sl'].toString(),
-          label: this.operatorLatestBatchNum['sl'].toString()
+          value: this.operatorLatestBatchNum[this.job.operators[0].name].toString(),
+          label: this.operatorLatestBatchNum[this.job.operators[0].name].toString()
         });
         this.updatePerformanceGraph(res);
-        this.operatorLatestBatchNum['sl']++;  // update the latest batch number
-        this.operatorAccumulativeLatency['sl'] = res.accumulativeLatency;  // update the accumulative latency
-        this.operatorAccumulativeThroughput['sl'] = res.accumulativeThroughput;  // update the accumulative throughput
+        this.operatorLatestBatchNum[this.job.operators[0].name]++;  // update the latest batch number
+        this.operatorAccumulativeLatency[this.job.operators[0].name] = res.accumulativeLatency;  // update the accumulative latency
+        this.operatorAccumulativeThroughput[this.job.operators[0].name] = res.accumulativeThroughput;  // update the accumulative throughput
       }
     });
   }
@@ -230,11 +230,11 @@ export class JobInformationComponent implements OnInit {
    */
   updatePerformanceGraph(batch: Batch) {
     this.throughputAndLatency[0].series.push({
-      name: this.operatorLatestBatchNum['sl'].toString() + " batch",
+      name: this.operatorLatestBatchNum[this.job.operators[0].name].toString() + " batch",
       value: parseFloat((batch.throughput / 10 ** 3).toFixed(1))  // 1000 tuples/s
     });
     this.throughputAndLatency[1].series.push({
-      name: this.operatorLatestBatchNum['sl'].toString() + " batch",
+      name: this.operatorLatestBatchNum[this.job.operators[0].name].toString() + " batch",
       value: batch.avgLatency
     });
     this.updateOnShowingThroughputAndLatency();
@@ -245,13 +245,12 @@ export class JobInformationComponent implements OnInit {
    */
   submitBatchStatisticForm(): void {
     if (this.batchForm.valid) {
-      this.jobInformationService.getBatchById(this.job.jobId, "sl", this.batchForm.controls.batch.value).subscribe(res => {
+      this.jobInformationService.getBatchById(this.job.jobId, this.job.operators[0].name, this.batchForm.controls.batch.value).subscribe(res => {
         if (res.batchId != -1) {
           res = this.transformTime(res);
           this.statisticBatch = res;
           this.statisticBatch.batchDuration = parseFloat((this.statisticBatch.batchDuration / 10**6).toFixed(1)); // ms
           this.updatePieChart(res);
-          this.message.success(`Information of SL Batch ${this.batchForm.controls.batch.value} is Fetched Successfully`);
         }
       });
     } else {
@@ -266,7 +265,7 @@ export class JobInformationComponent implements OnInit {
 
   submitTpgForm(): void {
     if (this.tpgForm.valid) {
-      this.jobInformationService.getBatchById(this.job.jobId, "sl", this.tpgForm.controls.batch.value).subscribe(res => {
+      this.jobInformationService.getBatchById(this.job.jobId, this.job.operators[0].name, this.tpgForm.controls.batch.value).subscribe(res => {
         if (res.batchId != -1) {
           this.tpgBatch = res;
           this.tpgNodes = [];
@@ -290,7 +289,6 @@ export class JobInformationComponent implements OnInit {
             }
           }
           this.tpgData = [{name: 'TD', value: this.numOfTD,}, {name: 'LD', value: this.numOfLD,}, {name: 'PD', value: this.numOfPD,}];
-          this.message.success(`TPG of SL batch ${this.tpgForm.controls.batch.value} is fetched successfully`);
         }
       });
     } else {

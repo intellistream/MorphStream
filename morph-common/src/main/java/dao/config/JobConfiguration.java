@@ -22,5 +22,6 @@ public class JobConfiguration {
     private Event event;
     private int totalEvents;
     private int checkpointInterval;
+    private int parallelism;
     private List<OperatorDescription> operatorDescription;
 }

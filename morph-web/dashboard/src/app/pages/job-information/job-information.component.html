@@ -48,8 +48,8 @@
                   <nz-list-item-meta-title>{{operator?.name}}</nz-list-item-meta-title>
                   <nz-list-item-meta-description>Number of instance: {{operator?.numOfInstances}}</nz-list-item-meta-description>
                 </nz-list-item-meta>
-                <nz-tag [nzColor]="'green'">throughput: {{operatorAccumulativeThroughput['sl']}} tuples/s</nz-tag>
-                <nz-tag [nzColor]="'blue'">latency: {{operatorAccumulativeLatency['sl']}} ms</nz-tag>
+                <nz-tag [nzColor]="'green'">throughput: {{operatorAccumulativeThroughput[operator.name]}} tuples/s</nz-tag>
+                <nz-tag [nzColor]="'blue'">latency: {{operatorAccumulativeLatency[operator.name]}} ms</nz-tag>
               </nz-list-item>
             </nz-list>
           </nz-collapse-panel>

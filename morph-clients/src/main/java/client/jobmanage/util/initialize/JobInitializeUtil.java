@@ -90,6 +90,7 @@ public class JobInitializeUtil {
             add("import intellistream.morphstream.api.state.StateAccess;");
             add("import intellistream.morphstream.api.output.Result;");
             add("import intellistream.morphstream.api.state.StateAccessDescription;");
+            add("import intellistream.morphstream.api.launcher.MorphStreamEnv;");
             add("import intellistream.morphstream.api.state.StateObject;");
             add("import intellistream.morphstream.api.utils.MetaTypes.AccessType;");
             add("import intellistream.morphstream.engine.txn.transaction.TxnDescription;");
@@ -146,7 +147,7 @@ public class JobInitializeUtil {
                 startJobCodeBuilder.append("        txnDescriptions.put(\"").append(txnDesc.getName()).append("\", ")
                         .append(txnDesc.getName()).append("Descriptor);\n\n");
             }
-            startJobCodeBuilder.append("        job.setSpoutCombo(\"").append(opDesc.getName()).append("\", txnDescriptions, 4);\n");
+            startJobCodeBuilder.append("        job.setSpoutCombo(\"").append(opDesc.getName()).append("\", txnDescriptions, MorphStreamEnv.get().configuration().getInt(\"tthread\"));\n");
             startJobCodeBuilder.append("        RuntimeMonitor.setOperatorIDs(new String[]{\"").append(opDesc.getName()).append("\"});\n");
         }
         startJobCodeBuilder.append("        RuntimeMonitor.setDataPath(Configuration.JOB_INFO_PATH + \"/").append(jobId).append("\");\n");
@@ -194,7 +195,14 @@ public class JobInitializeUtil {
                 "\"--keyNumberForEvents\", \"%s\", " +
                 "\"--valueNameForEvents\", \"%s\", " +
                 "\"--eventRatio\", \"%s\", " +
-                "\"--operatorIDs\", \"%s\"" +
+                "\"--ratioOfMultiPartitionTransactionsForEvents\", \"%s\", " +
+                "\"--stateAccessSkewnessForEvents\", \"%s\", " +
+                "\"--abortRatioForEvents\", \"%s\", " +
+                "\"--operatorIDs\", \"%s\", " +
+                "\"--loadDBThreadNum\", \"%s\", " +
+                "\"--tthread\", \"%s\", " +
+                "\"--spoutNum\", \"%s\", " +
+                "\"--operatorThreadNum\", \"%s\"" +
                 "}",
                 tableNames,
                 numberItemsForTables,
@@ -208,7 +216,14 @@ public class JobInitializeUtil {
                 jobConfiguration.getEvent().getKeyNumberForEvents(),
                 jobConfiguration.getEvent().getValueForEvents(),
                 jobConfiguration.getEvent().getEventRatio(),
-                jobConfiguration.getOperatorDescription().get(0).getName()
+                jobConfiguration.getEvent().getRatioMultiPartitionTransactionsForEvents(),
+                jobConfiguration.getEvent().getStateAccessSkewnessForEvents(),
+                jobConfiguration.getEvent().getAbortRatioForEvents(),
+                jobConfiguration.getOperatorDescription().get(0).getName(),
+                jobConfiguration.getParallelism(),
+                jobConfiguration.getParallelism(),
+                jobConfiguration.getParallelism(),
+                jobConfiguration.getParallelism()
         );
 
         startJobCodeBuilder.append("        startJob(").append(args).append(");\n");
