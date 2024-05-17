@@ -29,6 +29,11 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static final int PORT = 8080;
     private final ServerSocket serverSocket = MorphStreamEnv.get().stateManagerSocket();
     private static final int socketHandlerThreadNum = 4; //TODO: Hardcoded
+    private static int monitorCounter = 0;
+    private static int partitionCounter = 0;
+    private static int cacheCounter = 0;
+    private static int offloadCounter = 0;
+    private static int tpgCounter = 0;
 
 
     public SocketListener(LinkedBlockingQueue<PatternData> monitorQueue,
@@ -79,31 +84,37 @@ public class SocketListener implements Runnable { //A single thread that listens
 
         public void run() {
             try (InputStream input = clientSocket.getInputStream()) {
-                ByteBuffer byteBuffer = ByteBuffer.allocate(8); // 4 bytes for request type, 4 bytes for numElements
+                byte[] targetBytes = new byte[4];
+                byte[] lengthBytes = new byte[4];
 
                 while (true) {
-                    byteBuffer.clear();
                     int bytesRead = 0;
-
-                    // Read 8 bytes for request type and numElements
+                    while (bytesRead < 4) {
+                        int byteValue = input.read();
+                        if (byteValue == -1) {
+                            System.out.println("Unexpected end of stream while reading request type.");
+                            return;
+                        }
+                        targetBytes[bytesRead] = (byte) byteValue;
+                        bytesRead++;
+                    }
                     while (bytesRead < 8) {
                         int byteValue = input.read();
                         if (byteValue == -1) {
-                            System.out.println("Unexpected end of stream while reading request type and numElements.");
+                            System.out.println("Unexpected end of stream while reading numElements.");
                             return;
                         }
-                        byteBuffer.put((byte) byteValue);
+                        lengthBytes[bytesRead - 4] = (byte) byteValue;
                         bytesRead++;
                     }
 
-                    byteBuffer.rewind(); // Reset position for reading
-                    int target = byteBuffer.getInt();
-                    int numElements = byteBuffer.getInt();
-                    byte[] message = new byte[numElements];
+                    int target = decodeInt(targetBytes, 0);
+                    int length = decodeInt(lengthBytes, 0);
+                    byte[] message = new byte[length];
                     bytesRead = 0;
 
                     // Read numElements bytes for the message
-                    while (bytesRead < numElements) {
+                    while (bytesRead < length) {
                         int byteValue = input.read();
                         if (byteValue == -1) {
                             System.out.println("Unexpected end of stream while reading message bytes.");
@@ -116,20 +127,33 @@ public class SocketListener implements Runnable { //A single thread that listens
                     // Process the message based on the request type
                     switch (target) {
                         case 0:
+                            PatternData patternData = byteToPatternData(instanceID, message);
                             monitorQueue.add(byteToPatternData(instanceID, message));
+                            monitorCounter++;
+                            System.out.println("Received pattern data from " + instanceID + ": " + patternData.getTupleID() + ", " + patternData.getIsWrite() + ", total = " + monitorCounter);
                             break;
                         case 1:
+                            PartitionData partitionData = byteToPartitionData(instanceID, message);
                             partitionQueue.add(byteToPartitionData(instanceID, message));
+                            partitionCounter++;
+                            System.out.println("Received partition data from " + instanceID + ": " + partitionData.getTupleID() + ", " + partitionData.getValue() + ", total = " + partitionCounter);
                             break;
                         case 2:
+                            CacheData cacheData = byteToCacheData(instanceID, message);
                             cacheQueue.add(byteToCacheData(instanceID, message));
+                            cacheCounter++;
+                            System.out.println("Received cache data from " + instanceID + ": " + cacheData.getTupleID() + ", " + cacheData.getValue() + ", total = " + cacheCounter);
                             break;
                         case 3:
+                            OffloadData offloadData = byteToOffloadData(instanceID, message);
                             offloadQueue.add(byteToOffloadData(instanceID, message));
+                            System.out.println("Received offload data from " + instanceID + ": " + offloadData.toString());
                             break;
                         case 4:
+                            TransactionalEvent tpgData = byteToTPGData(instanceID, message);
                             tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, message));
                             rrIndex = (rrIndex + 1) % tpgThreadNum;
+                            System.out.println("Received TPG data from " + instanceID + ": " + tpgData.toString());
                             break;
                         default:
                             System.out.println("Unknown request type: " + target);
@@ -173,18 +197,18 @@ public class SocketListener implements Runnable { //A single thread that listens
 //                                    List<byte[]> splitByteArrays = splitByteArray(message, fullSeparator);
 //                                    int target = decodeInt(splitByteArrays.get(0), 0);
 //
-//                                    if (target == 0) {
-//                                        monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
-//                                    } else if (target == 1) {
-//                                        partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
-//                                    } else if (target == 2) {
-//                                        cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
-//                                    } else if (target == 3) {
-//                                        offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
-//                                    } else if (target == 4) {
-//                                        tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
-//                                        rrIndex = (rrIndex + 1) % tpgThreadNum;
-//                                    }
+////                                    if (target == 0) {
+////                                        monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
+////                                    } else if (target == 1) {
+////                                        partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
+////                                    } else if (target == 2) {
+////                                        cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
+////                                    } else if (target == 3) {
+////                                        offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
+////                                    } else if (target == 4) {
+////                                        tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
+////                                        rrIndex = (rrIndex + 1) % tpgThreadNum;
+////                                    }
 //                                    // Clear the buffer for the next message
 //                                    messageBuffer.clear();
 //                                    requestCounter++;

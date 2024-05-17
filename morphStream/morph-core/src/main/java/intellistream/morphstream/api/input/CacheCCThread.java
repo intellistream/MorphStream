@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.input;
 
+import intellistream.morphstream.api.input.java_peer.src.main.java.message.VNFCtrlClient;
 import intellistream.morphstream.api.input.simVNF.VNFSenderThread;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
@@ -43,27 +44,12 @@ public class CacheCCThread implements Runnable {
                     System.out.println("Cache CC thread received stop signal");
                     break;
                 }
+                int tupleID = cacheData.getTupleID();
+                int value = cacheData.getValue();
 
                 for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
                     if (entry.getKey() != cacheData.getInstanceID()) {
-                        try {
-                            ByteBuffer byteBuffer = ByteBuffer.allocate(24);
-                            byteBuffer.putInt(3);
-                            byteBuffer.putChar(';');
-                            byteBuffer.putInt(12);
-                            byteBuffer.putChar(';');
-                            byteBuffer.putInt(cacheData.getTupleID());
-                            byteBuffer.putChar(':');
-                            byteBuffer.putInt(cacheData.getValue());
-                            byteBuffer.putChar(';');
-                            byte[] byteArray = byteBuffer.array();
-
-                            OutputStream out = instanceSocketMap.get(entry.getKey()).getOutputStream();
-                            out.write(byteArray);
-                            out.flush();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        VNFCtrlClient.update_value(tupleID, value); //TODO: Align with libVNF
                     }
                 }
             }

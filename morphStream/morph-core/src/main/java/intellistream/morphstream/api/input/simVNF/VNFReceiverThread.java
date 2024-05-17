@@ -3,7 +3,9 @@ package intellistream.morphstream.api.input.simVNF;
 import communication.dao.VNFRequest;
 import intellistream.morphstream.api.input.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
 public class VNFReceiverThread implements Runnable {
@@ -34,8 +36,9 @@ public class VNFReceiverThread implements Runnable {
     private final CyclicBarrier finishBarrier;
     private final int expRequestCount;
     private int actualRequestCount = 0;
-    private long startTime;
-    private long endTime;
+    private long overallStartTime;
+    private long overallEndTime;
+    private final ArrayList<Long> latencyList = new ArrayList<>(); //TODO: Sort request order based on requestID
 
     public VNFReceiverThread(int instanceID, int expRequestCount, CyclicBarrier finishBarrier) {
         this.instanceID = instanceID;
@@ -55,11 +58,14 @@ public class VNFReceiverThread implements Runnable {
     public int getActualRequestCount() {
         return actualRequestCount;
     }
-    public long getStartTime() {
-        return startTime;
+    public long getOverallStartTime() {
+        return overallStartTime;
     }
-    public long getEndTime() {
-        return endTime;
+    public long getOverallEndTime() {
+        return overallEndTime;
+    }
+    public ArrayList<Long> getLatencyList() {
+        return latencyList;
     }
 
     @Override
@@ -70,10 +76,10 @@ public class VNFReceiverThread implements Runnable {
                 request = requestQueue.take();
 
                 if (actualRequestCount == expRequestCount) { // Stop signal indicated by VNF sender thread
-                    endTime = System.nanoTime();
-                    startTime = VNFManager.getSenderMap().get(instanceID).getStartTime();
-                    long durationNano = endTime - startTime;
-                    System.out.println("VNF receiver " + instanceID + " processed all " + actualRequestCount + " requests with throughput " + (actualRequestCount / (durationNano / 1E9)) + " events/second");
+                    overallEndTime = System.nanoTime();
+                    overallStartTime = VNFManager.getSenderMap().get(instanceID).getOverallStartTime();
+                    long overallDuration = overallEndTime - overallStartTime;
+                    System.out.println("VNF receiver " + instanceID + " processed all " + actualRequestCount + " requests with throughput " + (actualRequestCount / (overallDuration / 1E9)) + " events/second");
                     MorphStreamEnv.get().simVNFLatch.countDown();
 
                     int arrivedIndex = finishBarrier.await();
@@ -90,10 +96,10 @@ public class VNFReceiverThread implements Runnable {
                     break;
 
                 } else {
-                    request.setFinishTime(System.currentTimeMillis());
+                    long requestLatency = System.nanoTime() - request.getCreateTime();
+                    latencyList.add(requestLatency);
                     actualRequestCount++;
-//                    System.out.println("VNF receiver " + instanceID + " processed request " + actualRequestCount);
-                    //TODO: Record request finish time into a performance calculator tool
+                    System.out.println("VNF receiver " + instanceID + " processed request " + actualRequestCount);
                 }
 
             } catch (InterruptedException | BrokenBarrierException e) {

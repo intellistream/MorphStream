@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package message;
+option java_multiple_files = true;
+
+service VNFCtrl {
+	rpc Pause(Empty) returns (Empty) {}
+	rpc Continue(Empty) returns (Empty) {}
+	rpc PostCC(CCMessage) returns (Empty) {}
+	rpc GetCC(CCMessage) returns (CCMessage) {}
+	rpc PostValue(DSMessage) returns (Empty) {}
+	rpc GetValue(DSMessage) returns (DSMessage) {}
+	rpc UDFReady(UDFMessage) returns (UDFResponse) {}
+}
+
+message CCMessage {
+	int32 key = 1;
+	CC cc = 2;
+}
+
+message DSMessage {
+	int32 key = 1;
+	optional int32 value = 2;
+}
+
+message UDFMessage {
+	uint64 id = 1;
+	int32 saIdx = 2;
+	optional int32 key = 3;
+	optional int32 value = 4;
+}
+
+message UDFResponse {
+	uint64 id = 1;
+	int32 saIdx = 2;
+	optional int32 key = 3;
+	optional int32 value = 4;
+}
+
+service StateManager {
+	rpc MonitorReport(MonitorReportMessage) returns (Empty) {}
+	rpc TxnRequest(TxnReqMessage) returns (Empty) {}
+	rpc SFC(SFCMessage) returns (Empty) {}
+}
+
+message Empty {}
+
+message MonitorReportMessage {
+	CC cc = 1;
+}
+
+message SFCMessage {
+	string SFCJson = 1;
+}
+
+enum CC {
+	PARTITION = 0;
+	CACHE = 1;
+	OFFLOAD = 2;
+	PREEMPTIVE = 3;
+}
+
+message TxnReqMessage {
+	CC cc = 1;
+	uint64 id = 2;
+	int32 saIdx = 3;
+	int32 key = 4;
+}

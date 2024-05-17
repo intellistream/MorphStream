@@ -1,4 +1,7 @@
-import libVNFFrontend.NativeInterface;
+package intellistream.morphstream.api.input.openNF;
+
+import intellistream.morphstream.api.input.CacheData;
+import intellistream.morphstream.api.input.java_peer.src.main.java.message.VNFCtrlClient;
 
 import java.util.concurrent.BlockingQueue;
 
@@ -6,9 +9,9 @@ import java.util.concurrent.BlockingQueue;
 class OpenNFControllerThread implements Runnable {
     private final int vnfId;
     private final int vnfParallelism;
-    private final BlockingQueue<String> requestQueue; // FIFO queue of shared-state access requests (R/W) for this VNF
+    private final BlockingQueue<CacheData> requestQueue; // FIFO queue of shared-state access requests (R/W) for this VNF
 
-    public OpenNFControllerThread(int vnfId, int vnfParallelism, BlockingQueue<String> requestQueue) {
+    public OpenNFControllerThread(int vnfId, int vnfParallelism, BlockingQueue<CacheData> requestQueue) {
         this.vnfId = vnfId;
         this.vnfParallelism = vnfParallelism;
         this.requestQueue = requestQueue;
@@ -18,15 +21,15 @@ class OpenNFControllerThread implements Runnable {
     public void run() {
         while (true) {
             try {
-                String request = requestQueue.take();
-                int instanceID = Integer.parseInt(request.split(",")[0]);
-                System.out.println("ControllerThread " + vnfId + " received request from instance " + instanceID + ", state update: " + request);
-                String stateUpdate = NativeInterface.__process_request(instanceID, request);
+                CacheData request = requestQueue.take();
+                int instanceID = request.getInstanceID();
+                int tupleID = request.getTupleID();
+                int value = request.getValue();
 
                 for (int i = 0; i < vnfParallelism; i++) {
                     if (i != instanceID) {
                         System.out.println("ControllerThread " + vnfId + " sent state update to instance " + i);
-                        NativeInterface.__set_per_flow_state(i, stateUpdate);
+                        VNFCtrlClient.update_value(tupleID, value);
                     }
                 }
 

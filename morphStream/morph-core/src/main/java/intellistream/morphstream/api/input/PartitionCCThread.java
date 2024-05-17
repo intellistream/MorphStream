@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.java_peer.src.main.java.message.VNFCtrlClient;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
@@ -52,23 +53,14 @@ public class PartitionCCThread implements Runnable {
                     break;
                 }
                 int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
+                int tupleID = partitionData.getTupleID();
 
-                try {
-                    //TODO: Add LOCK-based cross-partition state access here
+                //TODO: Add LOCK-based cross-partition state access here
 
-                } catch (NullPointerException e) {
-                    throw new RuntimeException(e);
-                }
+                //TODO: Check type of request, treat R or W differently?
 
-                try {
-                    OutputStream out = instanceSocketMap.get(targetInstanceID).getOutputStream(); //TODO: Current workloads do not require cross-partition state access
-                    String combined =  4 + ";" + partitionData.getValue(); //__txn_finished
-                    byte[] byteArray = combined.getBytes();
-                    out.write(byteArray);
-                    out.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                VNFCtrlClient.fetch_value(tupleID); //TODO: Align with libVNF. Does libVNF offer state partition mapping?
+
             }
 
         } else {
@@ -97,49 +89,5 @@ public class PartitionCCThread implements Runnable {
                 }
             }
         }
-    }
-
-    private static long decodeLong(byte[] bytes, int offset) {
-        long value = 0;
-        for (int i = 0; i < 8; i++) {
-            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
-        }
-        return value;
-    }
-
-    private static int decodeInt(byte[] bytes, int offset) {
-        int value = 0;
-        for (int i = 0; i < 4; i++) {
-            value |= (bytes[offset + i] & 0xFF) << (i * 8);
-        }
-        return value;
-    }
-
-    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
-        List<byte[]> splitByteArrays = new ArrayList<>();
-        List<Integer> indexes = new ArrayList<>();
-
-        for (int i = 0; i < byteArray.length; i++) {
-            if (byteArray[i] == separator) {
-                indexes.add(i);
-            }
-        }
-
-        int startIndex = 0;
-        for (Integer index : indexes) {
-            byte[] subArray = new byte[index - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
-            splitByteArrays.add(subArray);
-            startIndex = index + 1;
-        }
-
-        // Handling the remaining part after the last occurrence of 59
-        if (startIndex < byteArray.length) {
-            byte[] subArray = new byte[byteArray.length - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
-            splitByteArrays.add(subArray);
-        }
-
-        return splitByteArrays;
     }
 }

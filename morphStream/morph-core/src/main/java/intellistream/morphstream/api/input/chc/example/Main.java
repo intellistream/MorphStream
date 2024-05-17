@@ -1,4 +1,4 @@
-package java.intellistream.chc.example;
+package intellistream.morphstream.api.input.chc.example;
 
 import java.intellistream.chc.common.dao.Pattern;
 import java.intellistream.chc.common.dao.Request;

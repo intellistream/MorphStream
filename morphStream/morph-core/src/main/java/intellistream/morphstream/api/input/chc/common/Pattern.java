@@ -1,4 +1,4 @@
-package java.intellistream.chc.common.dao;
+package intellistream.morphstream.api.input.chc.common;
 
 import lombok.Data;
 

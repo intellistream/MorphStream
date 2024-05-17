@@ -1,9 +1,7 @@
-package java.intellistream.chc.database.manage.handle.impl;
+package intellistream.morphstream.api.input.chc.database;
 
 import java.intellistream.chc.NativeInterface;
 import java.intellistream.chc.common.dao.Request;
-import java.intellistream.chc.database.manage.DBManager;
-import java.intellistream.chc.database.manage.handle.Handle;
 
 /**
  * Cross-flow state access handler

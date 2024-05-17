@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.input;
 
-import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.simVNF.VNFManager;
+import intellistream.morphstream.api.input.java_peer.src.main.java.message.VNFCtrlClient;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -100,11 +99,6 @@ public class MonitorThread implements Runnable {
 
     }
 
-//instanceID(int) -0
-//target = 0 (int) -1
-//TupleID(int) -2
-//isWrite (bool) -3
-
     private static void updatePatternData(PatternData metaDataByte) {
         
         int instanceID = metaDataByte.getInstanceID();
@@ -157,10 +151,11 @@ public class MonitorThread implements Runnable {
 
     private static void notifyCCSwitch(int instanceID, int tupleID, int newPattern) {
         try {
-            OutputStream output = instanceSocketMap.get(instanceID).getOutputStream();
-            byte[] message = (0 + ";" + 2 + ";" + tupleID + ";" + newPattern).getBytes();
-            output.write(message);
-            output.flush();
+
+            //TODO: Does this have to be split into two calls?
+            VNFCtrlClient.make_pause();// TODO: Align with libVNF
+            VNFCtrlClient.update_cc(tupleID, newPattern);// TODO: Align with libVNF
+
         } catch (IOException e) {
             System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
         }
@@ -168,10 +163,9 @@ public class MonitorThread implements Runnable {
 
     private static void notifyStateSyncComplete(int instanceID, int tupleID) {
         try {
-            OutputStream output = instanceSocketMap.get(instanceID).getOutputStream();
-            byte[] message = (1 + ";" + 1 + ";" + tupleID).getBytes();
-            output.write(message);
-            output.flush();
+            // TODO: Align with libVNF
+            VNFCtrlClient.make_continue();
+
         } catch (IOException e) {
             System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
         }
@@ -179,22 +173,9 @@ public class MonitorThread implements Runnable {
 
     private static void syncStateFromLocalToRemote(int instanceID, int tupleID) {
         try {
-            Socket socket = instanceSocketMap.get(instanceID);
             System.out.println("Monitor sending state sync to instance " + instanceID + " for tuple: " + tupleID);
-            // Send GET request to instance
-            byte[] requestMessage = (2 + ";" + 1 + ";" + tupleID).getBytes();
-            OutputStream output = socket.getOutputStream();
-            output.write(requestMessage);
-            output.flush();
 
-            // Wait for the GET response
-            InputStream input = socket.getInputStream();
-            byte[] buffer = new byte[1024];
-            int bytesRead = input.read(buffer);
-            byte[] responseMessage = new byte[bytesRead];
-            System.arraycopy(buffer, 0, responseMessage, 0, bytesRead);
-
-            int cachedValue = 0; //TODO: Hardcoded
+            int cachedValue = VNFCtrlClient.fetch_value(tupleID); // TODO: Align with libVNF
 
             try {
                 TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
@@ -223,11 +204,7 @@ public class MonitorThread implements Runnable {
                 throw new RuntimeException(e);
             }
 
-            Socket socket = instanceSocketMap.get(instanceID);
-            byte[] requestMessage = (3 + ";" + 1 + ";" + tupleID + ";" + tupleValue).getBytes();
-            OutputStream output = socket.getOutputStream();
-            output.write(requestMessage);
-            output.flush();
+            VNFCtrlClient.update_value(tupleID, tupleValue); // TODO: Align with libVNF
 
         } catch (IOException e) {
             System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
@@ -282,54 +259,6 @@ public class MonitorThread implements Runnable {
 
         //TODO: State movement optimizations
 
-    }
-
-    private static boolean decodeBoolean(byte[] bytes, int offset) {
-        return bytes[offset] != 0;
-    }
-
-    private static long decodeLong(byte[] bytes, int offset) {
-        long value = 0;
-        for (int i = 0; i < 8; i++) {
-            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
-        }
-        return value;
-    }
-
-    private static int decodeInt(byte[] bytes, int offset) {
-        int value = 0;
-        for (int i = 0; i < 4; i++) {
-            value |= (bytes[offset + i] & 0xFF) << (i * 8);
-        }
-        return value;
-    }
-
-    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
-        List<byte[]> splitByteArrays = new ArrayList<>();
-        List<Integer> indexes = new ArrayList<>();
-
-        for (int i = 0; i < byteArray.length; i++) {
-            if (byteArray[i] == separator) {
-                indexes.add(i);
-            }
-        }
-
-        int startIndex = 0;
-        for (Integer index : indexes) {
-            byte[] subArray = new byte[index - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
-            splitByteArrays.add(subArray);
-            startIndex = index + 1;
-        }
-
-        // Handling the remaining part after the last occurrence of 59
-        if (startIndex < byteArray.length) {
-            byte[] subArray = new byte[byteArray.length - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
-            splitByteArrays.add(subArray);
-        }
-
-        return splitByteArrays;
     }
 
 }

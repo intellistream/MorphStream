@@ -1,4 +1,4 @@
-package java.intellistream.chc.database.manage.handle;
+package intellistream.morphstream.api.input.chc.database;
 
 import lombok.Getter;
 

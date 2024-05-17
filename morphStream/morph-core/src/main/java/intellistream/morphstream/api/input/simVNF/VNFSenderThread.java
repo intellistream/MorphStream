@@ -25,7 +25,7 @@ public class VNFSenderThread implements Runnable {
     private final int numSpouts = MorphStreamEnv.get().configuration().getInt("tthread");
     private int requestCounter = 0;
     private int lineCounter = 0;
-    private long startTime;
+    private long overallStartTime;
 
     public VNFSenderThread(int instanceID, int ccStrategy, int statePartitionStart, int statePartitionEnd, int stateRange, String csvFilePath, CyclicBarrier finishBarrier) {
         this.instanceID = instanceID;
@@ -46,7 +46,7 @@ public class VNFSenderThread implements Runnable {
         try {
             reader = new BufferedReader(new FileReader(csvFilePath));
             String line;
-            startTime = System.nanoTime();
+            overallStartTime = System.nanoTime();
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 int reqID = Integer.parseInt(parts[0]);
@@ -56,7 +56,7 @@ public class VNFSenderThread implements Runnable {
                 lineCounter++;
 
                 if (ccStrategy == 0) { // local state access
-                    long timestamp = System.currentTimeMillis();
+                    long timestamp = System.nanoTime();
                     if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
                         vnfFunction(tupleID, type, 0);
                         VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
@@ -72,7 +72,7 @@ public class VNFSenderThread implements Runnable {
                     }
 
                 } else if (ccStrategy == 1) { // Replication
-                    long timestamp = System.currentTimeMillis();
+                    long timestamp = System.nanoTime();
                     if (type == 0) { // read
                         if (!managerSyncQueue.isEmpty()) {
                             processAllQueueItems();
@@ -92,14 +92,15 @@ public class VNFSenderThread implements Runnable {
                     }
 
                 } else if (ccStrategy == 2) { // Offload
-                    long timestamp = System.currentTimeMillis();
+                    long timestamp = System.nanoTime();
                     OffloadCCThread.submitOffloadReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type, managerResponseQueue));
                     if (type != 1) {
                         int response = managerResponseQueue.take(); // Wait for response from StateManager
                     }
 
                 } else if (ccStrategy == 3) { // TPG
-                    tpgQueues.get(requestCounter % numSpouts).offer(new TransactionalVNFEvent(type, instanceID, System.currentTimeMillis(), reqID, tupleID, 0, 0, 0));
+                    long timestamp = System.nanoTime();
+                    tpgQueues.get(requestCounter % numSpouts).offer(new TransactionalVNFEvent(type, instanceID, timestamp, reqID, tupleID, 0, 0, 0));
                     requestCounter++;
                 }
             }
@@ -165,8 +166,8 @@ public class VNFSenderThread implements Runnable {
         }
     }
 
-    public long getStartTime() {
-        return startTime;
+    public long getOverallStartTime() {
+        return overallStartTime;
     }
 
     public int readLocalState(int tupleID) {

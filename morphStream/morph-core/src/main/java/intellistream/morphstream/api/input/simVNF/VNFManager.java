@@ -1,7 +1,9 @@
 package intellistream.morphstream.api.input.simVNF;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
 
@@ -15,6 +17,12 @@ public class VNFManager {
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
     private static HashMap<Integer, VNFReceiverThread> receiverMap = new HashMap<>();
     private static HashMap<Integer, Thread> receiverThreadMap = new HashMap<>();
+    private static HashMap<Integer, ArrayList<Long>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
+    private static HashMap<Integer, Double> throughputMap = new HashMap<>(); //instanceID -> instance's throughput
+    private static HashMap<Integer, Double> minLatencyMap = new HashMap<>(); //instanceID -> instance's min latency
+    private static HashMap<Integer, Double> maxLatencyMap = new HashMap<>(); //instanceID -> instance's max latency
+    private static HashMap<Integer, Double> avgLatencyMap = new HashMap<>(); //instanceID -> instance's avg latency
+    private static HashMap<Integer, Double> percentile95Map = new HashMap<>(); //instanceID -> instance's 95th percentile latency
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
@@ -69,12 +77,28 @@ public class VNFManager {
                 senderThreadMap.get(i).join();
                 receiverThreadMap.get(i).join();
                 totalRequestCounter += receiverMap.get(i).getActualRequestCount();
-                overallStartTime = Math.min(overallStartTime, receiverMap.get(i).getStartTime());
-                overallEndTime = Math.max(overallEndTime, receiverMap.get(i).getEndTime());
+                overallStartTime = Math.min(overallStartTime, receiverMap.get(i).getOverallStartTime());
+                overallEndTime = Math.max(overallEndTime, receiverMap.get(i).getOverallEndTime());
+                latencyMap.put(i, receiverMap.get(i).getLatencyList());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
+
+        SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
+        for (int i = 0; i < parallelism; i++) {
+            instanceLatencyStats.clear();
+            for (long latency : latencyMap.get(i)) {
+                instanceLatencyStats.addValue(latency);
+            }
+            double minLatency = instanceLatencyStats.getMin();
+            double maxLatency = instanceLatencyStats.getMax();
+            double avgLatency = instanceLatencyStats.getMean();
+            double percentile95 = instanceLatencyStats.getPercentile(95);
+        }
+
+        //TODO: Write latency data and stats to csv file
+
         long overallDuration = overallEndTime - overallStartTime;
         double overallThroughput = totalRequestCounter / (overallDuration / 1E9);
         return overallThroughput;

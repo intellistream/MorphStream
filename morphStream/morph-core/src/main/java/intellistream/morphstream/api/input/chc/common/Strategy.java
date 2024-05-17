@@ -1,4 +1,4 @@
-package java.intellistream.chc.common.dao;
+package intellistream.morphstream.api.input.chc.common;
 
 /**
  * Based on the access pattern, the database can use different strategies to update the data.
