@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.input.openNF;
 
 import intellistream.morphstream.api.input.CacheData;
-import intellistream.morphstream.api.input.java_peer.src.main.java.message.VNFCtrlClient;
+import intellistream.morphstream.api.input.java_peer.message.VNFCtrlClient;
 
 import java.util.concurrent.BlockingQueue;
 

@@ -1,4 +1,4 @@
-package intellistream.morphstream.api.input.java_peer.src.main.java.message;
+package intellistream.morphstream.api.input.java_peer.message;
 
 import io.grpc.Channel;
 import io.grpc.Grpc;

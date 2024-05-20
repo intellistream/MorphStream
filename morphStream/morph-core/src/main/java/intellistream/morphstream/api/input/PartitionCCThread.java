@@ -1,16 +1,11 @@
 package intellistream.morphstream.api.input;
 
-import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.java_peer.src.main.java.message.VNFCtrlClient;
+import intellistream.morphstream.api.input.java_peer.message.VNFCtrlClient;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 

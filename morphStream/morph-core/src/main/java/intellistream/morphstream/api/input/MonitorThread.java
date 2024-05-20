@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.input;
 
-import intellistream.morphstream.api.input.java_peer.src.main.java.message.VNFCtrlClient;
+import intellistream.morphstream.api.input.java_peer.message.VNFCtrlClient;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -11,9 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;

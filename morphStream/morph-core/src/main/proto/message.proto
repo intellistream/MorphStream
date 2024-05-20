@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-package message;
+//package message;
+package intellistream.morphstream.api.input.java_peer.message;
 option java_multiple_files = true;
 
 service VNFCtrl {
