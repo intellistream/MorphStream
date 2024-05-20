@@ -1,4 +1,4 @@
-package intellistream.morphstream.api.input.java_peer.message;
+package message;
 
 import io.grpc.Channel;
 import io.grpc.Grpc;
@@ -9,13 +9,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * A simple client that requests a greeting from the {@link HelloWorldServer}.
- */
 public class VNFCtrlClient {
   private static final Logger logger = Logger.getLogger(VNFCtrlClient.class.getName());
 
-  private final VNFCtrlGrpc.VNFCtrlBlockingStub blockingStub;
+  private final message.VNFCtrlGrpc.VNFCtrlBlockingStub blockingStub;
 
   /** Construct client for accessing HelloWorld server using the existing channel. */
   public VNFCtrlClient(Channel channel) {
@@ -23,12 +20,12 @@ public class VNFCtrlClient {
     // shut it down.
 
     // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
-    blockingStub = VNFCtrlGrpc.newBlockingStub(channel);
+    blockingStub = message.VNFCtrlGrpc.newBlockingStub(channel);
   }
 
   public void make_pause() {
     logger.info("Trying to make VNF pause ...");
-    message.Empty request = Empty.newBuilder().build();
+    message.Empty request = message.Empty.newBuilder().build();
     try {
       blockingStub.pause(request);
     } catch (StatusRuntimeException e) {
@@ -39,7 +36,7 @@ public class VNFCtrlClient {
 
   public void make_continue() {
     logger.info("Trying to make VNF pause ...");
-    message.Empty request = Empty.newBuilder().build();
+    message.Empty request = message.Empty.newBuilder().build();
     try {
       blockingStub.continue_(request);
     } catch (StatusRuntimeException e) {
@@ -48,12 +45,12 @@ public class VNFCtrlClient {
     }
   }
 
-  public void update_cc(int key, CC cc) {
+  public void update_cc(int key, message.CC cc) {
     logger.info("Trying to update cc ...");
     message.CCMessage request = message.CCMessage.newBuilder()
-      .setCc(cc)
-      .setKey(key)
-      .build();
+            .setCc(cc)
+            .setKey(key)
+            .build();
     try {
       blockingStub.postCC(request);
     } catch (StatusRuntimeException e) {
@@ -65,8 +62,8 @@ public class VNFCtrlClient {
   public void fetch_cc(int key) {
     logger.info("Trying to fetch cc ...");
     message.CCMessage request = message.CCMessage.newBuilder()
-      .setKey(key)
-      .build();
+            .setKey(key)
+            .build();
     message.CCMessage response;
     try {
       response = blockingStub.getCC(request);
@@ -81,9 +78,9 @@ public class VNFCtrlClient {
   public void update_value(int key, int value) {
     logger.info("Trying to update value ...");
     message.DSMessage request = message.DSMessage.newBuilder()
-      .setKey(key)
-      .setValue(value)
-      .build();
+            .setKey(key)
+            .setValue(value)
+            .build();
     try {
       blockingStub.postValue(request);
     } catch (StatusRuntimeException e) {
@@ -95,8 +92,8 @@ public class VNFCtrlClient {
   public void fetch_value(int key) {
     logger.info("Trying to fetch value ...");
     message.DSMessage request = message.DSMessage.newBuilder()
-      .setKey(key)
-      .build();
+            .setKey(key)
+            .build();
     message.DSMessage response;
     try {
       response = blockingStub.getValue(request);
@@ -111,11 +108,11 @@ public class VNFCtrlClient {
   public void execute_sa_udf(long pktId, int saIdx, int key, int value) {
     logger.info("Trying to update cc ...");
     message.UDFMessage request = message.UDFMessage.newBuilder()
-      .setId(pktId)
-      .setKey(key)
-      .setSaIdx(saIdx)
-      .setValue(value)
-      .build();
+            .setId(pktId)
+            .setKey(key)
+            .setSaIdx(saIdx)
+            .setValue(value)
+            .build();
     message.UDFResponse response;
     try {
       response = blockingStub.uDFReady(request);
@@ -153,7 +150,7 @@ public class VNFCtrlClient {
     // For the example we use plaintext insecure credentials to avoid needing TLS certificates. To
     // use TLS, use TlsChannelCredentials instead.
     ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
-        .build();
+            .build();
     try {
       VNFCtrlClient client = new VNFCtrlClient(channel);
       client.fetch_cc(123);

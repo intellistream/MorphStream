@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.input.openNF;
 
 import intellistream.morphstream.api.input.CacheData;
-import intellistream.morphstream.api.input.java_peer.message.VNFCtrlClient;
+import message.VNFCtrlClient;
 
 import java.util.concurrent.BlockingQueue;
 
@@ -29,7 +29,7 @@ class OpenNFControllerThread implements Runnable {
                 for (int i = 0; i < vnfParallelism; i++) {
                     if (i != instanceID) {
                         System.out.println("ControllerThread " + vnfId + " sent state update to instance " + i);
-                        VNFCtrlClient.update_value(tupleID, value);
+//                        VNFCtrlClient.update_value(tupleID, value);
                     }
                 }
 

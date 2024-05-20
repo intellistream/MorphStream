@@ -1,4 +1,4 @@
-package intellistream.morphstream.api.input.java_peer.message;
+package message;
 
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * Hello world!
  *
  */
-public class StateManagerServer 
+public class StateManagerServer
 {
     private static final Logger logger = Logger.getLogger(StateManagerServer.class.getName());
     private Server server;
@@ -62,10 +62,10 @@ public class StateManagerServer
         server.blockUntilShutdown();
     }
 
-    static class StateManagerImpl extends StateManagerGrpc.StateManagerImplBase {
+    static class StateManagerImpl extends message.StateManagerGrpc.StateManagerImplBase {
         @Override
         public void monitorReport(message.MonitorReportMessage request,
-        io.grpc.stub.StreamObserver<message.Empty> responseObserver) {
+                                  io.grpc.stub.StreamObserver<message.Empty> responseObserver) {
             System.out.println("Monitor Report received CC: " + request.getCcValue());
             // private message.Empty t = message.Empty.newBuilder().build();
             // responseObserver.onNext(t);
@@ -74,15 +74,15 @@ public class StateManagerServer
         }
 
         public void txnRequest(message.TxnReqMessage request,
-            io.grpc.stub.StreamObserver<message.Empty> responseObserver) {
-                System.out.println("StateManager received txnRequest id: " + request.getId());
+                               io.grpc.stub.StreamObserver<message.Empty> responseObserver) {
+            System.out.println("StateManager received txnRequest id: " + request.getId());
         }
 
         /**
          */
         public void sFC(message.SFCMessage request,
-            io.grpc.stub.StreamObserver<message.Empty> responseObserver) {
-                System.out.println("StateManager received CC: " + request.getSFCJson());
+                        io.grpc.stub.StreamObserver<message.Empty> responseObserver) {
+            System.out.println("StateManager received CC: " + request.getSFCJson());
         }
     }
 }

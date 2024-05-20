@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.input;
 
-import intellistream.morphstream.api.input.java_peer.message.VNFCtrlClient;
+import message.VNFCtrlClient;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
@@ -54,7 +54,7 @@ public class PartitionCCThread implements Runnable {
 
                 //TODO: Check type of request, treat R or W differently?
 
-                VNFCtrlClient.fetch_value(tupleID); //TODO: Align with libVNF. Does libVNF offer state partition mapping?
+//                VNFCtrlClient.fetch_value(tupleID); //TODO: Align with libVNF. Does libVNF offer state partition mapping?
 
             }
 
