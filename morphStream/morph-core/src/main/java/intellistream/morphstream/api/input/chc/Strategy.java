@@ -1,4 +1,4 @@
-package intellistream.morphstream.api.input.chc.common;
+package intellistream.morphstream.api.input.chc;
 
 /**
  * Based on the access pattern, the database can use different strategies to update the data.

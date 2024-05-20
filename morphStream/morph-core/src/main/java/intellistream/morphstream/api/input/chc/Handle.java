@@ -1,8 +1,6 @@
-package intellistream.morphstream.api.input.chc.database;
+package intellistream.morphstream.api.input.chc;
 
 import lombok.Getter;
-
-import java.intellistream.chc.common.dao.Request;
 
 /**
  * Abstract handler

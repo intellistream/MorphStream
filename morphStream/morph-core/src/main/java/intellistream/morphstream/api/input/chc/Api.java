@@ -1,8 +1,5 @@
-package intellistream.morphstream.api.input.chc.common;
+package intellistream.morphstream.api.input.chc;
 
-import intellistream.morphstream.api.input.chc.common.dao.Pattern;
-import intellistream.morphstream.api.input.chc.common.dao.Request;
-import java.intellistream.chc.database.manage.DBManager;
 
 /**
  * APIs provided by the CHC module

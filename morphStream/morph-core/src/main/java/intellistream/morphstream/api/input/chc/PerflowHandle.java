@@ -1,7 +1,4 @@
-package intellistream.morphstream.api.input.chc.database;
-
-import java.intellistream.chc.NativeInterface;
-import java.intellistream.chc.common.dao.Request;
+package intellistream.morphstream.api.input.chc;
 
 /**
  * Per-flow state access handler
@@ -18,7 +15,7 @@ public class PerflowHandle extends Handle {
         } else {
             // return the read state to the requester
             int state = DBManager.getInstance().getDatabase().findExclusiveState(request.getVertexId(), request.getInstanceId(), request.getObjKey());
-            NativeInterface.__return_state(request.getRequestId(), state);
+//            NativeInterface.__return_state(request.getRequestId(), state);
         }
     }
 }

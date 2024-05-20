@@ -1,13 +1,6 @@
-package intellistream.morphstream.api.input.chc.database;
+package intellistream.morphstream.api.input.chc;
 
 import lombok.Getter;
-
-import java.intellistream.chc.common.dao.Request;
-import java.intellistream.chc.common.dao.Strategy;
-import java.intellistream.chc.database.Configuration;
-import java.intellistream.chc.database.manage.handle.impl.CrossflowHandle;
-import java.intellistream.chc.database.manage.handle.impl.PerflowHandle;
-import java.intellistream.chc.database.store.Database;
 
 /**
  * Database manager that manages the database states and handles the incoming access requests

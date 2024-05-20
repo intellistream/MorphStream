@@ -1,4 +1,4 @@
-package intellistream.morphstream.api.input.chc.database;
+package intellistream.morphstream.api.input.chc;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

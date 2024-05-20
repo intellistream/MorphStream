@@ -1,8 +1,5 @@
-package intellistream.morphstream.api.input.chc.example;
+package intellistream.morphstream.api.input.chc;
 
-import java.intellistream.chc.common.dao.Pattern;
-import java.intellistream.chc.common.dao.Request;
-import java.intellistream.chc.database.manage.DBManager;
 
 public class Main {
     public static void main(String[] args) {

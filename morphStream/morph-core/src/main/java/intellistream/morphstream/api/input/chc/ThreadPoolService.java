@@ -1,6 +1,5 @@
-package intellistream.morphstream.api.input.chc.database;
+package intellistream.morphstream.api.input.chc;
 
-import java.intellistream.chc.database.manage.handle.Handle;
 import java.util.concurrent.*;
 
 /**
