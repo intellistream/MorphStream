@@ -104,8 +104,40 @@
 #define DEBUG_PRINT_CONTEXT(sig, ctx) \
 	(spdlog::warn("DEBUG at {}: Context {}:\n\tcurrent app[{}].idx[{}] state {} \n\tpacket [{}] of length {} with reqObj {}.", sig, (ctx)->_ts_low_32b(), (ctx)->AppIdx(), (ctx)->TxnIdx(), (ctx)->ReturnValue(), (ctx)->packet() == NULL? "[isNull]" : (ctx)->packet(), (ctx)->packet_len(), reinterpret_cast<uint64_t>(ctx)))
 
+// DEBUG the TCP connections.
+#define BUSY_SEND(expr)                                                    \
+do { \
+        ssize_t bytes_written; \
+        while ((bytes_written = (expr)) == -1) { \
+            if (errno == EAGAIN) { \
+                continue; \
+            } else { \
+                fprintf(stderr, "Error writing to socket: errno = %d\n", errno); \
+                if (errno != 11) { \
+                    fprintf(stderr, "Error other than EAGAIN occurred, panicking.\n"); \
+                    exit(EXIT_FAILURE); \
+                } \
+            } \
+        } \
+    } while (0)
+
+#define BUSY(expr) BUSY_SEND(expr)
+
+void __debug__change_tuple_strategy(uint64_t tupleID, int s);
+
+/*
+	User side tools.
+*/
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+
+std::vector<std::string> parse_args(const std::string &bytes);
+
 // User define VNF init.
 int VNFMain(int argc, char ** argv);
+
 class Context;
 
 namespace vnf {
@@ -713,21 +745,23 @@ public:
 		const std::string name,
 		const int key,
 		const int field,
+		const int max_entries,
 		// const std::vector<std::string> types,
 		ConsistencyRequirement cr,
 		TxnCallBackHandler txnHandler,
 		TxnCallBackHandler errTxnHandler,
 		PostTxnHandler postHandler,
 		RWType rw)
-        : field_(field), key_(key), cr_(cr), name_(name),
+        : field_(field), key_(key), cr_(cr), name_(name), max_entries(max_entries),
         // : fields_(fields), types_(types), cr_(cr),
           txnHandler_(txnHandler), rw_(rw), errorTxnHandler_(errTxnHandler),
           postTxnHandler_(postHandler) {}
 
 	Json::Value toJson() const {
 		Json::Value json;
-		json["stateName"] = name_;
+		json["TableName"] = name_;
 		json["type"] = rw_ == 1? "read" : "write";
+		json["max_entries"] = max_entries;
 		json["fieldTableIndex"] = field_;
 		json["keyIndexInEvent"] = key_;
 		json["consistency_requirement"] =  "";
@@ -739,6 +773,7 @@ public:
 
     const int key_;
     const int field_;
+    const int max_entries;
     const ConsistencyRequirement cr_;
 
 	// The binded transaction handler for this State Access.

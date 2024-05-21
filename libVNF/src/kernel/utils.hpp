@@ -145,8 +145,8 @@ struct Globals {
     // may have to increase this at high load
     vector<char> dsMemPoolBlock;
     boost::simple_segregated_storage<size_t> dsMemPoolManager;
-    unordered_map<int, void *> localDatastore;
-    unordered_map<int, int> localDatastoreLens;
+    unordered_map<int, int> localDatastore;
+    // unordered_map<int, int> localDatastoreLens;
     unordered_map<int, void *> cachedRemoteDatastore;
     unordered_map<void *, int> doNotEvictCachedDSValueKeyMap;
     // unordered_map<int, string> socketProtocolMap;
@@ -166,7 +166,7 @@ struct Globals {
     }
 
     bool keyExistsInLocalDatastore(int key) {
-        unordered_map<int, void *>::const_iterator iterator = localDatastore.find(key);
+        unordered_map<int, int>::const_iterator iterator = localDatastore.find(key);
         return iterator != localDatastore.end();
     }
 

@@ -68,7 +68,7 @@ PLOT="--PLOT"
 
 # Compile Example VNF options
 EXAMPLE="--EXAMPLE_VNF"
-VNF_PATH="$LIBVNF_DIR/vnf/lb"
+VNF_PATH="$LIBVNF_DIR/vnf/ccSelector"
 
 USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable kernel to run the system. \n\t $RUN [$KERNEL_STACK|$KERNEL_BYPASS] to run the compiled system. \n\t $COMPILE [$KERNEL_STACK|$KERNEL_BYPASS] to set up the environment and compile. "
 

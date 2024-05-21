@@ -9,6 +9,7 @@ using namespace vnf;
 
 // State to hold through out a request.
 struct BState {
+    int ID;
     int host;
     int assigned_backend;
     bool abortion;
@@ -42,6 +43,12 @@ int RoutePacketUDF(vnf::ConnId& connId, Context &ctx, char * raw, int length){
     }
     int* route_destination = ctx.get_value(raw, length, 0);
     spdlog::debug("[DEBUG] packet routed to: %d", *route_destination);
+    
+    char ret[8];
+    memcpy(ret, (char *)&threadLocal->ID, sizeof(int));
+    assert(threadLocal->ID > 10000);
+    memcpy(ret + 4, ";", 1);
+    connId.sendData(ret, sizeof(int) + 1);
     return -1; // Read only.
 };
 
@@ -56,6 +63,12 @@ int AssignStreamUDF(vnf::ConnId& connId, Context &ctx, char * raw, int length){
     // Fetch State and decide assignment.
     int* lastAssigned = ctx.get_value(raw, length, 0);
     threadLocal->assigned_backend = (*lastAssigned + 1) % max_backend;
+
+    char ret[8];
+    memcpy(ret, (char *)&threadLocal->ID, sizeof(int));
+    assert(threadLocal->ID > 10000);
+    memcpy(ret + 4, ";", 1);
+    connId.sendData(ret, sizeof(int) + 1);
     return threadLocal->assigned_backend; 
 };
 
@@ -66,32 +79,31 @@ void app_accept_packet_handler(vnf::ConnId& connId, Context &ctx){
     return;
 };
 
-// Perform routing. Expected content: Host,IsFirstPacket,Protocol,Value,Abortion
+// Perform routing. Expected content: ID,Host,IsFirstPacket,Protocol,ValueLength,Abortion
 void app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
     spdlog::debug("[DEBUG] New Packet accepted");
-    auto content = string(ctx.packet());
+    auto pkt = string(ctx.packet(), ctx.packet_len());
 
-    // Parse content from comma.
-    int comma_pos[] = {0,0,0,0};
-    int com = 0;
-    for (int i = 0; i < content.length() && com < 4; i++)
-    {
-        if (content[i] == ','){
-            comma_pos[com] = i;
-            com++;
-        } 
+    // Parse packet.
+    auto fields = parse_args(pkt);
+    // Invalid pkt.
+    if (fields.size() != 7) {
+        std::cout << (pkt) << std::endl;
+        return;
     }
-
-    // std::cout << content.substr(0, comma_pos[0]) << std::endl;
-    auto host = content.substr(0, comma_pos[0]).c_str(); 
-	auto isFirst = content.substr(comma_pos[0] + 1, comma_pos[1] - comma_pos[0] - 1) == "true"? true: false;
-    // std::cout << "key" << key << std::endl;
 
     // std::cout << content.substr(comma_pos[0] + 1, comma_pos[1] - comma_pos[0] - 1) << std::endl;
     auto threadLocal = reinterpret_cast<BState *>(ctx.reqObj());
     assert(threadLocal != NULL);
 
-    threadLocal->host = atoi(host);
+    threadLocal->ID = atoi(fields[0].c_str());
+    if (threadLocal->ID < 10000) {
+        std::cout << threadLocal -> ID << std::endl;
+        assert(false);
+    }
+    threadLocal->host = atoi(fields[1].c_str());
+	bool isFirst = fields[2] == "true"? true: false;
+    threadLocal->abortion = fields[5] == "true"? true: false;
 
     // Make assignment if is new connection.
     if (isFirst){
@@ -99,8 +111,7 @@ void app_read_packet_handler(vnf::ConnId& connId, Context &ctx){
     } else {
         ctx.Transaction(0).Trigger(connId, ctx, (const char*)&threadLocal->assigned_backend, false); // Rount and count. Record count to the earlier assigned backend count.
     }
-    // Route and increment count if not.
-    threadLocal->abortion = content.substr(comma_pos[3] + 1) == "true"? true: false;
+
     return;
 };
 
@@ -112,12 +123,14 @@ auto LBApp = DB4NFV::App{
             {
                 StateAccess{
                     "IncrementCount",
-                    0, 1, None, 
+                    0, 1, 9999,
+                    None, 
                     IncrementPacketCountUDF, nullptr, nullptr, WRITE
                 },
                 StateAccess{
                     "RoutePacket",
-                    0, 1, None, 
+                    0, 1, 9999,
+                    None, 
                     RoutePacketUDF, nullptr, nullptr, RWType::READ
                 }
             }
@@ -126,9 +139,9 @@ auto LBApp = DB4NFV::App{
             "AssignStream",
             {
                 StateAccess{
-                    // TODO. Add definition of field to write result.
-                    "assign stream",
-                    0, 1, None, 
+                    "ConnectionAssign",
+                    0, 1, 9999,
+                    None, 
                     AssignStreamUDF, nullptr, nullptr, WRITE
                 }
             }

@@ -1,0 +1,81 @@
+Statistics about the generated batch:
+Number of unique hosts: 10000
+Records per host distribution:
+68 records: 4
+69 records: 3
+70 records: 4
+71 records: 4
+72 records: 2
+73 records: 10
+74 records: 13
+75 records: 20
+76 records: 16
+77 records: 26
+78 records: 38
+79 records: 43
+80 records: 49
+81 records: 62
+82 records: 69
+83 records: 81
+84 records: 96
+85 records: 119
+86 records: 158
+87 records: 170
+88 records: 198
+89 records: 245
+90 records: 262
+91 records: 285
+92 records: 267
+93 records: 314
+94 records: 380
+95 records: 371
+96 records: 367
+97 records: 428
+98 records: 403
+99 records: 410
+100 records: 381
+101 records: 389
+102 records: 374
+103 records: 367
+104 records: 330
+105 records: 374
+106 records: 338
+107 records: 290
+108 records: 306
+109 records: 270
+110 records: 258
+111 records: 176
+112 records: 189
+113 records: 160
+114 records: 147
+115 records: 117
+116 records: 98
+117 records: 85
+118 records: 82
+119 records: 53
+120 records: 70
+121 records: 43
+122 records: 51
+123 records: 28
+124 records: 20
+125 records: 24
+126 records: 11
+127 records: 12
+128 records: 9
+129 records: 10
+130 records: 2
+131 records: 4
+132 records: 2
+133 records: 5
+135 records: 4
+138 records: 1
+139 records: 2
+148 records: 1
+Protocol distribution:
+TCP: 200315
+UDP: 200136
+HTTP: 199832
+FTP: 200061
+SSH: 199656
+Record count: 1000000
+Connection count: 100

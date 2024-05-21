@@ -4,6 +4,23 @@
 using namespace vnf;
 using namespace std;
 
+/*
+	User side tools.
+*/
+std::vector<std::string> parse_args(const std::string &bytes) {
+    std::vector<std::string> args;
+    std::stringstream ss(bytes);
+    std::string arg;
+    auto trimChar = ';';
+    while (std::getline(ss, arg, ',')) {
+        arg.erase(std::find_if(arg.rbegin(), arg.rend(), [trimChar](char ch) {
+            return ch != trimChar;
+        }).base(), arg.end());
+        args.push_back(arg);
+    }
+    return args;
+}
+
 PerCoreState *perCoreStates;
 
 Globals globals;
@@ -86,7 +103,7 @@ void freeDSPool() {
             globals.cachedRemoteDatastore.erase(it.second);
             globals.localDatastore.erase(it.second);
             assert(false);
-            globals.localDatastoreLens.erase(it.second);
+            // globals.localDatastoreLens.erase(it.second);
             globals.dsMemPoolManager.free(it.first);
         }
     }
@@ -142,6 +159,7 @@ void handleCCSwitching(int socket) {
     int length;
     assert(read(socket, &length, sizeof(length)));
     assert(read(socket, &sep, sizeof(char)));
+    assert(sep == ';');
     char buf[length];
     int byte_read = 0;
     while (byte_read < length) {
@@ -150,6 +168,7 @@ void handleCCSwitching(int socket) {
         byte_read += bytes;
     }
     assert(read(socket, &sep, sizeof(char)));
+    assert(sep == ';');
     // Parsing records
     int index = 0;
     while (index < length) {
@@ -185,6 +204,7 @@ void handleCCSwitching(int socket) {
             }
         }
         globals.tupleIDtoCCMap[key] = s;
+        spdlog::info("Tuple %d switched to CC %d", key, s);
         // cache_void_list[dsMalloc] = bufKey;
         globals.ccMapLock.unlock();
     }
@@ -192,10 +212,11 @@ void handleCCSwitching(int socket) {
 
 void updateStateToCache(int socket) {
     char sep;
-    assert(read(socket, &sep, sizeof(char)));
+    BUSY(read(socket, &sep, sizeof(char)));
     int length;
-    assert(read(socket, &length, sizeof(length)));
-    assert(read(socket, &sep, sizeof(char)));
+    BUSY(read(socket, &length, sizeof(length)));
+    BUSY(read(socket, &sep, sizeof(char)));
+    assert(sep == ';');
     char buf[length];
     int byte_read = 0;
     while (byte_read< length) {
@@ -221,55 +242,78 @@ void updateStateToCache(int socket) {
             // globals.dsMemPoolManager.free(globals.localDatastore[key]);
         }
         // The local datastore is used as cache for reading.
-        auto ds = globals.localDatastore[key];
-        memcpy(ds, buf + index, sizeof(int));
+        // auto ds = globals.localDatastore[key];
+        // memcpy(ds, buf + index, sizeof(int));
+        globals.localDatastore[key] = *(int *)(buf + index);
         // globals.localDatastoreLens[key] = sizeof(int);
         // cache_void_list[dsMalloc] = bufKey;
         globals.dataStoreLock.unlock();
+        spdlog::info("Tuple %d update value to %d", key,  globals.localDatastore[key]);
         index += 5;
     }
 }
 
 void handleGetStateFromCache(int socket) {
     char sep;
-    assert(read(socket, &sep, sizeof(char)));
+    BUSY(read(socket, &sep, sizeof(char)));
     int length;
-    assert(read(socket, &length, sizeof(length)));
-    assert(read(socket, &sep, sizeof(char)));
+    BUSY(read(socket, &length, sizeof(length)));
+    BUSY(read(socket, &sep, sizeof(char)));
+    assert(sep == ';');
     char buf[length];
     int byte_read = 0;
-    while (byte_read< length) {
+    while (byte_read < length) {
         int bytes = read(socket, buf + byte_read, length - byte_read);
         assert(bytes >= 0);
         byte_read += bytes;
     }
     // Parsing records
+    std::vector<int> keys;
+    std::vector<int> values;
     int index = 0;
+    globals.dataStoreLock.lock();
     while (index < length) {
         int key;
         memcpy(&key, buf + index , sizeof(int));
         index += 5;
         // cache the state
-        globals.dataStoreLock.lock();
         if (globals.localDatastore.find(key) == globals.localDatastore.end()) {
             assert(false);
         }
-        // The local datastore is used as cache for reading.
-        assert(write(socket, (void *)globals.localDatastore[key], sizeof(int)));
-        char sep = ';';
-        assert(write(socket, &sep, sizeof(char)));
-        globals.dataStoreLock.unlock();
+        keys.push_back(key);
+        values.push_back(*(int*)globals.localDatastore[key]);
+        // sep = '\n';
+        // BUSY(write(socket, &sep, sizeof(char)));
     }
+    globals.dataStoreLock.unlock();
+
+    int command = 5;
+    length = keys.size() * 10;
+    BUSY(write(socket, &command, sizeof(int)));
+    BUSY(write(socket, &length, sizeof(int)));
+
+    char ret_buf[length];
+    char colon = ':';
+    char sepa = ';';
+    for (int i = 0; i < keys.size(); i++){
+        memcpy(ret_buf + i * 10, (void *)&keys[i], sizeof(int));
+        memcpy(ret_buf + i * 10 + 4, (void *)&colon, sizeof(char));
+        memcpy(ret_buf + i * 10 + 5, (void *)&values[i], sizeof(int));
+        memcpy(ret_buf + i * 10 + 9, (void *)&sepa, sizeof(char));
+    }
+
+    BUSY(write(socket, ret_buf, length));
 }
 
 void handleTxnFinished(int socket, int coreId){
     // Txn finished.  
     char sep;
-    assert(read(socket, &sep, sizeof(char)));
+    BUSY(read(socket, &sep, sizeof(char)));
     uint64_t txnReqId = 0; 
     if (read(socket, &txnReqId, sizeof(uint64_t)) < 0) {
         perror("serverThread.transactions.read");
     }
+    spdlog::info("Received TxnReqId %lld finished", txnReqId);
 
     // perCoreStates[coreId].txnDoneQueueLock.lock();
     // uint64_t txnReqId = perCoreStates[coreId].txnDoneQueue.front(); 
@@ -331,7 +375,8 @@ void *serverThread(void *args) {
 
     struct epoll_event ev;
     globals.listenLock.lock();
-    ev.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
+    ev.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLIN);
+    // ev.events = EPOLLIN | (globals.serverProtocol == "udp" ? EPOLLEXCLUSIVE : EPOLLET);
     ev.data.fd = globals.listeningSocketFd;
     epoll_ctl(epFd, EPOLL_CTL_ADD, globals.listeningSocketFd, &ev);
 
@@ -517,6 +562,7 @@ void *serverThread(void *args) {
                         //     break;
                         // }
                     }
+                    spdlog::info("Command: %d ", command);
                     switch (command) {
                         case 0: {
                             handleCCSwitching(currentSocketId);
@@ -755,8 +801,8 @@ void* vnf::setCachedDSKeyDNE(int dsKey) {
     void *value;
 
     globals.dataStoreLock.lock();
-    globals.doNotEvictCachedDSValueKeyMap[globals.localDatastore[dsKey]] = dsKey;
-    value = globals.localDatastore[dsKey];
+    globals.doNotEvictCachedDSValueKeyMap[&globals.localDatastore[dsKey]] = dsKey;
+    value = &globals.localDatastore[dsKey];
     globals.dataStoreLock.unlock();
 
     return value; // fixme
@@ -765,7 +811,7 @@ void* vnf::setCachedDSKeyDNE(int dsKey) {
 void vnf::unsetCachedDSKeyDNE(int dsKey) {
     /* TODO: fix this */
     globals.dataStoreLock.lock();
-    globals.doNotEvictCachedDSValueKeyMap.erase(globals.localDatastore[dsKey]);
+    globals.doNotEvictCachedDSValueKeyMap.erase(&globals.localDatastore[dsKey]);
     globals.dataStoreLock.unlock();
 }
 
@@ -930,9 +976,9 @@ void vnf::startEventLoop() {
     globals.dsMemPoolManager.add_block(&globals.dsMemPoolBlock.front(), globals.dsMemPoolBlock.size(), 256);
     // Init local data store.
     for (int i = 0 ; i< 10000; i += 1){
-        auto dsMalloc = globals.dsMemPoolManager.malloc();
-        memset(dsMalloc, 0, sizeof(int)); // Init as 0.
-        globals.localDatastore[i] = dsMalloc;
+        // auto dsMalloc = globals.dsMemPoolManager.malloc();
+        // memset(dsMalloc, 0, sizeof(int)); // Init as 0.
+        globals.localDatastore[i] = 0;
         globals.tupleIDtoCCMap[i] = Cache;
     }
     globals.dataStoreLock.unlock();
@@ -1177,28 +1223,28 @@ ConnId& vnf::ConnId::storeData(string tableName, int key, enum DataLocation loca
         return *this;
     }
 
-    if (location == LOCAL) {
-        globals.dataStoreLock.lock();
+    // if (location == LOCAL) {
+    //     globals.dataStoreLock.lock();
 
-        if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-            freeDSPool();
-        }
+    //     if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+    //         freeDSPool();
+    //     }
 
-        void *dsMalloc;
-        if (globals.keyExistsInLocalDatastore(key)) {
-            dsMalloc = globals.localDatastore[key];
-        } else {
-            dsMalloc = globals.dsMemPoolManager.malloc();
-            globals.dsSize++;
-        }
-        memcpy(dsMalloc, value, static_cast<size_t>(valueLen) + 1);
-        globals.localDatastore[key] = dsMalloc;
-        globals.localDatastoreLens[key] = valueLen;
+    //     void *dsMalloc;
+    //     if (globals.keyExistsInLocalDatastore(key)) {
+    //         dsMalloc = globals.localDatastore[key];
+    //     } else {
+    //         dsMalloc = globals.dsMemPoolManager.malloc();
+    //         globals.dsSize++;
+    //     }
+    //     memcpy(dsMalloc, value, static_cast<size_t>(valueLen) + 1);
+    //     globals.localDatastore[key] = dsMalloc;
+    //     // globals.localDatastoreLens[key] = valueLen;
 
-        globals.dataStoreLock.unlock();
+    //     globals.dataStoreLock.unlock();
 
-        return *this;
-    }
+    //     return *this;
+    // }
 
     spdlog::warn("storeData: Unknown location used {}", location);
 
@@ -1279,7 +1325,8 @@ ConnId& vnf::ConnId::retrieveData(string tableName, int key, enum DataLocation l
     if (location == LOCAL) {
         globals.dataStoreLock.lock();
 
-        int packetLen = globals.localDatastoreLens[key];
+        int packetLen = sizeof(int);
+        // int packetLen = globals.localDatastoreLens[key];
         char *value = (char *) (globals.localDatastore[key]);
 
         char valueCopy[packetLen + 1];
@@ -1316,7 +1363,7 @@ ConnId& vnf::ConnId::delData(string tableName, int key, enum DataLocation locati
     if (location == LOCAL) {
         globals.dataStoreLock.lock();
 
-        globals.dsMemPoolManager.free(globals.localDatastore[key]);
+        // globals.dsMemPoolManager.free(globals.localDatastore[key]);
         globals.localDatastore.erase(key);
 
         globals.dataStoreLock.unlock();
@@ -1885,11 +1932,33 @@ void DB4NFV::SFC::Add(App& last, App& app){
 	this->SFC_chain.push_back(&app);
 }
 
+void __debug__change_tuple_strategy(uint64_t tupleID, int s)
+{
+    switch (s) {
+        case 1: 
+            globals.tupleIDtoCCMap[tupleID] = Partition;
+            break;
+        case 2: 
+            globals.tupleIDtoCCMap[tupleID] = Cache;
+            break;
+        case 3: 
+            globals.tupleIDtoCCMap[tupleID] = Offloading;
+            break;
+        case 4: 
+            globals.tupleIDtoCCMap[tupleID] = TPG;
+            break;
+        default:
+            assert(false);
+    };
+}
+
 // The entry for sending txn execution request to txnEngine.
 void __request(uint64_t ts, uint64_t txnReqId, const char *key, int txnIndex, int saIndex, ConnId& connId)
 {
     // FIXME. To be optimized. Try to Cache JNIEnv in one persistent VNF thread.
     int len = sizeof(uint64_t) * 2 + strlen(key) + sizeof(int) * 2 + 4; // four separators
+
+    BUSY(write(perCoreStates[connId.coreId].txnSocket, &len, sizeof(int)));
 
     // Use SetByteArrayRegion to copy data into the byte array
     char data[len];
@@ -1920,7 +1989,7 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int txnIndex, in
     int isAbort_i = 0;
     memcpy(data + offset, &isAbort_i, sizeof(int));
     offset += sizeof(int);
-    data[offset] = '\n';
+    data[offset] = ';';
 
     // Copy the data into the msg byte array
     // auto msg = env->NewByteArray(len);
@@ -1951,18 +2020,18 @@ void __request(uint64_t ts, uint64_t txnReqId, const char *key, int txnIndex, in
 vector<int> pbdSeparator(char* buffer, int bufLen) {
     vector<int> ret = {};
     int size = 0;
-    for ( int i = 0; i< bufLen; i+=1 ){
+    for ( int i = 0; i < bufLen; i+=1 ){
         size += 1;
-        // Assume last char is ; or \0.
+        // Assume last char is ; or \n.
         if (buffer[i] == ';' || buffer[i] == '\n' ){
-            assert(buffer[i] == ';' ||  buffer[i] == '\n' || buffer[i] == '\0');
-            buffer[i] = '\0';
+            assert(buffer[i] == ';' ||  buffer[i] == '\n');
             ret.push_back(size);
             size = 0;
-        } else if ( i == bufLen - 1 ){
-            // No substitution at the last.
-            ret.push_back(size);
-            break;
+            // This would cause the last not reserved...
+        // } else if ( i == bufLen - 1 )
+        //     // No substitution at the last.
+        //     ret.push_back(size);
+        //     break;
         }
     }
     return ret;
@@ -2056,43 +2125,43 @@ int main(int argc, char ** argv) {
 //     return 0;
 // }
 
-int send_state_from_cache(uint64_t tupleID, int socketId){
-    globals.dataStoreLock.lock();
-    if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-        freeDSPool();
-    }
-    // cache the state
-    assert(globals.localDatastoreLens[tupleID] == sizeof(int));
-	return write(socketId, globals.localDatastore[tupleID], sizeof(int));
-}
+// int send_state_from_cache(uint64_t tupleID, int socketId){
+//     globals.dataStoreLock.lock();
+//     if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+//         freeDSPool();
+//     }
+//     // cache the state
+//     // assert(globals.localDatastoreLens[tupleID] == sizeof(int));
+// 	return write(socketId, globals.localDatastore[tupleID], sizeof(int));
+// }
 
-int get_state_from_cache(uint64_t tupleID, int *v){
-    globals.dataStoreLock.lock();
-    if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-        freeDSPool();
-    }
-    // cache the state
-    assert(globals.localDatastoreLens[tupleID] == sizeof(int));
-    memcpy(v, globals.localDatastore[tupleID], sizeof(int));
-	return sizeof(int);
-}
+// int get_state_from_cache(uint64_t tupleID, int *v){
+//     globals.dataStoreLock.lock();
+//     if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+//         freeDSPool();
+//     }
+//     // cache the state
+//     // assert(globals.localDatastoreLens[tupleID] == sizeof(int));
+//     memcpy(v, globals.localDatastore[tupleID], sizeof(int));
+// 	return sizeof(int);
+// }
 
-void* update_state_to_cache(int tupleID, int write_value){
-    globals.dataStoreLock.lock();
-    if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
-        freeDSPool();
-    }
-    // cache the state
-    void *dsMalloc = globals.dsMemPoolManager.malloc();
-    globals.dsSize++;
-    memcpy(dsMalloc, (void *) &write_value, sizeof(int));
-    // The local datastore is used as cache for reading.
-    globals.localDatastore[tupleID] = dsMalloc;
-    globals.localDatastoreLens[tupleID] = sizeof(int);
-    // globals.cachedRemoteDatastore[tupleID] = dsMalloc;
-    // cache_void_list[dsMalloc] = tupleID;
-    globals.dataStoreLock.unlock();
-}
+// void* update_state_to_cache(int tupleID, int write_value){
+//     globals.dataStoreLock.lock();
+//     if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
+//         freeDSPool();
+//     }
+//     // cache the state
+//     void *dsMalloc = globals.dsMemPoolManager.malloc();
+//     globals.dsSize++;
+//     memcpy(dsMalloc, (void *) &write_value, sizeof(int));
+//     // The local datastore is used as cache for reading.
+//     globals.localDatastore[tupleID] = dsMalloc;
+//     // globals.localDatastoreLens[tupleID] = sizeof(int);
+//     // globals.cachedRemoteDatastore[tupleID] = dsMalloc;
+//     // cache_void_list[dsMalloc] = tupleID;
+//     globals.dataStoreLock.unlock();
+// }
 
 #else
 
@@ -2467,14 +2536,16 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
         // Find out the state disposal strategy to be used.
         // Report to pattern monitor.
         bool has_write = (sa.rw_ == WRITE);
-        int zero = 0;
-        assert(write(perCoreStates[connId.coreId].txnSocket, &zero, sizeof(int) ));
-        assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
-        assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int) ));
-        assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
-        assert(write(perCoreStates[connId.coreId].txnSocket, &has_write, sizeof(bool) ));
-        assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
-        assert(write(perCoreStates[connId.coreId].txnSocket, "\n", sizeof(char) ));
+        int command = 0;
+        int length = 8; // ; + Int + ; + bool + ;
+        BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &command, sizeof(int) ));
+        BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &length, sizeof(int) ));
+        BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
+        BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int) ));
+        BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
+        BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &has_write, sizeof(bool) ));
+        BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
+        // BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, "\n", sizeof(char) ));
 
         switch (globals.tupleIDtoCCMap[(int)(*key)]) {
             case Partition: {
@@ -2485,7 +2556,7 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 // Call callback.
                 assert(ctx.AppIdx() != -1);
                 // Call actual sa udf.
-                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, sizeof(int));
+                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)&tmp, sizeof(int));
                 if (has_write) {
                     int abortion = (ctx.ReturnValue())? 1: 0;
                     // TODO. Abortion not handled here.
@@ -2495,15 +2566,15 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                     // if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
                     //     freeDSPool();
                     // }
-                    void *dsMalloc;
-                    if (globals.keyExistsInLocalDatastore((int)*key)) {
-                        dsMalloc = globals.localDatastore[(int)*key];
-                    } else {
-                        dsMalloc = globals.dsMemPoolManager.malloc();
-                        globals.dsSize++;
-                    }
-                    memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
-                    globals.localDatastore[(int)*key] = dsMalloc;
+                    // void *dsMalloc;
+                    // if (globals.keyExistsInLocalDatastore((int)*key)) {
+                    //     dsMalloc = globals.localDatastore[(int)*key];
+                    // } else {
+                    //     dsMalloc = globals.dsMemPoolManager.malloc();
+                    //     globals.dsSize++;
+                    // }
+                    // memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
+                    globals.localDatastore[(int)*key] = res;
                     // globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
                     globals.dataStoreLock.unlock();
                 }
@@ -2520,7 +2591,7 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 // TODO.
                 assert(ctx.AppIdx() != -1);
                 // Call actual sa udf.
-                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)tmp, sizeof(int));
+                STATE_TYPE res = (sa.txnHandler_)(connId, ctx, (char *)&tmp, sizeof(int));
                 int abortion = (ctx.ReturnValue())? 1: 0;
                 // TODO. Abortion not handled here.
 
@@ -2529,32 +2600,40 @@ void DB4NFV::Transaction::Trigger(vnf::ConnId& connId, Context &ctx, const char 
                 if (globals.dsSize == userConfig->DATASTORE_THRESHOLD) {
                     freeDSPool();
                 }
-                void *dsMalloc;
-                if (globals.keyExistsInLocalDatastore((int)*key)) {
-                    dsMalloc = globals.localDatastore[(int)*key];
-                } else {
-                    dsMalloc = globals.dsMemPoolManager.malloc();
-                    globals.dsSize++;
-                }
-                memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
-                globals.localDatastore[(int)*key] = dsMalloc;
-                globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
+                // void *dsMalloc;
+                // if (globals.keyExistsInLocalDatastore((int)*key)) {
+                //     dsMalloc = globals.localDatastore[(int)*key];
+                // } else {
+                //     dsMalloc = globals.dsMemPoolManager.malloc();
+                //     globals.dsSize++;
+                // }
+                // memcpy(dsMalloc, (void *)&res, (STATE_TYPE_SIZE + 1));
+                globals.localDatastore[(int)*key] = res;
+                // globals.localDatastoreLens[(int)*key] = STATE_TYPE_SIZE;
+                globals.dataStoreLock.unlock();
 
                 // Send to record.
-                int command = 2;
-                assert(write(perCoreStates[connId.coreId].txnSocket, &command, sizeof(int)) > 0); // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int)) > 0); // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, dsMalloc, sizeof(int)) > 0); // Send content to write.
-                assert(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
-                assert(write(perCoreStates[connId.coreId].txnSocket, "\n", 1) > 0);           // Send key to write.
-                globals.dataStoreLock.unlock();
+                command = 2;
+                length = 11; // ; + int + ; + int + ;
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &command, sizeof(int)) > 0); // Send key to write.
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &length, sizeof(int)) > 0); // Send key to write.
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, key, sizeof(int)) > 0); // Send key to write.
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, ";", 1) > 0);           // Send key to write.
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &res, sizeof(int)) > 0); // Send content to write.
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, ";", sizeof(char) ));
+                // BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, "\n", 1) > 0);           // Send key to write.
                 break;
             }
             // Offloading and TPG are just sending the request.
-            case Offloading:{}
-            case TPG:{}
+            case Offloading:{
+                command = 3;
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &command, sizeof(int)) > 0); // Send key to write.
+            }
+            case TPG:{
+                command = 4;
+                BUSY_SEND(write(perCoreStates[connId.coreId].txnSocket, &command, sizeof(int)) > 0); // Send key to write.
+            }
             default:{  
                 // Reset when transaction handle done.
                 ctx._set_wait_txn_callback();

@@ -1,0 +1,5 @@
+<interface type='network'>
+	  <mac address='3e:01:98:6d:b3:48'/> <!-- Replace with your generated MAC address -->
+		    <source network='vmbr0'/> <!-- Replace with the name of your bridge -->
+			      <model type='e1000'/>
+		      </interface>

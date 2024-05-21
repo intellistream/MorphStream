@@ -2,6 +2,7 @@ import argparse
 import random
 import csv
 from collections import defaultdict
+import struct
 
 import argparse
 import random
@@ -28,7 +29,7 @@ data = {
             # },
             {
                 "IP": "127.0.0.1",
-                "port": 9000
+                "port": 9090
             }
         ],
         "report": {
@@ -38,10 +39,12 @@ data = {
         }
     },
     "Generator": {
-        "count_millions": 1,
-        "location": "send_to"
+        "count_k": 10,
+        "location": "send_to_cc_switch"
     }
 }
+
+is_exit = False
 
 class RecordConfig:
     def __init__(self, host_range=(1, 10000), protocol_options=["TCP", "UDP", "HTTP", "FTP", "SSH"]):
@@ -160,33 +163,37 @@ class Sender:
         with open(csv_file, 'r') as file:
             reader = csv.reader(file)
             self.records = list(reader)
-            self.record_status = {int(r[0]): (0, 0) for r in self.records}
+            self.record_status = {int(r[0]): [0, 0] for r in self.records}
 
         for connection in self.connections:
             cnt = self.sent_cnt
             self.sent_cnt += data["Sender"]["firstSent"]
             batch = self.records[cnt:cnt+data["Sender"]["firstSent"]]
             for r in batch:
-                self.record_status[int(r[0])] = (time.time_ns(), 0)
-                connection.sendall((",".join(r) + '\n').encode())
+                self.record_status[int(r[0])] = [time.time_ns(), 0]
+                connection.sendall((",".join(r) + ';').encode())
         
-        while True:
+        global is_exit
+        while not is_exit:
             buffer = bytearray()
             for connection in self.connections:
                 try:
                     rcv = connection.recv(4096)
                     if rcv:
                         buffer += rcv
-                        while b'\n' in buffer:
-                            index = buffer.index(b'\n')
-                            response = buffer[:index].decode()
+                        d = list(buffer)
+                        while len(buffer) >= 4:
+                            index = 4
+                            response = buffer[:index]
                             self.handle_response(response)
                             # Send one more.
                             cnt = self.sent_cnt
+                            if cnt > data["Generator"]["count_k"] * 1000:
+                                is_exit = True
                             self.sent_cnt += 1
                             r = self.records[cnt]
-                            self.record_status[int(r[0])] = (time.time_ns(), 0)
-                            content = (",".join(r) +'\n').encode()
+                            self.record_status[int(r[0])] = [time.time_ns(), 0]
+                            content = (",".join(r) +';').encode()
                             connection.sendall(content)
                             # remove from buffer.
                             buffer = buffer[index+1:]
@@ -196,19 +203,31 @@ class Sender:
                     self.connections.remove(connection)
                     print(f"Connection broken with {self.ip_address}:{self.port}")
                     continue
+        # Exit clearance.
+        print(f"Exit. Sent {self.sent_cnt}")
 
     def handle_response(self, record):
-        print(f"Received record: {record}")
-        self.record_status[int(record)][1] = time.time_ns()
+        def decode_int32(byte_array):
+            # Ensure byte array is exactly 4 bytes long (32 bits)
+            if len(byte_array) != 4:
+                raise ValueError("Byte array must be 4 bytes long (32 bits)")
+
+            # Unpack the byte array into a single 32-bit integer
+            return struct.unpack('<i', byte_array)[0]
+        id = decode_int32(record)
+        self.received_cnt += 1
+        self.record_status[id][1] = time.time_ns()
 
     def save_history(self, csv_file):
+        pass
         # Save sending and feedback data along with the content sent to a new CSV file
-        history_file = os.path.splitext(csv_file)[0] + "_history.csv"
-        with open(history_file, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["Sent Record", "Received Record"])
-            for sent, received in zip(self.records_sent, self.records_received):
-                writer.writerow([sent, received])
+        # history_file = os.path.splitext(csv_file)[0] + "_history.csv"
+        # with open(history_file, 'w', newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow(["Sent Record", "Received Record"])
+        #     # TODO.
+        #     for sent, received in zip(self.records_sent, self.records_received):
+        #         writer.writerow([sent, received])
 
     def send_csv_files(self):
         csv_file = data["Generator"]["location"] + ".csv"
@@ -225,11 +244,18 @@ class Sender:
         #     return
         self.send_records(csv_file)
         self.save_history(csv_file)
+    
+    def report_process(self):
+        global is_exit
+        while not is_exit:
+        # Report size of sent_cnt and received_cnt and difference. With interval.
+            print(f"{self.ip_address}: Rcv/Sent {self.received_cnt}/{self.sent_cnt}")
+            time.sleep(1)
 
 
 def generate_handler():
     print("Generating data points...")
-    g = DataGenerator(data["Generator"]["count_millions"] * 1000000).generate_csv_records(data["Generator"]["location"] + ".csv")
+    g = DataGenerator(data["Generator"]["count_k"] * 1000).generate_csv_records(data["Generator"]["location"] + ".csv")
     host_count, records_per_host, protocol_distribution = g.generate_statistics()
     g.save_statistics(data["Generator"]["location"] + ".txt", host_count, records_per_host, protocol_distribution)
 
@@ -243,6 +269,9 @@ def send_handler():
         thread = threading.Thread(target=sender.send_csv_files)
         threads.append(thread)
         thread.start()
+        monitor_thread = threading.Thread(target=sender.report_process)
+        threads.append(monitor_thread)
+        monitor_thread.start()
 
     # Wait for all threads to complete
     for thread in threads:
@@ -250,6 +279,8 @@ def send_handler():
 
 def handle_sigint(signum, frame):
     print("Exiting gracefully...")
+    global is_exit
+    is_exit = True
     # Add any cleanup code here if needed
     exit(0)
 
