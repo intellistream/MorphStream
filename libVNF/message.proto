@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package message;
+
+option java_package = "org.example.protobuf";
+option java_outer_classname = "MessageProtos";
+option java_multiple_files = true;
+
+message MessageFromStateManager {
+    oneof msg {
+		TxnDoneMessage txnDoneMessage = 1;
+		getCCMessage getCCMessage = 2;
+		setCCMessage setCCMessage = 3;
+		getDSMessage getDSMessage = 4;
+		setDSMessage setDSMessage = 5;
+		UDFReadyMessage udfMessage = 6;
+		PauseMessage pauseMessage = 7;
+		ContinueMessage continueMessage = 8;
+    }
+}
+
+message PauseMessage {}
+
+message ContinueMessage {}
+
+message TxnDoneMessage {
+	uint64 id = 1;
+}
+
+message getCCMessage {
+	int32 key = 1;
+}
+
+message setCCMessage {
+	int32 key = 1;
+	CC cc = 2;
+}
+
+message getDSMessage {
+	int32 key = 1;
+}
+
+message setDSMessage {
+	int32 key = 1;
+	optional int32 value = 2;
+}
+
+message UDFReadyMessage {
+	uint64 id = 1;
+	int32 saIdx = 2;
+	optional int32 key = 3;
+	optional int32 value = 4;
+}
+
+message UDFResponse {
+	uint64 id = 1;
+	int32 saIdx = 2;
+	optional int32 key = 3;
+	optional int32 value = 4;
+}
+
+message MessageFromVNFInst {
+    oneof msg {
+		MonitorReportMessage monitorReportMessage = 1;
+		SFCMessage sfcMessage = 2;
+		TxnReqMessage txnReqMessage = 3;
+		setCCMessage pushCCMessage = 4;
+		setDSMessage pushDSMessage = 5;
+    }
+}
+
+message MonitorReportMessage {
+	CC cc = 1;
+}
+
+message SFCMessage {
+	string SFCJson = 1;
+}
+
+enum CC {
+	PARTITION = 0;
+	CACHE = 1;
+	OFFLOAD = 2;
+	PREEMPTIVE = 3;
+}
+
+message TxnReqMessage {
+	CC cc = 1;
+	uint64 id = 2;
+	int32 saIdx = 3;
+	int32 key = 4;
+}

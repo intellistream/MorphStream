@@ -1,125 +1,54 @@
-cmake_minimum_required(VERSION 3.5.0)
-project(libVNF)
+cmake_minimum_required(VERSION 3.8)
 
-set(PROJECT_DESCRIPTION "libvnf is a library to easily build custom scalable high performance Virtual Network Functions (VNFs)")
-# Release type
-set(CMAKE_BUILD_TYPE Debug)
+project(VNFRuntime C CXX)
 
-# Project version
-set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 9)
-set(PROJECT_VERSION_PATCH 1)
-set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+# Enable debugging
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")  # Add debugging information
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0") # Disable optimizations
 
-# Dependency Paths.
-option(MODE "Standalone or Shared lib to build." ON)
-option(BACKEND_MORPH "If enable compilation with morphStream." ON)
+include(./common.cmake)
 
-# Installation Paths.
-set(LIBRARY_INSTALL_DIR /usr/lib)
-set(LIBRARY_INSTALL_DIR2 /usr/local/lib)
-set(HEADERS_INSTALL_DIR /usr/include/libvnf)
-set(HEADERS_INSTALL_DIR2 /usr/local/include/libvnf)
+# Proto file
+get_filename_component(proto "${CMAKE_CURRENT_SOURCE_DIR}/message.proto" ABSOLUTE)
+get_filename_component(proto_path "${proto}" PATH)
 
-set(CMAKE_CXX_STANDARD 11)
-if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
-	message(STATUS "Building in Debug mode.")
-	add_definitions(-DDEBUG=true)
-	set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -Wno-pointer-arith -lnuma -lrt -DLIBVNF_STACK=1 -g -ljsoncpp -O0")
-else ()
-	message(STATUS "Building in Release mode.")
-	set(CMAKE_CXX_FLAGS "-Wno-deprecated-declarations -Wno-pointer-arith -lnuma -lrt -DLIBVNF_STACK=1 -ljsoncpp -O3")
-endif()
+# Other source file
+file(GLOB_RECURSE src_files 
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/vnf/*.cpp"
+)
 
-# Sources and Headers
-file(GLOB_RECURSE HEADERS "include/*hpp")
-file(GLOB_RECURSE SOURCES "src/datastore/*cpp" "src/kernel/*cpp")
+# Generated sources
+set(proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/message.pb.cc")
+set(proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/message.pb.h")
+add_custom_command(
+      OUTPUT "${proto_srcs}" "${proto_hdrs}" "${proto_grpc_srcs}" "${proto_grpc_hdrs}"
+      COMMAND ${_PROTOBUF_PROTOC}
+      ARGS --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+        -I "${proto_path}"
+        "${proto}"
+      DEPENDS "${proto}")
 
-# Include
-include_directories(include)
+# Include generated *.pb.h files
+include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+include_directories(${CMAKE_PREFIX_PATH}/include)
+include_directories(/usr/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/spdlog/include)
 
-# Modes to compile libVNF libraries
-if (${MODE} STREQUAL STANDALONE)
-	message(STATUS "Using ${MODE} for libVNF")
+# grpc_proto
+add_library(proto
+  ${proto_srcs}
+  ${proto_hdrs})
+target_link_libraries(proto
+  ${_PROTOBUF_LIBPROTOBUF})
 
-    add_definitions(-DSTANDALONE)
-
-	# Library
-	# add_library(vnf-kernel-dynamic SHARED ${SOURCES} ${HEADERS})
-	add_library(vnf-kernel-static STATIC ${SOURCES} ${HEADERS})
-
-	# Install
-	install(TARGETS vnf-kernel-static DESTINATION ${LIBRARY_INSTALL_DIR})
-	install(TARGETS vnf-kernel-static DESTINATION ${LIBRARY_INSTALL_DIR2})
-	# install(TARGETS vnf-kernel-dynamic DESTINATION ${LIBRARY_INSTALL_DIR})
-	# install(TARGETS vnf-kernel-dynamic DESTINATION ${LIBRARY_INSTALL_DIR2})
-	install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR})
-	install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR2})
-
-  	# Installation target 
-  	set(STACK_TARGET vnf-kernel-static)
-  	# set(STACK_TARGET vnf-kernel-dynamic)
-elseif (${MODE} STREQUAL SHARED)
-	message(STATUS "Using ${MODE} for libVNF")
-    # add_definitions(-DSTANDALONE=true)
-
-	# Library
-	add_library(vnf-kernel-dynamic SHARED ${SOURCES} ${HEADERS})
-	# add_library(vnf-kernel-static STATIC ${SOURCES} ${HEADERS})
-
-	# Install
-	# install(TARGETS vnf-kernel-static DESTINATION ${LIBRARY_INSTALL_DIR})
-	# install(TARGETS vnf-kernel-static DESTINATION ${LIBRARY_INSTALL_DIR2})
-	install(TARGETS vnf-kernel-dynamic DESTINATION ${LIBRARY_INSTALL_DIR})
-	install(TARGETS vnf-kernel-dynamic DESTINATION ${LIBRARY_INSTALL_DIR2})
-	install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR})
-	install(DIRECTORY include/ DESTINATION ${HEADERS_INSTALL_DIR2})
-
-  	# Installation target 
-  	# set(STACK_TARGET vnf-kernel-static)
-  	set(STACK_TARGET vnf-kernel-dynamic)
-endif()
-
-if (${BACKEND_MORPH})
-	set(JAVA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-	# set(JAVA_JNI_INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils/java/Loader/Loader.java)
-	set(JNI_HEADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-  	set(JAVA_INCLUDE_PATH "$ENV{JAVA_HOME}/include")
-
-	message("Compiling with morphStream.")
-	add_definitions(-DBACKEND_MORPH)
-
-	# Check environment.
-	find_package(Java REQUIRED)
-	if(JAVA_FOUND)
-		message(STATUS "Java found: ${Java_JAVA_EXECUTABLE}")
-		message(STATUS "Java compiler: ${Java_JAVAC_EXECUTABLE}")
-		message(STATUS "Java include path: ${JAVA_INCLUDE_PATH}")
-	else()
-		message(FATAL_ERROR "Java not found. Please install Java and set JAVA_HOME.")
-	endif()
-	# if(Java_VERSION_STRING VERSION_LESS "1.8")
-	# 	message(FATAL_ERROR "Java version 1.8 or higher is required.")
-	# endif()
-	message(STATUS "Java compiler flags: ${Java_COMPILE_FLAGS}")
-
-	# Check if JNI is supported
-	if(JAVA_FOUND AND EXISTS "${JAVA_INCLUDE_PATH}/jni.h")
-		include_directories(${JAVA_INCLUDE_PATH})
-		include_directories(${JAVA_INCLUDE_PATH}/linux)
-	else()
-		message(FATAL_ERROR "JNI headers not found. Please make sure Java development tools are installed.")
-	endif()
-
-	# Declair dependency for the main library. Choose to build to /lib.
-	# add_custom_target(jni_headers_generation ALL
-	#	COMMAND ${Java_JAVAC_EXECUTABLE} -cp ${JAVA_SOURCE_DIR} -h ${JNI_HEADERS_DIR} ${JAVA_JNI_INTERFACE}
-	#	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	# 	COMMENT "Generating JNI headers"
-	# )
-
-	# add_dependencies(${STACK_TARGET} jni_headers_generation)
-
-	include_directories(${JNI_HEADERS_DIR})
-	message(STATUS "Use JNI header in: ${JNI_HEADERS_DIR}")
-endif()
+# Targets greeter_[async_](client|server)
+add_executable(VNFRuntime ${src_files})
+target_link_libraries(VNFRuntime
+proto
+absl::flags
+absl::flags_parse
+jsoncpp
+${_REFLECTION}
+${_PROTOBUF_LIBPROTOBUF})
