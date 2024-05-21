@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.input;
 
+import java.util.concurrent.BlockingQueue;
+
 public class OffloadData {
     private final int instanceID;
     private final long timeStamp;
@@ -8,16 +10,11 @@ public class OffloadData {
     private final int txnIndex;
     private final int saIndex;
     private final int isAbort;
+    private final int saType;
+    private int logicalTimeStamp;
+    private final BlockingQueue<Integer> senderResponseQueue;
 
-    //target = 3 (int) +0
-//timeStamp(long) + 1
-//txnReqId(long) + 2
-//tupleID (int) + 3
-//txnIndex(int) + 4
-//saIndex(int) + 5
-//isAbort(int);6
-
-    public OffloadData(int instanceID, long timeStamp, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort) {
+    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType) {
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.timeStamp = timeStamp;
@@ -25,6 +22,20 @@ public class OffloadData {
         this.txnIndex = txnIndex;
         this.saIndex = saIndex;
         this.isAbort = isAbort;
+        this.saType = saType;
+        this.senderResponseQueue = null;
+    }
+
+    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType, BlockingQueue<Integer> senderResponseQueue) {
+        this.instanceID = instanceID;
+        this.tupleID = tupleID;
+        this.timeStamp = timeStamp;
+        this.txnReqId = txnReqId;
+        this.txnIndex = txnIndex;
+        this.saIndex = saIndex;
+        this.isAbort = isAbort;
+        this.saType = saType;
+        this.senderResponseQueue = senderResponseQueue;
     }
 
     public int getInstanceID() {
@@ -55,4 +66,17 @@ public class OffloadData {
         return isAbort;
     }
 
+    public int getSaType() {
+        return saType;
+    }
+
+    public BlockingQueue<Integer> getSenderResponseQueue() {
+        return senderResponseQueue;
+    }
+    public int getLogicalTimeStamp() {
+        return logicalTimeStamp;
+    }
+    public void setLogicalTimeStamp(int logicalTimeStamp) {
+        this.logicalTimeStamp = logicalTimeStamp;
+    }
 }

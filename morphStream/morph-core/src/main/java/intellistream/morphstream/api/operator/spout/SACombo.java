@@ -14,6 +14,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tupl
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,11 +80,11 @@ public class SACombo extends AbstractSpoutCombo {
                             bolt.execute(marker);
                         }
                     }
-                } else { //control signals
-                    if (Objects.equals(event.getFlag(), "pause")) {
-                        marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "pause"));
-                        bolt.execute(marker);
-                    }
+                } else { //stop signal arrives, stop the current spout thread
+                    System.out.println("TPG thread " + this.taskId + " received stop signal.");
+                    SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
+                    SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
+                    getContext().stop_running(); //stop itself
                 }
             }
         } catch (DatabaseException | BrokenBarrierException e) {

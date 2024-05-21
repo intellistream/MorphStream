@@ -20,7 +20,7 @@ public class ApplicationSink extends AbstractSink {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
         if (in.isMarker()) {
-            LOG.info("Received marker" + in.getBID());
+//            LOG.info("Received marker" + in.getBID());
         }
     }
 

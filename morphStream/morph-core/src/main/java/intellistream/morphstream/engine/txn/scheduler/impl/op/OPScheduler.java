@@ -44,7 +44,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public LoggingManager loggingManager; // Used by fault tolerance
     public int isLogging;// Used by fault tolerance
     private native boolean nativeTxnUDF(String operatorID, StateAccess stateAccess);
-    private boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
+    private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
@@ -104,49 +105,60 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         // set computation complexity
-        AppConfig.randomDelay();
+//        AppConfig.randomDelay();
 
-        //stateAccess: saID, type, writeObjIndex, [table name, key's value, field index in table, access type] * N
-        int[] readValues = new int[operation.condition_records.size()]; //<stateObj field value> * N
+        if (serveRemoteVNF) {
+            //stateAccess: saID, type, writeObjIndex, table name, key's value, field index in table, access type
+            int[] readValues = new int[operation.condition_records.size()]; //<stateObj field value> * N
 
-        int saIndex = 0;
-        for (TableRecord tableRecord : operation.condition_records) {
-            int stateFieldIndex = Integer.parseInt(operation.stateAccess[3 + saIndex * 4 + 2]);
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
-            readValues[saIndex] = (int) readRecord.getValues().get(stateFieldIndex).getDouble();
-            saIndex++;
-        }
-
-        ByteBuffer byteBuffer = ByteBuffer.allocate(readValues.length * 4);
-        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        for (int value : readValues) {
-            byteBuffer.putInt(value);
-        }
-        byte[] readBytes = byteBuffer.array();
-        int isAbort = -1;
-        int udfResult = -1;
-
-        //TODO: Simplify saData into a single write value
-
-        byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
-        isAbort = decodeInt(saResultBytes, 0);
-        udfResult = decodeInt(saResultBytes, 4);
-
-        if (isAbort == 0) { //txn is not aborted
-            if (operation.accessType == CommonMetaTypes.AccessType.WRITE
-                    || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
-                    || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
-                //Update udf results to writeRecord
-                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-                tempo_record.getValues().get(1).setDouble(udfResult);
-                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
+            int saIndex = 0;
+            for (TableRecord tableRecord : operation.condition_records) {
+                int stateFieldIndex = Integer.parseInt(operation.stateAccess[3 + saIndex * 4 + 2]);
+                SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
+                readValues[saIndex] = (int) readRecord.getValues().get(stateFieldIndex).getDouble();
+                saIndex++;
             }
-        } else if (isAbort == 1) {
-            operation.stateAccess[1] = "true"; //pass isAbort back to bolt
-            operation.isFailed.set(true);
+
+            ByteBuffer byteBuffer = ByteBuffer.allocate(readValues.length * 4);
+            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            for (int value : readValues) {
+                byteBuffer.putInt(value);
+            }
+            byte[] readBytes = byteBuffer.array();
+            int isAbort = -1;
+            int udfResult = -1;
+
+            //TODO: Simplify saData into a single write value
+
+            byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
+            isAbort = decodeInt(saResultBytes, 0);
+            udfResult = decodeInt(saResultBytes, 4);
+
+            if (isAbort == 0) { //txn is not aborted
+                if (operation.accessType == CommonMetaTypes.AccessType.WRITE
+                        || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
+                        || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
+                    //Update udf results to writeRecord
+                    SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+                    SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+                    tempo_record.getValues().get(1).setDouble(udfResult);
+                    operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
+                }
+            } else if (isAbort == 1) {
+                operation.stateAccess[1] = "true"; //pass isAbort back to bolt
+                operation.isFailed.set(true);
+            } else {
+                throw new RuntimeException();
+            }
+
         } else {
-            throw new RuntimeException();
+            // Simplified saData: saID, saType, tableName, tupleID
+            SchemaRecord simReadRecord = operation.d_record.content_.readPreValues(operation.bid);
+            int simReadValue = simReadRecord.getValues().get(1).getInt();
+
+            SchemaRecord simTempoRecord = new SchemaRecord(simReadRecord);
+            simTempoRecord.getValues().get(1).setInt(simReadValue);
+            operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, simTempoRecord);
         }
 
         commitLog(operation);

@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.input;
 
+import message.VNFCtlStub;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -10,15 +11,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MonitorThread implements Runnable {
-    private final BlockingQueue<PatternData> patternDataQueue;
+    private static BlockingQueue<PatternData> patternDataQueue;
     private static final ConcurrentHashMap<Integer, Integer> readCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> writeCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> ownershipMap = new ConcurrentHashMap<>();
@@ -38,6 +37,7 @@ public class MonitorThread implements Runnable {
     private static final Map<Integer, InputStream> instanceInputStreams = new HashMap<>();
     private static final Map<Integer, OutputStream> instanceOutputStreams = new HashMap<>();
     private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
+    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
 
     public MonitorThread(BlockingQueue<PatternData> patternDataQueue, int punctuation_interval) {
@@ -55,15 +55,27 @@ public class MonitorThread implements Runnable {
         }
     }
 
+    public static void submitPatternData(PatternData patternData) {
+        try {
+            patternDataQueue.put(patternData);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public void run() {
+
         while (!Thread.currentThread().isInterrupted()) {
             PatternData patternData;
             try {
                 patternData = patternDataQueue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            }
+            if (patternData.getTimeStamp() == -1) {
+                System.out.println("Pattern monitor thread received stop signal");
+                break;
             }
             updatePatternData(patternData);
             txnCounter++;
@@ -82,15 +94,11 @@ public class MonitorThread implements Runnable {
                 statesPattern_34_to_2.clear();
             }
         }
+
     }
 
-//instanceID(int) -0
-//target = 0 (int) -1
-//TupleID(int) -2
-//isWrite (bool) -3
-
     private static void updatePatternData(PatternData metaDataByte) {
-        
+
         int instanceID = metaDataByte.getInstanceID();
         int tupleID = metaDataByte.getTupleID();
         boolean isWrite = metaDataByte.getIsWrite();
@@ -140,81 +148,65 @@ public class MonitorThread implements Runnable {
     }
 
     private static void notifyCCSwitch(int instanceID, int tupleID, int newPattern) {
-        try {
-            OutputStream output = instanceSocketMap.get(instanceID).getOutputStream();
-            byte[] message = (0 + ";" + 2 + ";" + tupleID + ";" + newPattern).getBytes();
-            output.write(message);
-            output.flush();
-        } catch (IOException e) {
-            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-        }
+//        try {
+//
+//            //TODO: Does this have to be split into two calls?
+//            VNFCtrlClient.make_pause();// TODO: Align with libVNF
+//            VNFCtrlClient.update_cc(tupleID, newPattern);// TODO: Align with libVNF
+//
+//        } catch (IOException e) {
+//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+//        }
     }
 
     private static void notifyStateSyncComplete(int instanceID, int tupleID) {
-        try {
-            OutputStream output = instanceSocketMap.get(instanceID).getOutputStream();
-            byte[] message = (1 + ";" + 1 + ";" + tupleID).getBytes();
-            output.write(message);
-            output.flush();
-        } catch (IOException e) {
-            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-        }
+//        try {
+//            // TODO: Align with libVNF
+//            VNFCtrlClient.make_continue();
+//
+//        } catch (IOException e) {
+//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+//        }
     }
 
     private static void syncStateFromLocalToRemote(int instanceID, int tupleID) {
-        try {
-            Socket socket = instanceSocketMap.get(instanceID);
-            // Send GET request to instance
-            byte[] requestMessage = (2 + ";" + 1 + ";" + tupleID).getBytes();
-            OutputStream output = socket.getOutputStream();
-            output.write(requestMessage);
-            output.flush();
-
-            // Wait for the GET response
-            InputStream input = socket.getInputStream();
-            byte[] buffer = new byte[1024];
-            int bytesRead = input.read(buffer);
-            byte[] responseMessage = new byte[bytesRead];
-            System.arraycopy(buffer, 0, responseMessage, 0, bytesRead);
-
-            int cachedValue = 0; //TODO: Hardcoded
-
-            try {
-                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
-                SchemaRecord srcRecord = condition_record.content_.readPreValues(-1); //TODO: Pass-in a valid bid.
-                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-                tempo_record.getValues().get(1).setInt(cachedValue);
-                condition_record.content_.updateMultiValues(-1, 0, true, tempo_record);
-
-            } catch (DatabaseException e) {
-                throw new RuntimeException(e);
-            }
-
-        } catch (IOException e) {
-            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-        }
+//        try {
+//            System.out.println("Monitor sending state sync to instance " + instanceID + " for tuple: " + tupleID);
+//
+//            int cachedValue = VNFCtrlClient.fetch_value(tupleID); // TODO: Align with libVNF
+//
+//            try {
+//                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
+//                SchemaRecord srcRecord = condition_record.content_.readPreValues(-1); //TODO: Pass-in a valid bid.
+//                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+//                tempo_record.getValues().get(1).setInt(cachedValue);
+//                condition_record.content_.updateMultiValues(-1, 0, true, tempo_record);
+//
+//            } catch (DatabaseException e) {
+//                throw new RuntimeException(e);
+//            }
+//
+//        } catch (IOException e) {
+//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+//        }
     }
 
     private static void syncStateFromGlobalToLocal(int instanceID, int tupleID) {
-        try {
-            int tupleValue;
-            try {
-                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Specify table name
-                tupleValue = (int) condition_record.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getDouble(); //TODO: Read the latest state version?
-
-            } catch (DatabaseException e) {
-                throw new RuntimeException(e);
-            }
-
-            Socket socket = instanceSocketMap.get(instanceID);
-            byte[] requestMessage = (3 + ";" + 1 + ";" + tupleID + ";" + tupleValue).getBytes();
-            OutputStream output = socket.getOutputStream();
-            output.write(requestMessage);
-            output.flush();
-
-        } catch (IOException e) {
-            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-        }
+//        try {
+//            int tupleValue;
+//            try {
+//                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Specify table name
+//                tupleValue = (int) condition_record.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getDouble(); //TODO: Read the latest state version?
+//
+//            } catch (DatabaseException e) {
+//                throw new RuntimeException(e);
+//            }
+//
+//            VNFCtrlClient.update_value(tupleID, tupleValue); // TODO: Align with libVNF
+//
+//        } catch (IOException e) {
+//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+//        }
     }
 
     private static void ccSwitch() {
@@ -265,54 +257,6 @@ public class MonitorThread implements Runnable {
 
         //TODO: State movement optimizations
 
-    }
-
-    private static boolean decodeBoolean(byte[] bytes, int offset) {
-        return bytes[offset] != 0;
-    }
-
-    private static long decodeLong(byte[] bytes, int offset) {
-        long value = 0;
-        for (int i = 0; i < 8; i++) {
-            value |= ((long) (bytes[offset + i] & 0xFF)) << (i * 8);
-        }
-        return value;
-    }
-
-    private static int decodeInt(byte[] bytes, int offset) {
-        int value = 0;
-        for (int i = 0; i < 4; i++) {
-            value |= (bytes[offset + i] & 0xFF) << (i * 8);
-        }
-        return value;
-    }
-
-    private static List<byte[]> splitByteArray(byte[] byteArray, byte separator) {
-        List<byte[]> splitByteArrays = new ArrayList<>();
-        List<Integer> indexes = new ArrayList<>();
-
-        for (int i = 0; i < byteArray.length; i++) {
-            if (byteArray[i] == separator) {
-                indexes.add(i);
-            }
-        }
-
-        int startIndex = 0;
-        for (Integer index : indexes) {
-            byte[] subArray = new byte[index - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, index - startIndex);
-            splitByteArrays.add(subArray);
-            startIndex = index + 1;
-        }
-
-        // Handling the remaining part after the last occurrence of 59
-        if (startIndex < byteArray.length) {
-            byte[] subArray = new byte[byteArray.length - startIndex];
-            System.arraycopy(byteArray, startIndex, subArray, 0, byteArray.length - startIndex);
-            splitByteArrays.add(subArray);
-        }
-
-        return splitByteArrays;
     }
 
 }
