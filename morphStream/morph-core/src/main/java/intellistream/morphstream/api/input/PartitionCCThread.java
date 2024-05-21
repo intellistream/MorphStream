@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.input;
 
-import message.VNFCtrlClient;
+import message.VNFCtlStub;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 

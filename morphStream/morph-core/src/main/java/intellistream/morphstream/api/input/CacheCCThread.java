@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.input;
 
-import message.VNFCtrlClient;
+import message.VNFCtlStub;
 import intellistream.morphstream.api.input.simVNF.VNFSenderThread;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
@@ -46,7 +46,7 @@ public class CacheCCThread implements Runnable {
 
                 for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
                     if (entry.getKey() != cacheData.getInstanceID()) {
-//                        VNFCtrlClient.update_value(tupleID, value); //TODO: Align with libVNF
+//                        VNFCtlStub.update_value(tupleID, value); //TODO: Align with libVNF
                     }
                 }
             }
