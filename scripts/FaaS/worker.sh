@@ -31,7 +31,8 @@ function ResetParameters() {
     NUM_ITEMS=1000000
     tableNames="accounts"
     keyDataTypesForTables="String"
-    valueDataTypesForTables="int"
+    valueDataTypesForTables="string"
+    valueDataTypesForTables="128"
     valueNamesForTables="value"
     #Input Configurations
     rootFilePath="${RSTDIR}"

@@ -167,6 +167,8 @@ public class JCommanderHandler {
     public String keyDataTypesForTables = "string,string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
     public String valueDataTypesForTables = "double,double";
+    @Parameter(names = {"--valueDataTypesForTables"}, description = "value size for each table, split by ,")
+    public String valueSizeForTables = "128,256";
     @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
     public String valueNamesForTables = "balance,balance";
 
@@ -464,6 +466,7 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_num_items", Integer.parseInt(numberItemsForTables.split(",")[i]));
             config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
+            config.put(tableNameString[i] + "_value_size", Integer.parseInt(valueSizeForTables.split(",")[i]));
             config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(",")[i]);
         }
 

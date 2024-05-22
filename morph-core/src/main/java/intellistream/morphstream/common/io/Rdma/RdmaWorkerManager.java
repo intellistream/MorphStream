@@ -1,5 +1,6 @@
 package intellistream.morphstream.common.io.Rdma;
 
+import com.nimbusds.jose.util.StandardCharset;
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.ResultBatch;
@@ -26,10 +27,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class RdmaWorkerManager implements Serializable {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaWorkerManager.class);
@@ -65,7 +68,12 @@ public class RdmaWorkerManager implements Serializable {
         //PreAllocate message buffer
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         rdmaBufferManager.perAllocateTableBuffer(MorphStreamEnv.get().configuration().getInt("TableBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
-        rdmaBufferManager.perAllocateCacheBuffer(this.managerId, MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"),MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(","));
+        String[] tableName = MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(",");
+        int[] valueSize = new int[tableName.length];
+        for (int i = 0; i < tableName.length; i++) {
+            valueSize[i] = MorphStreamEnv.get().configuration().getInt(tableName[i] + "_value_size");
+        }
+        rdmaBufferManager.perAllocateCacheBuffer(this.managerId, MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"), tableName, valueSize);
         rdmaBufferManager.perAllocateRemoteOperationBuffer(MorphStreamEnv.get().configuration().getInt("workerNum"), MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         resultBatch = new ResultBatch(MorphStreamEnv.get().configuration().getInt("maxResultsCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"), this.totalFunctionExecutors);
         for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("workerNum"); i++) {
@@ -244,7 +252,7 @@ public class RdmaWorkerManager implements Serializable {
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         latch.await();
     }
-    public int syncReadRemoteCache(int workerId, int keyIndex, int tableIndex, int signature) throws Exception {
+    public String syncReadRemoteCache(int workerId, int keyIndex, int tableIndex) throws Exception {
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workerId);
         RegionToken regionToken = workerRegionTokenMap.get(workerId).getRegionTokens().get(tableIndex);
 
@@ -254,18 +262,17 @@ public class RdmaWorkerManager implements Serializable {
         RdmaBuffer readData = rdmaBufferManager.get(6);
         ByteBuffer dataBuffer = readData.getByteBuffer();
 
-        AtomicInteger atomicInteger = new AtomicInteger(signature);
+        AtomicReference<String> result = new AtomicReference<>("false");
 
         CountDownLatch latch = new CountDownLatch(1);
         rdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 int ownershipId = dataBuffer.getShort();
-                int value = dataBuffer.getInt();
+                ByteBuffer valueBuffer = dataBuffer.slice();
+                String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
                 if (ownershipId == managerId) {
-                    if (atomicInteger.get() == value)
-                        LOG.info("error");
-                    atomicInteger.set(value);
+                    result.set(value);
                 }
                 rdmaBufferManager.put(readData);
                 latch.countDown();
@@ -277,9 +284,9 @@ public class RdmaWorkerManager implements Serializable {
             }
         }, readData.getAddress(), readData.getLkey(), new int[]{6}, new long[]{remoteAddress}, new int[]{rkey});
         latch.await();
-        return atomicInteger.get();
+        return result.get();
     }
-    public void syncWriteRemoteCache(int workerId, int keyIndex, int tableIndex, int value) throws Exception {
+    public void syncWriteRemoteCache(int workerId, int keyIndex, int tableIndex, String value) throws Exception {
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workerId);
         RegionToken regionToken = workerRegionTokenMap.get(workerId).getRegionTokens().get(tableIndex);
 
@@ -290,7 +297,7 @@ public class RdmaWorkerManager implements Serializable {
         ByteBuffer dataBuffer = readData.getByteBuffer();
 
         dataBuffer.putShort((short) workerId);
-        dataBuffer.putInt(value);
+        dataBuffer.put(value.getBytes(StandardCharsets.UTF_8));
         dataBuffer.flip();
 
         CountDownLatch latch = new CountDownLatch(1);

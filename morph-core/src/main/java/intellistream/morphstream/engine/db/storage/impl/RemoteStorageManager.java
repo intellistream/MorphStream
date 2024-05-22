@@ -24,8 +24,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RemoteStorageManager extends StorageManager {
     private static final Logger LOG = Logger.getLogger(RemoteStorageManager.class);
     private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
-    private String[] tableNames;
+    private final String[] tableNames;
+    private final ConcurrentHashMap<String, Integer> tableNameToLength;
     public CacheBuffer cacheBuffer;
+    public ConcurrentHashMap<String, String> tempValueForTables = new ConcurrentHashMap<>();
     public int totalWorker;
     public int totalThread;
     public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
@@ -35,8 +37,13 @@ public class RemoteStorageManager extends StorageManager {
         this.tableNames = this.cacheBuffer.getTableNames();
         this.totalWorker = totalWorker;
         this.totalThread = totalThread;
+        this.tableNameToLength = this.cacheBuffer.getTableNameToLength();
         for (int i = 0; i < totalWorker; i++) {
             workerSideOwnershipTables.put(String.valueOf(i), new WorkerSideOwnershipTable(totalWorker));
+        }
+        for (String tableName: tableNames) {
+            int length = this.cacheBuffer.getTableNameToLength().get(tableName);
+            this.tempValueForTables.put(tableName, padStringToLength(tableName, length));
         }
     }
 
@@ -92,7 +99,7 @@ public class RemoteStorageManager extends StorageManager {
            int end = Math.min(interval * (context.thisThreadId + 1), keys.size());
            for (int i = start; i < end; i++) {
                String key = keys.get(i);
-               int value = this.readRemoteDatabase(tableName, key);
+               String value = this.readRemoteDatabase(tableName, key);
                this.workerSideOwnershipTables.get(tableName).valueList[i] = value;
            }
            LOG.info("Thread " + context.thisThreadId + " load cache for table " + tableName + " from remote database");
@@ -104,10 +111,10 @@ public class RemoteStorageManager extends StorageManager {
     public boolean checkOwnership(String tableName, String key) {
         return this.cacheBuffer.checkOwnership(tableName, key);
     }
-    public int readLocalCache(String tableName, String key, int workerId, int signature) {
-        return this.cacheBuffer.readCache(tableName, key, workerId, signature);
+    public String readLocalCache(String tableName, String key, int workerId) {
+        return this.cacheBuffer.readCache(tableName, key, workerId);
     }
-    public int syncReadRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, int signature)  {
+    public String syncReadRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key)  {
         int keyIndex = 0;
         int tableIndex = 0;
         for (int i = 0; i < this.tableNames.length; i ++) {
@@ -115,17 +122,16 @@ public class RemoteStorageManager extends StorageManager {
                 tableIndex = i;
                 break;
             }
-            keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).workerIdToTotalKeys.get(i) * 6;
         }
-        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * 6;
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 2);
         int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
-            return rdmaWorkerManager.syncReadRemoteCache(workerId, keyIndex, tableIndex, signature);
+            return rdmaWorkerManager.syncReadRemoteCache(workerId, keyIndex, tableIndex);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-    public void syncWriteRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, int value) {
+    public void syncWriteRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, String value) {
         int keyIndex = 0;
         int tableIndex = 0;
         for (int i = 0; i < this.tableNames.length; i ++) {
@@ -133,9 +139,8 @@ public class RemoteStorageManager extends StorageManager {
                 tableIndex = i;
                 break;
             }
-            keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).workerIdToTotalKeys.get(i) * 6;
         }
-        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * 6;
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 2);
         int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
             rdmaWorkerManager.syncWriteRemoteCache(workerId, keyIndex, tableIndex, value);
@@ -146,8 +151,8 @@ public class RemoteStorageManager extends StorageManager {
     public void writeRemoteDatabase(String tableName, String key, int workerId) {
         //remoteCallLibrary.write(tableName, key, workerId);
     }
-    private int readRemoteDatabase(String tableName, String key) {
-        return 100;
+    private String readRemoteDatabase(String tableName, String key) {
+        return this.tempValueForTables.get(tableName);
     }
 
     @Override
@@ -177,5 +182,16 @@ public class RemoteStorageManager extends StorageManager {
     @Override
     public void syncReloadDatabase(SnapshotResult snapshotResult) throws IOException, ExecutionException, InterruptedException {
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+    //Pad the string to a specified length, filling the insufficient parts with spaces.
+    private String padStringToLength(String str, int length) {
+        if (str.length() >= length) {
+            return str.substring(0, length);
+        }
+        StringBuilder sb = new StringBuilder(str);
+        while (sb.length() < length) {
+            sb.append(' ');
+        }
+        return sb.toString();
     }
 }

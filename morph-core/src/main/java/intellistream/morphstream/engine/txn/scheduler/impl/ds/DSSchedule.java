@@ -6,6 +6,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 import intellistream.morphstream.engine.db.storage.datatype.IntDataBox;
+import intellistream.morphstream.engine.db.storage.datatype.StringDataBox;
 import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
@@ -97,14 +98,14 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                 if (oc.operations.isEmpty()) {
                     continue;
                 }
-                int remoteWorkerId = this.remoteStorageManager.workerSideOwnershipTable.getOwnershipWorkerId(oc.getPrimaryKey());
+                int remoteWorkerId = this.remoteStorageManager.workerSideOwnershipTables.get(oc.getTableName()).getOwnershipWorkerId(oc.getPrimaryKey());
                 if (remoteWorkerId != this.managerId) {
                     for (Operation op : oc.operations) {
                         this.rdmaWorkerManager.sendRemoteOperations(context.thisThreadId, remoteWorkerId, new FunctionMessage(op.getOperationRef()));
                     }
                     oc.setLocalState(false);
                 } else {
-                    oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, signatureRandom.nextInt()));
+                    oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId));
                     oc.setLocalState(true);
                 }
             }
@@ -157,7 +158,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                 if (op.isReference) {
                     if (this.remoteStorageManager.checkOwnership(op.table_name, op.pKey)) {
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
-                        oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, signatureRandom.nextInt()));
+                        oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId));
                         oc.deleteOperation(op);
                         LOG.info("Commit reference operation");
                     } else {
@@ -208,23 +209,22 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             LOG.info("Reference operation from worker: " + operation.sourceWorkerId);
         } else {
             List<DataBox> dataBoxes = new ArrayList<>();
-            IntDataBox intDataBox = new IntDataBox();
+            StringDataBox stringDataBox = new StringDataBox();
             if (oc.isLocalState()) {
-                intDataBox.setInt((Integer) oc.getTempValue());
+                stringDataBox.setString(oc.getTempValue().toString());
             } else {
-                int signature = signatureRandom.nextInt();
-                int value = this.remoteStorageManager.syncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, signature);
+                String value = this.remoteStorageManager.syncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey);
                 oc.tryTimes ++;
-                if (value == signature) {
+                if (value.equals("false")) {
                     return;
                 } else {
-                    intDataBox.setInt(value);
+                    stringDataBox.setString(value);
                     LOG.info("Read from remote cache with " +  oc.tryTimes + " times");
                     MeasureTools.WorkerRdmaRound(oc.getDsContext().thisThreadId, oc.tryTimes);
                     oc.tryTimes = 0;
                 }
             }
-            dataBoxes.add(intDataBox);
+            dataBoxes.add(stringDataBox);
             SchemaRecord readRecord = new SchemaRecord(dataBoxes);
             operation.function.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
             //UDF updates operation.udfResult, which is the value to be written to writeRecord
@@ -238,14 +238,14 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     Object udfResult = operation.function.udfResult; //value to be written
                     oc.setTempValue(udfResult);
                     SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                    tempo_record.getValues().get(0).setInt((int) udfResult);
+                    tempo_record.getValues().get(0).setString((String) udfResult);
                     //Assign updated schemaRecord back to stateAccess
                     operation.function.setUpdatedStateObject(tempo_record);
                     //Update State
                     if (oc.isLocalState()) {
                         oc.setTempValue(udfResult);
                     } else {
-                        this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (int) udfResult);
+                        this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (String) udfResult);
                     }
                 }
                 operation.operationType = MetaTypes.OperationStateType.EXECUTED;

@@ -34,9 +34,9 @@ public class WorkerRdmaBufferManager extends RdmaBufferManager {
         }
         LOG.info("Pre allocated {} buffers of size {} KB for each worker", totalThreads, (length / 1024));
     }
-    public void perAllocateCacheBuffer(int workId, int length, String[] tableNames) throws Exception {
+    public void perAllocateCacheBuffer(int workId, int length, String[] tableNames, int[] valueSize) throws Exception {
         if (cacheBuffer == null) {
-            cacheBuffer = new CacheBuffer(workId, getPd(), length, tableNames);
+            cacheBuffer = new CacheBuffer(workId, getPd(), length, tableNames, valueSize);
         }
         LOG.info("Pre allocated {} buffers of size {} KB for each worker", tableNames.length, (length / 1024));
     }

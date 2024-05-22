@@ -67,6 +67,11 @@ public class StringDataBox extends DataBox {
     }
 
     @Override
+    public void setString(String s) throws DataBoxException {
+        this.s = s;
+    }
+
+    @Override
     public Types type() {
         return DataBox.Types.STRING;
     }

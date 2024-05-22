@@ -21,7 +21,7 @@ public class WorkerSideOwnershipTable {
     protected final ConcurrentHashMap<String, Tuple2<Integer, Integer>> ownershipTable = new ConcurrentHashMap<>();//Key -> <OwnerWorkerId, index>
     @Getter
     protected final List<String> keysForThisWorker = new ArrayList<>();
-    public int[] valueList;
+    public String[] valueList;
     public WorkerSideOwnershipTable(int totalWorker) {
         this.totalWorker = totalWorker;
     }
@@ -32,7 +32,7 @@ public class WorkerSideOwnershipTable {
         workerIdToTotalKeys.put(workerId, totalKeys);
     }
     public void initValueList() {
-        valueList = new int[totalWorker];
+        valueList = new String[totalWorker];
     }
     public void putEachOwnership(String key, int workerId, int index) {
         ownershipTable.put(key, new Tuple2<>(workerId, index));

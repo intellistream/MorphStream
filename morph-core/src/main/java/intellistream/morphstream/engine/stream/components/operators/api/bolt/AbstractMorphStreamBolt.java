@@ -32,7 +32,7 @@ public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt 
         }
     }
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        MorphStreamEnv.get().databaseInitializer().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), false);
+        //MorphStreamEnv.get().databaseInitializer().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), false);
     }
     protected abstract void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException;
     protected abstract void PRE_TXN_PROCESS(long bid) throws DatabaseException, InterruptedException;

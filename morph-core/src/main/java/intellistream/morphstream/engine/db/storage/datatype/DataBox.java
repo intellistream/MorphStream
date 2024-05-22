@@ -91,6 +91,9 @@ public abstract class DataBox implements Comparable, Cloneable {
     public void setString(String s, int len) throws DataBoxException {
         throw new DataBoxException("not string type");
     }
+    public void setString(String s) throws DataBoxException {
+        throw new DataBoxException("not string type");
+    }
 
     public void incLong(long current_value, long delta) {
         throw new DataBoxException("not string type");
