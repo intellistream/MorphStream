@@ -10,21 +10,25 @@ public class InputStatistic {
     public int workerId;
     public int totalEvents = 0;
     public ConcurrentHashMap<String, Integer> keyToNumberMap = new ConcurrentHashMap<>();
-    public InputStatistic(int workerId) {
+    public ConcurrentHashMap<String, keyStatistic> TableToKeyStatistic = new ConcurrentHashMap<>();
+    public InputStatistic(int workerId, String[] tableName) {
         this.workerId = workerId;
+        for (String table : tableName) {
+            TableToKeyStatistic.put(table, new keyStatistic());
+        }
     }
-    public void add(List<String> keys) {
+    public void add(List<String> keys, String tableName) {
         for (String key : keys) {
-            if (keyToNumberMap.containsKey(key)) {
-                keyToNumberMap.put(key, keyToNumberMap.get(key) + 1);
+            if (TableToKeyStatistic.get(tableName).containsKey(key)) {
+                TableToKeyStatistic.get(tableName).put(key, TableToKeyStatistic.get(tableName).get(key) + 1);
             } else {
-                keyToNumberMap.put(key, 1);
+                TableToKeyStatistic.get(tableName).put(key, 1);
             }
         }
         totalEvents ++;
     }
-    public int getNumber(String key) {
-        return keyToNumberMap.getOrDefault(key, 0);
+    public int getNumber(String key, String tableName) {
+        return TableToKeyStatistic.get(tableName).getOrDefault(key, 0);
     }
     public void display(String[][] data, DriverSideOwnershipTable driverSideOwnershipTable) {
         int totalOperations = 0;
@@ -53,5 +57,10 @@ public class InputStatistic {
         data[workerId][5] = String.valueOf(maxOperationsPerKey);
         data[workerId][6] = String.format("%.2f", withOwnership * 100.0 / totalKeys);
         data[workerId][7] = String.format("%.2f", withoutOwnership * 100.0 / totalKeys);
+    }
+    private class keyStatistic extends ConcurrentHashMap<String, Integer> {
+        public keyStatistic() {
+            super();
+        }
     }
 }

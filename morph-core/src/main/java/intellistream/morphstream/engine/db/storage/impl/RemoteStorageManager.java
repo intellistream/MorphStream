@@ -17,7 +17,9 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RemoteStorageManager extends StorageManager {
     private static final Logger LOG = Logger.getLogger(RemoteStorageManager.class);
@@ -26,43 +28,48 @@ public class RemoteStorageManager extends StorageManager {
     public CacheBuffer cacheBuffer;
     public int totalWorker;
     public int totalThread;
-    public final WorkerSideOwnershipTable workerSideOwnershipTable;
+    public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
+    public final ConcurrentHashMap<String, WorkerSideOwnershipTable> workerSideOwnershipTables = new ConcurrentHashMap<>();
     public RemoteStorageManager(CacheBuffer cacheBuffer, int totalWorker, int totalThread) {
         this.cacheBuffer = cacheBuffer;
         this.tableNames = this.cacheBuffer.getTableNames();
         this.totalWorker = totalWorker;
         this.totalThread = totalThread;
-        this.workerSideOwnershipTable = new WorkerSideOwnershipTable(totalWorker);
+        for (int i = 0; i < totalWorker; i++) {
+            workerSideOwnershipTables.put(String.valueOf(i), new WorkerSideOwnershipTable(totalWorker));
+        }
     }
 
     public void getOwnershipTable(RdmaWorkerManager rdmaWorkerManager, DSContext context) throws IOException {
-        if (this.workerSideOwnershipTable.ownershipTableReady.compareAndSet(false, true)) {
-            LOG.info("Start to get ownership table");
-            while (this.workerSideOwnershipTable.ownershipTableBuffer == null) {
-                this.workerSideOwnershipTable.ownershipTableBuffer = rdmaWorkerManager.getTableBuffer().getOwnershipTable();
-            }
-            LOG.info("Start to receive ownership table");
-            int[] length = new int[workerSideOwnershipTable.getTotalWorker()];
-            for (int i = 0; i < workerSideOwnershipTable.getTotalWorker(); i++) {
-                length[i] = workerSideOwnershipTable.ownershipTableBuffer.getInt();
-                workerSideOwnershipTable.putTotalKeysForWorker(i, length[i]);
-            }
-            for (int workerId = 0; workerId < workerSideOwnershipTable.getTotalWorker(); workerId ++) {
-                for (int index = 0; index < length[workerId]; index ++) {
-                    int keyLength = workerSideOwnershipTable.ownershipTableBuffer.getInt();
-                    byte[] keyBytes = new byte[keyLength];
-                    workerSideOwnershipTable.ownershipTableBuffer.get(keyBytes);
-                    String key = new String(keyBytes);
-                    workerSideOwnershipTable.putEachOwnership(key, workerId, index);
-                    if (workerId == rdmaWorkerManager.getManagerId()) {
-                        workerSideOwnershipTable.putEachKeyForThisWorker(key);
+        WorkerSideOwnershipTable workerSideOwnershipTable;
+        if (this.ownershipTableReady.compareAndSet(false, true)) {
+            for (String tableName: tableNames) {
+                LOG.info("Start to get ownership table for table " + tableName);
+                workerSideOwnershipTable = this.workerSideOwnershipTables.get(tableName);
+                while (workerSideOwnershipTable.ownershipTableBuffer == null) {
+                    workerSideOwnershipTable.ownershipTableBuffer = rdmaWorkerManager.getTableBuffer().getOwnershipTable();
+                }
+                LOG.info("Start to receive ownership table for table " + tableName);
+                int[] length = new int[totalWorker];
+                for (int i = 0; i < totalWorker; i++) {
+                    length[i] = workerSideOwnershipTable.ownershipTableBuffer.getInt();
+                    workerSideOwnershipTable.putTotalKeysForWorker(i, length[i]);
+                }
+                for (int workerId = 0; workerId < workerSideOwnershipTable.getTotalWorker(); workerId ++) {
+                    for (int index = 0; index < length[workerId]; index ++) {
+                        int keyLength = workerSideOwnershipTable.ownershipTableBuffer.getInt();
+                        byte[] keyBytes = new byte[keyLength];
+                        workerSideOwnershipTable.ownershipTableBuffer.get(keyBytes);
+                        String key = new String(keyBytes);
+                        workerSideOwnershipTable.putEachOwnership(key, workerId, index);
+                        if (workerId == rdmaWorkerManager.getManagerId()) {
+                            workerSideOwnershipTable.putEachKeyForThisWorker(key);
+                        }
                     }
                 }
+                workerSideOwnershipTable.initValueList();
+                LOG.info("Get ownership table");
             }
-            for (String tableName : tableNames) {
-                workerSideOwnershipTable.initTableNameToValueList(tableName);
-            }
-            LOG.info("Get ownership table");
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.WorkerRdmaRecvOwnershipTableEndEventTime(context.thisThreadId);
@@ -71,7 +78,7 @@ public class RemoteStorageManager extends StorageManager {
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (context.thisThreadId == 0) {
             for (String tableName : tableNames) {
-                this.cacheBuffer.initLocalCacheBuffer(this.workerSideOwnershipTable.getKeysForThisWorker(), this.workerSideOwnershipTable.tableNameToValueList.get(tableName), tableName);
+                this.cacheBuffer.initLocalCacheBuffer(this.workerSideOwnershipTables.get(tableName).getKeysForThisWorker(), this.workerSideOwnershipTables.get(tableName).valueList, tableName);
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -79,14 +86,14 @@ public class RemoteStorageManager extends StorageManager {
     }
     public void loadCache(DSContext context) {
        for (String tableName : tableNames) {
-           List<String> keys = this.workerSideOwnershipTable.getKeysForThisWorker();
+           List<String> keys = this.workerSideOwnershipTables.get(tableName).getKeysForThisWorker();
            int interval = (int) Math.ceil((double) keys.size() / totalThread);
            int start = interval * context.thisThreadId;
            int end = Math.min(interval * (context.thisThreadId + 1), keys.size());
            for (int i = start; i < end; i++) {
                String key = keys.get(i);
                int value = this.readRemoteDatabase(tableName, key);
-               this.workerSideOwnershipTable.tableNameToValueList.get(tableName)[i] = value;
+               this.workerSideOwnershipTables.get(tableName).valueList[i] = value;
            }
            LOG.info("Thread " + context.thisThreadId + " load cache for table " + tableName + " from remote database");
        }
@@ -108,10 +115,10 @@ public class RemoteStorageManager extends StorageManager {
                 tableIndex = i;
                 break;
             }
-            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
+            keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).workerIdToTotalKeys.get(i) * 6;
         }
-        keyIndex = keyIndex + this.workerSideOwnershipTable.getOwnershipIndex(key) * 6;
-        int workerId = this.workerSideOwnershipTable.getOwnershipWorkerId(key);
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * 6;
+        int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
             return rdmaWorkerManager.syncReadRemoteCache(workerId, keyIndex, tableIndex, signature);
         } catch (Exception e) {
@@ -126,10 +133,10 @@ public class RemoteStorageManager extends StorageManager {
                 tableIndex = i;
                 break;
             }
-            keyIndex = keyIndex + this.workerSideOwnershipTable.workerIdToTotalKeys.get(i) * 6;
+            keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).workerIdToTotalKeys.get(i) * 6;
         }
-        keyIndex = keyIndex + this.workerSideOwnershipTable.getOwnershipIndex(key) * 6;
-        int workerId = this.workerSideOwnershipTable.getOwnershipWorkerId(key);
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * 6;
+        int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
             rdmaWorkerManager.syncWriteRemoteCache(workerId, keyIndex, tableIndex, value);
         } catch (Exception e) {

@@ -7,23 +7,21 @@ public class Utils {
         // 将 Map 的键值对转换为 List，以便排序
         List<Map.Entry<Integer, Integer>> entryList = new ArrayList<>(map.entrySet());
 
-        // 使用比较器根据值进行排序
+        // 使用比较器根据值进行排序（从小到大）
         entryList.sort(Comparator.comparing(Map.Entry::getValue));
+
+        // 计算最小和最大事件总数
+        int minValue = entryList.get(0).getValue();
+        int maxValue = entryList.get(entryList.size() - 1).getValue();
 
         // 创建用于存储键和分值的 Map
         HashMap<Integer, Double> sortedKeysAndValues = new LinkedHashMap<>();
-        if (hasEqualMinMax(entryList)) {
-            // 处理相同的最大值和最小值的情况，例如直接计算相同分值
-            double sameValueScore = 1.0; // 可以根据实际需求进行调整
-            for (Map.Entry<Integer, Integer> entry : entryList) {
-                sortedKeysAndValues.put(entry.getKey(), sameValueScore);
-            }
-            return sortedKeysAndValues;
-        }
 
-        for (int i = 0; i < entryList.size(); i++) {
-            double mappedScore = 1.0 - (double) i / (entryList.size() - 1); // 线性映射，确保越小的值获得更高分数
-            sortedKeysAndValues.put(entryList.get(i).getKey(), mappedScore);
+        // 计算分数并存储键和分值
+        for (Map.Entry<Integer, Integer> entry : entryList) {
+            int eventsNumber = entry.getValue();
+            double score = (double) (eventsNumber - minValue) / (maxValue - minValue);
+            sortedKeysAndValues.put(entry.getKey(), score);
         }
 
         return sortedKeysAndValues;
@@ -38,23 +36,14 @@ public class Utils {
         // 创建用于存储键和分值的 Map
         HashMap<Integer, Double> sortedKeysAndValues = new LinkedHashMap<>();
 
-        if (hasEqualMinMax(entryList)) {
-            // 处理相同的最大值和最小值的情况，例如直接计算相同分值
-            double sameValueScore = 1.0; // 可以根据实际需求进行调整
-            for (Map.Entry<Integer, Integer> entry : entryList) {
-                sortedKeysAndValues.put(entry.getKey(), sameValueScore);
-            }
-            return sortedKeysAndValues;
-        }
-        // 计算线性映射的斜率和截距
-        double minValue = entryList.get(0).getValue();
-        double maxValue = entryList.get(entryList.size() - 1).getValue();
+        // 计算线性映射的斜率
+        int minValue = entryList.get(0).getValue();
+        int maxValue = entryList.get(entryList.size() - 1).getValue();
         double slope = 1.0 / (maxValue - minValue);
-        double intercept = 1 - minValue * slope;
 
         // 计算分值并存储键和分值
         for (Map.Entry<Integer, Integer> entry : entryList) {
-            double mappedScore = slope * entry.getValue() + intercept;
+            double mappedScore = 1.0 - slope * (entry.getValue() - minValue);
             sortedKeysAndValues.put(entry.getKey(), mappedScore);
         }
 
@@ -98,10 +87,10 @@ public class Utils {
     public static void main(String[] args) {
         // 示例数据
         HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
-        totalEventsToWorkerIdMap.put(3, 1);//2.0  //0.0
-        totalEventsToWorkerIdMap.put(1, 1);//2.0 //0.5
-        totalEventsToWorkerIdMap.put(2, 0);//1.0 //1.0
 
+        totalEventsToWorkerIdMap.put(3, 3);//2.0  //0.0
+        totalEventsToWorkerIdMap.put(1, 1);//2.0 //0.5
+        totalEventsToWorkerIdMap.put(2, 2);//1.0 //1.0
 
         // 调用排序方法
         Map<Integer, Double> sortedKeysAndValues = assignLowScores(totalEventsToWorkerIdMap);
@@ -111,6 +100,5 @@ public class Utils {
             System.out.println("Key: " + entry.getKey() + ", Score: " + entry.getValue());
         }
     }
-
 
 }

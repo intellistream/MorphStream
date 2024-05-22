@@ -16,6 +16,7 @@ public class Statistic {
     private Random random = new Random();
     private int delta;
     private int totalEvents = 0;
+    private String[] tableNames;
     private final ConcurrentHashMap<Integer, Double> frontendIdToThroughput = new ConcurrentHashMap<>();
     @Getter
     private final DescriptiveStatistics latencyStatistics = new DescriptiveStatistics();
@@ -24,28 +25,31 @@ public class Statistic {
     private final List<Integer> tempVotes = new ArrayList<>();
     private final Map<Integer, Integer> tempVoteCount = new HashMap<>();
     private final ConcurrentLinkedQueue<String> tempKeys = new ConcurrentLinkedQueue();
-    public Statistic(int workerNum, int shuffleType) {
+    public Statistic(int workerNum, int shuffleType, String[] tableNames) {
+        this.tableNames = tableNames;
         for (int i = 0; i < workerNum; i++) {
-            workerIdToInputStatisticMap.put(i, new InputStatistic(i));
+            workerIdToInputStatisticMap.put(i, new InputStatistic(i, tableNames));
         }
         this.shuffleType = shuffleType;
         this.workNum = workerNum;
         delta = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS") / workerNum;
     }
-    public synchronized int add(List<String> keys) {
-        int targetWorkerId = getTargetWorkerId(keys);
-        workerIdToInputStatisticMap.get(targetWorkerId).add(keys);
+    public synchronized int add(HashMap<String, List<String>> keyMap) {
+        int targetWorkerId = getTargetWorkerId(keyMap);
+        for (Map.Entry<String, List<String>> entry : keyMap.entrySet()) {
+            workerIdToInputStatisticMap.get(targetWorkerId).add(entry.getValue(), entry.getKey());
+        }
         totalEvents ++;
         return targetWorkerId;
     }
 
-    public DriverSideOwnershipTable getOwnershipTable() {
+    public DriverSideOwnershipTable getOwnershipTable(String tableName) {
         DriverSideOwnershipTable driverSideOwnershipTable = new DriverSideOwnershipTable(workNum);
         for(String key : this.tempKeys) {
             int id = 0;
             int max = Integer.MIN_VALUE;
             for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
-                int number = inputStatistic.getNumber(key);
+                int number = inputStatistic.getNumber(key, tableName);
                 if (number > max) {
                     max = number;
                     id = inputStatistic.workerId;
@@ -57,33 +61,35 @@ public class Statistic {
     }
 
     public void display() {
-        DriverSideOwnershipTable driverSideOwnershipTable = getOwnershipTable();
-        driverSideOwnershipTable.display();
-        String[] headers = {"workerId", "totalEvents", "totalKeys", "totalOperations", "averageOperationsPerKey", "maxOperationsPerKey", "withOwnership (%)", "withoutOwnership (%)"};
-        String[][] data = new String[workerIdToInputStatisticMap.size()][8];
-        for (Map.Entry<Integer, InputStatistic> entry : workerIdToInputStatisticMap.entrySet()) {
-            entry.getValue().display(data, driverSideOwnershipTable);
+        for (String tableName : tableNames) {
+            DriverSideOwnershipTable driverSideOwnershipTable = getOwnershipTable(tableName);
+            driverSideOwnershipTable.display();
+            String[] headers = {"workerId", "totalEvents", "totalKeys", "totalOperations", "averageOperationsPerKey", "maxOperationsPerKey", "withOwnership (%)", "withoutOwnership (%)"};
+            String[][] data = new String[workerIdToInputStatisticMap.size()][8];
+            for (Map.Entry<Integer, InputStatistic> entry : workerIdToInputStatisticMap.entrySet()) {
+                entry.getValue().display(data, driverSideOwnershipTable);
+            }
+            printAlignedBorderedTable(headers, data);
         }
-        printAlignedBorderedTable(headers, data);
     }
-    private int getTargetWorkerId(List<String> keys) {
-        getVotes(keys);
+    private int getTargetWorkerId(HashMap<String, List<String>> keyMap) {
+        getVotes(keyMap);
         getVoteCount();
         return findWinner();
     }
-    private void getVotes(List<String> keys){
+    private void getVotes(HashMap<String, List<String>> keyMap){
         switch (shuffleType) {
             case 0://Random
-                getVotesRandom(keys);
+                getVotesRandom(keyMap);
                 break;
             case 1://Sort
-                getVotesSort(keys);
+                getVotesSort(keyMap);
                 break;
             case 2://Partition
-                getVotesPartition(keys);
+                getVotesPartition(keyMap);
                 break;
             case 3://Optimized
-                getVotesOptimized(keys);
+                getVotesOptimized(keyMap);
                 break;
             default:
                 throw new RuntimeException("Wrong shuffle type!");
@@ -111,51 +117,59 @@ public class Statistic {
         this.tempVoteCount.clear();
         return winner;
     }
-    private void getVotesSort(List<String> keys) {
+    private void getVotesSort(HashMap<String, List<String>> keyMap) {
         int targetWorkerId = totalEvents % workerIdToInputStatisticMap.size();
-        for (String key : keys) {
-            this.tempVotes.add(targetWorkerId);
-            if (!this.tempKeys.contains(key)) {
-                this.tempKeys.add(key);
+        for (String tableName : keyMap.keySet()) {
+            for (String key : keyMap.get(tableName)) {
+                this.tempVotes.add(targetWorkerId);
+                if (!this.tempKeys.contains(key)) {
+                    this.tempKeys.add(key);
+                }
             }
         }
     }
-    private void getVotesRandom(List<String> keys) {
-        int targetWorkerId = random.nextInt(workerIdToInputStatisticMap.size());
-        for (String key : keys) {
-            this.tempVotes.add(targetWorkerId);
-            if (!this.tempKeys.contains(key)) {
-                this.tempKeys.add(key);
+    private void getVotesRandom(HashMap<String, List<String>> keyMap) {
+        for (String tableName : keyMap.keySet()) {
+            for (String key : keyMap.get(tableName)) {
+                int targetWorkerId = random.nextInt(workerIdToInputStatisticMap.size());
+                this.tempVotes.add(targetWorkerId);
+                if (!this.tempKeys.contains(key)) {
+                    this.tempKeys.add(key);
+                }
             }
         }
     }
-    private void getVotesPartition(List<String> keys) {
-        int targetWorkerId = Integer.parseInt(keys.get(0)) / delta;
-        for (String key : keys) {
-            this.tempVotes.add(targetWorkerId);
-            if (!this.tempKeys.contains(key)) {
-                this.tempKeys.add(key);
+    private void getVotesPartition(HashMap<String, List<String>> keyMap) {
+        for (String tableName : keyMap.keySet()) {
+            for (String key : keyMap.get(tableName)) {
+                int targetWorkerId = Integer.parseInt(key) / delta;
+                this.tempVotes.add(targetWorkerId);
+                if (!this.tempKeys.contains(key)) {
+                    this.tempKeys.add(key);
+                }
             }
         }
     }
-    private void getVotesOptimized(List<String> keys) {
-        for (String key : keys) {
-            HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
-            HashMap<Integer, Integer> totalKeysToWorkerIdMap = new HashMap<>();
-            for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
-                totalEventsToWorkerIdMap.put(inputStatistic.workerId, inputStatistic.totalEvents);
-                totalKeysToWorkerIdMap.put(inputStatistic.workerId, inputStatistic.getNumber(key));
+    private void getVotesOptimized(HashMap<String, List<String>> keyMap) {
+        for (String tableName : keyMap.keySet()) {
+            for (String key : keyMap.get(tableName)) {
+                HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
+                HashMap<Integer, Integer> totalKeysToWorkerIdMap = new HashMap<>();
+                for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
+                    totalEventsToWorkerIdMap.put(inputStatistic.workerId, inputStatistic.totalEvents);
+                    totalKeysToWorkerIdMap.put(inputStatistic.workerId, inputStatistic.getNumber(key, tableName));
+                }
+
+                HashMap<Integer, Double> totalEventsToScoreMap = Utils.assignLowScores(totalEventsToWorkerIdMap);//small get high score
+                HashMap<Integer, Double> totalKeysToScoreMap = Utils.assignHighScores(totalKeysToWorkerIdMap);//big get high score
+
+                int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0.5, 0.5);
+
+                if (!this.tempKeys.contains(key)) {
+                    this.tempKeys.add(key);
+                }
+                this.tempVotes.add(targetWorkerId);
             }
-
-            HashMap<Integer, Double> totalEventsToScoreMap = Utils.assignLowScores(totalEventsToWorkerIdMap);//small get high score
-            HashMap<Integer, Double> totalKeysToScoreMap = Utils.assignHighScores(totalKeysToWorkerIdMap);//big get high score
-
-            int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0.5, 0.5);
-
-            if (!this.tempKeys.contains(key)) {
-                this.tempKeys.add(key);
-            }
-            this.tempVotes.add(targetWorkerId);
         }
     }
 

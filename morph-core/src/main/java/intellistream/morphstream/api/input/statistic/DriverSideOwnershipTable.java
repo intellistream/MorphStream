@@ -46,7 +46,7 @@ public class DriverSideOwnershipTable {
     }
 
     public ByteBuffer buffer() {
-        //START_FLAG(Short) + TotalLength(Int) + TotalNumberForEachWorker(Int) * 4 + Length(Int) + Key + Value + Length(Int) + Key + Value + ... + END_FLAG(Short)
+        //START_FLAG(Short) + TotalLength(Int) + TotalNumberForEachWorker(Int) * totalWorkers + Length(Int) + Key + Value + Length(Int) + Key + Value + ... + END_FLAG(Short)
         ByteBufferBackedOutputStream bout = new ByteBufferBackedOutputStream(ByteBuffer.allocate(encoded_length + 2 + 4 + 4 * totalWorkers + 2));
         try {
             bout.writeShort(SOURCE_CONTROL.START_FLAG);

@@ -16,13 +16,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class WorkerSideOwnershipTable {
     @Getter
     protected int totalWorker;
-    public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
     public ByteBuffer ownershipTableBuffer;
     public ConcurrentHashMap<Integer, Integer> workerIdToTotalKeys = new ConcurrentHashMap<>();//workerId -> totalKeys
     protected final ConcurrentHashMap<String, Tuple2<Integer, Integer>> ownershipTable = new ConcurrentHashMap<>();//Key -> <OwnerWorkerId, index>
     @Getter
     protected final List<String> keysForThisWorker = new ArrayList<>();
-    public final ConcurrentHashMap<String, int[]> tableNameToValueList = new ConcurrentHashMap<>();
+    public int[] valueList;
     public WorkerSideOwnershipTable(int totalWorker) {
         this.totalWorker = totalWorker;
     }
@@ -32,8 +31,8 @@ public class WorkerSideOwnershipTable {
     public void putTotalKeysForWorker(int workerId, int totalKeys) {
         workerIdToTotalKeys.put(workerId, totalKeys);
     }
-    public void initTableNameToValueList(String tableName) {
-        tableNameToValueList.put(tableName, new int[keysForThisWorker.size()]);
+    public void initValueList() {
+        valueList = new int[totalWorker];
     }
     public void putEachOwnership(String key, int workerId, int index) {
         ownershipTable.put(key, new Tuple2<>(workerId, index));
@@ -49,8 +48,7 @@ public class WorkerSideOwnershipTable {
     public void clean() {
         ownershipTable.clear();
         keysForThisWorker.clear();
-        tableNameToValueList.clear();
+        valueList = null;
         ownershipTableBuffer = null;
-        ownershipTableReady.set(false);
     }
 }

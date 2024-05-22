@@ -98,7 +98,7 @@ public class MorphStreamFrontend extends Thread{
                 MeasureTools.DriverPrepareStartTime(this.threadId);
                 tempInput = tempZmsg.getLast().toString();
                 tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
-                rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getAllKeys()), new FunctionMessage(tempInput));
+                rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getKeyMap()), new FunctionMessage(tempInput));
                 this.statistic.addStartTimestamp(tempEvent.getBid(), System.nanoTime());
                 sendCount ++;
                 if (sendCount == totalEventToReceive) {
@@ -111,8 +111,8 @@ public class MorphStreamFrontend extends Thread{
         }
     }
 
-    private int getWorkId(List<String> keys) {
-        return this.statistic.add(keys);
+    private int getWorkId(HashMap<String, List<String>> keyMap) {
+        return this.statistic.add(keyMap);
     }
     private ByteBuffer getResult() throws IOException {
         if (hasRemaining() == -1) {

@@ -4,6 +4,7 @@ import intellistream.morphstream.engine.txn.TxnEvent;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
  */
 
 public class TransactionalEvent extends TxnEvent {
+    @Getter
     private HashMap<String, List<String>> keyMap; //<TableName, keys> assume key must be string, including sourceKey, targetKey, and conditionKey
     private HashMap<String, Object> valueMap; //<valueName, value>
     @Getter
