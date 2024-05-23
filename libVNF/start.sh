@@ -1,0 +1,1 @@
+java -cp ./java_peer/target/maven-protobuf-1.0-SNAPSHOT org.example.app.TestMain

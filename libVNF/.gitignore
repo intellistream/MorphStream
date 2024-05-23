@@ -1,10 +1,7 @@
-.idea
-cmake-build-debug
-*a.out
-build
-*.o
-*~
-temp/
-tags
-.vscode
-include/spdlog/*
+thirdparty/spdlog/*
+build/
+.vscode/
+/target/
+
+*.class
+.gdbinit

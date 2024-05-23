@@ -29,7 +29,8 @@ HEADER_INSTALL=/usr/local/include/libvnf/
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 # Executable
-CMAKE=$TMP_DIR/cmake/bin/cmake
+# CMAKE=$TMP_DIR/cmake/bin/cmake
+CMAKE=cmake
 JAR=$MORPH_DIR/morph-clients/morph-clients-0.1.jar
 if [ -x "$CMAKE" ]; then
 	:
@@ -67,7 +68,7 @@ PLOT="--PLOT"
 
 # Compile Example VNF options
 EXAMPLE="--EXAMPLE_VNF"
-VNF_PATH="$LIBVNF_DIR/vnf/lb"
+VNF_PATH="$LIBVNF_DIR/vnf/ccSelector"
 
 USAGE="$SCRIPT entry for running DB4NFV \n\t $NEWVM start a new vm for suitable kernel to run the system. \n\t $RUN [$KERNEL_STACK|$KERNEL_BYPASS] to run the compiled system. \n\t $COMPILE [$KERNEL_STACK|$KERNEL_BYPASS] to set up the environment and compile. "
 
@@ -272,7 +273,7 @@ setup_normal() {
 	else
 		cd "$TMP_DIR"
 		git clone https://github.com/gabime/spdlog.git
-		cd spdlog && $CMAKE . && make -j4
+		cd spdlog && $CMAKE . && make -j8
 		# apt spdlog version is too old.
 		if [[ -f include/spdlog/spdlog.h ]]; then
 			cp -r include/spdlog "$HEADER/"
