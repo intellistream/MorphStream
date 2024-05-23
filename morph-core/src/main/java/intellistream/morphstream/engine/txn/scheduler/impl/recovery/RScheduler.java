@@ -4,7 +4,6 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.durability.struct.FaultToleranceRelax;
-import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
@@ -312,10 +311,10 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
 
-            if (operation.function.getValue("function") == "INC") {
-                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.function.getValue("delta_long"));//compute.
-            } else if (operation.function.getValue("function") == "DEC") {
-                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.function.getValue("delta_long"));//compute.
+            if (operation.function.getPara("function") == "INC") {
+                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.function.getPara("delta_long"));//compute.
+            } else if (operation.function.getPara("function") == "DEC") {
+                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.function.getPara("delta_long"));//compute.
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -331,7 +330,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
         AppConfig.randomDelay();
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
-        tempo_record.getValues().get(1).incLong((Long) operation.function.getValue("delta_long"));//compute.
+        tempo_record.getValues().get(1).incLong((Long) operation.function.getPara("delta_long"));//compute.
         operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
@@ -353,8 +352,8 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
         sum /= keysLength;
         SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
         SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-        if ((Long) operation.function.getValue("delta_long") != -1) {
-            if (operation.function.getValue("function") == "SUM") {
+        if ((Long) operation.function.getPara("delta_long") != -1) {
+            if (operation.function.getPara("function") == "SUM") {
                 tempo_record.getValues().get(1).setLong(sum);//compute.
             } else
                 throw new UnsupportedOperationException();
@@ -368,14 +367,14 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     protected void TollProcess_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         AppConfig.randomDelay();
         List<DataBox> srcRecord = operation.d_record.record_.getValues();
-        if (operation.function.getValue("function") == "AVG") {
-            if ((double) operation.function.getValue("delta_double") < MAX_SPEED) {
+        if (operation.function.getPara("function") == "AVG") {
+            if ((double) operation.function.getPara("delta_double") < MAX_SPEED) {
                 double latestAvgSpeeds = srcRecord.get(1).getDouble();
                 double lav;
                 if (latestAvgSpeeds == 0) {//not initialized
-                    lav = (double) operation.function.getValue("delta_double");
+                    lav = (double) operation.function.getPara("delta_double");
                 } else
-                    lav = (latestAvgSpeeds + (double) operation.function.getValue("delta_double")) / 2;
+                    lav = (latestAvgSpeeds + (double) operation.function.getPara("delta_double")) / 2;
 
                 srcRecord.get(1).setDouble(lav);//write to state.
                 operation.function.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
@@ -383,9 +382,9 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 operation.isFailed.set(true);
             }
         } else {
-            if ((int) operation.function.getValue("delta_int") < MAX_INT) {
+            if ((int) operation.function.getPara("delta_int") < MAX_INT) {
                 HashSet cnt_segment = srcRecord.get(1).getHashSet();
-                cnt_segment.add(operation.function.getValue("delta_int"));//update hashset; updated state also. TODO: be careful of this.
+                cnt_segment.add(operation.function.getPara("delta_int"));//update hashset; updated state also. TODO: be careful of this.
                 operation.function.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             } else {
                 operation.isFailed.set(true);

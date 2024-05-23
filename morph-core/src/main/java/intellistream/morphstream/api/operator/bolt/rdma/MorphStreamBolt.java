@@ -133,8 +133,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             }
 
             //Each state access involves multiple conditions (values that are not commonly shared among events)
-            for (String valueName: stateAccessDesc.getValueNames()) {
-                function.addValue(valueName, event.getValue(valueName));
+            for (String paraName: stateAccessDesc.getParaNames()) {
+                function.addPara(paraName, event.getPara(paraName));
             }
 
             eventStateAccessesMap.get(event.getBid()).put(stateAccessName, function);

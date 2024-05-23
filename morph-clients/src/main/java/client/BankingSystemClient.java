@@ -29,18 +29,18 @@ public class BankingSystemClient extends Client {
             if (Objects.equals(stateAccessName, "srcTransfer")) {
                 StateObject srcAccountState = function.getStateObject("srcAccountState");
                 int srcBalance = srcAccountState.getIntValue("balance");
-                int transferAmount = Integer.parseInt((String) function.getValue("transferAmount"));
+                int transferAmount = Integer.parseInt((String) function.getPara("transferAmount"));
                 function.udfResult = srcBalance - transferAmount;
             } else if (Objects.equals(stateAccessName, "destTransfer")) {
                 StateObject destAccountState = function.getStateObject("destAccountState");
                 int destBalance = destAccountState.getIntValue("balance");
-                int transferAmount = Integer.parseInt((String) function.getValue("transferAmount"));
+                int transferAmount = Integer.parseInt((String) function.getPara("transferAmount"));
                 function.udfResult = destBalance + transferAmount;
             }
         } else if (Objects.equals(txnName, "deposit")) {
             StateObject srcAccountState = function.getStateObject("srcAccountState");
             int srcBalance = srcAccountState.getIntValue("balance");
-            int depositAmount = Integer.parseInt((String) function.getValue("depositAmount"));
+            int depositAmount = Integer.parseInt((String) function.getPara("depositAmount"));
             function.udfResult = srcBalance + depositAmount;
         }
         return true;
@@ -92,11 +92,11 @@ public class BankingSystemClient extends Client {
         //Define transfer's 1st state accesses
         FunctionDescription srcTransfer = new FunctionDescription("srcTransfer", AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
-        srcTransfer.addValueName("transferAmount");
+        srcTransfer.addParaName("transferAmount");
         //Define transfer's 2nd state accesses
         FunctionDescription destTransfer = new FunctionDescription("destTransfer", AccessType.WRITE);
         destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", 0);
-        destTransfer.addValueName("transferAmount");
+        destTransfer.addParaName("transferAmount");
         //Add state accesses to transaction
         transferDescriptor.addFunctionDescription("srcTransfer", srcTransfer);
         transferDescriptor.addFunctionDescription("destTransfer", destTransfer);
@@ -108,7 +108,7 @@ public class BankingSystemClient extends Client {
         FunctionDAGDescription depositDescriptor = new FunctionDAGDescription("Deposit");
         FunctionDescription deposit = new FunctionDescription("deposit", AccessType.WRITE);
         deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", 0);
-        deposit.addValueName("depositAmount");
+        deposit.addParaName("depositAmount");
         depositDescriptor.addFunctionDescription("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);
     }

@@ -19,7 +19,7 @@ public class MediaReview extends Client {
             case "userLogin": {
                 StateObject userState = function.getStateObject("userState");
                 String password = userState.getStringValue("password");
-                String inputPassword = (String) function.getValue("password");
+                String inputPassword = (String) function.getPara("password");
                 if (password.equals(inputPassword)) {
                     function.udfResult = true;
                 } else {
@@ -30,14 +30,14 @@ public class MediaReview extends Client {
             case "ratingMovie": {
                 StateObject movieState = function.getStateObject("movieState");
                 double rating = Double.parseDouble(movieState.getStringValue("rating"));
-                double inputRating = Double.parseDouble((String) function.getValue("rating"));
+                double inputRating = Double.parseDouble((String) function.getPara("rating"));
                 function.udfResult = (rating + inputRating) / 2;
                 break;
             }
             case "reviewMovie": {
                 StateObject movieState = function.getStateObject("movieState");
                 String review = movieState.getStringValue("review");
-                String inputReview = (String) function.getValue("review");
+                String inputReview = (String) function.getPara("review");
                 function.udfResult = review + inputReview;
                 break;
             }

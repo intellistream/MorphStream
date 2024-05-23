@@ -17,9 +17,9 @@ public class SocialNetwork extends Client {
         String txnName = function.getFunctionName();
         switch (txnName) {
             case "userLogin": {
-                StateObject userState = function.getStateObject("userState");
+                StateObject userState = function.getStateObject("password");
                 String password = userState.getStringValue("password");
-                String inputPassword = (String) function.getValue("password");
+                String inputPassword = (String) function.getPara("password");
                 if (password.equals(inputPassword)) {
                     function.udfResult = true;
                 } else {
@@ -28,16 +28,16 @@ public class SocialNetwork extends Client {
                 break;
             }
             case "userProfile": {
-                function.udfResult = function.getStateObject("userProfile");
+                function.udfResult = function.getStateObject("userProfile").getStringValue("profile");
                 break;
             }
             case "getTimeLine": {
-                function.udfResult = function.getStateObject("tweet");
+                function.udfResult = function.getStateObject("tweet").getStringValue("tweet");
                 break;
             }
             case "postTweet": {
                 StateObject tweet = function.getStateObject("tweet");
-                function.udfResult = (String) function.getValue("newTweet");
+                function.udfResult = function.getPara("newTweet");
                 break;
             }
         }
@@ -53,7 +53,8 @@ public class SocialNetwork extends Client {
     public void defineFunction() {
         FunctionDAGDescription UserLogin = new FunctionDAGDescription("userLogin");
         FunctionDescription login = new FunctionDescription("login", MetaTypes.AccessType.READ);
-        login.addStateObjectDescription("password", MetaTypes.AccessType.READ, "user_pwd", "pwd", 0);
+        login.addStateObjectDescription("password", MetaTypes.AccessType.READ, "user_pwd", "password", 0);
+        login.addParaName("password");
         UserLogin.addFunctionDescription("login", login);
 
         FunctionDAGDescription userProfile = new FunctionDAGDescription("userProfile");
@@ -69,6 +70,7 @@ public class SocialNetwork extends Client {
         FunctionDAGDescription PostTweet = new FunctionDAGDescription("postTweet");
         FunctionDescription postTweet = new FunctionDescription("postTweet", MetaTypes.AccessType.WRITE);
         postTweet.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 0);
+        postTweet.addParaName("tweet");
         PostTweet.addFunctionDescription("postTweet", postTweet);
 
         this.txnDescriptions.put("userLogin", UserLogin);

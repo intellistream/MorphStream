@@ -32,7 +32,7 @@ function ResetParameters() {
     keyDataTypesForTables="String;String;String"
     valueDataTypesForTables="String;String;String"
     valueDataSizeForTables="64;128;128"
-    valueNamesForTables="pwd;profile;tweet"
+    valueNamesForTables="password;profile;tweet"
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0

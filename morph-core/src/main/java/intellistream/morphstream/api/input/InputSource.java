@@ -123,15 +123,20 @@ public class InputSource {
             keyMap.put(keyMapPair[0], keys);
         }
         String [] valueMapPairs = inputArray[2].split(",");
-        for (String mapPair : valueMapPairs) {
-            String[] valueMapPair = mapPair.split(":");
-            valueMap.put(valueMapPair[0], valueMapPair[1]);
+        if (!valueMapPairs[0].isEmpty()) {
+            for (String mapPair : valueMapPairs) {
+                String[] valueMapPair = mapPair.split(":");
+                valueMap.put(valueMapPair[0], valueMapPair[1]);
+            }
         }
         String [] valueTypeMapPairs = inputArray[3].split(",");
-        for (String typeMapPair : valueTypeMapPairs) {
-            String[] valueTypeMapPair = typeMapPair.split(":");
-            valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
+        if (!valueTypeMapPairs[0].isEmpty()){
+            for (String typeMapPair : valueTypeMapPairs) {
+                String[] valueTypeMapPair = typeMapPair.split(":");
+                valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
+            }
         }
+
         String flag = inputArray[4];
         String isAbort = inputArray[5];
 

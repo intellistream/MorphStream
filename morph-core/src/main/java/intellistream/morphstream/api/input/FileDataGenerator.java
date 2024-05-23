@@ -97,8 +97,9 @@ public class FileDataGenerator {
         for (String eventType : eventTypes) {
             HashMap<String, Integer> keyMap = new HashMap<>();
             String[] keyNumbers = configuration.getString(eventType + "_key_number", "2,2").split(",");
-            for (int i = 0; i < tableNames.length; i++) {
-                keyMap.put(tableNames[i], Integer.parseInt(keyNumbers[i]));
+            String[] tableNamesForEvent = configuration.getString(eventType + "_tables", "table1,table2").split(",");
+            for (int i = 0; i < tableNamesForEvent.length; i++) {
+                keyMap.put(tableNamesForEvent[i], Integer.parseInt(keyNumbers[i]));
             }
             eventKeyMap.put(eventType, keyMap);
             eventValueNamesMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
@@ -148,13 +149,9 @@ public class FileDataGenerator {
     private void generateTuple(String eventType) {
         TransactionalEvent inputEvent;
         HashMap<String, List<String>> keys = generateKey(eventType);
-        String[] values = generateValue(eventType);
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
-        for (int i = 0; i < values.length; i++) {
-            valueMap.put(eventValueNamesMap.get(eventType).get(i), values[i]);
-            valueTypeMap.put(eventValueNamesMap.get(eventType).get(i), "int");
-        }
+        generateValue(eventType, valueMap, valueTypeMap);
         if (random.nextInt(1000) < eventRatioMap.get(eventType)) {
             inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, true);
         } else {
@@ -189,13 +186,14 @@ public class FileDataGenerator {
         }
         return keyMap;
     }
-    private String[] generateValue(String eventType) {
-        String[] values = new String[eventValueNamesMap.get(eventType).size()];
-        for (int i = 0; i < values.length; i++) {
+    private void generateValue(String eventType, HashMap<String, Object> valueMap, HashMap<String, String> valueTypeMap) {
+        for (int i = 0; i < valueMap.size(); i++) {
             int length = Integer.parseInt(eventValueLengthMap.get(eventType).get(i));
-            values[i] = FixedLengthRandomString.generateRandomFixedLengthString(length);
+            if (length > 0) {
+                valueMap.put(eventValueNamesMap.get(eventType).get(i), FixedLengthRandomString.generateRandomFixedLengthString(length));
+                valueTypeMap.put(eventValueNamesMap.get(eventType).get(i), "int");
+            }
         }
-        return values;
     }
 
     private String nextEvent() {

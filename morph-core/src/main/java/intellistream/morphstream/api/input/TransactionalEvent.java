@@ -4,7 +4,6 @@ import intellistream.morphstream.engine.txn.TxnEvent;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.security.Key;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,9 +17,9 @@ import java.util.List;
 public class TransactionalEvent extends TxnEvent {
     @Getter
     private HashMap<String, List<String>> keyMap; //<TableName, keys> assume key must be string, including sourceKey, targetKey, and conditionKey
-    private HashMap<String, Object> valueMap; //<valueName, value>
+    private HashMap<String, Object> paraMap; //<valueName, value>
     @Getter
-    private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
+    private HashMap<String, String> paraTypeMap; //<valueName, valueDataType>
     @Getter
     @Setter
     private String flag; //E.g., "Deposit" or "Transfer"
@@ -28,14 +27,14 @@ public class TransactionalEvent extends TxnEvent {
 
     public TransactionalEvent(long bid,
                               HashMap<String, List<String>> keyMap,
-                              HashMap<String, Object> valueMap,
-                              HashMap<String, String> valueTypeMap,
+                              HashMap<String, Object> paraMap,
+                              HashMap<String, String> paraTypeMap,
                               String flag,
                               boolean isAbort) {
         super(bid);
         this.keyMap = keyMap;
-        this.valueMap = valueMap;
-        this.valueTypeMap = valueTypeMap;
+        this.paraMap = paraMap;
+        this.paraTypeMap = paraTypeMap;
         this.flag = flag;
         this.isAbort = isAbort;
     }
@@ -48,8 +47,8 @@ public class TransactionalEvent extends TxnEvent {
         this.bid = bid;
     }
 
-    public Object getValue(String valueName) {
-        return this.valueMap.get(valueName);
+    public Object getPara(String paraName) {
+        return this.paraMap.get(paraName);
     }
 
     public String getKey(String tableName, int keyIndex) {
@@ -78,15 +77,17 @@ public class TransactionalEvent extends TxnEvent {
         }
         stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
-        for (String value : valueMap.keySet()) {
-            stringBuilder.append(value).append(":").append(valueMap.get(value)).append(",");
+        for (String value : paraMap.keySet()) {
+            stringBuilder.append(value).append(":").append(paraMap.get(value)).append(",");
         }
-        stringBuilder.deleteCharAt(stringBuilder.length() -1);
+        if (!paraMap.isEmpty())
+            stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
-        for (String valueType : valueTypeMap.keySet()) {
-            stringBuilder.append(valueType).append(":").append(valueTypeMap.get(valueType)).append(",");
+        for (String valueType : paraTypeMap.keySet()) {
+            stringBuilder.append(valueType).append(":").append(paraTypeMap.get(valueType)).append(",");
         }
-        stringBuilder.deleteCharAt(stringBuilder.length() -1);
+        if (!paraTypeMap.isEmpty())
+            stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
         stringBuilder.append(flag);
         stringBuilder.append(";");

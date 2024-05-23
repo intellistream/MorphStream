@@ -26,7 +26,7 @@ public class Function {
     private final MetaTypes.AccessType accessType;
     private final HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
     @Getter
-    private final HashMap<String, Object> valueMap; //Store all values required during txn-UDF, including WRITE value
+    private final HashMap<String, Object> paraMap; //Store all values required during txn-UDF, including WRITE value
     public Object udfResult;
     private boolean isAborted;
 
@@ -38,7 +38,7 @@ public class Function {
         fatherStateAccessNames = description.getFatherNames();
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();
-        valueMap = new HashMap<>();
+        paraMap = new HashMap<>();
         isAborted = false;
     }
 
@@ -60,11 +60,11 @@ public class Function {
         return stateObjectMap.values();
     }
 
-    public void addValue(String valueName, Object value) {
-        valueMap.put(valueName, value);
+    public void addPara(String valueName, Object value) {
+        paraMap.put(valueName, value);
     }
-    public Object getValue(String valueName) {
-        return valueMap.get(valueName);
+    public Object getPara(String valueName) {
+        return paraMap.get(valueName);
     }
 
     public void setAborted() {
