@@ -208,7 +208,7 @@ public class JCommanderHandler {
     public String keyNumberForEvents = "2,2;1,1"; //transfer: {account:2(src,dest). bookEntries:2(src,dest)}; deposit: {account:1(src), bookEntries:1(src)}
     @Parameter(names = {"--valueNameForEvents"}, description = "value names for each type of event, split by ;")
     public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
-    @Parameter(names = {"--valueDataSizeForTables"}, description = "value size for each event, split by ;")
+    @Parameter(names = {"--valueSizeForEvents"}, description = "value size for each event, split by ;")
     public String valueSizeForEvents = "128;256";
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
     public String eventRatio = "50,50";
