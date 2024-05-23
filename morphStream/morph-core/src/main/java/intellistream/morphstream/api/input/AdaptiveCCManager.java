@@ -2,10 +2,8 @@ package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import message.VNFCtrlServer;
 import message.VNFCtlStub;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,10 +15,7 @@ public class AdaptiveCCManager {
     private final LinkedBlockingQueue<CacheData> cacheQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<OffloadData> offloadQueue = new LinkedBlockingQueue<>();
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
-    private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
-    private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
-    private static final VNFCtrlServer vnfCtrlServer = new VNFCtrlServer();
     public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();
     private VNFManager vnfManager;
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
@@ -44,27 +39,17 @@ public class AdaptiveCCManager {
         }
     }
 
-    public void updateSATypeMap(int saID, int saType) {
-        saTypeMap.put(saID, saType);
-    }
-    public void updateSATableNameMap(int saID, String tableName) {
-        saTableNameMap.put(saID, tableName);
-    }
-
-    public void initialize() throws IOException {
-        if (serveRemoteVNF) {
-            vnfCtrlServer.listenForInstances(8080, vnfInstanceNum);
-        }
-
+    public void startCC123_Monitor() {
         Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
         Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
-        Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, saTypeMap, saTableNameMap));
+        Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, MorphStreamEnv.get().getSaTypeMap(), MorphStreamEnv.get().getSaTableNameMap()));
 
         monitorThread.start();
         partitionCCThread.start();
         cacheCCThread.start();
         offloadCCThread.start();
+        System.out.println("CC123 and Monitor started");
     }
 
     /** For java simulated VNF instances only */
@@ -78,7 +63,7 @@ public class AdaptiveCCManager {
         return vnfManager.joinVNFInstances();
     }
 
-    public BlockingQueue<TransactionalEvent> getInputQueue(int spoutId) {
+    public BlockingQueue<TransactionalEvent> getTPGInputQueue(int spoutId) {
         return tpgQueues.get(spoutId);
     }
 

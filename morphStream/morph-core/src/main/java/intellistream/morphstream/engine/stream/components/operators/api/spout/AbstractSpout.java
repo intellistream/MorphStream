@@ -44,7 +44,7 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
         punctuation_interval = config.getInt("checkpoint");
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
-        inputQueue = MorphStreamEnv.get().adaptiveCCManager().getInputQueue(thread_Id);
+        inputQueue = MorphStreamEnv.get().adaptiveCCManager().getTPGInputQueue(thread_Id);
         ccOption = config.getInt("CCOption", 0);
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
     }

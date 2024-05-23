@@ -42,7 +42,14 @@ public class CliFrontend {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        env.initializeAdaptiveCCManager(); //Separate initialization of adaptive CC manager from MorphStreamEnv constructor
+    }
+
+    public void prepareAdaptiveCC() {
+        env.initializeAdaptiveCCManager();
+    }
+
+    public void startAdaptiveCC() {
+        env.startAdaptiveCC();
     }
 
     public void registerStateAccess(String saID, String saType, String tableName) {
@@ -129,7 +136,7 @@ public class CliFrontend {
 
     private void runTopologyLocally() throws InterruptedException {
         Topology topology = env.createTopology();
-        env.submitTopology(topology);
+        env.submitTopology(topology); //This starts the TPG_CC threads (MorphStreamBolts)
         listenToStop();
     }
 

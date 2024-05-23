@@ -16,8 +16,6 @@ import intellistream.morphstream.engine.txn.db.Database;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 
-import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -38,24 +36,25 @@ public class MorphStreamEnv {
     private ServerSocket stateManagerSocket;
     private final HashMap<Integer, Socket> socketsToInstances = new java.util.HashMap<>();
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
+    public String vnfJSON = null;
+    private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
+    private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
     public CountDownLatch simVNFLatch;
 
-//    public MorphStreamEnv() {
-//        try {
-//            InetAddress ipAddr = InetAddress.getLocalHost();
-////            stateManagerSocket = new ServerSocket(8080, 50, ipAddr);
-//            stateManagerSocket = new ServerSocket(8080);
-//            System.out.println("Server started on port " + stateManagerSocket.getLocalPort());
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-
-    public void initializeAdaptiveCCManager() throws IOException {
+    public void initializeAdaptiveCCManager() {
         if (adaptiveCCManager == null) {
             adaptiveCCManager = new AdaptiveCCManager();
-            adaptiveCCManager.initialize();
+        } else {
+            throw new RuntimeException("AdaptiveCCManager already initialized");
         }
+    }
+
+    public void startAdaptiveCC() {
+        adaptiveCCManager.startCC123_Monitor();
+    }
+
+    public AdaptiveCCManager adaptiveCCManager() {
+        return adaptiveCCManager;
     }
 
     public static MorphStreamEnv get() {
@@ -80,17 +79,14 @@ public class MorphStreamEnv {
     public Map<Integer, Socket> instanceSocketMap() {return socketsToInstances;}
     public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
     public ServerSocket stateManagerSocket() {return stateManagerSocket;}
-
-    public AdaptiveCCManager adaptiveCCManager() {
-        if (adaptiveCCManager == null) {
-            try {
-                initializeAdaptiveCCManager();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return adaptiveCCManager;
+    public void updateSATypeMap(int saID, int saType) {
+        saTypeMap.put(saID, saType);
     }
+    public HashMap<Integer, Integer> getSaTypeMap() {return saTypeMap;}
+    public void updateSATableNameMap(int saID, String tableName) {
+        saTableNameMap.put(saID, tableName);
+    }
+    public HashMap<Integer, String> getSaTableNameMap() {return saTableNameMap;}
 
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);

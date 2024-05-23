@@ -40,7 +40,6 @@ public class OffloadCCThread implements Runnable {
     private final ReentrantLock globalLock = new ReentrantLock();
     private final Condition nextEventCondition = globalLock.newCondition();
     private int watermark = 0;
-
     private boolean doStatePartitioning = false;
 
 
