@@ -28,19 +28,16 @@ public class SocialNetwork extends Client {
                 break;
             }
             case "userProfile": {
-                StateObject userProfile = function.getStateObject("userProfile");
-                function.udfResult = userProfile;
+                function.udfResult = function.getStateObject("userProfile");
                 break;
             }
             case "getTimeLine": {
-                StateObject tweet = function.getStateObject("tweet");
-                function.udfResult = tweet;
+                function.udfResult = function.getStateObject("tweet");
                 break;
             }
             case "postTweet": {
                 StateObject tweet = function.getStateObject("tweet");
-                String newTweet = (String) function.getValue("newTweet");
-                function.udfResult = newTweet;
+                function.udfResult = (String) function.getValue("newTweet");
                 break;
             }
         }

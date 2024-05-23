@@ -1,6 +1,5 @@
 package intellistream.morphstream.engine.db.storage;
 
-import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CacheBuffer;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.db.storage.table.BaseTable;

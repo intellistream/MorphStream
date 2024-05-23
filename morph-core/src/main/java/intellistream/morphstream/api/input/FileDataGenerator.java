@@ -4,6 +4,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.util.AppConfig;
 import intellistream.morphstream.util.FastZipfGenerator;
+import intellistream.morphstream.util.FixedLengthRandomString;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class FileDataGenerator {
     //Event configure
     private HashMap<String, HashMap<String, Integer>> eventKeyMap = new HashMap<>();//event -> tableName -> keyNumber
     private HashMap<String, List<String>> eventValueNamesMap = new HashMap<>();//event -> value name list
+    private HashMap<String, List<String>> eventValueLengthMap = new HashMap<>();//event -> value Length
     //InputStream configuration
     private int totalEvents;
     private HashMap<String, Integer> numItemMaps = new HashMap<>();//table name (key) to number of items
@@ -64,7 +66,7 @@ public class FileDataGenerator {
     }
     private void configure_store() {
         configuration = MorphStreamEnv.get().configuration();
-        String[] tableNames = configuration.getString("tableNames","table1,table2").split(",");
+        String[] tableNames = configuration.getString("tableNames","table1,table2").split(";");
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
         }
@@ -87,7 +89,7 @@ public class FileDataGenerator {
         totalEvents = configuration.getInt("totalEvents", totalPartition * punctuation);
         phaseType = configuration.getString("workloadType", "default").split(",");
         phase = 0;
-        eventTypes = configuration.getString("eventTypes", "event1,event2").split(";");
+        eventTypes = configuration.getString("eventTypes", "event1;event2").split(";");
         inputEvents = new ArrayList<TransactionalEvent>(totalEvents);
         for (Map.Entry<String, Integer> s : numItemMaps.entrySet()) {
             intervalMaps.put(s.getKey(), s.getValue() / totalPartition);
@@ -100,6 +102,7 @@ public class FileDataGenerator {
             }
             eventKeyMap.put(eventType, keyMap);
             eventValueNamesMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
+            eventValueLengthMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_value_length", "10,10").split(",")));
             stateAssessSkewMap.put(eventType, configuration.getDouble(eventType + "_state_access_skewness", 0));
             eventRatioMap.put(eventType, configuration.getInt(eventType + "_event_ratio", 50));
             for (int i = 0; i < eventRatioMap.get(eventType) / 10; i++) {
@@ -189,7 +192,8 @@ public class FileDataGenerator {
     private String[] generateValue(String eventType) {
         String[] values = new String[eventValueNamesMap.get(eventType).size()];
         for (int i = 0; i < values.length; i++) {
-            values[i] = String.valueOf(random.nextInt(10000));
+            int length = Integer.parseInt(eventValueLengthMap.get(eventType).get(i));
+            values[i] = FixedLengthRandomString.generateRandomFixedLengthString(length);
         }
         return values;
     }
@@ -313,5 +317,16 @@ public class FileDataGenerator {
                 nextDataGeneratorConfig();
             }
         }
+    }
+    //Pad the string to a specified length, filling the insufficient parts with spaces.
+    private String padStringToLength(String str, int length) {
+        if (str.length() >= length) {
+            return str.substring(0, length);
+        }
+        StringBuilder sb = new StringBuilder(str);
+        while (sb.length() < length) {
+            sb.append(' ');
+        }
+        return sb.toString();
     }
 }

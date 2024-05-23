@@ -159,18 +159,18 @@ public class JCommanderHandler {
     public int NUM_ITEMS = 8000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
-    @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
+    @Parameter(names = {"--tableNames"}, description = "String of table names, split by ;")
     public String tableNames = "accounts,bookEntries";
-    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "8000,8000"; // 10000,10000
-    @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
-    public String keyDataTypesForTables = "string,string";
-    @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
-    public String valueDataTypesForTables = "double,double";
-    @Parameter(names = {"--valueDataTypesForTables"}, description = "value size for each table, split by ,")
-    public String valueSizeForTables = "128,256";
-    @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
-    public String valueNamesForTables = "balance,balance";
+    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ;")
+    public String numberItemsForTables = "8000;8000"; // 10000,10000
+    @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ;")
+    public String keyDataTypesForTables = "string;string";
+    @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ;")
+    public String valueDataTypesForTables = "double;double";
+    @Parameter(names = {"--valueDataSizeForTables"}, description = "value size for each table, split by ;")
+    public String valueSizeForTables = "128;256";
+    @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ;")
+    public String valueNamesForTables = "balance;balance";
 
 
 
@@ -200,7 +200,7 @@ public class JCommanderHandler {
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging";
     //OP_BFS -> OP_NS -> OP_NS_A -> OP_NS -> OP_BFS -> OP_NS -> OP_NS_A -> OP_NS
-    @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
+    @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ;")
     public String eventTypes = "transfer;deposit";
     @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
     public String tableNameForEvents = "accounts,bookEntries;accounts,bookEntries";
@@ -208,6 +208,8 @@ public class JCommanderHandler {
     public String keyNumberForEvents = "2,2;1,1"; //transfer: {account:2(src,dest). bookEntries:2(src,dest)}; deposit: {account:1(src), bookEntries:1(src)}
     @Parameter(names = {"--valueNameForEvents"}, description = "value names for each type of event, split by ;")
     public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
+    @Parameter(names = {"--valueDataSizeForTables"}, description = "value size for each event, split by ;")
+    public String valueSizeForEvents = "128;256";
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
     public String eventRatio = "50,50";
     @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")//1000
@@ -461,13 +463,13 @@ public class JCommanderHandler {
         config.put("NUM_ITEMS", NUM_ITEMS);
         config.put("loadDBThreadNum", tthread);
         config.put("tableNames", tableNames);
-        String[] tableNameString = tableNames.split(",");
+        String[] tableNameString = tableNames.split(";");
         for (int i = 0; i < tableNameString.length; i ++) {
-            config.put(tableNameString[i] + "_num_items", Integer.parseInt(numberItemsForTables.split(",")[i]));
-            config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(",")[i]);
-            config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
-            config.put(tableNameString[i] + "_value_size", Integer.parseInt(valueSizeForTables.split(",")[i]));
-            config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(",")[i]);//Field
+            config.put(tableNameString[i] + "_num_items", Integer.parseInt(numberItemsForTables.split(";")[i]));
+            config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(";")[i]);
+            config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(";")[i]);
+            config.put(tableNameString[i] + "_value_size", Integer.parseInt(valueSizeForTables.split(";")[i]));
+            config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(";")[i]);//Field
         }
 
         /* Input configurations */
@@ -483,10 +485,11 @@ public class JCommanderHandler {
             config.put(eventTypeString[i] + "_tables", tableNameForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_key_number", keyNumberForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_values", valueNameForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_event_ratio", eventRatio.split(",")[i]);
-            config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", ratioOfMultiPartitionTransactionsForEvents.split(",")[i]);
-            config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(",")[i]);
-            config.put(eventTypeString[i] + "_abort_ratio", abortRatioForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_value_size", valueSizeForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_event_ratio", eventRatio.split(";")[i]);
+            config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", ratioOfMultiPartitionTransactionsForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_abort_ratio", abortRatioForEvents.split(";")[i]);
         }
 
         /* Benchmarking and evaluation configurations */

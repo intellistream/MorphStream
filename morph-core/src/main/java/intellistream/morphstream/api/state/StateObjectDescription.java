@@ -2,12 +2,14 @@ package intellistream.morphstream.api.state;
 
 
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
+import lombok.Getter;
 
 import java.io.Serializable;
 
 /**
  * Used as a data carrier for SchemaRecord, provides simplified retrieval-by-columnName APIs.
  */
+@Getter
 public class StateObjectDescription implements Serializable {
     private final String name;
     private final AccessType type;
@@ -23,22 +25,4 @@ public class StateObjectDescription implements Serializable {
         this.keyIndex = keyIndex;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getKeyName() {
-        return keyName;
-    }
-    public int getKeyIndex() {
-        return keyIndex;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public AccessType getType() {
-        return type;
-    }
 }
