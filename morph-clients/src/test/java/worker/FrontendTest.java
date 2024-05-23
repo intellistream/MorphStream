@@ -63,6 +63,6 @@ public class FrontendTest extends Thread{
         return isRunning;
     }
     private int getWorkId(List<String> keys) {
-        return this.statistic.add(keys);
+        return this.statistic.add(null);
     }
 }
