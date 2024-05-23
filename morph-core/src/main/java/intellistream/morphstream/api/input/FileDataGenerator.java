@@ -106,7 +106,7 @@ public class FileDataGenerator {
             eventValueLengthMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_value_length", "10,10").split(",")));
             stateAssessSkewMap.put(eventType, configuration.getDouble(eventType + "_state_access_skewness", 0));
             eventRatioMap.put(eventType, configuration.getInt(eventType + "_event_ratio", 50));
-            for (int i = 0; i < eventRatioMap.get(eventType) / 10; i++) {
+            for (int i = 0; i < eventRatioMap.get(eventType); i++) {
                 eventList.add(eventType);
             }
             eventAbortMap.put(eventType, configuration.getDouble(eventType + "_abort_ratio", 0));
@@ -187,7 +187,7 @@ public class FileDataGenerator {
         return keyMap;
     }
     private void generateValue(String eventType, HashMap<String, Object> valueMap, HashMap<String, String> valueTypeMap) {
-        for (int i = 0; i < valueMap.size(); i++) {
+        for (int i = 0; i < eventValueNamesMap.get(eventType).size(); i++) {
             int length = Integer.parseInt(eventValueLengthMap.get(eventType).get(i));
             if (length > 0) {
                 valueMap.put(eventValueNamesMap.get(eventType).get(i), FixedLengthRandomString.generateRandomFixedLengthString(length));

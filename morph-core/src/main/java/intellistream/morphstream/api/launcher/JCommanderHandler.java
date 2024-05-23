@@ -485,7 +485,7 @@ public class JCommanderHandler {
             config.put(eventTypeString[i] + "_tables", tableNameForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_key_number", keyNumberForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_values", valueNameForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_value_size", valueSizeForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_value_length", valueSizeForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_event_ratio", eventRatio.split(";")[i]);
             config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", ratioOfMultiPartitionTransactionsForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(";")[i]);
