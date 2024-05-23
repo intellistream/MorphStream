@@ -80,6 +80,7 @@ public class MorphStreamEnv {
     public Map<Integer, Socket> instanceSocketMap() {return socketsToInstances;}
     public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
     public ServerSocket stateManagerSocket() {return stateManagerSocket;}
+
     public AdaptiveCCManager adaptiveCCManager() {
         if (adaptiveCCManager == null) {
             try {
@@ -90,6 +91,7 @@ public class MorphStreamEnv {
         }
         return adaptiveCCManager;
     }
+
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitializer.creates_Table();

@@ -2,6 +2,7 @@ package intellistream.morphstream.api.operator.bolt;
 
 import commonStorage.RequestTemplates;
 import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.TransactionalVNFEvent;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
@@ -102,11 +103,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (serveRemoteVNF) {
             for (TransactionalVNFEvent event : eventQueue) {
                 try {
-                    OutputStream out = instanceSocketMap.get(event.getInstanceID()).getOutputStream();
-                    String combined =  4 + ";" + event.getTxnRequestID();
-                    byte[] byteArray = combined.getBytes();
-                    out.write(byteArray);
-                    out.flush();
+                    AdaptiveCCManager.vnfStubs.get(event.getInstanceID()).txn_handle_done(event.getTxnRequestID());
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -125,8 +123,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 System.out.println("TPG CC processed all " + requestCounter + " requests.");
             }
         }
-
-
     }
 
     @Override

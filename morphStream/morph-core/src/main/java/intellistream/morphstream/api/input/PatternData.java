@@ -6,11 +6,11 @@ public class PatternData {
     private final int tupleID;
     private final boolean isWrite;
 
-    public PatternData(long timeStamp, int instanceID, int tupleID, boolean value) {
+    public PatternData(long timeStamp, int instanceID, int tupleID, boolean isWrite) {
         this.timeStamp = timeStamp;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
-        this.isWrite = value;
+        this.isWrite = isWrite;
     }
 
     public long getTimeStamp() {

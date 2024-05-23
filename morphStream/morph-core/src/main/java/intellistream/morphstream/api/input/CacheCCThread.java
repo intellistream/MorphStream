@@ -1,10 +1,10 @@
 package intellistream.morphstream.api.input;
 
-import message.VNFCtlStub;
 import intellistream.morphstream.api.input.simVNF.VNFSenderThread;
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -46,7 +46,11 @@ public class CacheCCThread implements Runnable {
 
                 for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
                     if (entry.getKey() != cacheData.getInstanceID()) {
-//                        VNFCtlStub.update_value(tupleID, value); //TODO: Align with libVNF
+                        try {
+                            AdaptiveCCManager.vnfStubs.get(cacheData.getInstanceID()).update_value(tupleID, value);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
             }

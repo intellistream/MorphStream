@@ -316,7 +316,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
     public String nfvWorkloadPath = "morphStream/scripts/nfvWorkload";
     @Parameter(names = {"--serveRemoteVNF"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
-    public int serveRemoteVNF = 0;
+    public int serveRemoteVNF = 1;
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
     public int vnfInstanceNum = 4;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")

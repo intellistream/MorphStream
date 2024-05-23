@@ -89,11 +89,7 @@ public class OffloadCCThread implements Runnable {
                 int saType = saTypeMap.get(offloadData.getSaIndex());
                 if (saType == 1) {
                     try {
-                        out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream(); //Immediate acknowledge write
-                        String combined =  4 + ";" + offloadData.getTxnReqId();
-                        byte[] byteArray = combined.getBytes();
-                        out.write(byteArray);
-                        out.flush();
+                        AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(offloadData.getTxnReqId());
 
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -247,11 +243,7 @@ public class OffloadCCThread implements Runnable {
             tempo_record.getValues().get(1).setInt(udfResult);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
-            OutputStream out = instanceSocketMap.get(offloadData.getInstanceID()).getOutputStream();
-            String combined =  4 + ";" + offloadData.getTxnReqId();
-            byte[] byteArray = combined.getBytes();
-            out.write(byteArray);
-            out.flush();
+            AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(txnReqId);
 
         } catch (DatabaseException | IOException e) {
             throw new RuntimeException(e);

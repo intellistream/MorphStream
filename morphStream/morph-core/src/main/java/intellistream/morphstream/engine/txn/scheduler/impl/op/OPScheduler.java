@@ -1,6 +1,7 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.op;
 
 
+import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
@@ -131,6 +132,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             //TODO: Simplify saData into a single write value
 
             byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
+
+//            long pktId, int saIdx, int key, int value
+            try {
+                AdaptiveCCManager.vnfStubs.get(-1).execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), -1, -1); //TODO: Hardcoded
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
             isAbort = decodeInt(saResultBytes, 0);
             udfResult = decodeInt(saResultBytes, 4);
 

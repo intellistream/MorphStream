@@ -2,6 +2,8 @@ package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.input.simVNF.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import message.VNFCtrlServer;
+import message.VNFCtlStub;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -18,6 +20,8 @@ public class AdaptiveCCManager {
     private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
     private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
+    private static final VNFCtrlServer vnfCtrlServer = new VNFCtrlServer();
+    public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();
     private VNFManager vnfManager;
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     private final int writeThreadPoolSize = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
@@ -49,9 +53,9 @@ public class AdaptiveCCManager {
 
     public void initialize() throws IOException {
         if (serveRemoteVNF) {
-            Thread listenerThread = new Thread(new SocketListener(monitorQueue, partitionQueue, cacheQueue, offloadQueue, tpgQueues));
-            listenerThread.start();
+            vnfCtrlServer.listenForInstances(8080, vnfInstanceNum);
         }
+
         Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
         Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
@@ -63,11 +67,13 @@ public class AdaptiveCCManager {
         offloadCCThread.start();
     }
 
+    /** For java simulated VNF instances only */
     public void startVNFInstances() {
         vnfManager = new VNFManager(totalRequests, vnfInstanceNum, tableSize, ccStrategy, pattern);
         vnfManager.startVNFInstances();
     }
 
+    /** For java simulated VNF instances only */
     public double joinVNFInstances() {
         return vnfManager.joinVNFInstances();
     }

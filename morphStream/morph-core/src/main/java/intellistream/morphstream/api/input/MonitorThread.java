@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import message.VNFCtlStub;
+import org.example.protobuf.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -65,7 +66,6 @@ public class MonitorThread implements Runnable {
 
     @Override
     public void run() {
-
         while (!Thread.currentThread().isInterrupted()) {
             PatternData patternData;
             try {
@@ -94,11 +94,9 @@ public class MonitorThread implements Runnable {
                 statesPattern_34_to_2.clear();
             }
         }
-
     }
 
     private static void updatePatternData(PatternData metaDataByte) {
-
         int instanceID = metaDataByte.getInstanceID();
         int tupleID = metaDataByte.getTupleID();
         boolean isWrite = metaDataByte.getIsWrite();
@@ -148,65 +146,61 @@ public class MonitorThread implements Runnable {
     }
 
     private static void notifyCCSwitch(int instanceID, int tupleID, int newPattern) {
-//        try {
-//
-//            //TODO: Does this have to be split into two calls?
-//            VNFCtrlClient.make_pause();// TODO: Align with libVNF
-//            VNFCtrlClient.update_cc(tupleID, newPattern);// TODO: Align with libVNF
-//
-//        } catch (IOException e) {
-//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-//        }
+        try {
+            //TODO: Does this have to be split into two calls?
+            VNFCtlStub vnfCtlStub = AdaptiveCCManager.vnfStubs.get(instanceID);
+            vnfCtlStub.make_pause();
+            vnfCtlStub.update_cc(tupleID, CC.forNumber(newPattern));
+
+        } catch (IOException e) {
+            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+        }
     }
 
     private static void notifyStateSyncComplete(int instanceID, int tupleID) {
-//        try {
-//            // TODO: Align with libVNF
-//            VNFCtrlClient.make_continue();
-//
-//        } catch (IOException e) {
-//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-//        }
+        try {
+            AdaptiveCCManager.vnfStubs.get(instanceID).make_continue();
+
+        } catch (IOException e) {
+            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+        }
     }
 
     private static void syncStateFromLocalToRemote(int instanceID, int tupleID) {
-//        try {
-//            System.out.println("Monitor sending state sync to instance " + instanceID + " for tuple: " + tupleID);
-//
+        System.out.println("Monitor sending state sync to instance " + instanceID + " for tuple: " + tupleID);
+
 //            int cachedValue = VNFCtrlClient.fetch_value(tupleID); // TODO: Align with libVNF
-//
-//            try {
-//                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
-//                SchemaRecord srcRecord = condition_record.content_.readPreValues(-1); //TODO: Pass-in a valid bid.
-//                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-//                tempo_record.getValues().get(1).setInt(cachedValue);
-//                condition_record.content_.updateMultiValues(-1, 0, true, tempo_record);
-//
-//            } catch (DatabaseException e) {
-//                throw new RuntimeException(e);
-//            }
-//
-//        } catch (IOException e) {
-//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-//        }
+        int cachedValue = 0;
+
+        try {
+            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
+            SchemaRecord srcRecord = condition_record.content_.readPreValues(-1); //TODO: Pass-in a valid bid.
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+            tempo_record.getValues().get(1).setInt(cachedValue);
+            condition_record.content_.updateMultiValues(-1, 0, true, tempo_record);
+
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private static void syncStateFromGlobalToLocal(int instanceID, int tupleID) {
-//        try {
-//            int tupleValue;
-//            try {
-//                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Specify table name
-//                tupleValue = (int) condition_record.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getDouble(); //TODO: Read the latest state version?
-//
-//            } catch (DatabaseException e) {
-//                throw new RuntimeException(e);
-//            }
-//
-//            VNFCtrlClient.update_value(tupleID, tupleValue); // TODO: Align with libVNF
-//
-//        } catch (IOException e) {
-//            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
-//        }
+        try {
+            int tupleValue;
+            try {
+                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Specify table name
+                tupleValue = (int) condition_record.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getDouble(); //TODO: Read the latest state version?
+
+            } catch (DatabaseException e) {
+                throw new RuntimeException(e);
+            }
+
+            AdaptiveCCManager.vnfStubs.get(instanceID).update_value(tupleID, tupleValue);
+
+        } catch (IOException e) {
+            System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
+        }
     }
 
     private static void ccSwitch() {

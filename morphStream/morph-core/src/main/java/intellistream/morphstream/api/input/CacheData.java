@@ -7,7 +7,7 @@ public class CacheData {
     private final int instanceID;
     private final int tupleID;
     private final int value;
-    private final BlockingQueue<Integer> senderResponseQueue;
+    private final BlockingQueue<Integer> senderResponseQueue; //For efficient response handling through CacheData itself
 
     public CacheData(long timestamp, int instanceID, int tupleID, int value) {
         this.timestamp = timestamp;

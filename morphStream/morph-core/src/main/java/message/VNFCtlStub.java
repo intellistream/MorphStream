@@ -6,12 +6,11 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class VNFCtlStub {
-
-    private int index;
+    private int instanceID;
     private Socket socket;
 
-    VNFCtlStub(int index, Socket socket) {
-        this.index = index;
+    VNFCtlStub(int instanceID, Socket socket) {
+        this.instanceID = instanceID;
         this.socket = socket;
     }
 
@@ -97,23 +96,23 @@ public class VNFCtlStub {
     }
 
     // Your handler function to implement
-    public void handleConnection(int index, Socket socket) {
+    public void handleConnection(int instanceID, Socket socket) {
         // Implement your logic here
         while (true) {
             try {
                 MessageFromVNFInst wrapper = MessageFromVNFInst.parseDelimitedFrom(socket.getInputStream());
                 if (wrapper.hasMonitorReportMessage()) {
-                    VNFCtlStubImpl.onMonitorReportMessage(wrapper.getMonitorReportMessage());
+                    VNFCtlStubImpl.onMonitorReportMessage(instanceID, wrapper.getMonitorReportMessage());
                 } else if (wrapper.hasPushCCMessage()) {
-                    VNFCtlStubImpl.onPushCCMessage(wrapper.getPushCCMessage());
+                    VNFCtlStubImpl.onPushCCMessage(instanceID, wrapper.getPushCCMessage());
                 } else if (wrapper.hasPushDSMessage()) {
-                    VNFCtlStubImpl.onPushDSMessage(wrapper.getPushDSMessage());
+                    VNFCtlStubImpl.onPushDSMessage(instanceID, wrapper.getPushDSMessage());
                 } else if (wrapper.hasSfcMessage()) {
-                    VNFCtlStubImpl.onSFCJsonMessage(wrapper.getSfcMessage());
+                    VNFCtlStubImpl.onSFCJsonMessage(instanceID, wrapper.getSfcMessage());
                 } else if (wrapper.hasTxnReqMessage()) {
-                    VNFCtlStubImpl.onTxnReqMessage(wrapper.getTxnReqMessage());
+                    VNFCtlStubImpl.onTxnReqMessage(instanceID, wrapper.getTxnReqMessage());
                 } else {
-                    System.out.println("unknown.");
+                    System.out.println("Unknown type of request from VNF.");
                 }
             } catch (IOException e) {
                 System.err.println("Error reading input stream: " + e.getMessage());

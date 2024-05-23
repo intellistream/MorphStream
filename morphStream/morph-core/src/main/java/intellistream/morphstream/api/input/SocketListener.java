@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -170,88 +168,6 @@ public class SocketListener implements Runnable { //A single thread that listens
                 }
             }
         }
-
-
-
-//        @Override
-//        public void run() {
-//            try (InputStream input = clientSocket.getInputStream()) {
-//                // Buffer to hold the read data
-//                List<Byte> messageBuffer = new ArrayList<>();
-//                int readByte;
-//
-//                while (true) {  // Changed from while ((readByte = input.read()) != -1)
-//                    try {
-//                        if ((readByte = input.read()) != -1) {
-//                            if (readByte == msgSeparator) {
-//                                byte[] message = new byte[messageBuffer.size()];
-//                                for (int i = 0; i < message.length; i++) {
-//                                    message[i] = messageBuffer.get(i);
-//                                }
-////                                System.out.println("Received from " + clientSocket.getRemoteSocketAddress() + ": " + new String(message));
-//
-//                                if (message.length == 1) {
-//                                    System.out.println("Error: reading invalid message: " + message[0]);
-//                                    System.out.println("Total requests received: " + requestCounter);
-//                                } else {
-//                                    List<byte[]> splitByteArrays = splitByteArray(message, fullSeparator);
-//                                    int target = decodeInt(splitByteArrays.get(0), 0);
-//
-////                                    if (target == 0) {
-////                                        monitorQueue.add(byteToPatternData(instanceID, splitByteArrays));
-////                                    } else if (target == 1) {
-////                                        partitionQueue.add(byteToPartitionData(instanceID, splitByteArrays));
-////                                    } else if (target == 2) {
-////                                        cacheQueue.add(byteToCacheData(instanceID, splitByteArrays));
-////                                    } else if (target == 3) {
-////                                        offloadQueue.add(byteToOffloadData(instanceID, splitByteArrays));
-////                                    } else if (target == 4) {
-////                                        tpgQueues.get(rrIndex).add(byteToTPGData(instanceID, splitByteArrays));
-////                                        rrIndex = (rrIndex + 1) % tpgThreadNum;
-////                                    }
-//                                    // Clear the buffer for the next message
-//                                    messageBuffer.clear();
-//                                    requestCounter++;
-//                                }
-//
-//                            } else {
-//                                messageBuffer.add((byte) readByte);
-//                            }
-//                        } else {
-//                            // -1 returned from read indicates client has closed the connection properly
-//                            System.out.println("Client has closed the connection: " + clientSocket.getRemoteSocketAddress());
-//                            System.out.println("Total request received: " + requestCounter);
-//                            break;
-//                        }
-//                    } catch (SocketException se) {
-//                        // Specific handling for socket related exceptions
-//                        System.out.println("Socket exception (likely connection reset by client): " + se.getMessage());
-//                        System.out.println("Total request received: " + requestCounter);
-//                        break;
-//                    } catch (IOException ie) {
-//                        // General I/O exceptions
-//                        System.out.println("IOException during communication: " + ie.getMessage());
-//                        System.out.println("Total request received: " + requestCounter);
-//                        break;
-//                    }
-//                }
-//            } catch (Exception e) {
-//                System.out.println("Exception when setting up input stream: " + e.getMessage());
-//                System.out.println("Exception type: " + e.getClass().getName());
-//                e.printStackTrace();
-//                System.out.println("Total request received: " + requestCounter);
-//            }
-//            finally {
-//                try {
-//                    clientSocket.close();
-//                    System.out.println("Closed client socket.");
-//                    System.out.println("Total request received: " + requestCounter);
-//                } catch (IOException e) {
-//                    System.out.println("Error closing client socket: " + e.getMessage());
-//                    System.out.println("Total request received: " + requestCounter);
-//                }
-//            }
-//        }
     }
 
 
@@ -307,14 +223,6 @@ public class SocketListener implements Runnable { //A single thread that listens
         }
         return value;
     }
-
-//    private static int decodeInt(byte[] bytes, int offset) {
-//        int value = 0;
-//        for (int i = 0; i < 4; i++) {
-//            value |= (bytes[offset + i] & 0xFF) << (i * 8);
-//        }
-//        return value;
-//    }
 
     private static int decodeInt(byte[] bytes, int offset) {
         if (bytes == null) {
