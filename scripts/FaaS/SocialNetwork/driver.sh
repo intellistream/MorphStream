@@ -31,7 +31,7 @@ function ResetParameters() {
     tableNames="user_pwd;user_profile;tweet"
     keyDataTypesForTables="String;String;String"
     valueDataTypesForTables="String;String;String"
-    valueDataSizesForTables="64;128;128"
+    valueDataSizeForTables="64;128;128"
     valueNamesForTables="pwd;profile;tweet"
     #Input Configurations
     rootFilePath="${RSTDIR}"
@@ -88,7 +88,7 @@ function runApplication() {
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
       --valueNamesForTables $valueNamesForTables \
-      --valueDataSizesForTables $valueDataSizesForTables \
+      --valueDataSizeForTables $valueDataSizeForTables \
       --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
       --eventTypes $eventTypes \
@@ -140,7 +140,7 @@ function runApplication() {
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
       --valueNamesForTables $valueNamesForTables \
-      --valueDataSizesForTables $valueDataSizesForTables \
+      --valueDataSizeForTables $valueDataSizeForTables \
       --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
       --eventTypes $eventTypes \
