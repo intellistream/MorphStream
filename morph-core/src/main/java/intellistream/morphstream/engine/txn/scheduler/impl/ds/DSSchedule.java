@@ -35,7 +35,6 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     public final TaskPrecedenceGraph<Context> tpg;
     public final RdmaWorkerManager rdmaWorkerManager;
     public final int managerId;
-    public final Random signatureRandom = new Random();
     public final RemoteStorageManager remoteStorageManager;
     public static final Client clientObj;
     static {

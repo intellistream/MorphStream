@@ -1,0 +1,74 @@
+package client;
+
+import intellistream.morphstream.api.Client;
+import intellistream.morphstream.api.output.Result;
+import intellistream.morphstream.api.state.Function;
+import intellistream.morphstream.api.state.FunctionDescription;
+import intellistream.morphstream.api.utils.MetaTypes;
+import intellistream.morphstream.api.state.StateObject;
+import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
+
+import java.util.HashMap;
+
+public class MediaReview extends Client {
+
+    @Override
+    public boolean transactionUDF(Function function) {
+        String txnName = function.getFunctionName();
+        switch (txnName) {
+            case "userLogin": {
+                StateObject userState = function.getStateObject("userState");
+                String password = userState.getStringValue("password");
+                String inputPassword = (String) function.getValue("password");
+                if (password.equals(inputPassword)) {
+                    function.udfResult = true;
+                } else {
+                    function.udfResult = false;
+                }
+                break;
+            }
+            case "ratingMovie": {
+                StateObject movieState = function.getStateObject("movieState");
+                double rating = Double.parseDouble(movieState.getStringValue("rating"));
+                double inputRating = Double.parseDouble((String) function.getValue("rating"));
+                function.udfResult = (rating + inputRating) / 2;
+                break;
+            }
+            case "reviewMovie": {
+                StateObject movieState = function.getStateObject("movieState");
+                String review = movieState.getStringValue("review");
+                String inputReview = (String) function.getValue("review");
+                function.udfResult = review + inputReview;
+                break;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public Result postUDF(long bid, String txnFlag, HashMap<String, Function> FunctionMap) {
+        return new Result(bid);
+    }
+
+    @Override
+    public void defineFunction() {
+        FunctionDAGDescription userLogin = new FunctionDAGDescription("userLogin");
+        FunctionDescription login = new FunctionDescription("login", MetaTypes.AccessType.READ);
+        login.addStateObjectDescription("password", MetaTypes.AccessType.READ, "user_pwd", "pwd", 0);
+        userLogin.addFunctionDescription("login", login);
+
+        FunctionDAGDescription ratingMovie = new FunctionDAGDescription("ratingMovie");
+        FunctionDescription rate = new FunctionDescription("rate", MetaTypes.AccessType.WRITE);
+        rate.addStateObjectDescription("rate", MetaTypes.AccessType.WRITE, "movie_rating", "rate", 0);
+        ratingMovie.addFunctionDescription("rate", rate);
+
+        FunctionDAGDescription reviewMovie = new FunctionDAGDescription("reviewMovie");
+        FunctionDescription review = new FunctionDescription("review", MetaTypes.AccessType.WRITE);
+        review.addStateObjectDescription("review", MetaTypes.AccessType.WRITE, "movie_review", "review", 0);
+        reviewMovie.addFunctionDescription("review", review);
+
+        this.txnDescriptions.put("userLogin", userLogin);
+        this.txnDescriptions.put("ratingMovie", ratingMovie);
+        this.txnDescriptions.put("reviewMovie", reviewMovie);
+    }
+}

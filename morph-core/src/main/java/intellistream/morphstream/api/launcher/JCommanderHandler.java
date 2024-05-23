@@ -467,7 +467,7 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_size", Integer.parseInt(valueSizeForTables.split(",")[i]));
-            config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(",")[i]);
+            config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(",")[i]);//Field
         }
 
         /* Input configurations */
