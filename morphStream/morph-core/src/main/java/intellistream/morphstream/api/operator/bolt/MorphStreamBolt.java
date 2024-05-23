@@ -82,12 +82,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (serveRemoteVNF) {
             //TODO: Note that here we bypass the transaction encapsulation, because the inputs are stateAccess UDF requests
-            saData = new String[4]; //saID, saType, tableName, tupleID
+            saData = new String[5]; //saID, saType, tableName, tupleID, instanceID
             String[] saTemplate = saTemplates.get(event.getFlag()); //saID, saType, tableName
             saData[0] = saTemplate[0];
             saData[1] = saTemplate[1];
             saData[2] = saTemplate[2];
             saData[3] = event.getTupleID();
+            saData[4] = String.valueOf(event.getInstanceID());
 
         } else {
             saData = new String[]{"0", String.valueOf(event.getSaType()), "testTable", event.getTupleID()}; //Hardcoded for preliminary study

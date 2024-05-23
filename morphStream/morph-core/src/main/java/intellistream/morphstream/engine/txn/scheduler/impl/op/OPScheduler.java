@@ -105,60 +105,23 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             return;
         }
 
-        // set computation complexity
-//        AppConfig.randomDelay();
-
         if (serveRemoteVNF) {
-            //stateAccess: saID, type, writeObjIndex, table name, key's value, field index in table, access type
-            int[] readValues = new int[operation.condition_records.size()]; //<stateObj field value> * N
+            // Simplified saData: saID, saType, tableName, tupleID, instanceID
+            SchemaRecord simReadRecord = operation.d_record.content_.readPreValues(operation.bid);
+            int saID = Integer.parseInt(operation.stateAccess[0]);
+            int instanceID = Integer.parseInt(operation.stateAccess[4]);
+            int key = Integer.parseInt(simReadRecord.GetPrimaryKey());
+            int simReadValue = simReadRecord.getValues().get(1).getInt();
 
-            int saIndex = 0;
-            for (TableRecord tableRecord : operation.condition_records) {
-                int stateFieldIndex = Integer.parseInt(operation.stateAccess[3 + saIndex * 4 + 2]);
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(operation.bid);
-                readValues[saIndex] = (int) readRecord.getValues().get(stateFieldIndex).getDouble();
-                saIndex++;
-            }
-
-            ByteBuffer byteBuffer = ByteBuffer.allocate(readValues.length * 4);
-            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            for (int value : readValues) {
-                byteBuffer.putInt(value);
-            }
-            byte[] readBytes = byteBuffer.array();
-            int isAbort = -1;
-            int udfResult = -1;
-
-            //TODO: Simplify saData into a single write value
-
-            byte[] saResultBytes = NativeInterface._execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), readBytes, readValues.length);
-
-//            long pktId, int saIdx, int key, int value
             try {
-                AdaptiveCCManager.vnfStubs.get(-1).execute_sa_udf(operation.txnReqID, Integer.parseInt(operation.stateAccess[0]), -1, -1); //TODO: Hardcoded
+                AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(operation.txnReqID, saID, key, simReadValue);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
-            isAbort = decodeInt(saResultBytes, 0);
-            udfResult = decodeInt(saResultBytes, 4);
-
-            if (isAbort == 0) { //txn is not aborted
-                if (operation.accessType == CommonMetaTypes.AccessType.WRITE
-                        || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
-                        || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
-                    //Update udf results to writeRecord
-                    SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-                    SchemaRecord tempo_record = new SchemaRecord(srcRecord);
-                    tempo_record.getValues().get(1).setDouble(udfResult);
-                    operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
-                }
-            } else if (isAbort == 1) {
-                operation.stateAccess[1] = "true"; //pass isAbort back to bolt
-                operation.isFailed.set(true);
-            } else {
-                throw new RuntimeException();
-            }
+            SchemaRecord simTempoRecord = new SchemaRecord(simReadRecord);
+            simTempoRecord.getValues().get(1).setInt(simReadValue);
+            operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, simTempoRecord);
 
         } else {
             // Simplified saData: saID, saType, tableName, tupleID

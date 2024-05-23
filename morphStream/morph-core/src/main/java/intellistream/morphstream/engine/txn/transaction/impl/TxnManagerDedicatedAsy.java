@@ -179,7 +179,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     //If read only, set src key and table to read key, and add this single read access into readRecords.
     public boolean Asy_ReadRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        // saData: saID, saType, tableName, tupleID
+        // saData: saID, saType, tableName, tupleID, instanceID
         String tableName = saData[2];
         String tupleID = saData[3];
 
@@ -209,7 +209,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public boolean Asy_WriteRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        // saData: saID, saType, tableName, tupleID
+        // saData: saID, saType, tableName, tupleID, instanceID
         String tableName = saData[2];
         String tupleID = saData[3];
 
