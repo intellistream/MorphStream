@@ -12,10 +12,10 @@ function ResetParameters() {
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
-    driverHost="10.10.10.3"
+    driverHost="10.10.10.19"
     driverPort=5570
-    workerHosts="10.10.10.1,10.10.10.2"
-    workerPorts="5550,5540"
+    workerHosts="10.10.10.20"
+    workerPorts="5550"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
@@ -31,7 +31,7 @@ function ResetParameters() {
     tableNames="user_pwd;user_profile;tweet"
     keyDataTypesForTables="String;String;String"
     valueDataTypesForTables="String;String;String"
-    valueDataSizeForTables="64;128;128"
+    valueDataSizeForTables="16;128;128"
     valueNamesForTables="password;profile;tweet"
     #Input Configurations
     rootFilePath="${RSTDIR}"
@@ -40,7 +40,7 @@ function ResetParameters() {
     tableNameForEvents="user_pwd;user_profile;tweet;tweet"
     keyNumberForEvents="1;1;1;1"
     valueNameForEvents="password;;;tweet"
-    valueSizeForEvents="64;0;0;128"
+    valueSizeForEvents="16;0;0;128"
     eventRatio="15;30;50;5"
     ratioOfMultiPartitionTransactionsForEvents="0;0;0;0"
     stateAccessSkewnessForEvents="0;0;0;0"
