@@ -40,16 +40,16 @@ public class MorphStreamEnv {
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
     public CountDownLatch simVNFLatch;
 
-    public MorphStreamEnv() {
-        try {
-            InetAddress ipAddr = InetAddress.getLocalHost();
-//            stateManagerSocket = new ServerSocket(8080, 50, ipAddr);
-            stateManagerSocket = new ServerSocket(8080);
-            System.out.println("Server started on port " + stateManagerSocket.getLocalPort());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    public MorphStreamEnv() {
+//        try {
+//            InetAddress ipAddr = InetAddress.getLocalHost();
+////            stateManagerSocket = new ServerSocket(8080, 50, ipAddr);
+//            stateManagerSocket = new ServerSocket(8080);
+//            System.out.println("Server started on port " + stateManagerSocket.getLocalPort());
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     public void initializeAdaptiveCCManager() throws IOException {
         if (adaptiveCCManager == null) {
