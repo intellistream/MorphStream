@@ -23,7 +23,7 @@ public class DriverRdmaBufferManager extends RdmaBufferManager {
                 resultBufferMap.put(i, new CircularMessageBuffer(getPd(), length, totalThreads));
             }
         }
-        LOG.info("Pre allocated {} buffers of size {} KB for each worker", totalWorkers, (length / 1024));
+        LOG.info("Pre allocated result buffer of size {} MB for each worker", (length / 1024/1024));
     }
 
     public CircularMessageBuffer getResultBuffer(int workerId) {

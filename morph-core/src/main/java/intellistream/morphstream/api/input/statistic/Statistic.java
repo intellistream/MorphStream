@@ -160,8 +160,8 @@ public class Statistic {
                     totalKeysToWorkerIdMap.put(inputStatistic.workerId, inputStatistic.getNumber(key, tableName));
                 }
 
-                HashMap<Integer, Double> totalEventsToScoreMap = Utils.assignLowScores(totalEventsToWorkerIdMap);//small get high score
-                HashMap<Integer, Double> totalKeysToScoreMap = Utils.assignHighScores(totalKeysToWorkerIdMap);//big get high score
+                HashMap<Integer, Double> totalEventsToScoreMap = Utils.assignHighScoresToSmall(totalEventsToWorkerIdMap);//small get high score
+                HashMap<Integer, Double> totalKeysToScoreMap = Utils.assignLowScoresToSmall(totalKeysToWorkerIdMap);//big get high score
 
                 int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0.5, 0.5);
 

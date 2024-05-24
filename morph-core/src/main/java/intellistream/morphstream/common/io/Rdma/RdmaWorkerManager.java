@@ -68,7 +68,7 @@ public class RdmaWorkerManager implements Serializable {
         //PreAllocate message buffer
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         rdmaBufferManager.perAllocateTableBuffer(MorphStreamEnv.get().configuration().getInt("TableBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
-        String[] tableName = MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(",");
+        String[] tableName = MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(";");
         int[] valueSize = new int[tableName.length];
         for (int i = 0; i < tableName.length; i++) {
             valueSize[i] = MorphStreamEnv.get().configuration().getInt(tableName[i] + "_value_size");

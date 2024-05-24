@@ -37,7 +37,7 @@ public class RdmaDriverManager {
     private final int punctuation_interval;
     private final String[] workerHosts;
     private final String[] workerPorts;
-    private final String[] tableName;
+    private final String[] tableNames;
     private final String driverHost;
     private final int driverPort;
     private final Configuration conf;
@@ -57,7 +57,7 @@ public class RdmaDriverManager {
         this.punctuation_interval = MorphStreamEnv.get().configuration().getInt("totalBatch");
         workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
         workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
-        tableName = MorphStreamEnv.get().configuration().getString("tableNames").split(",");
+        tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(";");
         driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
         rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, isDriver);
@@ -221,16 +221,22 @@ public class RdmaDriverManager {
         }
         int rdmaBufferCapacity = 0;
         List<ByteBuffer> byteBuffers = new ArrayList<>();
-        for (String tableName : tableName) {
+
+        for (String tableName : tableNames) {
             DriverSideOwnershipTable driverSideOwnershipTable = this.statistic.getOwnershipTable(tableName);
-            byteBuffers.add(driverSideOwnershipTable.buffer());
+            ByteBuffer buffer = driverSideOwnershipTable.buffer();
+            buffer.flip();
+            byteBuffers.add(buffer);
+            rdmaBufferCapacity += buffer.capacity();
         }
 
         RdmaBuffer rdmaBuffer = rdmaBufferManager.get(rdmaBufferCapacity);
         ByteBuffer dataBuffer = rdmaBuffer.getByteBuffer();
-        for (ByteBuffer bytebuffer : byteBuffers) {
-            dataBuffer.put(bytebuffer);
+
+        for (ByteBuffer byteBuffer : byteBuffers) {
+            dataBuffer.put(byteBuffer);
         }
+
         dataBuffer.flip();
 
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workId);
@@ -239,13 +245,14 @@ public class RdmaDriverManager {
         long remoteAddress = regionToken.getAddress();
         int rkey = regionToken.getLocalKey();
         CountDownLatch latch = new CountDownLatch(1);
+        int finalRdmaBufferCapacity = rdmaBufferCapacity;
         rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 try {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
-                    regionToken.setAddress(remoteAddress + rdmaBufferCapacity);
+                    regionToken.setAddress(remoteAddress + finalRdmaBufferCapacity);
                     latch.countDown();
                     LOG.info("Driver sends ownership table to worker " + workId);
                 } catch (IOException e) {

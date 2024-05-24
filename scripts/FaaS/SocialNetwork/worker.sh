@@ -6,24 +6,24 @@ function ResetParameters() {
     #Cluster Configurations
     isDriver=0
     workerId=$Id
-    workerNum=2
+    workerNum=1
     tthread=10
-    clientNum=10
-    frontendNum=20
+    clientNum=20
+    frontendNum=50
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
     driverHost="10.10.10.19"
     driverPort=5570
-    workerHosts="10.10.10.2"
-    workerPorts="5540"
+    workerHosts="10.10.10.20"
+    workerPorts="5550"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 50 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=4
-    returnResultPerExecutor=`expr 50 \* $frontendNum / $workerNum / $tthread`
+    returnResultPerExecutor=`expr 50`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
@@ -61,7 +61,7 @@ function ResetParameters() {
 }
 
 function runApplication() {
-  echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
+  echo "-Xms64g -Xmx64g -Xss100M -XX:+PrintGCDetails -Xmn60g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
       --workerId $workerId \
       --workerNum $workerNum \
@@ -88,7 +88,7 @@ function runApplication() {
       --tableNames $tableNames \
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
-      --valueDataSizesForTables $valueDataSizesForTables \
+      --valueDataSizeForTables $valueDataSizesForTables \
       --valueNamesForTables $valueNamesForTables \
       --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
@@ -113,7 +113,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
+  java -Xms64g -Xmx64g -Xss100M -XX:+PrintGCDetails -Xmn60g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
       --workerId $workerId \
       --workerNum $workerNum \
@@ -140,7 +140,7 @@ function runApplication() {
       --tableNames $tableNames \
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
-      --valueDataSizesForTables $valueDataSizesForTables \
+      --valueDataSizeForTables $valueDataSizesForTables \
       --valueNamesForTables $valueNamesForTables \
       --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
@@ -148,6 +148,7 @@ function runApplication() {
       --tableNameForEvents $tableNameForEvents \
       --keyNumberForEvents $keyNumberForEvents \
       --valueNameForEvents $valueNameForEvents \
+      --valueSizeForEvents $valueSizeForEvents \
       --eventRatio $eventRatio \
       --ratioOfMultiPartitionTransactionsForEvents $ratioOfMultiPartitionTransactionsForEvents \
       --stateAccessSkewnessForEvents $stateAccessSkewnessForEvents \

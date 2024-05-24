@@ -32,7 +32,7 @@ public class WorkerSideOwnershipTable {
         workerIdToTotalKeys.put(workerId, totalKeys);
     }
     public void initValueList() {
-        valueList = new String[totalWorker];
+        valueList = new String[keysForThisWorker.size()];
     }
     public void putEachOwnership(String key, int workerId, int index) {
         ownershipTable.put(key, new Tuple2<>(workerId, index));

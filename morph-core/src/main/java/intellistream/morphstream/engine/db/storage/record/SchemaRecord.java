@@ -4,6 +4,7 @@ import intellistream.morphstream.engine.db.storage.table.RecordSchema;
 import intellistream.morphstream.engine.db.storage.table.RowID;
 import intellistream.morphstream.engine.db.storage.datatype.DataBox;
 import intellistream.morphstream.engine.txn.utils.Utils;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class SchemaRecord {
     public boolean is_visible_;
     public RecordSchema schema_ptr_;
     private RowID id;
+    @Getter
     private volatile List<DataBox> values;//TODO: Note that, I'm not following the pointer based implementation in Cavalia (C++ based). This may or may not be suitable...
 
     public SchemaRecord(DataBox values) {
@@ -31,10 +33,6 @@ public class SchemaRecord {
         this.id = _record_ptr.id;
         this.values = Utils.memcpy(_record_ptr.values);//memcpy( * data, data_ptr_, data_size_);
         single_value = null;
-    }
-
-    public List<DataBox> getValues() {
-        return this.values;
     }
 
     public DataBox getValue() {

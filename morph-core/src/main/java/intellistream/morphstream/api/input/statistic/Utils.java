@@ -3,7 +3,7 @@ package intellistream.morphstream.api.input.statistic;
 import java.util.*;
 
 public class Utils {
-    public static HashMap<Integer, Double> assignLowScores(HashMap<Integer, Integer> map) {
+    public static HashMap<Integer, Double> assignLowScoresToSmall(HashMap<Integer, Integer> map) {//small -> small score
         // 将 Map 的键值对转换为 List，以便排序
         List<Map.Entry<Integer, Integer>> entryList = new ArrayList<>(map.entrySet());
 
@@ -16,6 +16,13 @@ public class Utils {
 
         // 创建用于存储键和分值的 Map
         HashMap<Integer, Double> sortedKeysAndValues = new LinkedHashMap<>();
+        if (hasEqualMinMax(entryList)) {
+            // 如果最大值和最小值相等，则将所有键的分值设置为 0.0
+            for (Map.Entry<Integer, Integer> entry : entryList) {
+                sortedKeysAndValues.put(entry.getKey(), 1.0);
+            }
+            return sortedKeysAndValues;
+        }
 
         // 计算分数并存储键和分值
         for (Map.Entry<Integer, Integer> entry : entryList) {
@@ -26,7 +33,7 @@ public class Utils {
 
         return sortedKeysAndValues;
     }
-    public static HashMap<Integer, Double> assignHighScores(HashMap<Integer, Integer> map) {
+    public static HashMap<Integer, Double> assignHighScoresToSmall(HashMap<Integer, Integer> map) {//small -> big score
         // 将 Map 的键值对转换为 List，以便排序
         List<Map.Entry<Integer, Integer>> entryList = new ArrayList<>(map.entrySet());
 
@@ -35,7 +42,13 @@ public class Utils {
 
         // 创建用于存储键和分值的 Map
         HashMap<Integer, Double> sortedKeysAndValues = new LinkedHashMap<>();
-
+        if (hasEqualMinMax(entryList)) {
+            // 如果最大值和最小值相等，则将所有键的分值设置为 0.0
+            for (Map.Entry<Integer, Integer> entry : entryList) {
+                sortedKeysAndValues.put(entry.getKey(), 1.0);
+            }
+            return sortedKeysAndValues;
+        }
         // 计算线性映射的斜率
         int minValue = entryList.get(0).getValue();
         int maxValue = entryList.get(entryList.size() - 1).getValue();
@@ -89,11 +102,10 @@ public class Utils {
         HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
 
         totalEventsToWorkerIdMap.put(3, 3);//2.0  //0.0
-        totalEventsToWorkerIdMap.put(1, 1);//2.0 //0.5
-        totalEventsToWorkerIdMap.put(2, 2);//1.0 //1.0
-
+        totalEventsToWorkerIdMap.put(2, 3);//2.0  //0.0
+        totalEventsToWorkerIdMap.put(1, 1);//2.0  //0.0
         // 调用排序方法
-        Map<Integer, Double> sortedKeysAndValues = assignLowScores(totalEventsToWorkerIdMap);
+        Map<Integer, Double> sortedKeysAndValues = assignLowScoresToSmall(totalEventsToWorkerIdMap);
 
         // 打印排序后的键和分值
         for (Map.Entry<Integer, Double> entry : sortedKeysAndValues.entrySet()) {

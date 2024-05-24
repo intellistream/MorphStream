@@ -13,7 +13,7 @@ public class OperationChain implements Comparable<OperationChain> {
     private final String tableName;
     @Getter
     private final String primaryKey;
-    @Setter @Getter
+    @Getter
     private Object tempValue;
     @Setter @Getter
     private boolean isLocalState = false;
@@ -54,5 +54,11 @@ public class OperationChain implements Comparable<OperationChain> {
             return 0;
         else
             return -1;
+    }
+    public void setTempValue(Object tempValue) {
+        if (tempValue == null) {
+            throw new NullPointerException("tempValue is null");
+        }
+        this.tempValue = tempValue;
     }
 }

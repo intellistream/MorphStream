@@ -28,16 +28,24 @@ public class SocialNetwork extends Client {
                 break;
             }
             case "userProfile": {
-                function.udfResult = function.getStateObject("userProfile").getStringValue("profile");
+                function.udfResult = function.getStateObject("profile").getStringValue("profile");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
                 break;
             }
             case "getTimeLine": {
                 function.udfResult = function.getStateObject("tweet").getStringValue("tweet");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
                 break;
             }
             case "postTweet": {
-                StateObject tweet = function.getStateObject("tweet");
-                function.udfResult = function.getPara("newTweet");
+                function.udfResult = function.getPara("tweet");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
                 break;
             }
         }

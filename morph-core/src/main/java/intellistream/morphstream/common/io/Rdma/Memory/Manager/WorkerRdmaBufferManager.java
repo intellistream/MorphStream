@@ -26,19 +26,19 @@ public class WorkerRdmaBufferManager extends RdmaBufferManager {
         if (circularMessageBuffer == null) {
             circularMessageBuffer = new CircularMessageBuffer(getPd(), length, totalThreads);
         }
-        LOG.info("Pre allocated {} buffers of size {} KB for each worker", totalThreads, (length / 1024));
+        LOG.info("Pre allocated request buffer of size {} MB for driver", (length / 1024/1024));
     }
     public void perAllocateTableBuffer(int length, int totalThreads) throws Exception {
         if (tableBuffer == null) {
             tableBuffer = new OwnershipTableBuffer(getPd(), length, totalThreads);
         }
-        LOG.info("Pre allocated {} buffers of size {} KB for each worker", totalThreads, (length / 1024));
+        LOG.info("Pre allocated ownership table of size {} MB for driver", (length / 1024/1024));
     }
     public void perAllocateCacheBuffer(int workId, int length, String[] tableNames, int[] valueSize) throws Exception {
         if (cacheBuffer == null) {
             cacheBuffer = new CacheBuffer(workId, getPd(), length, tableNames, valueSize);
         }
-        LOG.info("Pre allocated {} buffers of size {} KB for each worker", tableNames.length, (length / 1024));
+        LOG.info("Pre allocated global data table of size {} MB for workers", (length / 1024/1024));
     }
 
     public void perAllocateRemoteOperationBuffer(int totalWorkers, int length, int totalThreads) throws Exception {
@@ -47,7 +47,7 @@ public class WorkerRdmaBufferManager extends RdmaBufferManager {
                 remoteOperationsMap.put(i, new CircularMessageBuffer(getPd(), length, totalThreads));
             }
         }
-        LOG.info("Pre allocated {} buffers of size {} KB for each worker", totalWorkers, (length / 1024));
+        LOG.info("Pre allocated remote operation buffers of size {} MB for each worker", (length / 1024/1024));
     }
     public CircularMessageBuffer getRemoteOperationBuffer(int workerId) {
         return remoteOperationsMap.get(workerId);

@@ -31,19 +31,17 @@ public class RemoteStorageManager extends StorageManager {
     public int totalWorker;
     public int totalThread;
     public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
-    public final ConcurrentHashMap<String, WorkerSideOwnershipTable> workerSideOwnershipTables = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<String, WorkerSideOwnershipTable> workerSideOwnershipTables = new ConcurrentHashMap<>();//tableName -> WorkerSideOwnershipTable
     public RemoteStorageManager(CacheBuffer cacheBuffer, int totalWorker, int totalThread) {
         this.cacheBuffer = cacheBuffer;
         this.tableNames = this.cacheBuffer.getTableNames();
         this.totalWorker = totalWorker;
         this.totalThread = totalThread;
         this.tableNameToLength = this.cacheBuffer.getTableNameToLength();
-        for (int i = 0; i < totalWorker; i++) {
-            workerSideOwnershipTables.put(String.valueOf(i), new WorkerSideOwnershipTable(totalWorker));
-        }
         for (String tableName: tableNames) {
             int length = this.cacheBuffer.getTableNameToLength().get(tableName);
             this.tempValueForTables.put(tableName, padStringToLength(tableName, length));
+            workerSideOwnershipTables.put(tableName, new WorkerSideOwnershipTable(totalWorker));
         }
     }
 

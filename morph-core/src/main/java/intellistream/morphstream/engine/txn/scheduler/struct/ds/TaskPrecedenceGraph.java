@@ -12,9 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TaskPrecedenceGraph<Context extends DSContext> {
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
-    private final int delta;//range of each partition. depends on the number of thread in the stage.
+    private final ConcurrentHashMap<String, Integer> tableNameToDelta = new ConcurrentHashMap<>();//range of each partition. depends on the number of thread in the stage.
     private final int totalThreads;
-    private final int numItems;
+    private final ConcurrentHashMap<String, Integer> tableNameToNumItems = new ConcurrentHashMap<>();
     @Getter
     private final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;//Exactly which OCs are executed by each thread.
     @Getter
@@ -24,12 +24,14 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
 
     public TaskPrecedenceGraph(int totalThreads, int numItems) {
         this.totalThreads = totalThreads;
-        this.numItems = numItems;
-        this.delta = this.numItems / this.totalThreads;
         this.threadToOCs = new ConcurrentHashMap<>();
         this.tableNameToOCs = new ConcurrentHashMap<>();
         this.threadToContext = new ConcurrentHashMap<>();
-        tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(",");
+        tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(";");
+        for (String tableName : tableNames) {
+            tableNameToNumItems.put(tableName, MorphStreamEnv.get().configuration().getInt(tableName + "_num_items", 1000000));
+            tableNameToDelta.put(tableName, tableNameToNumItems.get(tableName) / totalThreads);
+        }
     }
     public void initTPG() {
         for (String tableName : tableNames) {
@@ -38,23 +40,24 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
     }
     public void setOCs(Context context) {
         ArrayDeque<OperationChain> ocs = new ArrayDeque<>();
-        int left_bound = context.thisThreadId * delta;
-        int right_bound;
-        if (context.thisThreadId == totalThreads - 1) {//last executor need to handle left-over
-            right_bound = numItems;
-        } else {
-            right_bound = (context.thisThreadId + 1) * delta;
-        }
         resetOCs(context);
         String _key;
-        for (int key = left_bound; key < right_bound; key++) {
-            _key = String.valueOf(key);
-            for (String tableName : tableNames) {
+        for (String tableName : tableNames) {
+            int left_bound = context.thisThreadId * tableNameToDelta.get(tableName);
+            int right_bound;
+            if (context.thisThreadId == totalThreads - 1) {//last executor need to handle left-over
+                right_bound = tableNameToNumItems.get(tableName);
+            } else {
+                right_bound = (context.thisThreadId + 1) * tableNameToDelta.get(tableName);
+            }
+            for (int key = left_bound; key < right_bound; key++) {
+                _key = String.valueOf(key);
                 OperationChain oc = context.createTask(tableName, _key);
                 tableNameToOCs.get(tableName).threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, oc);
                 ocs.add(oc);
             }
         }
+
         threadToOCs.put(context.thisThreadId, ocs);//Init task placing
     }
     public void setupOperations(HashMap<String, Operation> operationHashMap) {
@@ -96,7 +99,7 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
         return tableNameToOCs.get(tableName);
     }
     public OperationChain getOC(String tableName, String pKey) {
-        int threadId = Integer.parseInt(pKey) / delta;
+        int threadId = Integer.parseInt(pKey) / tableNameToDelta.get(tableName);
         ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
         return holder.computeIfAbsent(pKey, s -> threadToContext.get(threadId).createTask(tableName, pKey));
     }

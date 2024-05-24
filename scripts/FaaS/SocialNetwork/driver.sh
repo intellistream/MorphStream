@@ -5,10 +5,10 @@ function ResetParameters() {
     #Cluster Configurations
     isDriver=1
     workerId=0
-    workerNum=2
+    workerNum=1
     tthread=10
-    clientNum=10
-    frontendNum=20
+    clientNum=20
+    frontendNum=50
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
@@ -22,7 +22,7 @@ function ResetParameters() {
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
     sendMessagePerFrontend=`expr 50 \* $tthread \* $workerNum / $frontendNum`
     totalBatch=4
-    returnResultPerExecutor=`expr 50 \* $frontendNum / $workerNum / $tthread`
+    returnResultPerExecutor=`expr 50`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1

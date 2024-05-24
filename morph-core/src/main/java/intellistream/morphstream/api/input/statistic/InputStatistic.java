@@ -58,7 +58,7 @@ public class InputStatistic {
         data[workerId][6] = String.format("%.2f", withOwnership * 100.0 / totalKeys);
         data[workerId][7] = String.format("%.2f", withoutOwnership * 100.0 / totalKeys);
     }
-    private class keyStatistic extends ConcurrentHashMap<String, Integer> {
+    private static class keyStatistic extends ConcurrentHashMap<String, Integer> {
         public keyStatistic() {
             super();
         }
