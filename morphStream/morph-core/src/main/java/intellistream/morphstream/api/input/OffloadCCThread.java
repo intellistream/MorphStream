@@ -10,7 +10,6 @@ import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -71,7 +70,6 @@ public class OffloadCCThread implements Runnable {
     public void run() {
 
         if (serveRemoteVNF) {
-            OutputStream out;
             while (!Thread.currentThread().isInterrupted()) {
                 OffloadData offloadData;
                 try {

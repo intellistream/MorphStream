@@ -14,21 +14,25 @@ public class VNFCtlStubImpl {
     private static final int numSpouts = MorphStreamEnv.get().configuration().getInt("tthread");
 
     /** Offloading CC, TPG CC, submit txn req to executor */
-    static public void onTxnReqMessage(int instanceID, TxnReqMessage msg) { //TODO: Some hardcoded values (saType, txnIndex)
+    static public void onTxnReqMessage(int instanceID, TxnReqMessage msg) {
         if (msg.getCc().getNumber() == 0) { // Partition
             PartitionCCThread.submitPartitionRequest(
                     new PartitionData(System.nanoTime(), msg.getId(), instanceID, msg.getKey(), -1));
+            System.out.println("Server received Partition_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 2) { // Offloading
+            int saType = MorphStreamEnv.get().getSaTypeMap().get(msg.getSaIdx());
             OffloadCCThread.submitOffloadReq(
-                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1));
+                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, saType));
+            System.out.println("Server received Offloading_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 3) { // TPG
             tpgQueues.get(tpgReqCount % numSpouts).offer(
                     new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0));
+            System.out.println("Server received TPG_Req from client: " + msg.getId());
             tpgReqCount++;
         }
-        System.out.println("Server received TxnReq from client: " + msg.getId());
+
     }
 
     /** VNF initialization */
@@ -39,7 +43,7 @@ public class VNFCtlStubImpl {
 
     /** Monitor pattern report */
     static public void onMonitorReportMessage(int instanceID, MonitorReportMessage msg) {
-        MonitorThread.submitPatternData(new PatternData(System.nanoTime(), instanceID, msg.getKey(), msg.getIsWrite())); //TODO: Hardcoded (tupleID and isWrite)
+        MonitorThread.submitPatternData(new PatternData(System.nanoTime(), instanceID, msg.getKey(), msg.getIsWrite()));
         System.out.println("Server received MonitorReport from client: " + msg.getCcValue());
     }
 
@@ -51,6 +55,6 @@ public class VNFCtlStubImpl {
     /** Cache CC, submit state sync to Cache CC executor */
     static public void onPushDSMessage(int instanceID, setDSMessage msg) {
         CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
-        System.out.println("Server received PushDS from client: " + msg.getValue());
+        System.out.println("Server received Cache_Req from client: " + msg.getValue());
     }
 }

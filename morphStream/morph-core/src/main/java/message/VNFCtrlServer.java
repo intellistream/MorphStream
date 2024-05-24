@@ -13,6 +13,7 @@ public class VNFCtrlServer {
         ServerSocket serverSocket = new ServerSocket(port);
         VNFCtlStub[] vnfStubs = new VNFCtlStub[parallelism];
         for (int i = 0; i < parallelism; i++){
+            System.out.println("Waiting for connection " + i);
             Socket socketConnection = serverSocket.accept();
             System.out.println("Server accepted connection from: " + socketConnection.getInetAddress());
 
