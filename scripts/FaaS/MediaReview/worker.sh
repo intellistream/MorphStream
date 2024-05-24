@@ -1,10 +1,11 @@
 #!/bin/bash
 source ../../dir.sh || exit
-DAGName=$1
+Id=$1
+DAGName=$2
 function ResetParameters() {
     #Cluster Configurations
-    isDriver=1
-    workerId=0
+    isDriver=0
+    workerId=$Id
     workerNum=1
     tthread=10
     clientNum=20
@@ -26,25 +27,25 @@ function ResetParameters() {
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
-    numberItemsForTables="10000;10000;100000"
+    numberItemsForTables="10000;100000;100000"
     NUM_ITEMS=100000
-    tableNames="user_pwd;user_profile;tweet"
+    tableNames="user_pwd;movie_rating;movie_review"
     keyDataTypesForTables="String;String;String"
     valueDataTypesForTables="String;String;String"
-    valueDataSizeForTables="16;128;128"
-    valueNamesForTables="password;profile;tweet"
+    valueDataSizeForTables="16;16;256"
+    valueNamesForTables="password;rate;review"
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
-    eventTypes="userLogin;userProfile;getTimeLine;postTweet"
-    tableNameForEvents="user_pwd;user_profile;tweet;tweet"
-    keyNumberForEvents="1;1;1;1"
-    valueNameForEvents="password;;;tweet"
-    valueSizeForEvents="16;0;0;128"
-    eventRatio="15;30;50;5"
-    ratioOfMultiPartitionTransactionsForEvents="0;0;0;0"
-    stateAccessSkewnessForEvents="0;0;0;0"
-    abortRatioForEvents="0;0;0;0"
+    eventTypes="userLogin;ratingMovie;reviewMovie"
+    tableNameForEvents="user_pwd;movie_rating;movie_review"
+    keyNumberForEvents="1;1;1"
+    valueNameForEvents="password;rate;review"
+    valueSizeForEvents="16;16,256"
+    eventRatio="20;40;40"
+    ratioOfMultiPartitionTransactionsForEvents="0;0;0"
+    stateAccessSkewnessForEvents="0;0;0"
+    abortRatioForEvents="0;0;0"
     isCyclic=0
     isDynamic=0
     workloadType="default,unchanging,unchanging,unchanging"

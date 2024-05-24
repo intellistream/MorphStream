@@ -9,7 +9,7 @@ function ResetParameters() {
     workerNum=1
     tthread=10
     clientNum=20
-    frontendNum=50
+    frontendNum=10
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1

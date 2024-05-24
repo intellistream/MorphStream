@@ -124,7 +124,7 @@ public class RemoteStorageManager extends StorageManager {
         keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 2);
         int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
-            return rdmaWorkerManager.syncReadRemoteCache(workerId, keyIndex, tableIndex);
+            return rdmaWorkerManager.syncReadRemoteCache(workerId, keyIndex, tableIndex, this.tableNameToLength.get(tableName) + 2);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

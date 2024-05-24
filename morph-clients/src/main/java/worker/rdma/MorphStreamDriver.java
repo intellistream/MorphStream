@@ -93,8 +93,8 @@ public class MorphStreamDriver extends Thread {
             boolean allFinished = false;
             while (!allFinished) {
                 allFinished = true;
-                for (int i = 0; i < frontends.size(); i++) {
-                    if (frontends.get(i).isRunning) {
+                for (MorphStreamFrontend morphStreamFrontend : frontends) {
+                    if (morphStreamFrontend.isRunning) {
                         allFinished = false;
                         break;
                     }

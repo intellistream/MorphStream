@@ -246,6 +246,8 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     } else {
                         this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (String) udfResult);
                     }
+                } else if (operation.accessType == CommonMetaTypes.AccessType.READ && !oc.isLocalState()) {
+                    this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, stringDataBox.getString());
                 }
                 operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             } else {

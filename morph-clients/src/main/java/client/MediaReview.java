@@ -28,17 +28,11 @@ public class MediaReview extends Client {
                 break;
             }
             case "ratingMovie": {
-                StateObject movieState = function.getStateObject("movieState");
-                double rating = Double.parseDouble(movieState.getStringValue("rating"));
-                double inputRating = Double.parseDouble((String) function.getPara("rating"));
-                function.udfResult = (rating + inputRating) / 2;
+                function.udfResult = function.getPara("rate");
                 break;
             }
             case "reviewMovie": {
-                StateObject movieState = function.getStateObject("movieState");
-                String review = movieState.getStringValue("review");
-                String inputReview = (String) function.getPara("review");
-                function.udfResult = review + inputReview;
+                function.udfResult = function.getPara("review");
                 break;
             }
         }
@@ -54,17 +48,20 @@ public class MediaReview extends Client {
     public void defineFunction() {
         FunctionDAGDescription userLogin = new FunctionDAGDescription("userLogin");
         FunctionDescription login = new FunctionDescription("login", MetaTypes.AccessType.READ);
-        login.addStateObjectDescription("password", MetaTypes.AccessType.READ, "user_pwd", "pwd", 0);
+        login.addStateObjectDescription("password", MetaTypes.AccessType.READ, "user_pwd", "password", 0);
+        login.addParaName("password");
         userLogin.addFunctionDescription("login", login);
 
         FunctionDAGDescription ratingMovie = new FunctionDAGDescription("ratingMovie");
         FunctionDescription rate = new FunctionDescription("rate", MetaTypes.AccessType.WRITE);
         rate.addStateObjectDescription("rate", MetaTypes.AccessType.WRITE, "movie_rating", "rate", 0);
+        rate.addParaName("rate");
         ratingMovie.addFunctionDescription("rate", rate);
 
         FunctionDAGDescription reviewMovie = new FunctionDAGDescription("reviewMovie");
         FunctionDescription review = new FunctionDescription("review", MetaTypes.AccessType.WRITE);
         review.addStateObjectDescription("review", MetaTypes.AccessType.WRITE, "movie_review", "review", 0);
+        review.addParaName("review");
         reviewMovie.addFunctionDescription("review", review);
 
         this.txnDescriptions.put("userLogin", userLogin);

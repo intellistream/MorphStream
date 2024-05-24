@@ -31,7 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RdmaWorkerManager implements Serializable {
@@ -252,14 +251,14 @@ public class RdmaWorkerManager implements Serializable {
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
         latch.await();
     }
-    public String syncReadRemoteCache(int workerId, int keyIndex, int tableIndex) throws Exception {
+    public String syncReadRemoteCache(int workerId, int keyIndex, int tableIndex, int length) throws Exception {
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workerId);
         RegionToken regionToken = workerRegionTokenMap.get(workerId).getRegionTokens().get(tableIndex);
 
         long remoteAddress = regionToken.getAddress() + keyIndex;
         int rkey = regionToken.getLocalKey();
 
-        RdmaBuffer readData = rdmaBufferManager.get(6);
+        RdmaBuffer readData = rdmaBufferManager.get(length);
         ByteBuffer dataBuffer = readData.getByteBuffer();
 
         AtomicReference<String> result = new AtomicReference<>("false");
@@ -282,7 +281,7 @@ public class RdmaWorkerManager implements Serializable {
                 rdmaBufferManager.put(readData);
                 latch.countDown();
             }
-        }, readData.getAddress(), readData.getLkey(), new int[]{6}, new long[]{remoteAddress}, new int[]{rkey});
+        }, readData.getAddress(), readData.getLkey(), new int[]{length}, new long[]{remoteAddress}, new int[]{rkey});
         latch.await();
         return result.get();
     }
@@ -293,7 +292,7 @@ public class RdmaWorkerManager implements Serializable {
         long remoteAddress = regionToken.getAddress() + keyIndex;
         int rkey = regionToken.getLocalKey();
 
-        RdmaBuffer readData = rdmaBufferManager.get(6);
+        RdmaBuffer readData = rdmaBufferManager.get(value.getBytes(StandardCharsets.UTF_8).length + 2);
         ByteBuffer dataBuffer = readData.getByteBuffer();
 
         dataBuffer.putShort((short) workerId);
