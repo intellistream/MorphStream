@@ -71,6 +71,8 @@ message MessageFromVNFInst {
 
 message MonitorReportMessage {
 	CC cc = 1;
+	int32 key = 2;
+	bool isWrite = 3;
 }
 
 message SFCMessage {

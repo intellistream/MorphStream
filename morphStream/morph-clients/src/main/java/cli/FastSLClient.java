@@ -79,7 +79,7 @@ public class FastSLClient extends Client {
                     }
                 }
             }
-            System.out.println("Deserialized data: " + vnfJsonClass.getApps().get(0).getName());
+            System.out.println("Deserialized SFC Json data: " + vnfJsonClass.getApps().get(0).getName());
 
             vnfClient.startAdaptiveCC(); // Start Partition_CC, Cache_CC, Offload_CC, and Monitor threads
             vnfClient.start(); // Start TPG_CC threads, at this stage all manager threads are ready to process requests

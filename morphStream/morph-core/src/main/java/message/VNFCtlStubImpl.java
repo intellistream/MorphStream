@@ -28,28 +28,29 @@ public class VNFCtlStubImpl {
                     new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0));
             tpgReqCount++;
         }
-        System.out.println("Received TxnReq from client: " + msg.getId());
+        System.out.println("Server received TxnReq from client: " + msg.getId());
     }
 
     /** VNF initialization */
     static public void onSFCJsonMessage(int instanceID, SFCMessage msg) {
-        System.out.println("Received SFCJson from client: " + msg.getSFCJson());
+        MorphStreamEnv.get().vnfJSON = msg.getSFCJson();
+        System.out.println("Server received SFCJson from client: " + msg.getSFCJson());
     }
 
     /** Monitor pattern report */
     static public void onMonitorReportMessage(int instanceID, MonitorReportMessage msg) {
-        MonitorThread.submitPatternData(new PatternData(System.nanoTime(), instanceID, -1, true)); //TODO: Hardcoded (tupleID and isWrite)
-        System.out.println("Received MonitorReport from client: " + msg.getCcValue());
+        MonitorThread.submitPatternData(new PatternData(System.nanoTime(), instanceID, msg.getKey(), msg.getIsWrite())); //TODO: Hardcoded (tupleID and isWrite)
+        System.out.println("Server received MonitorReport from client: " + msg.getCcValue());
     }
 
     /** Currently no use */
     static public void onPushCCMessage(int instanceID, setCCMessage msg) {
-        System.out.println("Received PushCC from client: " + msg.getCcValue());
+        System.out.println("Server received PushCC from client: " + msg.getCcValue());
     }
 
     /** Cache CC, submit state sync to Cache CC executor */
     static public void onPushDSMessage(int instanceID, setDSMessage msg) {
         CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
-        System.out.println("Received PushDS from client: " + msg.getValue());
+        System.out.println("Server received PushDS from client: " + msg.getValue());
     }
 }
