@@ -10,6 +10,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class AdaptiveCCManager {
+    private Thread monitorThread;
+    private Thread partitionCCThread;
+    private Thread cacheCCThread;
+    private Thread offloadCCThread;
     private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<PartitionData> partitionQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<CacheData> cacheQueue = new LinkedBlockingQueue<>();
@@ -28,6 +32,10 @@ public class AdaptiveCCManager {
 
 
     public AdaptiveCCManager() {
+        monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
+        partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
+        cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
+        offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, MorphStreamEnv.get().getSaTypeMap(), MorphStreamEnv.get().getSaTableNameMap()));
         int tpgThreadNum = MorphStreamEnv.get().configuration().getInt("tthread"); //Number of thread for TPG_CC
         for (int i = 0; i < tpgThreadNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
@@ -40,11 +48,6 @@ public class AdaptiveCCManager {
     }
 
     public void startCC123_Monitor() {
-        Thread monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
-        Thread partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
-        Thread cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
-        Thread offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, MorphStreamEnv.get().getSaTypeMap(), MorphStreamEnv.get().getSaTableNameMap()));
-
         monitorThread.start();
         partitionCCThread.start();
         cacheCCThread.start();
