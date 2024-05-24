@@ -21,9 +21,8 @@ public class VNFCtlStubImpl {
             System.out.println("Server received Partition_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 2) { // Offloading
-            int saType = MorphStreamEnv.get().getSaTypeMap().get(msg.getSaIdx());
             OffloadCCThread.submitOffloadReq(
-                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, saType));
+                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1));
             System.out.println("Server received Offloading_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 3) { // TPG
