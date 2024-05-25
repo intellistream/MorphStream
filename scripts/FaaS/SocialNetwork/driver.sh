@@ -4,6 +4,7 @@ DAGName=$1
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
+    isDatabase=0
     workerId=0
     workerNum=1
     tthread=10
@@ -14,8 +15,10 @@ function ResetParameters() {
     isRDMA=1
     driverHost="10.10.10.19"
     driverPort=5570
-    workerHosts="10.10.10.20"
-    workerPorts="5550"
+    databaseHost="10.10.10.19"
+    databasePort=5580
+    workerHosts="10.10.10.20,10.10.10.24"
+    workerPorts="5550,5540"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
@@ -62,6 +65,7 @@ function ResetParameters() {
 function runApplication() {
   echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
+      --isDatabase $isDatabase \
       --workerId $workerId \
       --workerNum $workerNum \
       --tthread $tthread \
@@ -71,6 +75,8 @@ function runApplication() {
       --isRDMA $isRDMA \
       --driverHost $driverHost \
       --driverPort $driverPort \
+      --databaseHost $databaseHost \
+      --databasePort $databasePort \
       --workerHosts $workerHosts \
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
@@ -114,6 +120,7 @@ function runApplication() {
             "
   java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
+      --isDatabase $isDatabase \
       --workerId $workerId \
       --workerNum $workerNum \
       --tthread $tthread \
