@@ -222,6 +222,8 @@ public class JCommanderHandler {
     //Cluster configuration
     @Parameter(names = {"--isDriver"}, description = "isDriver")
     public int isDriver = 1;//
+    @Parameter(names = {"--isDatabase"}, description = "isDatabase")
+    public int isDatabase = 0;//
     @Parameter(names = {"--workerId"}, description = "workerId")
     public int workerId = 0;//
     @Parameter(names = {"--workerNum"}, description = "total workerNum in the cluster")
@@ -242,6 +244,10 @@ public class JCommanderHandler {
     public String driverHost = "localhost";
     @Parameter(names = {"--driverPort"}, description = "morphstream driver port")
     public int driverPort = 5570;
+    @Parameter(names = {"--databaseHost"}, description = "morphstream database host")
+    public String databaseHost = "localhost";
+    @Parameter(names = {"--databasePort"}, description = "morphstream database port")
+    public int databasePort = 5570;
     @Parameter(names = {"--workerHosts"}, description = "morphstream worker hosts")
     public String workerHosts = "localhost,localhost,localhost";
     @Parameter(names = {"--workerPorts"}, description = "morphstream worker ports")
@@ -331,16 +337,25 @@ public class JCommanderHandler {
         } else {
             config.put("isDriver", false);
         }
+        if (isDatabase == 1) {
+            config.put("isDatabase", true);
+        } else {
+            config.put("isDatabase", false);
+        }
         if (isRDMA == 1) {
             config.put("isRDMA", true);
             config.put("morphstream.rdma.driverHost", driverHost);
             config.put("morphstream.rdma.driverPort", driverPort);
+            config.put("morphstream.rdma.databaseHost", databaseHost);
+            config.put("morphstream.rdma.databasePort", databasePort);
             config.put("morphstream.rdma.workerPorts", workerPorts);
             config.put("morphstream.rdma.workerHosts", workerHosts);
         } else {
             config.put("isRDMA", false);
             config.put("morphstream.socket.driverHost", driverHost);
             config.put("morphstream.socket.driverPort", driverPort);
+            config.put("morphstream.rdma.databaseHost", databaseHost);
+            config.put("morphstream.rdma.databasePort", databasePort);
             config.put("morphstream.socket.workerPorts", workerPorts);
             config.put("morphstream.socket.workerHosts", workerHosts);
         }

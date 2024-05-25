@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *  OwnershipTable for each key
@@ -22,6 +23,8 @@ public class WorkerSideOwnershipTable {
     @Getter
     protected final List<String> keysForThisWorker = new ArrayList<>();
     public String[] valueList;
+    @Getter
+    public AtomicInteger totalKeys = new AtomicInteger(0);
     public WorkerSideOwnershipTable(int totalWorker) {
         this.totalWorker = totalWorker;
     }
@@ -45,10 +48,14 @@ public class WorkerSideOwnershipTable {
     public boolean isWorkerOwnKey(int workerId, String key) {
         return ownershipTable.get(key)._1 == workerId;
     }
+    public boolean isFinishLoadValue() {
+        return totalKeys.get() == keysForThisWorker.size();
+    }
     public void clean() {
         ownershipTable.clear();
         keysForThisWorker.clear();
         valueList = null;
         ownershipTableBuffer = null;
+        totalKeys.set(0);
     }
 }

@@ -1,6 +1,5 @@
 package intellistream.morphstream.common.io.Rdma;
 
-import com.nimbusds.jose.util.StandardCharset;
 import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.ResultBatch;
@@ -13,10 +12,7 @@ import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CircularMessa
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.OwnershipTableBuffer;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
-import intellistream.morphstream.common.io.Rdma.Msg.DWRegionTokenGroup;
-import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
-import intellistream.morphstream.common.io.Rdma.Msg.WDRegionTokenGroup;
-import intellistream.morphstream.common.io.Rdma.Msg.WWRegionTokenGroup;
+import intellistream.morphstream.common.io.Rdma.Msg.*;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
@@ -31,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RdmaWorkerManager implements Serializable {
@@ -44,10 +41,14 @@ public class RdmaWorkerManager implements Serializable {
     private final String[] workerPorts;
     private final String driverHost;
     private final int driverPort;
+    private final String databaseHost;
+    private final int databasePort;
     private final Configuration conf;
     private final WorkerRdmaBufferManager rdmaBufferManager;
     private RdmaChannel driverRdmaChannel;
+    private RdmaChannel databaseRdmaChannel;
     private DWRegionTokenGroup dwRegionTokenGroup = new DWRegionTokenGroup();// Driver's region token
+    private DBWRegionTokenGroup dbwRegionTokenGroup = new DBWRegionTokenGroup();// Database's region token
     private ResultBatch resultBatch;// Results, send to driver
     private ConcurrentHashMap<Integer, RemoteOperationBatch> remoteOperationBatchMap = new ConcurrentHashMap<>(); //Remote operations, send to workers
     private ConcurrentHashMap<Integer, RdmaChannel> workerRdmaChannelMap = new ConcurrentHashMap<>();//workerId -> RdmaChannel
@@ -62,7 +63,9 @@ public class RdmaWorkerManager implements Serializable {
         managerId = MorphStreamEnv.get().configuration().getInt("workerId", 0);
         driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
-        rdmaNode = new RdmaNode(workerHosts[managerId],  Integer.parseInt(workerPorts[managerId]), conf.rdmaChannelConf, conf.rdmaChannelConf.getRdmaChannelType(), isDriver);
+        databaseHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.databaseHost");
+        databasePort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.databasePort");
+        rdmaNode = new RdmaNode(workerHosts[managerId],  Integer.parseInt(workerPorts[managerId]), conf.rdmaChannelConf, conf.rdmaChannelConf.getRdmaChannelType(), isDriver, false);
         rdmaBufferManager = (WorkerRdmaBufferManager) rdmaNode.getRdmaBufferManager();
         //PreAllocate message buffer
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
@@ -130,6 +133,11 @@ public class RdmaWorkerManager implements Serializable {
         }
         //Wait for other workers to connect
         MorphStreamEnv.get().workerLatch().await();
+    }
+    public void connectDatabase() throws Exception {
+        //Connect to database and receive region token from remoteDatabase;
+        databaseRdmaChannel = rdmaNode.getRdmaChannel(new InetSocketAddress(databaseHost, databasePort), true, conf.rdmaChannelConf.getRdmaChannelType());
+        dbwRegionTokenGroup.addRegionTokens(rdmaNode.getRemoteRegionToken(databaseRdmaChannel));
     }
     public void connectDriver() throws Exception {
         //Connect to driver and receive region token from driver
@@ -321,5 +329,29 @@ public class RdmaWorkerManager implements Serializable {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    public void asyncReadRemoteDatabase(int keyIndex, int tableIndex, int length, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
+        RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
+
+        long remoteAddress = regionToken.getAddress() + keyIndex;
+        int rkey = regionToken.getLocalKey();
+
+        RdmaBuffer readData = rdmaBufferManager.get(length);
+        ByteBuffer dataBuffer = readData.getByteBuffer();
+
+        databaseRdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                ByteBuffer valueBuffer = dataBuffer.slice();
+                String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
+                valueList[valueIndex] = value;
+                count.incrementAndGet();
+                rdmaBufferManager.put(readData);
+            }
+            @Override
+            public void onFailure(Throwable exception) {
+                rdmaBufferManager.put(readData);
+            }
+        }, readData.getAddress(), readData.getLkey(), new int[]{length}, new long[]{remoteAddress}, new int[]{rkey});
     }
 }

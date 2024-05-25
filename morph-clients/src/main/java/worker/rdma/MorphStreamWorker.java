@@ -88,6 +88,7 @@ public class MorphStreamWorker extends Thread {
     private void runTopologyLocally() throws Exception {
         Topology topology = env.createTopology();
         env.submitTopology(topology);
+        this.rdmaWorkerManager.connectDatabase();
         this.rdmaWorkerManager.connectDriver();
         env.OM().start();
     }

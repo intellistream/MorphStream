@@ -33,6 +33,7 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
 public class MorphStreamEnv {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamEnv.class);
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
+    public boolean isDatabase;
     private boolean isDriver;
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
@@ -75,6 +76,7 @@ public class MorphStreamEnv {
     public void setRdmaWorkerManager(RdmaWorkerManager rdmaWorkerManager) {this.workerManager = rdmaWorkerManager;}
     public ZContext zContext() {return zContext;}
     public boolean isDriver() {return isDriver;}
+    public boolean isDatabase() {return isDatabase;}
     public void LoadConfiguration(String configPath, String[] args) throws IOException, DatabaseException {
         if (configPath != null) {
             this.jCommanderHandler().loadProperties(configPath);
@@ -89,6 +91,7 @@ public class MorphStreamEnv {
         }
         this.jCommanderHandler().initializeCfg(this.configuration());
         this.isDriver = this.configuration().getBoolean("isDriver", false);
+        this.isDatabase = this.configuration().getBoolean("isDatabase", false);
         if (isDriver) {
             this.clientLatch = new CountDownLatch(this.configuration().getInt("clientNum", 1) + 1);// Client Number + MorphStreamDriver
             this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));

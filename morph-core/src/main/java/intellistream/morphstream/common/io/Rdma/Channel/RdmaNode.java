@@ -4,12 +4,14 @@ import com.ibm.disni.verbs.*;
 import intellistream.morphstream.common.io.Rdma.Conf.RdmaChannelConf;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaCompletionListener;
 import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
+import intellistream.morphstream.common.io.Rdma.Memory.Manager.DatabaseBufferManager;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.DriverRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.RdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.ExecutorsServiceContext;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,7 @@ public class RdmaNode {
     private final ConcurrentHashMap<InetSocketAddress, RdmaChannel> activeRdmaChannelMap = new ConcurrentHashMap<>();//保存主动连接其他RDMANode的K,V键值对
     public final ConcurrentHashMap<InetSocketAddress, RdmaChannel> passiveRdmaChannelMap = new ConcurrentHashMap<>();//保存被动接受其他RDMANode的连接的K,V键值对
     public final ConcurrentHashMap<String, InetSocketAddress> passiveRdmaInetSocketMap = new ConcurrentHashMap<>();
+    @Getter
     private RdmaBufferManager rdmaBufferManager = null;
     private RdmaCmId listenerRdmaCmId;//Listener Channel ID
     private RdmaEventChannel cmChannel;//RDMA Communication  Event Channel
@@ -45,7 +48,7 @@ public class RdmaNode {
     private RdmaChannel.RdmaChannelType rdmaChannelType;
     private String hostName;//本地主机名
 
-    public RdmaNode(String hostName, int port, final RdmaChannelConf conf, RdmaChannel.RdmaChannelType rdmaChannelType, boolean isDriver) throws Exception {
+    public RdmaNode(String hostName, int port, final RdmaChannelConf conf, RdmaChannel.RdmaChannelType rdmaChannelType, boolean isDriver, boolean isDatabase) throws Exception {
         this.conf = conf;
         this.rdmaChannelType = rdmaChannelType;
         this.hostName = hostName;
@@ -85,6 +88,8 @@ public class RdmaNode {
             }
             if (isDriver) {
                 this.rdmaBufferManager = new DriverRdmaBufferManager(ibvPd, conf);
+            } else if (isDatabase) {
+                this.rdmaBufferManager = new DatabaseBufferManager(ibvPd, conf);
             } else {
                 this.rdmaBufferManager = new WorkerRdmaBufferManager(ibvPd, conf);
             }
@@ -156,7 +161,7 @@ public class RdmaNode {
     private int getNextCpuVector() {
         return cpuArrayList.get(cpuIndex++ % cpuArrayList.size());
     }
-    public RdmaBufferManager getRdmaBufferManager() { return rdmaBufferManager; }
+
     public void bindConnectCompleteListener(final RdmaConnectionListener connectListener) {
         listeningThread = new Thread(() -> {
             LOG.info("Starting RdmaNode Listening Server, listening on: " + localInetSocketAddress);

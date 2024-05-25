@@ -60,7 +60,7 @@ public class RdmaDriverManager {
         tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(";");
         driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
-        rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, isDriver);
+        rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, isDriver, false);
         rdmaBufferManager = (DriverRdmaBufferManager) rdmaNode.getRdmaBufferManager();
         workerLatch = MorphStreamEnv.get().workerLatch();
         //PreAllocate CircularRdmaBuffer to receive results from workers

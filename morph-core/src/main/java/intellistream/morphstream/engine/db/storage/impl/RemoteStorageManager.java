@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RemoteStorageManager extends StorageManager {
     private static final Logger LOG = Logger.getLogger(RemoteStorageManager.class);
@@ -45,7 +46,7 @@ public class RemoteStorageManager extends StorageManager {
         }
     }
 
-    public void getOwnershipTable(RdmaWorkerManager rdmaWorkerManager, DSContext context) throws IOException {
+    public void getOwnershipTable(RdmaWorkerManager rdmaWorkerManager, DSContext context) throws Exception {
         WorkerSideOwnershipTable workerSideOwnershipTable;
         if (this.ownershipTableReady.compareAndSet(false, true)) {
             for (String tableName: tableNames) {
@@ -79,17 +80,17 @@ public class RemoteStorageManager extends StorageManager {
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.WorkerRdmaRecvOwnershipTableEndEventTime(context.thisThreadId);
         MeasureTools.WorkerPrepareCacheStartTime(context.thisThreadId);
-        this.loadCache(context);
+        this.loadCache(context, rdmaWorkerManager);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-        if (context.thisThreadId == 0) {
-            for (String tableName : tableNames) {
-                this.cacheBuffer.initLocalCacheBuffer(this.workerSideOwnershipTables.get(tableName).getKeysForThisWorker(), this.workerSideOwnershipTables.get(tableName).valueList, tableName);
-            }
+        if (context.thisThreadId < this.tableNames.length) {
+            String tableName = this.tableNames[context.thisThreadId];
+            while (!this.workerSideOwnershipTables.get(tableName).isFinishLoadValue()) {}
+            this.cacheBuffer.initLocalCacheBuffer(this.workerSideOwnershipTables.get(tableName).getKeysForThisWorker(), this.workerSideOwnershipTables.get(tableName).valueList, tableName);
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.WorkerPrepareCacheEndTime(context.thisThreadId);
     }
-    public void loadCache(DSContext context) {
+    public void loadCache(DSContext context, RdmaWorkerManager rdmaWorkerManager) throws Exception {
        for (String tableName : tableNames) {
            List<String> keys = this.workerSideOwnershipTables.get(tableName).getKeysForThisWorker();
            int interval = (int) Math.ceil((double) keys.size() / totalThread);
@@ -97,8 +98,7 @@ public class RemoteStorageManager extends StorageManager {
            int end = Math.min(interval * (context.thisThreadId + 1), keys.size());
            for (int i = start; i < end; i++) {
                String key = keys.get(i);
-               String value = this.readRemoteDatabase(tableName, key);
-               this.workerSideOwnershipTables.get(tableName).valueList[i] = value;
+               this.readRemoteDatabase(tableName, key, rdmaWorkerManager, i, this.workerSideOwnershipTables.get(tableName).valueList, this.workerSideOwnershipTables.get(tableName).getTotalKeys());
            }
            LOG.info("Thread " + context.thisThreadId + " load cache for table " + tableName + " from remote database");
        }
@@ -149,8 +149,19 @@ public class RemoteStorageManager extends StorageManager {
     public void writeRemoteDatabase(String tableName, String key, int workerId) {
         //remoteCallLibrary.write(tableName, key, workerId);
     }
-    private String readRemoteDatabase(String tableName, String key) {
-        return this.tempValueForTables.get(tableName);
+    private void readRemoteDatabase(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.getInteger(key) * (this.tableNameToLength.get(tableName) + 2);
+                size = this.tableNameToLength.get(tableName) + 2;
+                break;
+            }
+        }
+        rdmaWorkerManager.asyncReadRemoteDatabase(keyIndex, tableIndex, size, valueIndex, valueList, count);
     }
 
     @Override
