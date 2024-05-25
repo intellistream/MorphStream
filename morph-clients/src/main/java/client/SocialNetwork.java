@@ -16,7 +16,7 @@ public class SocialNetwork extends Client {
     public boolean transactionUDF(Function function) {
         String txnName = function.getFunctionName();
         switch (txnName) {
-            case "userLogin": {
+            case "login": {
                 StateObject userState = function.getStateObject("password");
                 String password = userState.getStringValue("password");
                 String inputPassword = (String) function.getPara("password");
@@ -27,7 +27,7 @@ public class SocialNetwork extends Client {
                 }
                 break;
             }
-            case "userProfile": {
+            case "getProfile": {
                 function.udfResult = function.getStateObject("profile").getStringValue("profile");
                 if (function.udfResult == null) {
                     throw new NullPointerException("Profile not found");
@@ -66,9 +66,9 @@ public class SocialNetwork extends Client {
         UserLogin.addFunctionDescription("login", login);
 
         FunctionDAGDescription userProfile = new FunctionDAGDescription("userProfile");
-        FunctionDescription profile = new FunctionDescription("profile", MetaTypes.AccessType.READ);
+        FunctionDescription profile = new FunctionDescription("getProfile", MetaTypes.AccessType.READ);
         profile.addStateObjectDescription("profile", MetaTypes.AccessType.READ, "user_profile", "profile", 0);
-        userProfile.addFunctionDescription("profile", profile);
+        userProfile.addFunctionDescription("getProfile", profile);
 
         FunctionDAGDescription GetTimeLine = new FunctionDAGDescription("getTimeLine");
         FunctionDescription getTimeLine = new FunctionDescription("getTimeLine", MetaTypes.AccessType.READ);

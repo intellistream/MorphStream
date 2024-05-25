@@ -16,8 +16,8 @@ public class MediaReview extends Client {
     public boolean transactionUDF(Function function) {
         String txnName = function.getFunctionName();
         switch (txnName) {
-            case "userLogin": {
-                StateObject userState = function.getStateObject("userState");
+            case "login": {
+                StateObject userState = function.getStateObject("login");
                 String password = userState.getStringValue("password");
                 String inputPassword = (String) function.getPara("password");
                 if (password.equals(inputPassword)) {
@@ -27,11 +27,11 @@ public class MediaReview extends Client {
                 }
                 break;
             }
-            case "ratingMovie": {
+            case "rate": {
                 function.udfResult = function.getPara("rate");
                 break;
             }
-            case "reviewMovie": {
+            case "review": {
                 function.udfResult = function.getPara("review");
                 break;
             }
