@@ -161,7 +161,7 @@ public class RemoteStorageManager extends StorageManager {
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
-                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 2);
+                keyIndex = 0 * (this.tableNameToLength.get(tableName) + 2);
                 size = this.tableNameToLength.get(tableName) + 2;
                 break;
             }
