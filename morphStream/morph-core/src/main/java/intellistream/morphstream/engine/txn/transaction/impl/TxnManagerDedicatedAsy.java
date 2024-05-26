@@ -161,7 +161,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         String accessType = stateAccess[1];
         if (Objects.equals(accessType, "read") || accessType.equals("0")) {
             return Asy_ReadRecord(stateAccess, txnContext);
-        } else if (accessType.equals("write") || accessType.equals("raed-write") || accessType.equals("1") || accessType.equals("2")) {
+        } else if (accessType.equals("write") || accessType.equals("read-write") || accessType.equals("1") || accessType.equals("2")) {
             return Asy_WriteRecord(stateAccess, txnContext);
         } else if (accessType.equals("WINDOW_READ")) {
             return Asy_WindowReadRecord(stateAccess, txnContext);

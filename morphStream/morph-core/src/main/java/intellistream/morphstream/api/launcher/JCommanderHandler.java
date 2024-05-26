@@ -213,7 +213,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "RoutePacket";
+    public String tableNames = "StateAccessCC";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
     public String numberItemsForTables = "10000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
