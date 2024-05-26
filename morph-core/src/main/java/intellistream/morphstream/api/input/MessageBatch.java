@@ -75,13 +75,21 @@ public class MessageBatch {
             Deque<Integer> length = new ArrayDeque<>();
             for (int i = 0; i < receiverThreads; i++) {
                 int totalLength = 0;
-                for (int j = i * totalMessage.size() / receiverThreads; j < (i + 1) * totalMessage.size() / receiverThreads; j++) {
+                int leftBound = i * totalMessage.size() / receiverThreads;
+                int rightBound;
+                if (i == receiverThreads - 1) {//last thread
+                    rightBound = totalMessage.size();
+                } else {
+                    rightBound = (i + 1) * totalMessage.size() / receiverThreads;
+                }
+                for (int j = leftBound; j < rightBound; j ++) {
                     totalLength += totalMessage.get(j).getEncodeLength() + 4;
                 }
                 length.add(totalLength);
             }
-            while (length.size() > 0) { //MessageBlockLength(Int) * totalThreads
-                bout.writeInt(length.poll());
+            for (int len: length) {
+                bout.writeInt(len);
+                totalEncodedLength = totalEncodedLength - len;
             }
             for (FunctionMessage msg : totalMessage) {//msg.length(Int) + msg + msg.length(Int) + msg...
                 bout.writeInt(msg.getEncodeLength());

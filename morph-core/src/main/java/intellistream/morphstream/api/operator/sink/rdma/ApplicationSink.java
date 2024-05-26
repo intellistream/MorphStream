@@ -29,11 +29,7 @@ public class ApplicationSink extends AbstractSink {
             }
         } else {
             Result result = (Result) in.getValue(0);
-            try {
-                MorphStreamEnv.get().rdmaWorkerManager().sendResults(this.thread_Id, new FunctionMessage(result.toString()));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            MorphStreamEnv.get().rdmaWorkerManager().sendResults(this.thread_Id, new FunctionMessage(result.toString()));
         }
     }
 }

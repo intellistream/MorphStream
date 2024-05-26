@@ -32,6 +32,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
     private HashMap<String, FunctionDAGDescription> FunctionDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
     private ByteBuffer msgBuffer;
+    private int eventCount = 0;
     private Tuple2<Long, ByteBuffer> canRead;
     public FunctionExecutor(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
@@ -72,6 +73,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                 generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, InputSource.inputFromByteToTxnEvent(msg), System.nanoTime());
                 tuple = new Tuple(this.taskId, context, generalMsg);
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
+                eventCount ++;
                 MeasureTools.WorkerPrepareEndTime(threadId);
                 if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                     if (model_switch(counter) && !msgBuffer.hasRemaining()) {
@@ -105,6 +107,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                     context.stop_running();
                     return null;
                 }
+                LOG.info("ThreadId : " + threadId + " receive: " + eventCount);
             } else {
                 return null;
             }

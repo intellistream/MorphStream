@@ -159,17 +159,15 @@ public class RdmaWorkerManager implements Serializable {
         return rdmaBufferManager.getRemoteOperationBuffer(i);
     }
 
-    public void sendResults(int senderThreadId, FunctionMessage functionMessage) throws Exception {
+    public void sendResults(int senderThreadId, FunctionMessage functionMessage) {
         this.resultBatch.add(senderThreadId, functionMessage);
         MeasureTools.WorkerFinishEndTime(senderThreadId);
-        if (this.resultBatch.getTotalResultCount(senderThreadId) >= SOURCE_CONTROL.getInstance().getResultPerExecutor()) {
-            sendResultBatch(senderThreadId);
-        }
     }
     public void sendResultBatch(int senderThreadId) throws Exception {
+        if (this.resultBatch.getAllResultCount() == 0) return;
         MeasureTools.WorkerRdmaSendResultStartTime(senderThreadId);
         SOURCE_CONTROL.getInstance().workerStartSendResultBarrier();
-        if (senderThreadId == 0 && this.resultBatch.getAllResultCount() > 0 ){
+        if (senderThreadId == 0){
             ByteBuffer byteBuffer = this.resultBatch.buffer();
             byteBuffer.flip();
 

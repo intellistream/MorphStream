@@ -45,7 +45,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     public boolean isCombo = false;
     private int currentBatchID = 1; //batchID starts from 1
     private final SynchronizedDescriptiveStatistics latencyStat = new SynchronizedDescriptiveStatistics(); //latency statistics of current batch
-    private long batchStartTime = 0; //Timestamp of the first event in the current batch
+    private int punctuation_interval;
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
     public static final Client clientObj;
     static {
@@ -79,6 +79,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerDistributed(thisTaskId, this.context.getThisComponent().getNumTasks(), config.getString("scheduler"));
+        punctuation_interval = config.getInt("totalBatch");
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
@@ -146,29 +147,40 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Post_Process() {
-        for (TransactionalEvent event: eventQueue) {
-            MeasureTools.WorkerFinishStartTime(this.thread_Id);
-            Result udfResultReflect = null;
-            try {
-                //Invoke client defined post-processing UDF using Reflection
-                HashMap<String, Function> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                udfResultReflect = clientObj.postUDF(event.getBid(), event.getFlag(), stateAccesses);
-                if (!isCombo) {
-                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
-                } else {
-                    sink.execute(new Tuple(this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect)));
+        int delta = eventQueue.size() / punctuation_interval;
+        for (int i = 0; i < punctuation_interval; i++) {
+            int leftBound = i * delta;
+            int rightBound;
+            if (i == punctuation_interval - 1) {//last thread
+                rightBound = eventQueue.size();
+            } else {
+                rightBound = (i + 1) * delta;
+            }
+            for (int j = leftBound; j < rightBound; j++) {
+                TransactionalEvent event = eventQueue.poll();
+                MeasureTools.WorkerFinishStartTime(this.thread_Id);
+                Result udfResultReflect = null;
+                try {
+                    //Invoke client defined post-processing UDF using Reflection
+                    HashMap<String, Function> stateAccesses = eventStateAccessesMap.get(event.getBid());
+                    udfResultReflect = clientObj.postUDF(event.getBid(), event.getFlag(), stateAccesses);
+                    if (!isCombo) {
+                        collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
+                    } else {
+                        sink.execute(new Tuple(this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect)));
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Output emission interrupted");
+                } catch (BrokenBarrierException | IOException | DatabaseException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Output emission interrupted");
-            } catch (BrokenBarrierException | IOException | DatabaseException e) {
+            }
+            marker = new Tuple(this.thread_Id, context, new Marker(DEFAULT_STREAM_ID, -1, eventQueue.size(), 0, "punctuation"));
+            try {
+                sink.execute(marker);
+            } catch (InterruptedException | DatabaseException | BrokenBarrierException | IOException e) {
                 throw new RuntimeException(e);
             }
-        }
-        marker = new Tuple(this.thread_Id, context, new Marker(DEFAULT_STREAM_ID, -1, eventQueue.size(), 0, "punctuation"));
-        try {
-            sink.execute(marker);
-        } catch (InterruptedException | DatabaseException | BrokenBarrierException | IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -194,7 +206,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             if (enable_latency_measurement) {
                 if (isNewBatch) { //only executed by 1st event in a batch
                     isNewBatch = false;
-                    batchStartTime = System.nanoTime();
                 }
             }
             execute_ts_normal(in);

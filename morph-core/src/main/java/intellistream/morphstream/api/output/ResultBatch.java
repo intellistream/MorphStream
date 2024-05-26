@@ -61,7 +61,13 @@ public class ResultBatch {
             Deque<Integer> length = new ArrayDeque<>();
             for (int i = 0; i < receiverThreads; i++) {
                 int totalLength = 0;
-                for (int j = i * totalSize / receiverThreads; j < (i + 1) * totalSize / receiverThreads; j ++) {
+                int leftBound = i * totalMessage.size() / receiverThreads;
+                int rightBound;
+                if (i == receiverThreads - 1) //last thread
+                     rightBound = totalMessage.size();
+                else
+                     rightBound = (i + 1) * totalMessage.size() / receiverThreads;
+                for (int j = leftBound; j < rightBound; j ++) {
                     totalLength += totalMessage.get(j).getEncodeLength() + 4;
                 }
                 length.add(totalLength);
