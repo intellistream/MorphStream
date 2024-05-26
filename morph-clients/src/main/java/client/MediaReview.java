@@ -17,7 +17,7 @@ public class MediaReview extends Client {
         String txnName = function.getFunctionName();
         switch (txnName) {
             case "login": {
-                StateObject userState = function.getStateObject("login");
+                StateObject userState = function.getStateObject("password");
                 String password = userState.getStringValue("password");
                 String inputPassword = (String) function.getPara("password");
                 if (password.equals(inputPassword)) {

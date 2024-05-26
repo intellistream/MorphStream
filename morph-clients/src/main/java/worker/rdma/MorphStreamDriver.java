@@ -43,7 +43,7 @@ public class MorphStreamDriver extends Thread {
         frontend.bind("tcp://"+ address +":" + port);
         backend = zContext.createSocket(SocketType.DEALER); //  Backend socket talks to workers over inproc
         backend.bind("inproc://backend");
-        statistic = new Statistic(MorphStreamEnv.get().configuration().getInt("workerNum",4), MorphStreamEnv.get().configuration().getInt("shuffleType", 0), MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(";"));
+        statistic = new Statistic(MorphStreamEnv.get().configuration().getInt("workerNum",4), MorphStreamEnv.get().configuration().getInt("shuffleType", 0), MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(";"), this.numFrontend);
         rdmaDriverManager = new RdmaDriverManager(true, env.configuration(), statistic);
         workerLatch = MorphStreamEnv.get().workerLatch();
     }

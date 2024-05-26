@@ -22,24 +22,27 @@ public class Statistic {
     private final DescriptiveStatistics latencyStatistics = new DescriptiveStatistics();
     private final ConcurrentHashMap<Long, Long> bidToStartTimestamp = new ConcurrentHashMap<>();
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
-    private final List<Integer> tempVotes = new ArrayList<>();
-    private final Map<Integer, Integer> tempVoteCount = new HashMap<>();
+    private final ConcurrentHashMap<Integer, List<Integer>> tempVotes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Map<Integer, Integer>> tempVoteCount = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<String> tempKeys = new ConcurrentLinkedQueue();
-    public Statistic(int workerNum, int shuffleType, String[] tableNames) {
+    public Statistic(int workerNum, int shuffleType, String[] tableNames, int frontendNumber) {
         this.tableNames = tableNames;
         for (int i = 0; i < workerNum; i++) {
             workerIdToInputStatisticMap.put(i, new InputStatistic(i, tableNames));
+        }
+        for (int i = 0; i < frontendNumber; i++) {
+           tempVotes.put(i, new ArrayList<>());
+           tempVoteCount.put(i, new HashMap<>());
         }
         this.shuffleType = shuffleType;
         this.workNum = workerNum;
         delta = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS") / workerNum;
     }
-    public synchronized int add(HashMap<String, List<String>> keyMap) {
-        int targetWorkerId = getTargetWorkerId(keyMap);
+    public int add(HashMap<String, List<String>> keyMap, int frontendId) {
+        int targetWorkerId = getTargetWorkerId(keyMap, frontendId);
         for (Map.Entry<String, List<String>> entry : keyMap.entrySet()) {
             workerIdToInputStatisticMap.get(targetWorkerId).add(entry.getValue(), entry.getKey());
         }
-        totalEvents ++;
         return targetWorkerId;
     }
 
@@ -72,85 +75,85 @@ public class Statistic {
             printAlignedBorderedTable(headers, data);
         }
     }
-    private int getTargetWorkerId(HashMap<String, List<String>> keyMap) {
-        getVotes(keyMap);
-        getVoteCount();
-        return findWinner();
+    private int getTargetWorkerId(HashMap<String, List<String>> keyMap, int frontendId) {
+        getVotes(keyMap, frontendId);
+        getVoteCount(frontendId);
+        return findWinner(frontendId);
     }
-    private void getVotes(HashMap<String, List<String>> keyMap){
+    private void getVotes(HashMap<String, List<String>> keyMap, int frontendId){
         switch (shuffleType) {
             case 0://Random
-                getVotesRandom(keyMap);
+                getVotesRandom(keyMap, frontendId);
                 break;
             case 1://Sort
-                getVotesSort(keyMap);
+                getVotesSort(keyMap, frontendId);
                 break;
             case 2://Partition
-                getVotesPartition(keyMap);
+                getVotesPartition(keyMap, frontendId);
                 break;
             case 3://Optimized
-                getVotesOptimized(keyMap);
+                getVotesOptimized(keyMap, frontendId);
                 break;
             default:
                 throw new RuntimeException("Wrong shuffle type!");
         }
     }
-    private void getVoteCount() {
-        for (Integer vote : this.tempVotes) {
-            if (tempVoteCount.containsKey(vote)) {
-                tempVoteCount.put(vote, tempVoteCount.get(vote) + 1);
+    private void getVoteCount(int frontendId) {
+        for (Integer vote : this.tempVotes.get(frontendId)) {
+            if (tempVoteCount.get(frontendId).containsKey(vote)) {
+                tempVoteCount.get(frontendId).put(vote, tempVoteCount.get(frontendId).get(vote) + 1);
             } else {
-                tempVoteCount.put(vote, 1);
+                tempVoteCount.get(frontendId).put(vote, 1);
             }
         }
     }
-    private int findWinner() {
+    private int findWinner(int frontendId) {
         int winner = 0;
         int max = Integer.MIN_VALUE;
-        for (Map.Entry<Integer, Integer> entry : this.tempVoteCount.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : this.tempVoteCount.get(frontendId).entrySet()) {
             if (entry.getValue() > max) {
                 max = entry.getValue();
                 winner = entry.getKey();
             }
         }
-        this.tempVotes.clear();
-        this.tempVoteCount.clear();
+        this.tempVotes.get(frontendId).clear();
+        this.tempVoteCount.get(frontendId).clear();
         return winner;
     }
-    private void getVotesSort(HashMap<String, List<String>> keyMap) {
+    private void getVotesSort(HashMap<String, List<String>> keyMap, int frontendId) {
         int targetWorkerId = totalEvents % workerIdToInputStatisticMap.size();
         for (String tableName : keyMap.keySet()) {
             for (String key : keyMap.get(tableName)) {
-                this.tempVotes.add(targetWorkerId);
+                this.tempVotes.get(frontendId).add(targetWorkerId);
                 if (!this.tempKeys.contains(key)) {
                     this.tempKeys.add(key);
                 }
             }
         }
     }
-    private void getVotesRandom(HashMap<String, List<String>> keyMap) {
+    private void getVotesRandom(HashMap<String, List<String>> keyMap, int frontendId) {
         for (String tableName : keyMap.keySet()) {
             for (String key : keyMap.get(tableName)) {
                 int targetWorkerId = random.nextInt(workerIdToInputStatisticMap.size());
-                this.tempVotes.add(targetWorkerId);
+                this.tempVotes.get(frontendId).add(targetWorkerId);
                 if (!this.tempKeys.contains(key)) {
                     this.tempKeys.add(key);
                 }
             }
         }
     }
-    private void getVotesPartition(HashMap<String, List<String>> keyMap) {
+    private void getVotesPartition(HashMap<String, List<String>> keyMap, int frontendId) {
         for (String tableName : keyMap.keySet()) {
             for (String key : keyMap.get(tableName)) {
                 int targetWorkerId = Integer.parseInt(key) / delta;
-                this.tempVotes.add(targetWorkerId);
+                this.tempVotes.get(frontendId).add(targetWorkerId);
                 if (!this.tempKeys.contains(key)) {
                     this.tempKeys.add(key);
                 }
             }
         }
     }
-    private void getVotesOptimized(HashMap<String, List<String>> keyMap) {
+    private void getVotesOptimized(HashMap<String, List<String>> keyMap, int frontendId) {
         for (String tableName : keyMap.keySet()) {
             for (String key : keyMap.get(tableName)) {
                 HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
@@ -168,7 +171,7 @@ public class Statistic {
                 if (!this.tempKeys.contains(key)) {
                     this.tempKeys.add(key);
                 }
-                this.tempVotes.add(targetWorkerId);
+                this.tempVotes.get(frontendId).add(targetWorkerId);
             }
         }
     }

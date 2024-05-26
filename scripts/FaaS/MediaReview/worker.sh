@@ -15,7 +15,7 @@ function ResetParameters() {
     #Network Configurations
     isRDMA=1
     driverHost="10.10.10.19"
-    driverPort=5570
+    driverPort=5590
     databaseHost="10.10.10.19"
     databasePort=5580
     workerHosts="10.10.10.20,10.10.10.24"
@@ -119,7 +119,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
+  java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar $JAR \
       --isDriver $isDriver \
       --isDatabase $isDatabase \
       --workerId $workerId \

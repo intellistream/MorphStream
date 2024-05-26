@@ -14,7 +14,7 @@ function ResetParameters() {
     #Network Configurations
     isRDMA=1
     driverHost="10.10.10.19"
-    driverPort=5570
+    driverPort=5590
     databaseHost="10.10.10.19"
     databasePort=5580
     workerHosts="10.10.10.20,10.10.10.24"
@@ -65,7 +65,7 @@ function ResetParameters() {
 function runApplication() {
   echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
-      --isDatabase $isDatabase
+      --isDatabase $isDatabase \
       --workerId $workerId \
       --workerNum $workerNum \
       --tthread $tthread \
@@ -120,7 +120,7 @@ function runApplication() {
             "
   java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
-      --isDatabase $isDatabase
+      --isDatabase $isDatabase \
       --workerId $workerId \
       --workerNum $workerNum \
       --tthread $tthread \

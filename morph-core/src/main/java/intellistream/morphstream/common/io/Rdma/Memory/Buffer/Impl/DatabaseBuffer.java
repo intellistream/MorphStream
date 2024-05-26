@@ -3,6 +3,7 @@ package intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl;
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
+import intellistream.morphstream.util.FixedLengthRandomString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,15 +16,13 @@ public class DatabaseBuffer {
     private final int numberItems;
     private final int itemSize;
     private final RdmaBuffer tableBuffer;
-    public final String tempValueForTables;
     public final String tableName;
 
     public DatabaseBuffer(String tableName, int numberItems, int itemSize, IbvPd ibvPd) throws Exception {
         this.numberItems = numberItems;
         this.itemSize = itemSize;
-        this.tableBuffer = new RdmaBuffer(ibvPd, (numberItems + 2) * itemSize);
+        this.tableBuffer = new RdmaBuffer(ibvPd, numberItems * (itemSize + 2));
         this.tableName = tableName;
-        this.tempValueForTables = padStringToLength(tableName, itemSize);
     }
     public RegionToken createRegionToken() {
         return tableBuffer.createRegionToken();
@@ -33,19 +32,9 @@ public class DatabaseBuffer {
         ByteBuffer byteBuffer = tableBuffer.getByteBuffer();
         for (int i = 0; i < numberItems; i++) {
             byteBuffer.putShort((short) 0);
-            byteBuffer.put(tempValueForTables.getBytes(StandardCharsets.UTF_8));
+            byteBuffer.put(FixedLengthRandomString.generateRandomFixedLengthString(itemSize).getBytes(StandardCharsets.UTF_8));
         }
         LOG.info("Table initialized with TableName: " + this.tableName + " ItemNumber: " + numberItems + " valueSize " + itemSize);
-    }
-    private String padStringToLength(String str, int length) {
-        if (str.length() >= length) {
-            return str.substring(0, length);
-        }
-        StringBuilder sb = new StringBuilder(str);
-        while (sb.length() < length) {
-            sb.append(' ');
-        }
-        return sb.toString();
     }
 
 }

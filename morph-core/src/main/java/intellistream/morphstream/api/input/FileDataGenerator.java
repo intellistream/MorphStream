@@ -114,7 +114,7 @@ public class FileDataGenerator {
             HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();//tableNames -> zipf generator
             HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();//tableNames -> Lists of partition zipf generator
             for (String tableName: eventKeyMap.get(eventType).keySet()) {
-                zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, 0,random.nextInt()));
+                zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, 0, random.nextInt()));
                 List<FastZipfGenerator> zipfGenerators = new ArrayList<>();
                 for (int i = 0; i < totalPartition; i++) {
                     zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName)/ totalPartition, (double) stateAssessSkewMap.get(eventType) / 100, i * intervalMaps.get(tableName),123456789));
@@ -167,6 +167,9 @@ public class FileDataGenerator {
         for (Map.Entry<String, Integer> entry : keysForTable.entrySet()) {//TableName -> keyNumber
             List<String> keys = new ArrayList<>();
             int key = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
+            if (key == numItemMaps.get(entry.getKey())) {
+                System.out.println("Error");
+            }
             keys.add(String.valueOf(key));
             int partition = key_to_partition(entry.getKey(), key);
             if (random.nextInt(1000) < eventMultiPartitionMap.get(eventType)) {

@@ -31,7 +31,7 @@ public class DriverTest extends Thread {
         frontend.bind("tcp://"+ address +":" + port);
         backend = zContext.createSocket(SocketType.DEALER); //  Backend socket talks to workers over inproc
         backend.bind("inproc://backend");
-        statistic = new Statistic(MorphStreamEnv.get().configuration().getInt("workerNum",4), MorphStreamEnv.get().configuration().getInt("shuffleType", 0), MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(","));
+        statistic = new Statistic(MorphStreamEnv.get().configuration().getInt("workerNum",4), MorphStreamEnv.get().configuration().getInt("shuffleType", 0), MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(","), this.numFrontend);
     }
     public void initialize() {
         for (int i = 0; i < numFrontend; i++) {

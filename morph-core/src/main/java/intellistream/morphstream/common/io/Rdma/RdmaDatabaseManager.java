@@ -26,7 +26,7 @@ public class RdmaDatabaseManager {
     public RdmaDatabaseManager(boolean isDriver, Configuration conf) throws Exception {
         this.isDriver = isDriver;
         this.databaseHost = conf.getString("morphstream.rdma.databaseHost");
-        this.databasePort = conf.getInt("morphstream.rdma.driverHost");
+        this.databasePort = conf.getInt("morphstream.rdma.databasePort");
         workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
         rdmaNode = new RdmaNode(databaseHost ,databasePort , conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, this.isDriver, true);
         databaseBufferManager = (DatabaseBufferManager) rdmaNode.getRdmaBufferManager();

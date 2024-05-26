@@ -10,15 +10,16 @@ public class RDMABenchmark {
         try {
             MorphStreamEnv.get().LoadConfiguration(null, args); //TODO: add loadConfig from file
             if (MorphStreamEnv.get().isDriver()) {
+                if (MorphStreamEnv.get().isDatabase()) {
+                    MorphStreamDatabase morphStreamDatabase = new MorphStreamDatabase();
+                    morphStreamDatabase.start();
+                }
                 MorphStreamDriver driver = new MorphStreamDriver();
                 driver.initialize();
                 driver.start();
                 driver.startClient();
                 driver.MorphStreamDriverJoin();
-            } else if (MorphStreamEnv.get().isDatabase()) {
-                MorphStreamDatabase morphStreamDatabase = new MorphStreamDatabase();
-                morphStreamDatabase.start();
-            } else {
+            }  else {
                 MorphStreamWorker morphStreamWorker = new MorphStreamWorker();
                 morphStreamWorker.initialize();
                 morphStreamWorker.start();

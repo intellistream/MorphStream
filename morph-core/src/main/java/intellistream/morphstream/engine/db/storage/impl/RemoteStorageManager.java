@@ -95,7 +95,12 @@ public class RemoteStorageManager extends StorageManager {
            List<String> keys = this.workerSideOwnershipTables.get(tableName).getKeysForThisWorker();
            int interval = (int) Math.ceil((double) keys.size() / totalThread);
            int start = interval * context.thisThreadId;
-           int end = Math.min(interval * (context.thisThreadId + 1), keys.size());
+           int end;
+           if (context.thisThreadId == totalThread - 1) {
+               end = keys.size();
+           } else {
+               end = interval * (context.thisThreadId + 1);
+           }
            for (int i = start; i < end; i++) {
                String key = keys.get(i);
                this.readRemoteDatabase(tableName, key, rdmaWorkerManager, i, this.workerSideOwnershipTables.get(tableName).valueList, this.workerSideOwnershipTables.get(tableName).getTotalKeys());
@@ -156,7 +161,7 @@ public class RemoteStorageManager extends StorageManager {
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
-                keyIndex = Integer.getInteger(key) * (this.tableNameToLength.get(tableName) + 2);
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 2);
                 size = this.tableNameToLength.get(tableName) + 2;
                 break;
             }

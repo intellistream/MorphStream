@@ -13,4 +13,12 @@ public class MorphStreamDatabase extends Thread{
         this.rdmaDatabaseManager = new RdmaDatabaseManager(false, env.configuration());
         LOG.info("MorphStreamDatabase is initialized");
     }
+
+  public void run() {
+      try {
+          Thread.sleep(60000);
+      } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+      }
+  }
 }

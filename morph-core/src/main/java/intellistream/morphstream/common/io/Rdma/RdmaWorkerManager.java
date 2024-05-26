@@ -342,6 +342,7 @@ public class RdmaWorkerManager implements Serializable {
         databaseRdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
+                dataBuffer.getShort();
                 ByteBuffer valueBuffer = dataBuffer.slice();
                 String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
                 valueList[valueIndex] = value;
