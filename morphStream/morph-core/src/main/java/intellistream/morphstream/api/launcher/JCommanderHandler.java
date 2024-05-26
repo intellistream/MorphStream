@@ -32,11 +32,11 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = Constants.CCOption_MorphStream;
-//    public int CCOption = CCOption_SStore;
+    //    public int CCOption = CCOption_SStore;
 //    public int CCOption = CCOption_LOCK;
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
-//    public String generator = "OCGenerator";
+    //    public String generator = "OCGenerator";
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
@@ -119,7 +119,7 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
     public String application = "SimVNF";
-//    public String application = "StreamLedger";
+    //    public String application = "StreamLedger";
 //    public String application = "SHJ";
 //    public String application = "GrepSum";
 //    public String application = "WindowedGrepSum";
@@ -127,7 +127,7 @@ public class JCommanderHandler {
 //    public String application = "TollProcessing";
     @Parameter(names = {"--operatorIDs"}, description = "Unique identifiers for operators")
     public String operatorIDs = "sim_vnf";
-//    public String operatorIDs = "sl";
+    //    public String operatorIDs = "sl";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
@@ -213,7 +213,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "testTable";
+    public String tableNames = "RoutePacket";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
     public String numberItemsForTables = "10000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
@@ -318,7 +318,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--serveRemoteVNF"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
     public int serveRemoteVNF = 1;
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
-    public int vnfInstanceNum = 4;
+    public int vnfInstanceNum = 1;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int offloadCCThreadNum = 4;
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")

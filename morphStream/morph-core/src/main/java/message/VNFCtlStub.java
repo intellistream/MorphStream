@@ -129,6 +129,11 @@ public class VNFCtlStub {
             while (!socket.isClosed()) {
                 try {
                     MessageFromVNFInst wrapper = MessageFromVNFInst.parseDelimitedFrom(socket.getInputStream());
+                    if (wrapper == null) {
+                        // Handle the null case appropriately
+                        System.out.println("Received null wrapper. Possibly end of stream.");
+                        break; // or continue; depending on your logic
+                    }
                     reqCount++;
                     if (wrapper.hasMonitorReportMessage()) {
                         VNFCtlStubImpl.onMonitorReportMessage(instanceID, wrapper.getMonitorReportMessage());
@@ -153,20 +158,20 @@ public class VNFCtlStub {
                 } catch (IOException e) {
                     System.err.println("Error reading input stream: " + e.getMessage());
                     // Additional handling can be added here, like breaking the loop or retrying
+                } catch (NullPointerException e) {
+                    System.err.println("Null pointer exception: " + e.getMessage());
                 }
             }
-        } finally {
-            try {
-                if (!socket.isClosed()) {
-                    socket.close();
-                    System.out.println("Socket closed by server. Total request: " + reqCount);
-                } else {
-                    System.out.println("Socket closed by client. Total request: " + reqCount);
-                }
+        }
+        finally {
+            if (!socket.isClosed()) {
+//                System.out.println("Socket NOT closed by server yet. Total request: " + reqCount);
+//                    socket.close();
+                System.out.println("Socket is still running. Total request: " + reqCount);
+            } else {
+                System.out.println("Socket closed by client. Total request: " + reqCount);
+            }
 
-            } catch (IOException e) {
-                System.err.println("Error closing socket: " + e.getMessage());
-            }
         }
     }
 }

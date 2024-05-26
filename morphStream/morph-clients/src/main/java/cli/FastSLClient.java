@@ -61,10 +61,11 @@ public class FastSLClient extends Client {
                     txn.setTxnID(txnIndex++);
                     int saIndex = 0;
                     for (StateAccess sa : txn.getStateAccesses()) {
-                        vnfClient.registerStateAccess(String.valueOf(saIndex), sa.getType(), sa.getTableName());
+                        String saType = "read-write"; // TODO: Hardcoded as read-write, need JSON to specify
+                        vnfClient.registerStateAccess(String.valueOf(saIndex), saType, sa.getTableName());
 
                         sa.setSaID(saIndex++);
-                        switch (sa.getType()) {
+                        switch (saType) {
                             case "read":
                                 MorphStreamEnv.get().updateSATypeMap(saIndex, 0);
                                 break;

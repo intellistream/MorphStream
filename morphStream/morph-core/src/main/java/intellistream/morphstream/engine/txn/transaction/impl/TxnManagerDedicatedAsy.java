@@ -159,17 +159,17 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     @Override
     public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
         String accessType = stateAccess[1];
-        if (accessType == "READ" || accessType.equals("0")) {
+        if (Objects.equals(accessType, "read") || accessType.equals("0")) {
             return Asy_ReadRecord(stateAccess, txnContext);
-        } else if (accessType == "WRITE" || accessType.equals("1") || accessType.equals("2")) {
+        } else if (accessType.equals("write") || accessType.equals("raed-write") || accessType.equals("1") || accessType.equals("2")) {
             return Asy_WriteRecord(stateAccess, txnContext);
-        } else if (accessType == "WINDOW_READ") {
+        } else if (accessType.equals("WINDOW_READ")) {
             return Asy_WindowReadRecord(stateAccess, txnContext);
-        } else if (accessType == "WINDOW_WRITE") {
+        } else if (accessType.equals("WINDOW_WRITE")) {
             return Asy_WindowWriteRecord(stateAccess, txnContext);
-        } else if (accessType == "NON_DETER_READ") {
+        } else if (accessType.equals("NON_DETER_READ")) {
             return Asy_NonDeterReadRecord(stateAccess, txnContext);
-        } else if (accessType == "NON_DETER_WRITE") {
+        } else if (accessType.equals("NON_DETER_WRITE")) {
             return Asy_NonDeterWriteRecord(stateAccess, txnContext);
         } else {
             throw new UnsupportedOperationException("Unsupported access type: " + accessType);
