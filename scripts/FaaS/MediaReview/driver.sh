@@ -4,7 +4,7 @@ DAGName=$1
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
-    isDatabase=0
+    isDatabase=1
     workerId=0
     workerNum=2
     tthread=10

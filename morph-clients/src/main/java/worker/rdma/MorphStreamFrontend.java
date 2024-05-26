@@ -112,7 +112,7 @@ public class MorphStreamFrontend extends Thread{
     }
 
     private int getWorkId(HashMap<String, List<String>> keyMap) {
-        return this.statistic.add(keyMap);
+        return this.statistic.add(keyMap, this.threadId);
     }
     private ByteBuffer getResult() throws IOException {
         if (hasRemaining() == -1) {
