@@ -1,12 +1,14 @@
 #!/bin/bash
 source ../../dir.sh || exit
 DAGName=$1
+number=$2
+batch=$3
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
     isDatabase=1
     workerId=0
-    workerNum=2
+    workerNum=4
     tthread=10
     clientNum=20
     frontendNum=10
@@ -17,15 +19,15 @@ function ResetParameters() {
     driverPort=5590
     databaseHost="10.10.10.19"
     databasePort=5580
-    workerHosts="10.10.10.20,10.10.10.24"
-    workerPorts="5550,5540"
+    workerHosts="10.10.10.20,10.10.10.24,10.10.10.3,10.10.10.113"
+    workerPorts="5550,5540,5530,5520"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 10 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=5
-    returnResultPerExecutor=`expr 10`
+    sendMessagePerFrontend=`expr $number \* $tthread \* $workerNum / $frontendNum`
+    totalBatch=$batch
+    returnResultPerExecutor=`expr $number`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1

@@ -148,11 +148,12 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     protected void Transaction_Post_Process() {
         int delta = eventQueue.size() / punctuation_interval;
+        int total = eventQueue.size();
         for (int i = 0; i < punctuation_interval; i++) {
             int leftBound = i * delta;
             int rightBound;
             if (i == punctuation_interval - 1) {//last thread
-                rightBound = eventQueue.size();
+                rightBound = total;
             } else {
                 rightBound = (i + 1) * delta;
             }

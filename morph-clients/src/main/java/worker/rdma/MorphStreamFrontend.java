@@ -33,9 +33,10 @@ public class MorphStreamFrontend extends Thread{
     private ZMQ.Socket frontend;// Frontend socket talks to Driver over TCP
     private RdmaDriverManager rdmaDriverManager;
     private List<Integer> workIdList = new ArrayList<>();
-    protected int sendCount = 0;
-    protected int receiveCount = 0;
-    private int totalEventToReceive = 0;
+    protected int sendEventCount = 0;
+    protected int receiveEventCount = 0;
+    private int totalEventToSend = 0;
+    private int receiveCount;
     private Tuple2<Long, ByteBuffer> tempCanRead;//the temp buffer to decide whether the result buffer can read
     private HashMap<Integer, ByteBuffer> workerIdToResultBufferMap = new HashMap<>();//the map to store the result buffer that can read
     private ConcurrentHashMap<Integer, CircularMessageBuffer> workerIdToCircularRdmaBufferMap = new ConcurrentHashMap<>();//the map to store all result buffer
@@ -45,7 +46,8 @@ public class MorphStreamFrontend extends Thread{
     private ZMsg tempZmsg;
     public MorphStreamFrontend(int threadId, ZContext zContext, RdmaDriverManager rdmaDriverManager, Statistic statistic) {
         this.frontend = zContext.createSocket(SocketType.DEALER);
-        this.totalEventToReceive = MorphStreamEnv.get().configuration().getInt("totalEvents") / MorphStreamEnv.get().configuration().getInt("frontendNum");
+        this.totalEventToSend = MorphStreamEnv.get().configuration().getInt("totalEvents") / MorphStreamEnv.get().configuration().getInt("frontendNum");
+        this.receiveCount = MorphStreamEnv.get().configuration().getInt("totalBatch") * MorphStreamEnv.get().configuration().getInt("workerNum");
         frontend.connect("inproc://backend");
         this.rdmaDriverManager = rdmaDriverManager;
         workerIdToCircularRdmaBufferMap = rdmaDriverManager.getRdmaBufferManager().getResultBufferMap();
@@ -65,8 +67,8 @@ public class MorphStreamFrontend extends Thread{
             }
         }
         this.systemEndTime = System.nanoTime();
-        LOG.info("ThreadId : " + threadId + " sendCount: " + sendCount + " receiveCount: " + receiveCount);
-        this.statistic.addThroughput(this.threadId, totalEventToReceive * 1E6 / ((this.systemEndTime - this.systemStartTime)));
+        LOG.info("ThreadId : " + threadId + " sendCount: " + sendEventCount + " receiveCount: " + receiveEventCount);
+        this.statistic.addThroughput(this.threadId, receiveEventCount * 1E6 / ((this.systemEndTime - this.systemStartTime)));
     }
 
     public void asyncReceiveFunctionOutput(){
@@ -81,10 +83,7 @@ public class MorphStreamFrontend extends Thread{
                 results.get(bytes);
                 String result = new String(bytes);
                 this.statistic.addLatency(Long.parseLong(result), System.nanoTime());
-                receiveCount ++;
-                if (receiveCount == totalEventToReceive) {
-                    isRunning = false;
-                }
+                receiveEventCount ++;
                 MeasureTools.DriverFinishEndTime(this.threadId);
             }
         } catch (IOException e) {
@@ -100,8 +99,8 @@ public class MorphStreamFrontend extends Thread{
                 tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
                 rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getKeyMap()), new FunctionMessage(tempInput));
                 this.statistic.addStartTimestamp(tempEvent.getBid(), System.nanoTime());
-                sendCount ++;
-                if (sendCount == totalEventToReceive) {
+                sendEventCount ++;
+                if (sendEventCount == totalEventToSend) {
                     rdmaDriverManager.sendFinish(this.threadId);
                     isSending = false;
                 }
@@ -116,6 +115,9 @@ public class MorphStreamFrontend extends Thread{
     }
     private ByteBuffer getResult() throws IOException {
         if (hasRemaining() == -1) {
+            if (receiveCount == 0) {
+                isRunning = false;
+            }
             for (int i = 0; i < workerIdToCircularRdmaBufferMap.size(); i++) {
                 tempCanRead = workerIdToCircularRdmaBufferMap.get(i).canRead(this.threadId);
                 if (tempCanRead != null) {
@@ -130,6 +132,7 @@ public class MorphStreamFrontend extends Thread{
                     }
                     ByteBuffer byteBuffer = workerIdToCircularRdmaBufferMap.get(i).read(myOffset, myLength);
                     workerIdToResultBufferMap.put(i, byteBuffer);
+                    receiveCount --;
                     LOG.info("ThreadId : " + threadId + " receive results from worker " + i);
                 }
             }
