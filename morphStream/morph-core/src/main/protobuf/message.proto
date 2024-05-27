@@ -84,6 +84,9 @@ enum CC {
 	CACHE = 1;
 	OFFLOAD = 2;
 	PREEMPTIVE = 3;
+	OPENNF = 4;
+	S6 = 5;
+	CHC = 6;
 }
 
 message TxnReqMessage {

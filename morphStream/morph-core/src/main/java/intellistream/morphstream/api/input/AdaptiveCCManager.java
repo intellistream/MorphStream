@@ -35,7 +35,7 @@ public class AdaptiveCCManager {
         monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
-        offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize, MorphStreamEnv.get().getSaTypeMap(), MorphStreamEnv.get().getSaTableNameMap()));
+        offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize));
         int tpgThreadNum = MorphStreamEnv.get().configuration().getInt("tthread"); //Number of thread for TPG_CC
         for (int i = 0; i < tpgThreadNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();

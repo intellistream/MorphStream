@@ -97,31 +97,6 @@ public class VNFCtlStub {
         wrapper.writeDelimitedTo(socket.getOutputStream());
     }
 
-    // Your handler function to implement
-//    public void handleConnection(int instanceID, Socket socket) {
-//        // Implement your logic here
-//        while (true) {
-//            try {
-//                MessageFromVNFInst wrapper = MessageFromVNFInst.parseDelimitedFrom(socket.getInputStream());
-//                if (wrapper.hasMonitorReportMessage()) {
-//                    VNFCtlStubImpl.onMonitorReportMessage(instanceID, wrapper.getMonitorReportMessage());
-//                } else if (wrapper.hasPushCCMessage()) {
-//                    VNFCtlStubImpl.onPushCCMessage(instanceID, wrapper.getPushCCMessage());
-//                } else if (wrapper.hasPushDSMessage()) {
-//                    VNFCtlStubImpl.onPushDSMessage(instanceID, wrapper.getPushDSMessage());
-//                } else if (wrapper.hasSfcMessage()) {
-//                    VNFCtlStubImpl.onSFCJsonMessage(instanceID, wrapper.getSfcMessage());
-//                } else if (wrapper.hasTxnReqMessage()) {
-//                    VNFCtlStubImpl.onTxnReqMessage(instanceID, wrapper.getTxnReqMessage());
-//                } else {
-//                    System.out.println("Unknown type of request from VNF.");
-//                }
-//            } catch (IOException e) {
-//                System.err.println("Error reading input stream: " + e.getMessage());
-//            }
-//        }
-//    }
-
     public void handleConnection(int instanceID, Socket socket) {
         try {
             // Set socket timeout if desired
