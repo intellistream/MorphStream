@@ -33,6 +33,7 @@ public class OffloadCCThread implements Runnable {
     private static final int numPartitions = MorphStreamEnv.get().configuration().getInt("offloadLockNum");
     private static final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each tuple to its lock partition
+    private static final Object socketLock = new Object();
     private static int requestCounter = 0;
     private final ReentrantLock globalLock = new ReentrantLock();
     private final Condition nextEventCondition = globalLock.newCondition();
@@ -80,11 +81,12 @@ public class OffloadCCThread implements Runnable {
                 offloadData.setLogicalTimeStamp(requestCounter++);
                 int saType = saTypeMap.get(offloadData.getSaIndex());
                 if (saType == 1) {
-                    try {
-                        AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(offloadData.getTxnReqId());
-
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                    synchronized (socketLock) {
+                        try {
+                            AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(offloadData.getTxnReqId());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     offloadExecutor.submit(() -> offloadWrite(offloadData));
 
@@ -228,8 +230,9 @@ public class OffloadCCThread implements Runnable {
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
             tempo_record.getValues().get(1).setInt(readValue);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-
-            AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(txnReqId);
+            synchronized (socketLock) {
+                AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(txnReqId);
+            }
 
         } catch (DatabaseException | IOException e) {
             throw new RuntimeException(e);
