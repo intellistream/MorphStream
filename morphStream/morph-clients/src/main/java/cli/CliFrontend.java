@@ -66,7 +66,7 @@ public class CliFrontend {
 
     /**
      * Register a new operator to the system. This combines both operator (VNF) creation and topology node registration
-    * */
+     * */
     public void registerOperator(String operatorID, int parallelism) {
         try {
             SACombo operator = new SACombo(operatorID);
@@ -147,6 +147,8 @@ public class CliFrontend {
         if (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") == 0) {
             AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
             adaptiveCCManager.startVNFInstances();
+        } else {
+            MorphStreamEnv.get().startAdaptiveCC(); // Start Partition_CC, Cache_CC, Offload_CC, and Monitor threads
         }
 
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins

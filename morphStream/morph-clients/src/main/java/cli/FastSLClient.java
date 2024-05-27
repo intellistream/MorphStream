@@ -58,13 +58,13 @@ public class FastSLClient extends Client {
 
                 int txnIndex = 0;
                 for (Transaction txn : app.getTransactions()) {
-                    txn.setTxnID(txnIndex++);
+                    txn.setTxnID(txnIndex);
                     int saIndex = 0;
                     for (StateAccess sa : txn.getStateAccesses()) {
                         String saType = "read-write"; // TODO: Hardcoded as read-write, need JSON to specify
                         vnfClient.registerStateAccess(String.valueOf(saIndex), saType, sa.getTableName());
 
-                        sa.setSaID(saIndex++);
+                        sa.setSaID(saIndex);
                         switch (saType) {
                             case "read":
                                 MorphStreamEnv.get().updateSATypeMap(saIndex, 0);
@@ -77,12 +77,14 @@ public class FastSLClient extends Client {
                                 break;
                         }
                         MorphStreamEnv.get().updateSATableNameMap(saIndex, sa.getTableName());
+                        saIndex++;
                     }
+                    txnIndex++;
                 }
             }
             System.out.println("Deserialized SFC Json data: " + vnfJsonClass.getApps().get(0).getName());
 
-            vnfClient.startAdaptiveCC(); // Start Partition_CC, Cache_CC, Offload_CC, and Monitor threads
+//            vnfClient.startAdaptiveCC(); // Start Partition_CC, Cache_CC, Offload_CC, and Monitor threads
             vnfClient.start(); // Start TPG_CC threads, at this stage all manager threads are ready to process requests
 
         } else {

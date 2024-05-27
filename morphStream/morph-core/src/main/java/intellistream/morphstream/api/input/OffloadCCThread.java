@@ -7,12 +7,10 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
+import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -182,28 +180,24 @@ public class OffloadCCThread implements Runnable {
 
 
     private void offloadWrite(OffloadData offloadData) {
-
         long timeStamp = offloadData.getTimeStamp();
         long txnReqId = offloadData.getTxnReqId();
         int tupleID = offloadData.getTupleID();
         int saIndex = offloadData.getSaIndex();
+        int instanceID = offloadData.getInstanceID();
 
         try {
             TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-
-            int readValue = (int) readRecord.getValues().get(1).getDouble();
-            ByteBuffer byteBuffer = ByteBuffer.allocate(1);
-            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            byteBuffer.putInt(readValue);
-            byte[] readBytes = byteBuffer.array();
-            int udfResult = -1;
-
-            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, saIndex, readBytes, 1);
-            udfResult = decodeInt(saResultBytes, 4);
+            int readValue = readRecord.getValues().get(1).getInt();
+            try {
+                AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(udfResult);
+            tempo_record.getValues().get(1).setInt(readValue);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
         } catch (DatabaseException e) {
@@ -213,28 +207,26 @@ public class OffloadCCThread implements Runnable {
     }
 
     private void offloadRead(OffloadData offloadData) {
-
         long timeStamp = offloadData.getTimeStamp();
         long txnReqId = offloadData.getTxnReqId();
         int tupleID = offloadData.getTupleID();
         int saIndex = offloadData.getSaIndex();
+        int instanceID = offloadData.getInstanceID();
 
         try {
-            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
+            BaseTable table = storageManager.getTable(saTableNameMap.get(saIndex));
+            TableRecord tableRecord = table.SelectKeyRecord(String.valueOf(tupleID));
+//            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
-
-            int readValue = (int) readRecord.getValues().get(1).getDouble();
-            ByteBuffer byteBuffer = ByteBuffer.allocate(1);
-            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            byteBuffer.putInt(readValue);
-            byte[] readBytes = byteBuffer.array();
-            int udfResult = -1;
-
-            byte[] saResultBytes = NativeInterface._execute_sa_udf(txnReqId, saIndex, readBytes, 1);
-            udfResult = decodeInt(saResultBytes, 4);
+            int readValue = readRecord.getValues().get(1).getInt();
+            try {
+                AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(udfResult);
+            tempo_record.getValues().get(1).setInt(readValue);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
             AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(txnReqId);
