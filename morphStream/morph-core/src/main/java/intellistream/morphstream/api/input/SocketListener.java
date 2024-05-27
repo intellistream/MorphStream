@@ -180,7 +180,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static PartitionData byteToPartitionData(int instanceID, byte[] messageBytes) {
         int tupleID = decodeInt(copySubarray(messageBytes, 1, 4), 0);
         int value = decodeInt(copySubarray(messageBytes, 6, 9), 0);
-        return new PartitionData(-1, -1, instanceID, tupleID, value);
+        return new PartitionData(-1, -1, instanceID, tupleID, value, -1);
     }
 
     private static CacheData byteToCacheData(int instanceID, byte[] messageBytes) {

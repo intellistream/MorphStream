@@ -86,7 +86,7 @@ public class VNFReceiverThread implements Runnable {
                     if (arrivedIndex == 0) {
                         System.out.println("All VNF receivers have finished processing requests, sending stop signals...");
                         MonitorThread.submitPatternData(new PatternData(-1, instanceID, 0, false));
-                        PartitionCCThread.submitPartitionRequest(new PartitionData(-1, 0, instanceID, 0, 0));
+                        PartitionCCThread.submitPartitionRequest(new PartitionData(-1, 0, instanceID, 0, 0, -1));
                         CacheCCThread.submitReplicationRequest(new CacheData(-1, 0, instanceID, 0));
                         OffloadCCThread.submitOffloadReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0));
                         for (int tpgQueueIndex = 0; tpgQueueIndex < tpgQueues.size(); tpgQueueIndex++) {

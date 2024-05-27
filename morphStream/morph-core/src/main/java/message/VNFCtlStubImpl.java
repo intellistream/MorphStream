@@ -17,7 +17,7 @@ public class VNFCtlStubImpl {
     static public void onTxnReqMessage(int instanceID, TxnReqMessage msg) {
         if (msg.getCc().getNumber() == 0) { // Partition
             PartitionCCThread.submitPartitionRequest(
-                    new PartitionData(System.nanoTime(), msg.getId(), instanceID, msg.getKey(), -1));
+                    new PartitionData(System.nanoTime(), msg.getId(), instanceID, msg.getKey(), -1, msg.getSaIdx()));
             System.out.println("Server received Partition_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 2) { // Offloading
@@ -70,4 +70,7 @@ public class VNFCtlStubImpl {
         CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
         System.out.println("Server received Cache_Req from client: " + msg.getValue());
     }
+
+    /** Response of fetch_value, submit instance local state to manager, for partition CC or monitor thread  */
+    static public void onPushValMessage(int instanceID) {}
 }

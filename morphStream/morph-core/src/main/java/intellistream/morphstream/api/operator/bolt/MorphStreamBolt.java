@@ -22,6 +22,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 
@@ -36,6 +37,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int expRequestCount = totalRequests / boltThreadCount;
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private int requestCounter;
 
     public MorphStreamBolt(String id, int fid) {
@@ -104,7 +106,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (serveRemoteVNF) {
             for (TransactionalVNFEvent event : eventQueue) {
                 try {
-                    AdaptiveCCManager.vnfStubs.get(event.getInstanceID()).txn_handle_done(event.getTxnRequestID());
+                    synchronized (instanceLocks.get(event.getInstanceID())) {
+                        AdaptiveCCManager.vnfStubs.get(event.getInstanceID()).txn_handle_done(event.getTxnRequestID());
+                    }
 
                 } catch (IOException e) {
                     throw new RuntimeException(e);

@@ -13,10 +13,12 @@ import java.util.concurrent.TimeUnit;
 
 public class PartitionCCThread implements Runnable {
     private static BlockingQueue<PartitionData> operationQueue;
-    private static ConcurrentHashMap<Integer, Integer> fetchedValues = new ConcurrentHashMap<>(); // tupleID (fetching from another instance) -> value
+    //TODO: Update the fetchValue map, maybe share it with the Pattern monitor
+    private static final ConcurrentHashMap<Integer, Integer> fetchedValues = MorphStreamEnv.fetchedValues;
     private final Map<Integer, Socket> instanceSocketMap;
     private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance.
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     //TODO: The key should labels partition start index as optimization
 
     public PartitionCCThread(BlockingQueue<PartitionData> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
@@ -45,22 +47,18 @@ public class PartitionCCThread implements Runnable {
                         break;
                     }
 
+                    int srcInstanceID = partitionData.getInstanceID();
                     int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
                     int tupleID = partitionData.getTupleID();
 
-                    AdaptiveCCManager.vnfStubs.get(targetInstanceID).fetch_value(tupleID); //Send fetch_value request to target instance
-                    // Wait until the value is fetched with a timeout
-                    while (!fetchedValues.containsKey(tupleID)) {
-                        try {
-                            // Avoid busy-waiting
-                            TimeUnit.MILLISECONDS.sleep(50); //TODO: Make sure it does not introduce bottleneck
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
-                        }
+                    synchronized (instanceLocks.get(targetInstanceID)) {
+                        AdaptiveCCManager.vnfStubs.get(targetInstanceID).fetch_value(tupleID); //TODO: This simulates lock to another partition
+                        AdaptiveCCManager.vnfStubs.get(targetInstanceID).execute_sa_udf(partitionData.getTxnReqId(), partitionData.getSaIndex(), tupleID, 0);
                     }
-                    fetchedValues.remove(tupleID);
-                    AdaptiveCCManager.vnfStubs.get(partitionData.getInstanceID()).txn_handle_done(partitionData.getTxnReqId());
+
+                    synchronized (instanceLocks.get(srcInstanceID)) {
+                        AdaptiveCCManager.vnfStubs.get(srcInstanceID).txn_handle_done(partitionData.getTxnReqId());
+                    }
 
                 } catch (InterruptedException | IOException e) {
                     throw new RuntimeException(e);

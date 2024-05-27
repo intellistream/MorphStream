@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class MonitorThread implements Runnable {
     private static BlockingQueue<PatternData> patternDataQueue;
@@ -38,7 +39,10 @@ public class MonitorThread implements Runnable {
     private static final Map<Integer, InputStream> instanceInputStreams = new HashMap<>();
     private static final Map<Integer, OutputStream> instanceOutputStreams = new HashMap<>();
     private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
+    private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
+    private static final ConcurrentHashMap<Integer, Integer> fetchedValues = MorphStreamEnv.fetchedValues;
 
 
     public MonitorThread(BlockingQueue<PatternData> patternDataQueue, int punctuation_interval) {
@@ -147,10 +151,12 @@ public class MonitorThread implements Runnable {
 
     private static void notifyCCSwitch(int instanceID, int tupleID, int newPattern) {
         try {
-            //TODO: Does this have to be split into two calls?
-            VNFCtlStub vnfCtlStub = AdaptiveCCManager.vnfStubs.get(instanceID);
-            vnfCtlStub.make_pause();
-            vnfCtlStub.update_cc(tupleID, CC.forNumber(newPattern));
+            //TODO: Does the following have to be split into separate calls?
+            synchronized (instanceLocks.get(instanceID)) {
+                VNFCtlStub vnfCtlStub = AdaptiveCCManager.vnfStubs.get(instanceID);
+                vnfCtlStub.make_pause();
+                vnfCtlStub.update_cc(tupleID, CC.forNumber(newPattern));
+            }
 
         } catch (IOException e) {
             System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
@@ -166,20 +172,33 @@ public class MonitorThread implements Runnable {
         }
     }
 
-    private static void syncStateFromLocalToRemote(int instanceID, int tupleID) {
+    private static void syncStateFromLocalToGlobal(int instanceID, int tupleID) {
         System.out.println("Monitor sending state sync to instance " + instanceID + " for tuple: " + tupleID);
 
-//            int cachedValue = VNFCtrlClient.fetch_value(tupleID); // TODO: Align with libVNF
-        int cachedValue = 0;
-
         try {
-            TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord srcRecord = condition_record.content_.readPreValues(-1); //TODO: Pass-in a valid bid.
+            synchronized (instanceLocks.get(instanceID)) {
+                AdaptiveCCManager.vnfStubs.get(instanceID).fetch_value(tupleID);
+            }
+            // Wait until the value is fetched with a timeout
+            while (!fetchedValues.containsKey(tupleID)) {
+                try {
+                    // Avoid busy-waiting
+                    TimeUnit.MILLISECONDS.sleep(50); //TODO: Make sure it does not introduce bottleneck
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            int cachedValue = fetchedValues.get(tupleID);
+            fetchedValues.remove(tupleID);
+
+            TableRecord condition_record = storageManager.getTable("StateAccessCC").SelectKeyRecord(String.valueOf(tupleID));
+            SchemaRecord srcRecord = condition_record.content_.readPreValues(System.nanoTime());
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);
             tempo_record.getValues().get(1).setInt(cachedValue);
             condition_record.content_.updateMultiValues(-1, 0, true, tempo_record);
 
-        } catch (DatabaseException e) {
+        } catch (DatabaseException | IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -189,14 +208,16 @@ public class MonitorThread implements Runnable {
         try {
             int tupleValue;
             try {
-                TableRecord condition_record = storageManager.getTable("table").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Specify table name
-                tupleValue = (int) condition_record.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getDouble(); //TODO: Read the latest state version?
+                TableRecord condition_record = storageManager.getTable("StateAccessCC").SelectKeyRecord(String.valueOf(tupleID)); //TODO: Specify table name
+                tupleValue = (int) condition_record.content_.readPreValues(System.nanoTime()).getValues().get(1).getDouble(); //TODO: Read the latest state version?
 
             } catch (DatabaseException e) {
                 throw new RuntimeException(e);
             }
 
-            AdaptiveCCManager.vnfStubs.get(instanceID).update_value(tupleID, tupleValue);
+            synchronized (instanceLocks.get(instanceID)) {
+                AdaptiveCCManager.vnfStubs.get(instanceID).update_value(tupleID, tupleValue);
+            }
 
         } catch (IOException e) {
             System.err.println("Error communicating with server on instance " + instanceID + ": " + e.getMessage());
@@ -217,14 +238,14 @@ public class MonitorThread implements Runnable {
         for (Map.Entry<Integer, Integer> entry : statesPattern_1_to_34.entrySet()) {
             int tupleID = entry.getKey();
             int instanceID = statePartitionMap.get(tupleID);
-            syncStateFromLocalToRemote(instanceID, tupleID);
+            syncStateFromLocalToGlobal(instanceID, tupleID);
         }
 
         //From ANY local cache to global store
         for (Map.Entry<Integer, Integer> entry : statesPattern_2_to_34.entrySet()) {
             int tupleID = entry.getKey();
             int instanceID = 0; //TODO: Only requires one instance's cache, make sure it is correct
-            syncStateFromLocalToRemote(instanceID, tupleID);
+            syncStateFromLocalToGlobal(instanceID, tupleID);
         }
 
         //From global store to dedicated local state partition

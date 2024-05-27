@@ -29,12 +29,15 @@ import intellistream.morphstream.util.AppConfig;
 import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Int;
 
 import java.lang.reflect.InvocationTargetException;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
 
@@ -47,6 +50,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     private native boolean nativeTxnUDF(String operatorID, StateAccess stateAccess);
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
@@ -114,7 +118,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             int simReadValue = simReadRecord.getValues().get(1).getInt();
 
             try {
-                AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(operation.txnReqID, saID, key, simReadValue);
+                synchronized (instanceLocks.get(instanceID)) {
+                    AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(operation.txnReqID, saID, key, simReadValue);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

@@ -7,13 +7,13 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Condition;
@@ -32,8 +32,8 @@ public class OffloadCCThread implements Runnable {
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
     private static final int numPartitions = MorphStreamEnv.get().configuration().getInt("offloadLockNum");
     private static final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
+    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each tuple to its lock partition
-    private static final Object socketLock = new Object();
     private static int requestCounter = 0;
     private final ReentrantLock globalLock = new ReentrantLock();
     private final Condition nextEventCondition = globalLock.newCondition();
@@ -81,7 +81,7 @@ public class OffloadCCThread implements Runnable {
                 offloadData.setLogicalTimeStamp(requestCounter++);
                 int saType = saTypeMap.get(offloadData.getSaIndex());
                 if (saType == 1) {
-                    synchronized (socketLock) {
+                    synchronized (instanceLocks.get(offloadData.getInstanceID())) {
                         try {
                             AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(offloadData.getTxnReqId());
                         } catch (IOException e) {
@@ -193,7 +193,9 @@ public class OffloadCCThread implements Runnable {
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
             int readValue = readRecord.getValues().get(1).getInt();
             try {
-                AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
+                synchronized (instanceLocks.get(instanceID)) {
+                    AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -216,13 +218,13 @@ public class OffloadCCThread implements Runnable {
         int instanceID = offloadData.getInstanceID();
 
         try {
-            BaseTable table = storageManager.getTable(saTableNameMap.get(saIndex));
-            TableRecord tableRecord = table.SelectKeyRecord(String.valueOf(tupleID));
-//            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
+            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
             int readValue = readRecord.getValues().get(1).getInt();
             try {
-                AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
+                synchronized (instanceLocks.get(instanceID)) {
+                    AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -230,7 +232,7 @@ public class OffloadCCThread implements Runnable {
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
             tempo_record.getValues().get(1).setInt(readValue);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-            synchronized (socketLock) {
+            synchronized (instanceLocks.get(instanceID)) {
                 AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(txnReqId);
             }
 

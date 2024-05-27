@@ -1,6 +1,7 @@
 package message;
 
 import intellistream.morphstream.api.input.AdaptiveCCManager;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -24,7 +25,8 @@ public class VNFCtrlServer {
             Thread thread = new Thread(() -> {
                 // Call your handler function here, passing in the instanceID and the socket
                 // connection
-                AdaptiveCCManager.vnfStubs.put(instanceID, instanceStub); //TODO: Check if it's ok to put it here
+                AdaptiveCCManager.vnfStubs.put(instanceID, instanceStub);
+                MorphStreamEnv.instanceLocks.put(instanceID, new Object());
                 instanceStub.handleConnection(instanceID, socketConnection);
             });
             thread.start();

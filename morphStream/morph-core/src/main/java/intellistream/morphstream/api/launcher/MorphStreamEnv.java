@@ -20,6 +20,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 public class MorphStreamEnv {
@@ -39,6 +40,8 @@ public class MorphStreamEnv {
     public String vnfJSON = null;
     private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
     private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
+    public static final ConcurrentHashMap<Integer, Object> instanceLocks = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<Integer, Integer> fetchedValues = new ConcurrentHashMap<>(); // tupleID -> value
     public CountDownLatch simVNFLatch;
 
     public void initializeAdaptiveCCManager() {

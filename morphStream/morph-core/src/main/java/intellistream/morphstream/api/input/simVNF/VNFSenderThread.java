@@ -62,7 +62,7 @@ public class VNFSenderThread implements Runnable {
                         VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
 
                     } else { // cross-partition state access
-                        PartitionCCThread.submitPartitionRequest(new PartitionData(timestamp, reqID, instanceID, tupleID, 0, managerResponseQueue));
+                        PartitionCCThread.submitPartitionRequest(new PartitionData(timestamp, reqID, instanceID, tupleID, 0, -1, managerResponseQueue));
                         int response = managerResponseQueue.take(); // Wait for response from StateManager
                         if (response == 1) {
                             VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
