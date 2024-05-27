@@ -17,7 +17,7 @@ public class OpenNFController implements Runnable {
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
-    private static final Object socketLock = new Object();
+    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
 
     public OpenNFController(BlockingQueue<OffloadData> requestQueue) {
         OpenNFController.requestQueue = requestQueue;
@@ -60,7 +60,7 @@ public class OpenNFController implements Runnable {
                 SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                 int readValue = readRecord.getValues().get(1).getInt();
 
-                synchronized (socketLock) {
+                synchronized (instanceLocks.get(instanceID)) {
                     try {
                         AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
                         SchemaRecord tempo_record = new SchemaRecord(readRecord);
@@ -70,6 +70,7 @@ public class OpenNFController implements Runnable {
                         for (int i = 0; i < vnfInstanceNum; i++) {
                             AdaptiveCCManager.vnfStubs.get(i).update_value(tupleID, readValue);
                         }
+                        //TODO: Here we should add lock to all instance, but since OpenNF only has a single controller thread, it is fine
 
                         AdaptiveCCManager.vnfStubs.get(request.getInstanceID()).txn_handle_done(request.getTxnReqId());
 

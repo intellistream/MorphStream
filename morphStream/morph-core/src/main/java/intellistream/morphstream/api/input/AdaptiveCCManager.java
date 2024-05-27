@@ -15,11 +15,13 @@ public class AdaptiveCCManager {
     private Thread cacheCCThread;
     private Thread offloadCCThread;
     private Thread openNFCCThread;
+    private Thread chcThread;
     private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<PartitionData> partitionQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<CacheData> cacheQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<OffloadData> offloadQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<OffloadData> openNFQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<OffloadData> chcQueue = new LinkedBlockingQueue<>();
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
     public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();
@@ -38,6 +40,7 @@ public class AdaptiveCCManager {
         cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
         offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize));
         openNFCCThread = new Thread(new OpenNFController(openNFQueue));
+        chcThread = new Thread(new CHCController(chcQueue));
         int tpgThreadNum = MorphStreamEnv.get().configuration().getInt("tthread"); //Number of thread for TPG_CC
         for (int i = 0; i < tpgThreadNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
@@ -60,6 +63,11 @@ public class AdaptiveCCManager {
     public void startOpenNF() {
         openNFCCThread.start();
         System.out.println("OpenNF controller started");
+    }
+
+    public void startCHC() {
+        chcThread.start();
+        System.out.println("CHC controller started");
     }
 
     /** For java simulated VNF instances only */

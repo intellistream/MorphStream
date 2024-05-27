@@ -149,10 +149,12 @@ public class CliFrontend {
             adaptiveCCManager.startVNFInstances();
 
         } else {
-            if (ccStrategy == 4) { // OpenNF broadcasting
+            if (ccStrategy == 4) {
                 MorphStreamEnv.get().startOpenNF(); // Start OpenNF controller thread
-            } else { // TransNFV adaptive CC
-                MorphStreamEnv.get().startAdaptiveCC(); // Start Partition_CC, Cache_CC, Offload_CC, and Monitor threads
+            } else if (ccStrategy == 5) {
+                MorphStreamEnv.get().startCHC(); // Start CHC controller thread
+            } else {
+                MorphStreamEnv.get().startAdaptiveCC(); // Start TransNFV: Partition_CC, Cache_CC, Offload_CC, and Monitor threads
             }
         }
 

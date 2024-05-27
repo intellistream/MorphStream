@@ -60,6 +60,10 @@ public class MorphStreamEnv {
         adaptiveCCManager.startOpenNF();
     }
 
+    public void startCHC() {
+        adaptiveCCManager.startCHC();
+    }
+
     public AdaptiveCCManager adaptiveCCManager() {
         return adaptiveCCManager;
     }
