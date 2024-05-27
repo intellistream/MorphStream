@@ -30,6 +30,20 @@ public class VNFCtlStubImpl {
                     new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0));
             System.out.println("Server received TPG_Req from client: " + msg.getId());
             tpgReqCount++;
+
+        } else if (msg.getCc().getNumber() == 4) { // OpenNF broadcasting
+            OpenNFController.submitOpenNFReq(
+                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1));
+            System.out.println("Server received OpenNF_Req from client: " + msg.getId());
+
+        } else if (msg.getCc().getNumber() == 5) { // S6
+            //TODO: Add S6
+            System.out.println("Server received S6_Req from client: " + msg.getId());
+
+        } else if (msg.getCc().getNumber() == 6) { // CHC
+            //TODO: Add CHC
+            System.out.println("Server received CHC_Req from client: " + msg.getId());
+
         }
 
     }

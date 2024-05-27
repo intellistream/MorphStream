@@ -329,11 +329,12 @@ public class JCommanderHandler {
     public int wRatioSharedWriters = 80;
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
-    @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy")
+    @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: S6, 6: CHC
     public int ccStrategy = 3;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
     public int workloadPattern = 2;
-
+    @Parameter(names = {"--enableCCSwitch"}, description = "Chosen pattern workload")
+    public int enableCCSwitch = 0;
 
     public JCommanderHandler() {}
 
@@ -541,6 +542,7 @@ public class JCommanderHandler {
         config.put("rwRatioMutualInteractive", rwRatioMutualInteractive);
         config.put("ccStrategy", ccStrategy);
         config.put("workloadPattern", workloadPattern);
+        config.put("enableCCSwitch", enableCCSwitch);
 
         configSystem(config);
     }

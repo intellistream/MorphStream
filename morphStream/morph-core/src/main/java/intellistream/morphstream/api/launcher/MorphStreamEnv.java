@@ -53,6 +53,10 @@ public class MorphStreamEnv {
         adaptiveCCManager.startCC123_Monitor();
     }
 
+    public void startOpenNF() {
+        adaptiveCCManager.startOpenNF();
+    }
+
     public AdaptiveCCManager adaptiveCCManager() {
         return adaptiveCCManager;
     }

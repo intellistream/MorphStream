@@ -14,10 +14,12 @@ public class AdaptiveCCManager {
     private Thread partitionCCThread;
     private Thread cacheCCThread;
     private Thread offloadCCThread;
+    private Thread openNFCCThread;
     private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<PartitionData> partitionQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<CacheData> cacheQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<OffloadData> offloadQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<OffloadData> openNFQueue = new LinkedBlockingQueue<>();
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
     public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();
@@ -30,12 +32,12 @@ public class AdaptiveCCManager {
     private final int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
     private final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
 
-
     public AdaptiveCCManager() {
         monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
         offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize));
+        openNFCCThread = new Thread(new OpenNFController(openNFQueue));
         int tpgThreadNum = MorphStreamEnv.get().configuration().getInt("tthread"); //Number of thread for TPG_CC
         for (int i = 0; i < tpgThreadNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
@@ -53,6 +55,11 @@ public class AdaptiveCCManager {
         cacheCCThread.start();
         offloadCCThread.start();
         System.out.println("CC123 and Monitor started");
+    }
+
+    public void startOpenNF() {
+        openNFCCThread.start();
+        System.out.println("OpenNF controller started");
     }
 
     /** For java simulated VNF instances only */

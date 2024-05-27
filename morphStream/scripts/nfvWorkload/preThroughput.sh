@@ -12,7 +12,7 @@ function ResetParameters() {
   totalEvents=400000
 
   nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload"
-  serveRemoteVNF=0
+  serveRemoteVNF=1
   vnfInstanceNum=4
   offloadCCThreadNum=4
   offloadLockNum=1000
@@ -21,6 +21,7 @@ function ResetParameters() {
   rwRatioMutualInteractive=80
   ccStrategy=0
   workloadPattern=0
+  enableCCSwitch=0
 }
 
 function runTStream() {
@@ -43,7 +44,8 @@ function runTStream() {
           --wRatioSharedWriters $wRatioSharedWriters \
           --rwRatioMutualInteractive $rwRatioMutualInteractive \
           --ccStrategy $ccStrategy \
-          --workloadPattern $workloadPattern
+          --workloadPattern $workloadPattern \
+          --enableCCSwitch $enableCCSwitch
           "
   java -Xms20g -Xmx80g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \
     --app $app \
@@ -64,7 +66,8 @@ function runTStream() {
     --wRatioSharedWriters $wRatioSharedWriters \
     --rwRatioMutualInteractive $rwRatioMutualInteractive \
     --ccStrategy $ccStrategy \
-    --workloadPattern $workloadPattern
+    --workloadPattern $workloadPattern \
+    --enableCCSwitch $enableCCSwitch
 }
 
 function baselinePattern() {

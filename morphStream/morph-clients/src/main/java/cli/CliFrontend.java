@@ -133,7 +133,6 @@ public class CliFrontend {
         env.setBolt(id, sink, numTasks, groups);
     }
 
-
     private void runTopologyLocally() throws InterruptedException {
         Topology topology = env.createTopology();
         env.submitTopology(topology); //This starts the TPG_CC threads (MorphStreamBolts)
@@ -142,13 +141,19 @@ public class CliFrontend {
 
     public void listenToStop() throws InterruptedException {
         executorThread sinkThread = env.OM().getEM().getSinkThread();
+        int ccStrategy = env.configuration().getInt("ccStrategy");
 
         // Start simulated VNF instances
         if (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") == 0) {
             AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
             adaptiveCCManager.startVNFInstances();
+
         } else {
-            MorphStreamEnv.get().startAdaptiveCC(); // Start Partition_CC, Cache_CC, Offload_CC, and Monitor threads
+            if (ccStrategy == 4) { // OpenNF broadcasting
+                MorphStreamEnv.get().startOpenNF(); // Start OpenNF controller thread
+            } else { // TransNFV adaptive CC
+                MorphStreamEnv.get().startAdaptiveCC(); // Start Partition_CC, Cache_CC, Offload_CC, and Monitor threads
+            }
         }
 
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
