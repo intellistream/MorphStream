@@ -28,8 +28,8 @@ public class OffloadCCThread implements Runnable {
     private final ExecutorService offloadExecutor;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-    private final HashMap<Integer, Integer> saTypeMap = new HashMap<>();
-    private final HashMap<Integer, String> saTableNameMap = new HashMap<>();
+    private final HashMap<Integer, Integer> saTypeMap = MorphStreamEnv.get().getSaTypeMap();
+    private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final Map<Integer, Lock> partitionLocks = new HashMap<>(); //Each table partition holds one lock
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
     private static final int numPartitions = MorphStreamEnv.get().configuration().getInt("offloadLockNum");
@@ -42,13 +42,10 @@ public class OffloadCCThread implements Runnable {
     private boolean doStatePartitioning = false;
 
 
-    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize,
-                           HashMap<Integer, Integer> saTypeMap, HashMap<Integer, String> saTableNameMap) {
+    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize) {
         OffloadCCThread.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
-        this.saTypeMap.putAll(saTypeMap);
-        this.saTableNameMap.putAll(saTableNameMap);
         for (int i = 0; i < numPartitions; i++) {
             partitionLocks.put(i, new ReentrantLock(true));  // Create a fair lock for each partition
         }
