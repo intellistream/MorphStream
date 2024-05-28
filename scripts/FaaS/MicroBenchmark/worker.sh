@@ -45,7 +45,7 @@ function ResetParameters() {
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
-    eventTypes="count"
+    eventTypes="counter"
     tableNameForEvents="count"
     keyNumberForEvents="1"
     valueNameForEvents=""

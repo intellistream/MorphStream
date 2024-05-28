@@ -46,11 +46,11 @@ function ResetParameters() {
     rootFilePath="${RSTDIR}"
     inputFileType=0
     eventTypes="userLogin;userProfile;getTimeLine;postTweet"
-    tableNameForEvents="user_pwd;user_profile;tweet"
+    tableNameForEvents="user_pwd;user_profile;tweet;tweet"
     keyNumberForEvents="1;1;2;2"
     valueNameForEvents="password;;;tweet1,tweet2"
     valueSizeForEvents="16;0;0;128,128"
-    eventRatio="15;30;50;5"
+    eventRatio="0;0;90;10"
     ratioOfMultiPartitionTransactionsForEvents="0;0;0;0"
     stateAccessSkewnessForEvents="0;0;0;0"
     abortRatioForEvents="0;0;0;0"

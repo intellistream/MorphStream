@@ -34,7 +34,8 @@ public class SocialNetwork extends Client {
                 }
                 break;
             }
-            case "getTimeLine": {
+            case "getTimeLine1":
+            case "getTimeLine2": {
                 function.udfResult = function.getStateObject("tweet").getStringValue("tweet");
                 if (function.udfResult == null) {
                     throw new NullPointerException("Profile not found");
@@ -78,12 +79,12 @@ public class SocialNetwork extends Client {
         userProfile.addFunctionDescription("getProfile", profile);
 
         FunctionDAGDescription GetTimeLine = new FunctionDAGDescription("getTimeLine");
-        FunctionDescription getTimeLine1 = new FunctionDescription("getTimeLine", MetaTypes.AccessType.READ);
+        FunctionDescription getTimeLine1 = new FunctionDescription("getTimeLine1", MetaTypes.AccessType.READ);
         getTimeLine1.addStateObjectDescription("tweet", MetaTypes.AccessType.READ, "tweet", "tweet", 0);
-        GetTimeLine.addFunctionDescription("getTimeLine", getTimeLine1);
-        FunctionDescription getTimeLine2 = new FunctionDescription("getTimeLine", MetaTypes.AccessType.READ);
-        getTimeLine1.addStateObjectDescription("tweet", MetaTypes.AccessType.READ, "tweet", "tweet", 1);
-        GetTimeLine.addFunctionDescription("getTimeLine", getTimeLine2);
+        GetTimeLine.addFunctionDescription("getTimeLine1", getTimeLine1);
+        FunctionDescription getTimeLine2 = new FunctionDescription("getTimeLine2", MetaTypes.AccessType.READ);
+        getTimeLine2.addStateObjectDescription("tweet", MetaTypes.AccessType.READ, "tweet", "tweet", 1);
+        GetTimeLine.addFunctionDescription("getTimeLine2", getTimeLine2);
 
         FunctionDAGDescription PostTweet = new FunctionDAGDescription("postTweet");
         FunctionDescription postTweet1 = new FunctionDescription("postTweet1", MetaTypes.AccessType.WRITE);
