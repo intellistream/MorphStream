@@ -41,8 +41,15 @@ public class SocialNetwork extends Client {
                 }
                 break;
             }
-            case "postTweet": {
-                function.udfResult = function.getPara("tweet");
+            case "postTweet1": {
+                function.udfResult = function.getPara("tweet1");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
+                break;
+            }
+            case "postTweet2": {
+                function.udfResult = function.getPara("tweet2");
                 if (function.udfResult == null) {
                     throw new NullPointerException("Profile not found");
                 }
@@ -71,15 +78,22 @@ public class SocialNetwork extends Client {
         userProfile.addFunctionDescription("getProfile", profile);
 
         FunctionDAGDescription GetTimeLine = new FunctionDAGDescription("getTimeLine");
-        FunctionDescription getTimeLine = new FunctionDescription("getTimeLine", MetaTypes.AccessType.READ);
-        getTimeLine.addStateObjectDescription("tweet", MetaTypes.AccessType.READ, "tweet", "tweet", 0);
-        GetTimeLine.addFunctionDescription("getTimeLine", getTimeLine);
+        FunctionDescription getTimeLine1 = new FunctionDescription("getTimeLine", MetaTypes.AccessType.READ);
+        getTimeLine1.addStateObjectDescription("tweet", MetaTypes.AccessType.READ, "tweet", "tweet", 0);
+        GetTimeLine.addFunctionDescription("getTimeLine", getTimeLine1);
+        FunctionDescription getTimeLine2 = new FunctionDescription("getTimeLine", MetaTypes.AccessType.READ);
+        getTimeLine1.addStateObjectDescription("tweet", MetaTypes.AccessType.READ, "tweet", "tweet", 1);
+        GetTimeLine.addFunctionDescription("getTimeLine", getTimeLine2);
 
         FunctionDAGDescription PostTweet = new FunctionDAGDescription("postTweet");
-        FunctionDescription postTweet = new FunctionDescription("postTweet", MetaTypes.AccessType.WRITE);
-        postTweet.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 0);
-        postTweet.addParaName("tweet");
-        PostTweet.addFunctionDescription("postTweet", postTweet);
+        FunctionDescription postTweet1 = new FunctionDescription("postTweet1", MetaTypes.AccessType.WRITE);
+        postTweet1.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 0);
+        postTweet1.addParaName("tweet1");
+        PostTweet.addFunctionDescription("postTweet1", postTweet1);
+        FunctionDescription postTweet2 = new FunctionDescription("postTweet2", MetaTypes.AccessType.WRITE);
+        postTweet2.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 1);
+        postTweet2.addParaName("tweet2");
+        PostTweet.addFunctionDescription("postTweet2", postTweet2);
 
         this.txnDescriptions.put("userLogin", UserLogin);
         this.txnDescriptions.put("userProfile", userProfile);

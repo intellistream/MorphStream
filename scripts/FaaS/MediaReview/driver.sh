@@ -3,15 +3,18 @@ source ../../dir.sh || exit
 DAGName=$1
 number=$2
 batch=$3
+frontend=$4
+worker=$5
+thread=$6
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
     isDatabase=1
     workerId=0
-    workerNum=4
-    tthread=10
+    workerNum=$worker
+    tthread=$thread
     clientNum=20
-    frontendNum=10
+    frontendNum=$frontend
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1

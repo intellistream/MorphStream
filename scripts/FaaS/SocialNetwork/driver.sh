@@ -1,31 +1,36 @@
 #!/bin/bash
 source ../../dir.sh || exit
 DAGName=$1
+number=$2
+batch=$3
+frontend=$4
+worker=$5
+thread=$6
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
-    isDatabase=0
+    isDatabase=1
     workerId=0
-    workerNum=1
-    tthread=10
+    workerNum=$worker
+    tthread=$thread
     clientNum=20
-    frontendNum=10
+    frontendNum=$frontend
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
     driverHost="10.10.10.19"
-    driverPort=5570
+    driverPort=5590
     databaseHost="10.10.10.19"
     databasePort=5580
-    workerHosts="10.10.10.20,10.10.10.24"
-    workerPorts="5550,5540"
+    workerHosts="10.10.10.20,10.10.10.24,10.10.10.3,10.10.10.113"
+    workerPorts="5550,5540,5530,5520"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 50 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=4
-    returnResultPerExecutor=`expr 50`
+    sendMessagePerFrontend=`expr $number \* $tthread \* $workerNum / $frontendNum`
+    totalBatch=$batch
+    returnResultPerExecutor=`expr $number`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
@@ -40,10 +45,10 @@ function ResetParameters() {
     rootFilePath="${RSTDIR}"
     inputFileType=0
     eventTypes="userLogin;userProfile;getTimeLine;postTweet"
-    tableNameForEvents="user_pwd;user_profile;tweet;tweet"
-    keyNumberForEvents="1;1;1;1"
-    valueNameForEvents="password;;;tweet"
-    valueSizeForEvents="16;0;0;128"
+    tableNameForEvents="user_pwd;user_profile;tweet"
+    keyNumberForEvents="1;1;2;2"
+    valueNameForEvents="password;;;tweet,tweet"
+    valueSizeForEvents="16;0;0;128,128"
     eventRatio="15;30;50;5"
     ratioOfMultiPartitionTransactionsForEvents="0;0;0;0"
     stateAccessSkewnessForEvents="0;0;0;0"

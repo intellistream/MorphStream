@@ -37,6 +37,7 @@ public class RdmaWorkerManager implements Serializable {
     private final boolean isDriver;
     @Getter
     private final int managerId;
+    private final int workerNum;
     private final String[] workerHosts;
     private final String[] workerPorts;
     private final String driverHost;
@@ -58,6 +59,7 @@ public class RdmaWorkerManager implements Serializable {
         this.isDriver = isDriver;
         this.conf = conf;
         this.totalFunctionExecutors = MorphStreamEnv.get().configuration().getInt("tthread");
+        this.workerNum = MorphStreamEnv.get().configuration().getInt("workerNum", 1);
         workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
         workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
         managerId = MorphStreamEnv.get().configuration().getInt("workerId", 0);
@@ -89,7 +91,7 @@ public class RdmaWorkerManager implements Serializable {
         rdmaNode.bindConnectCompleteListener(new RdmaConnectionListener() {
             @Override
             public void onSuccess(InetSocketAddress inetSocketAddress, RdmaChannel rdmaChannel) throws Exception {
-                for (int i = 0; i < workerHosts.length; i++) {
+                for (int i = 0; i < workerNum; i++) {
                     if (workerHosts[i].equals(inetSocketAddress.getHostName())) {
                         workerRdmaChannelMap.put(i, rdmaChannel);
                         //Send region token to target workers
@@ -115,7 +117,7 @@ public class RdmaWorkerManager implements Serializable {
         MorphStreamEnv.get().workerLatch().countDown();
 
         //Connect to other workers
-        for (int i = managerId + 1; i < workerHosts.length; i++) {
+        for (int i = managerId + 1; i < workerNum; i++) {
             if (i != managerId) {
                 workerRdmaChannelMap.put(i, rdmaNode.getRdmaChannel(new InetSocketAddress(workerHosts[i], Integer.parseInt(workerPorts[i])), true, conf.rdmaChannelConf.getRdmaChannelType()));
                 workerRegionTokenMap.put(i, new WWRegionTokenGroup());

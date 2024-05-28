@@ -1,17 +1,16 @@
 #!/bin/bash
 source ../../dir.sh || exit
-Id=$1
-DAGName=$2
-number=$3
-batch=$4
-frontend=$5
-worker=$6
-thread=$7
+DAGName=$1
+number=$2
+batch=$3
+frontend=$4
+worker=$5
+thread=$6
 function ResetParameters() {
     #Cluster Configurations
-    isDriver=0
-    isDatabase=0
-    workerId=$Id
+    isDriver=1
+    isDatabase=1
+    workerId=0
     workerNum=$worker
     tthread=$thread
     clientNum=20
@@ -33,27 +32,27 @@ function ResetParameters() {
     totalBatch=$batch
     returnResultPerExecutor=`expr $number`
     shuffleType=3
-    #Database Configurations
+   #Database Configurations
     isRemoteDB=1
-    numberItemsForTables="10000;100000;100000"
-    NUM_ITEMS=100000
-    tableNames="user_pwd;movie_rating;movie_review"
-    keyDataTypesForTables="String;String;String"
-    valueDataTypesForTables="String;String;String"
-    valueDataSizeForTables="16;16;256"
-    valueNamesForTables="password;rate;review"
+    numberItemsForTables="80000"
+    NUM_ITEMS=80000
+    tableNames="count"
+    keyDataTypesForTables="String"
+    valueDataTypesForTables="String"
+    valueDataSizeForTables="8"
+    valueNamesForTables="count"
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
-    eventTypes="userLogin;ratingMovie;reviewMovie"
-    tableNameForEvents="user_pwd;movie_rating;movie_review"
-    keyNumberForEvents="1;1;1"
-    valueNameForEvents="password;rate;review"
-    valueSizeForEvents="16;16;256"
-    eventRatio="20;40;40"
-    ratioOfMultiPartitionTransactionsForEvents="0;0;0"
-    stateAccessSkewnessForEvents="0;0;0"
-    abortRatioForEvents="0;0;0"
+    eventTypes="count"
+    tableNameForEvents="count"
+    keyNumberForEvents="1"
+    valueNameForEvents=""
+    valueSizeForEvents=""
+    eventRatio="100"
+    ratioOfMultiPartitionTransactionsForEvents="0"
+    stateAccessSkewnessForEvents="0"
+    abortRatioForEvents="0"
     isCyclic=0
     isDynamic=0
     workloadType="default,unchanging,unchanging,unchanging"
@@ -124,7 +123,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms48g -Xmx48g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar $JAR \
+  java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
       --isDatabase $isDatabase \
       --workerId $workerId \
