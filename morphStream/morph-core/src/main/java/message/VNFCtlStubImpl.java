@@ -28,7 +28,7 @@ public class VNFCtlStubImpl {
         } else if (msg.getCc().getNumber() == 3) { // TPG
             tpgQueues.get(tpgReqCount % numSpouts).offer(
                     new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0));
-            System.out.println("Server received TPG_Req from client: " + msg.getId());
+            System.out.println("Server received TPG_Req from client: " + msg.getId() + ", total req: " + tpgReqCount);
             tpgReqCount++;
 
         } else if (msg.getCc().getNumber() == 4) { // OpenNF broadcasting
@@ -57,7 +57,7 @@ public class VNFCtlStubImpl {
     /** Monitor pattern report */
     static public void onMonitorReportMessage(int instanceID, MonitorReportMessage msg) {
         MonitorThread.submitPatternData(new PatternData(System.nanoTime(), instanceID, msg.getKey(), msg.getIsWrite()));
-        System.out.println("Server received MonitorReport from client: " + msg.getCcValue());
+//        System.out.println("Server received MonitorReport from client: " + msg.getCcValue());
     }
 
     /** Currently no use */
