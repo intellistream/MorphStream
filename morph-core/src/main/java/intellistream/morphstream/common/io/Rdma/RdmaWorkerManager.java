@@ -77,7 +77,7 @@ public class RdmaWorkerManager implements Serializable {
         for (int i = 0; i < tableName.length; i++) {
             valueSize[i] = MorphStreamEnv.get().configuration().getInt(tableName[i] + "_value_size");
         }
-        rdmaBufferManager.perAllocateCacheBuffer(this.managerId, MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"), tableName, valueSize);
+        rdmaBufferManager.perAllocateCacheBuffer(this.managerId, MorphStreamEnv.get().configuration().getInt("CacheBufferCapacity"), tableName, valueSize, MorphStreamEnv.get().configuration().getInt("tthread"));
         rdmaBufferManager.perAllocateRemoteOperationBuffer(MorphStreamEnv.get().configuration().getInt("workerNum"), MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
         resultBatch = new ResultBatch(MorphStreamEnv.get().configuration().getInt("maxResultsCapacity"), MorphStreamEnv.get().configuration().getInt("frontendNum"), this.totalFunctionExecutors);
         for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("workerNum"); i++) {

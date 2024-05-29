@@ -94,6 +94,13 @@ public class RdmaBuffer {
             throw new IOException("java.nio.DirectByteBuffer exception: " + e.toString());
         }
     }
+    public ByteBuffer getByteBufferFromOffset(int offset, int length) throws IOException {
+        try {
+            return (ByteBuffer) directBufferConstructor.newInstance(address + offset, length);
+        } catch (Exception e) {
+            throw new IOException("java.nio.DirectByteBuffer exception: " + e.toString());
+        }
+    }
     public ByteBuffer getByteBuffer() throws IOException {
         try {
             return (ByteBuffer) directBufferConstructor.newInstance(getAddress(), getLength());

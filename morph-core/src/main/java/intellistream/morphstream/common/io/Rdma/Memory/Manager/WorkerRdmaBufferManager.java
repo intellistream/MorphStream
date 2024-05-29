@@ -34,9 +34,9 @@ public class WorkerRdmaBufferManager extends RdmaBufferManager {
         }
         LOG.info("Pre allocated ownership table of size {} MB for driver", (length / 1024/1024));
     }
-    public void perAllocateCacheBuffer(int workId, int length, String[] tableNames, int[] valueSize) throws Exception {
+    public void perAllocateCacheBuffer(int workId, int length, String[] tableNames, int[] valueSize, int tthread) throws Exception {
         if (cacheBuffer == null) {
-            cacheBuffer = new CacheBuffer(workId, getPd(), length, tableNames, valueSize);
+            cacheBuffer = new CacheBuffer(workId, getPd(), length, tableNames, valueSize, tthread);
         }
         LOG.info("Pre allocated global data table of size {} MB for workers", (length / 1024/1024));
     }

@@ -93,7 +93,7 @@ public class RemoteStorageManager extends StorageManager {
     public void loadCache(DSContext context, RdmaWorkerManager rdmaWorkerManager) throws Exception {
        for (String tableName : tableNames) {
            List<String> keys = this.workerSideOwnershipTables.get(tableName).getKeysForThisWorker();
-           int interval = (int) Math.ceil((double) keys.size() / totalThread);
+           int interval = (int) Math.floor((double) keys.size() / totalThread);
            int start = interval * context.thisThreadId;
            int end;
            if (context.thisThreadId == totalThread - 1) {
@@ -108,14 +108,26 @@ public class RemoteStorageManager extends StorageManager {
            LOG.info("Thread " + context.thisThreadId + " load cache for table " + tableName + " from remote database");
        }
     }
-    public void updateOwnership(String tableName, String key, int ownershipWorkerId) {
-        this.cacheBuffer.updateOwnership(tableName, key, ownershipWorkerId);
+    public void updateOwnership(String tableName, String key, int ownershipWorkerId, int threadId) {
+        try {
+            this.cacheBuffer.updateOwnership(tableName, key, ownershipWorkerId, threadId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
-    public boolean checkOwnership(String tableName, String key) {
-        return this.cacheBuffer.checkOwnership(tableName, key);
+    public boolean checkOwnership(String tableName, String key, int threadId) {
+        try {
+            return this.cacheBuffer.checkOwnership(tableName, key, threadId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
-    public String readLocalCache(String tableName, String key, int workerId) {
-        return this.cacheBuffer.readCache(tableName, key, workerId);
+    public String readLocalCache(String tableName, String key, int workerId, int tthread) {
+        try {
+            return this.cacheBuffer.readCache(tableName, key, workerId, tthread);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     public String syncReadRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key)  {
         int keyIndex = 0;

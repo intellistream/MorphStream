@@ -104,7 +104,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
                     }
                     oc.setLocalState(false);
                 } else {
-                    oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId));
+                    oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, context.thisThreadId));
                     oc.setLocalState(true);
                 }
             }
@@ -155,9 +155,9 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
         for (Operation op : oc.operations) {
             if (op.getOperationType().equals(MetaTypes.OperationStateType.EXECUTED)) {
                 if (op.isReference) {
-                    if (this.remoteStorageManager.checkOwnership(op.table_name, op.pKey)) {
+                    if (this.remoteStorageManager.checkOwnership(op.table_name, op.pKey, context.thisThreadId)) {
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
-                        oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId));
+                        oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, context.thisThreadId));
                         oc.deleteOperation(op);
                         LOG.info("Commit reference operation");
                     } else {
@@ -203,7 +203,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
     }
     private void execute(Operation operation, OperationChain oc) {
         if (operation.isReference) {
-            this.remoteStorageManager.updateOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId);
+            this.remoteStorageManager.updateOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId, oc.getDsContext().thisThreadId);
             operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             LOG.info("Reference operation from worker: " + operation.sourceWorkerId);
         } else {

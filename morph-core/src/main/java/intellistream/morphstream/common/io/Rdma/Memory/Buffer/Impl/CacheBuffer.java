@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CacheBuffer {
     private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(CacheBuffer.class);
-    private int workerId;
+    private final int workerId;
     @Getter
     private final String[] tableNames;
     @Getter
@@ -23,8 +23,10 @@ public class CacheBuffer {
     private final HashMap<String, ByteBuffer> tableNameToByteBuffer = new HashMap<>();//To shared among workers
     private final HashMap<String, HashMap<String, Integer>> tableNameToKeyIndexMap = new HashMap<>();//To fast update/read the value in the buffer
 
+    private final ByteBuffer[] readBuffer;
 
-    public CacheBuffer(int workId, IbvPd ibvPb, int length, String[] tableNames, int[] valueSize) throws Exception {
+
+    public CacheBuffer(int workId, IbvPd ibvPb, int length, String[] tableNames, int[] valueSize, int tthread) throws Exception {
         this.workerId = workId;
         for (String tableName : tableNames) {
             tableNameToRdmaBuffer.put(tableName, new RdmaBuffer(ibvPb, length));
@@ -35,6 +37,7 @@ public class CacheBuffer {
         for (int i = 0; i < tableNames.length; i++) {
             tableNameToLength.put(tableNames[i], valueSize[i]);
         }
+        readBuffer = new ByteBuffer[tthread];
     }
     public List<RegionToken> createRegionTokens() {
         List<RegionToken> regionTokens = new ArrayList<>();
@@ -55,28 +58,30 @@ public class CacheBuffer {
         byteBuffer.flip();
     }
 
-    public synchronized String readCache(String tableName, String key, int workerId) {
+    public String readCache(String tableName, String key, int workerId, int threadId) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
-        tableNameToByteBuffer.get(tableName).position(index * (this.tableNameToLength.get(tableName) + 2)); // 移动到指定位置
-        short ownershipId = tableNameToByteBuffer.get(tableName).getShort();
+        int length = this.tableNameToLength.get(tableName);
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2), length + 2);
+        short ownershipId = readBuffer[threadId].getShort();
         if (ownershipId == workerId) {
-            int length = this.tableNameToLength.get(tableName);
             byte[] valueBytes = new byte[length];
-            tableNameToByteBuffer.get(tableName).get(valueBytes);
+            readBuffer[threadId].get(valueBytes);
             return new String(valueBytes, StandardCharsets.UTF_8);
         } else {
             return "false";
         }
     }
-    public synchronized void updateOwnership(String tableName, String key, int workerId) {
+    public void updateOwnership(String tableName, String key, int workerId, int threadId) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
-        tableNameToByteBuffer.get(tableName).position(index * (this.tableNameToLength.get(tableName) + 2));
-        tableNameToByteBuffer.get(tableName).putShort((short) workerId);
+        int length = this.tableNameToLength.get(tableName);
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2), 2);
+        readBuffer[threadId].putShort((short) workerId);
     }
-    public synchronized boolean checkOwnership(String tableName, String key) {
+    public boolean checkOwnership(String tableName, String key, int threadId) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
-        tableNameToByteBuffer.get(tableName).position(index * (this.tableNameToLength.get(tableName) + 2));
-        short ownershipId = tableNameToByteBuffer.get(tableName).getShort();
+        int length = this.tableNameToLength.get(tableName);
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2),  2);
+        short ownershipId = readBuffer[threadId].getShort();
         return ownershipId == (short) workerId;
     }
 
