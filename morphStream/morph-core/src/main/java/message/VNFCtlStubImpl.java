@@ -15,6 +15,8 @@ public class VNFCtlStubImpl {
     private static final int numSpouts = MorphStreamEnv.get().configuration().getInt("tthread");
     private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     private static final HashMap<Integer, Integer> instanceReqCounters = new HashMap<>();
+    private static final int[] partitionReqCountPerInstance = new int[vnfInstanceNum];
+    private static final int[] cacheReqCountPerInstance = new int[vnfInstanceNum];
     private static final int[] tpgReqCountPerInstance = new int[vnfInstanceNum];
     private static final int[] tpgReqCountPerQueue = new int[numSpouts];
 
@@ -29,7 +31,11 @@ public class VNFCtlStubImpl {
         if (msg.getCc().getNumber() == 0) { // Partition
             PartitionCCThread.submitPartitionRequest(
                     new PartitionData(System.nanoTime(), msg.getId(), instanceID, msg.getKey(), -1, msg.getSaIdx()));
-            System.out.println("Server received Partition_Req from client: " + msg.getId());
+            partitionReqCountPerInstance[instanceID]++;
+//            System.out.println("Server received Partition_Req from client: " + msg.getId());
+            if (partitionReqCountPerInstance[instanceID] > 7400) {
+                System.out.println("Instance"+instanceID+" has sent " + partitionReqCountPerInstance[instanceID] + " partition req");
+            }
 
         } else if (msg.getCc().getNumber() == 2) { // Offloading
             OffloadCCThread.submitOffloadReq(
@@ -43,7 +49,7 @@ public class VNFCtlStubImpl {
             tpgReqCountPerQueue[tpgReqCountPerInstance[instanceID] % numSpouts]++;
 
             if (tpgReqCountPerInstance[instanceID] == 10000) {
-                System.out.println("Instance"+instanceID+" has sent 10000 req");
+                System.out.println("Instance"+instanceID+" has sent 10000 tpg req");
                 for (int k=0; k<numSpouts; k++) {
                     System.out.println("Queue"+k+" has received req: " + tpgReqCountPerQueue[k]);
                 }
@@ -81,8 +87,13 @@ public class VNFCtlStubImpl {
 
     /** Cache CC, submit state sync to Cache CC executor */
     static public void onPushDSMessage(int instanceID, setDSMessage msg) {
-        CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
-        System.out.println("Server received Cache_Req from client: " + msg.getValue());
+//        CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
+        System.out.println("Received instance push_DS for tuple " + msg.getKey() + ", value: " + msg.getValue());
+        cacheReqCountPerInstance[instanceID]++;
+        if (cacheReqCountPerInstance[instanceID] > 7400) {
+            MorphStreamEnv.fetchedValues.put(msg.getKey(), msg.getValue());
+            System.out.println("Instance "+instanceID+" has sent " + cacheReqCountPerInstance[instanceID] + " push DS Msg in response to cross-partition");
+        }
     }
 
     /** Response of fetch_value, submit instance local state to manager, for partition CC or monitor thread  */
