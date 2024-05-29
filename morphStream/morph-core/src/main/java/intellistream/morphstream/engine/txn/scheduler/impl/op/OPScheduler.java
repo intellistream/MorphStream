@@ -4,7 +4,6 @@ package intellistream.morphstream.engine.txn.scheduler.impl.op;
 import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.LogRecord;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.DependencyLoggingManager;
@@ -26,17 +25,10 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
-import intellistream.morphstream.util.libVNFFrontend.NativeInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Int;
 
-import java.lang.reflect.InvocationTargetException;
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static intellistream.morphstream.util.FaultToleranceConstants.*;

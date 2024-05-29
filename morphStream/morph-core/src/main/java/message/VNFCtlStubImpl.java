@@ -4,6 +4,7 @@ import intellistream.morphstream.api.input.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.example.protobuf.*;
 
+import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,6 +13,16 @@ public class VNFCtlStubImpl {
     private static ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = AdaptiveCCManager.tpgQueues;
     private static int tpgReqCount = 0;
     private static final int numSpouts = MorphStreamEnv.get().configuration().getInt("tthread");
+    private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    private static final HashMap<Integer, Integer> instanceReqCounters = new HashMap<>();
+    private static final int[] tpgReqCountPerInstance = new int[vnfInstanceNum];
+    private static final int[] tpgReqCountPerQueue = new int[numSpouts];
+
+    public static void initializeVNFCtrlStubImpl() {
+        for (int i=0; i<vnfInstanceNum; i++) {
+            instanceReqCounters.put(i, 0);
+        }
+    }
 
     /** Offloading CC, TPG CC, submit txn req to executor */
     static public void onTxnReqMessage(int instanceID, TxnReqMessage msg) {
@@ -26,24 +37,27 @@ public class VNFCtlStubImpl {
             System.out.println("Server received Offloading_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 3) { // TPG
-            tpgQueues.get(tpgReqCount % numSpouts).offer(
+            tpgQueues.get(tpgReqCountPerInstance[instanceID] % numSpouts).offer(
                     new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0));
-            System.out.println("Server received TPG_Req from client: " + msg.getId() + ", total req: " + tpgReqCount);
-            tpgReqCount++;
+            tpgReqCountPerInstance[instanceID]++;
+            tpgReqCountPerQueue[tpgReqCountPerInstance[instanceID] % numSpouts]++;
+
+            if (tpgReqCountPerInstance[instanceID] == 10000) {
+                System.out.println("Instance"+instanceID+" has sent 10000 req");
+                for (int k=0; k<numSpouts; k++) {
+                    System.out.println("Queue"+k+" has received req: " + tpgReqCountPerQueue[k]);
+                }
+            }
 
         } else if (msg.getCc().getNumber() == 4) { // OpenNF broadcasting
             OpenNFController.submitOpenNFReq(
                     new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1));
             System.out.println("Server received OpenNF_Req from client: " + msg.getId());
 
-        } else if (msg.getCc().getNumber() == 5) { // S6
-            //TODO: Add S6
-            System.out.println("Server received S6_Req from client: " + msg.getId());
-
-        } else if (msg.getCc().getNumber() == 6) { // CHC
-            //TODO: Add CHC
+        } else if (msg.getCc().getNumber() == 5) { // CHC
+            CHCController.submitCHCReq(
+                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1));
             System.out.println("Server received CHC_Req from client: " + msg.getId());
-
         }
 
     }

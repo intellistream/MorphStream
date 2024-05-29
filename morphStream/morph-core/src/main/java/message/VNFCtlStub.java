@@ -14,6 +14,7 @@ public class VNFCtlStub {
     VNFCtlStub(int instanceID, Socket socket) {
         this.instanceID = instanceID;
         this.socket = socket;
+        VNFCtlStubImpl.initializeVNFCtrlStubImpl();
     }
 
     public void make_pause() throws IOException {

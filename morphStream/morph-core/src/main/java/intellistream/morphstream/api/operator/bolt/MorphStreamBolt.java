@@ -16,13 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 
@@ -39,11 +39,18 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private int requestCounter;
+    private static final int numInstance = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    private static final ConcurrentHashMap<Integer, Integer> instanceFinishReqCounter = new ConcurrentHashMap<>();
+    private static final AtomicInteger totalFinishedReqCounter = new AtomicInteger(0);
+
 
     public MorphStreamBolt(String id, int fid) {
         super(id, LOG, fid);
         saTemplates = RequestTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
+        for (int i=0; i<numInstance; i++) {
+            instanceFinishReqCounter.put(i, 0);
+        }
     }
     public MorphStreamBolt(String id, int fid, AbstractSink sink) {
         super(id, LOG, fid);
@@ -51,6 +58,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         this.isCombo = true;
         saTemplates = RequestTemplates.sharedSATemplates;
         eventQueue = new ArrayDeque<>();
+        for (int i=0; i<numInstance; i++) {
+            instanceFinishReqCounter.put(i, 0);
+        }
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
@@ -106,8 +116,16 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (serveRemoteVNF) {
             for (TransactionalVNFEvent event : eventQueue) {
                 try {
-                    synchronized (instanceLocks.get(event.getInstanceID())) {
-                        AdaptiveCCManager.vnfStubs.get(event.getInstanceID()).txn_handle_done(event.getTxnRequestID());
+                    int instanceID = event.getInstanceID();
+                    synchronized (instanceLocks.get(instanceID)) {
+                        AdaptiveCCManager.vnfStubs.get(instanceID).txn_handle_done(event.getTxnRequestID());
+                        instanceFinishReqCounter.compute(instanceID, (key, value) -> value == null ? 1 : value + 1);
+                        if (instanceFinishReqCounter.get(instanceID) % 100 == 0) {
+                            System.out.println("TPG threads sent finished req to instance" + instanceID + ": " + instanceFinishReqCounter.get(instanceID));
+                        }
+                        if (totalFinishedReqCounter.incrementAndGet() == 40000) {
+                            System.out.println("Total requests 10000, all finished");
+                        }
                     }
 
                 } catch (IOException e) {
@@ -132,7 +150,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
-
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
             { // state access
