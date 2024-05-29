@@ -64,8 +64,9 @@ message MessageFromVNFInst {
 		MonitorReportMessage monitorReportMessage = 1;
 		SFCMessage sfcMessage = 2;
 		TxnReqMessage txnReqMessage = 3;
-		setCCMessage pushCCMessage = 4;
+		setCCMessage answerCCMessage = 4;
 		setDSMessage pushDSMessage = 5;
+		setDSMessage answerDSMessage = 6;
 	}
 }
 

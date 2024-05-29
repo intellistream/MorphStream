@@ -57,7 +57,7 @@ public class PartitionCCThread implements Runnable {
 
                     // Wait until the value is fetched with a timeout
                     while (!MorphStreamEnv.fetchedValues.containsKey(tupleID)) {
-                        System.out.println("Partition CC waiting for cross-partition tuple: " + tupleID);
+//                        System.out.println("Partition CC waiting for cross-partition tuple: " + tupleID);
                         Thread.sleep(100);
                     }
                     int cachedValue = MorphStreamEnv.fetchedValues.get(tupleID);

@@ -113,10 +113,12 @@ public class VNFCtlStub {
                     reqCount++;
                     if (wrapper.hasMonitorReportMessage()) {
                         VNFCtlStubImpl.onMonitorReportMessage(instanceID, wrapper.getMonitorReportMessage());
-                    } else if (wrapper.hasPushCCMessage()) {
-                        VNFCtlStubImpl.onPushCCMessage(instanceID, wrapper.getPushCCMessage());
-                    } else if (wrapper.hasPushDSMessage()) {
+                    } else if (wrapper.hasAnswerCCMessage()) {
+                        VNFCtlStubImpl.onPushCCMessage(instanceID, wrapper.getAnswerCCMessage());
+                    } else if (wrapper.hasPushDSMessage() && wrapper.getMsgCase().equals(MessageFromVNFInst.MsgCase.PUSHDSMESSAGE)) {
                         VNFCtlStubImpl.onPushDSMessage(instanceID, wrapper.getPushDSMessage());
+                    } else if (wrapper.hasPushDSMessage() && wrapper.getMsgCase().equals(MessageFromVNFInst.MsgCase.ANSWERDSMESSAGE)) {
+                        VNFCtlStubImpl.onAnswerDSMessage(instanceID, wrapper.getPushDSMessage());
                     } else if (wrapper.hasSfcMessage()) {
                         VNFCtlStubImpl.onSFCJsonMessage(instanceID, wrapper.getSfcMessage());
                     } else if (wrapper.hasTxnReqMessage()) {

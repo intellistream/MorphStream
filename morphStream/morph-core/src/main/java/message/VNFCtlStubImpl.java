@@ -87,15 +87,17 @@ public class VNFCtlStubImpl {
 
     /** Cache CC, submit state sync to Cache CC executor */
     static public void onPushDSMessage(int instanceID, setDSMessage msg) {
-//        CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
         System.out.println("Received instance push_DS for tuple " + msg.getKey() + ", value: " + msg.getValue());
         cacheReqCountPerInstance[instanceID]++;
-        if (cacheReqCountPerInstance[instanceID] > 7400) {
-            MorphStreamEnv.fetchedValues.put(msg.getKey(), msg.getValue());
-            System.out.println("Instance "+instanceID+" has sent " + cacheReqCountPerInstance[instanceID] + " push DS Msg in response to cross-partition");
-        }
+        CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
+//        if (cacheReqCountPerInstance[instanceID] > 7400) {
+//            System.out.println("Instance "+instanceID+" has sent " + cacheReqCountPerInstance[instanceID] + " push DS Msg in response to cross-partition");
+//        }
     }
 
     /** Response of fetch_value, submit instance local state to manager, for partition CC or monitor thread  */
-    static public void onPushValMessage(int instanceID) {}
+    static public void onAnswerDSMessage(int instanceID, setDSMessage msg) {
+        System.out.println("Received instance answer_DS for tuple " + msg.getKey() + ", value: " + msg.getValue());
+        MorphStreamEnv.fetchedValues.put(msg.getKey(), msg.getValue());
+    }
 }
