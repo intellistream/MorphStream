@@ -49,7 +49,7 @@ function ResetParameters() {
     keyNumberForEvents="1;1;2;2"
     valueNameForEvents="password;;;tweet1,tweet2"
     valueSizeForEvents="16;0;0;128,128"
-    eventRatio="0;0;90;10"
+    eventRatio="15;30;50;5"
     ratioOfMultiPartitionTransactionsForEvents="0;0;0;0"
     stateAccessSkewnessForEvents="0;0;0;0"
     abortRatioForEvents="0;0;0;0"

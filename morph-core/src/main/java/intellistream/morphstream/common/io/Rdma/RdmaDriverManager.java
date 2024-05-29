@@ -136,17 +136,16 @@ public class RdmaDriverManager {
 
         long remoteAddress = regionToken.getAddress();
         int rkey = regionToken.getLocalKey();
-        CountDownLatch latch = new CountDownLatch(1);
+
+        regionToken.setAddress(remoteAddress + byteBuffer.capacity());
+        frontendTotalMessageCountMap.put(workId, 0);
+        messageBatch.clear();
         rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 try {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
-                    regionToken.setAddress(remoteAddress + byteBuffer.capacity());
-                    frontendTotalMessageCountMap.put(workId, 0);
-                    messageBatch.clear();
-                    latch.countDown();
                     LOG.info("Driver sends " + totalMessageCount + " functions to worker " + workId);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -158,13 +157,11 @@ public class RdmaDriverManager {
                 try {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
-                    latch.countDown();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
-        latch.await();
     }
     public void sendFinish(int workId) throws Exception {
         if (workerRdmaChannelMap.get(workId) == null) {
