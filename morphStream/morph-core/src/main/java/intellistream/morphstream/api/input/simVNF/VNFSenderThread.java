@@ -7,6 +7,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
 public class VNFSenderThread implements Runnable {
@@ -17,26 +18,45 @@ public class VNFSenderThread implements Runnable {
     private int statePartitionEnd;
     private int stateRange; //entire state space
     private int stateDefaultValue = 0;
-    private final CyclicBarrier finishBarrier;
-    private ConcurrentHashMap<Integer, Integer> localStateMap = new ConcurrentHashMap<>();
+    private final CyclicBarrier instancesBarrier;
+    private final ConcurrentHashMap<Integer, Integer> localStateMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = AdaptiveCCManager.tpgQueues;
-    private BlockingQueue<SyncData> managerSyncQueue = new LinkedBlockingQueue<>();
-    private BlockingQueue<Integer> managerResponseQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<SyncData> managerSyncQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Integer> managerResponseQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<VNFRequest> finishedRequestQueue = new LinkedBlockingQueue<>();
     private final int numSpouts = MorphStreamEnv.get().configuration().getInt("tthread");
-    private int requestCounter = 0;
-    private int lineCounter = 0;
+    private int tpgRequestCount = 0;
+    private int inputLineCounter = 0;
     private long overallStartTime;
+    private long overallEndTime;
+    private final int expectedRequestCount;
+    private int finishedRequestCount = 0;
+    private final ArrayList<Long> latencyList = new ArrayList<>(); //TODO: Sort request order based on requestID, maybe use advanced data structure?
 
-    public VNFSenderThread(int instanceID, int ccStrategy, int statePartitionStart, int statePartitionEnd, int stateRange, String csvFilePath, CyclicBarrier finishBarrier) {
+    public VNFSenderThread(int instanceID, int ccStrategy, int statePartitionStart, int statePartitionEnd, int stateRange,
+                           String csvFilePath, CyclicBarrier instancesBarrier, int expectedRequestCount) {
         this.instanceID = instanceID;
         this.ccStrategy = ccStrategy;
         this.statePartitionStart = statePartitionStart;
         this.statePartitionEnd = statePartitionEnd;
         this.stateRange = stateRange;
         this.csvFilePath = csvFilePath;
-        this.finishBarrier = finishBarrier;
+        this.instancesBarrier = instancesBarrier;
+        this.expectedRequestCount = expectedRequestCount;
         for (int i = 0; i <= stateRange; i++) {
             localStateMap.put(i, stateDefaultValue);
+        }
+    }
+
+    public void submitFinishedRequest(VNFRequest request) {
+        try {
+            long requestFinishTime = System.nanoTime();
+            latencyList.add(requestFinishTime - request.getCreateTime()); //TODO: Include more information, such as reqID
+            finishedRequestQueue.put(request); //TODO: In fact, maintaining such queue is not necessary, recording latency is enough?
+            finishedRequestCount++;
+
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -53,19 +73,21 @@ public class VNFSenderThread implements Runnable {
                 int tupleID = Integer.parseInt(parts[1]);
                 int type = Integer.parseInt(parts[2]);
 
-                lineCounter++;
+                inputLineCounter++;
 
                 if (ccStrategy == 0) { // local state access
                     long timestamp = System.nanoTime();
                     if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
-                        vnfFunction(tupleID, type, 0);
-                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                        executeUDF(tupleID, type, 0);
+                        finishedRequestQueue.add(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+//                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
 
                     } else { // cross-partition state access
                         PartitionCCThread.submitPartitionRequest(new PartitionData(timestamp, reqID, instanceID, tupleID, 0, -1, managerResponseQueue));
                         int response = managerResponseQueue.take(); // Wait for response from StateManager
                         if (response == 1) {
-                            VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+//                            VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                            finishedRequestQueue.add(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
                         } else {
                             System.err.println("Error in processing cross-partition request to tuple: " + tupleID);
                         }
@@ -77,15 +99,17 @@ public class VNFSenderThread implements Runnable {
                         if (!managerSyncQueue.isEmpty()) {
                             processAllQueueItems();
                         }
-                        vnfFunction(tupleID, type, 0);
-                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                        executeUDF(tupleID, type, 0);
+                        finishedRequestQueue.add(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+//                        VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
 
                     } else if (type == 1 || type == 2) { // write
-                        vnfFunction(tupleID, type, 0);
+                        executeUDF(tupleID, type, 0);
                         CacheCCThread.submitReplicationRequest(new CacheData(timestamp, tupleID, instanceID, 0, managerResponseQueue));
                         int response = managerResponseQueue.take(); // Wait for response from StateManager
                         if (response == 1) {
-                            VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                            finishedRequestQueue.add(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+//                            VNFManager.getReceiver(instanceID).submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
                         } else {
                             System.err.println("Error in sync updates to instance caches: " + tupleID);
                         }
@@ -95,25 +119,41 @@ public class VNFSenderThread implements Runnable {
                     long timestamp = System.nanoTime();
                     OffloadCCThread.submitOffloadReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type, managerResponseQueue));
                     if (type != 1) {
-                        int response = managerResponseQueue.take(); // Wait for response from StateManager
+                        int response = managerResponseQueue.take(); // Wait for response from StateManager, blocking
                     }
 
                 } else if (ccStrategy == 3) { // TPG
                     long timestamp = System.nanoTime();
-                    tpgQueues.get(requestCounter % numSpouts).offer(new TransactionalVNFEvent(type, instanceID, timestamp, reqID, tupleID, 0, 0, 0));
-                    requestCounter++;
+                    tpgQueues.get(tpgRequestCount % numSpouts).offer(new TransactionalVNFEvent(type, instanceID, timestamp, reqID, tupleID, 0, 0, 0));
+                    tpgRequestCount++;
                 }
             }
 
-            System.out.println("Sender instance " + instanceID + " processed " + lineCounter + " requests.");
-            Thread.sleep(1000);
-            int arrivedIndex = finishBarrier.await();
+            System.out.println("Instance " + instanceID + " initiated " + inputLineCounter + " requests.");
+            assert inputLineCounter == expectedRequestCount;
 
-            if (arrivedIndex == 0) { // Notify all receivers for the end of workload
-                int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
-                for (int i=0; i<vnfInstanceNum; i++) {
-                    VNFManager.getReceiver(i).submitFinishedRequest(new VNFRequest(0, instanceID, 0, 0, -1));
+            while (finishedRequestCount < expectedRequestCount) {
+                Thread.sleep(1000);
+            }
+
+            int arrivedIndex = instancesBarrier.await(); // Wait for other instances
+            if (arrivedIndex == 0) {
+                System.out.println("All instances have finished, sending stop signals to StateManager...");
+                MonitorThread.submitPatternData(new PatternData(-1, instanceID, 0, false));
+                PartitionCCThread.submitPartitionRequest(new PartitionData(-1, 0, instanceID, 0, 0, -1));
+                CacheCCThread.submitReplicationRequest(new CacheData(-1, 0, instanceID, 0));
+                OffloadCCThread.submitOffloadReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0));
+                for (int tpgQueueIndex = 0; tpgQueueIndex < tpgQueues.size(); tpgQueueIndex++) {
+                    tpgQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, instanceID, -1, 0, 0, 0, 0, 0));
                 }
+
+                // Compute instance local performance
+                overallEndTime = latencyList.get(latencyList.size() - 1);
+                long overallDuration = overallEndTime - overallStartTime;
+                System.out.println("VNF receiver " + instanceID + " processed all " + finishedRequestCount + " requests with throughput " + (finishedRequestCount / (overallDuration / 1E9)) + " events/second");
+
+                // Notify performance computation
+                MorphStreamEnv.get().simVNFLatch.countDown();
             }
 
         } catch (IOException | InterruptedException | BrokenBarrierException e) {
@@ -129,7 +169,7 @@ public class VNFSenderThread implements Runnable {
         }
     }
 
-    private int vnfFunction(int tupleID, int type, int value) {
+    private int executeUDF(int tupleID, int type, int value) {
         try {
             if (type == 0) {
                 return localStateMap.get(tupleID);
@@ -165,15 +205,23 @@ public class VNFSenderThread implements Runnable {
             throw new RuntimeException(e);
         }
     }
-
+    public int getFinishedRequestCount() {
+        return finishedRequestCount;
+    }
     public long getOverallStartTime() {
         return overallStartTime;
     }
+    public long getOverallEndTime() {
+        return overallEndTime;
+    }
+    public ArrayList<Long> getLatencyList() {
+        return latencyList;
+    }
 
+    //TODO: Implement Lock for reading and writing states
     public int readLocalState(int tupleID) {
         return localStateMap.get(tupleID);
     }
-
     public void writeLocalState(int tupleID, int value) {
         localStateMap.put(tupleID, value);
     }

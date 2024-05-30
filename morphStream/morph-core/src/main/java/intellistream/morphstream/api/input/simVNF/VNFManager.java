@@ -15,8 +15,6 @@ public class VNFManager {
     private String patternString;
     private static HashMap<Integer, VNFSenderThread> senderMap = new HashMap<>();
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
-    private static HashMap<Integer, VNFReceiverThread> receiverMap = new HashMap<>();
-    private static HashMap<Integer, Thread> receiverThreadMap = new HashMap<>();
     private static HashMap<Integer, ArrayList<Long>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
     private static HashMap<Integer, Double> throughputMap = new HashMap<>(); //instanceID -> instance's throughput
     private static HashMap<Integer, Double> minLatencyMap = new HashMap<>(); //instanceID -> instance's min latency
@@ -35,22 +33,17 @@ public class VNFManager {
         this.patternString = patternTranslator(pattern);
 
         CyclicBarrier senderBarrier = new CyclicBarrier(parallelism);
-        CyclicBarrier receiverBarrier = new CyclicBarrier(parallelism);
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
 
         for (int i = 0; i < parallelism; i++) {
             String csvFilePath = String.format(rootPath + "/pattern_files/%s/instance_%d.csv", patternString, i);
             int stateGap = stateRange / parallelism;
             VNFSenderThread sender = new VNFSenderThread(i, ccStrategy,
-                    stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange, csvFilePath, senderBarrier);
+                    stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange,
+                    csvFilePath, senderBarrier, totalRequests /parallelism);
             Thread senderThread = new Thread(sender);
             senderMap.put(i, sender);
             senderThreadMap.put(i, senderThread);
-
-            VNFReceiverThread receiver = new VNFReceiverThread(i, totalRequests /parallelism, receiverBarrier);
-            Thread receiverThread = new Thread(receiver);
-            receiverMap.put(i, receiver);
-            receiverThreadMap.put(i, receiverThread);
         }
     }
 
@@ -60,14 +53,10 @@ public class VNFManager {
     public static HashMap<Integer, VNFSenderThread> getSenderMap() {
         return senderMap;
     }
-    public static VNFReceiverThread getReceiver(int id) {
-        return receiverMap.get(id);
-    }
 
     public void startVNFInstances() {
         for (int i = 0; i < parallelism; i++) {
             senderThreadMap.get(i).start();
-            receiverThreadMap.get(i).start();
         }
     }
 
@@ -75,11 +64,10 @@ public class VNFManager {
         for (int i = 0; i < parallelism; i++) {
             try {
                 senderThreadMap.get(i).join();
-                receiverThreadMap.get(i).join();
-                totalRequestCounter += receiverMap.get(i).getActualRequestCount();
-                overallStartTime = Math.min(overallStartTime, receiverMap.get(i).getOverallStartTime());
-                overallEndTime = Math.max(overallEndTime, receiverMap.get(i).getOverallEndTime());
-                latencyMap.put(i, receiverMap.get(i).getLatencyList());
+                totalRequestCounter += senderMap.get(i).getFinishedRequestCount();
+                overallStartTime = Math.min(overallStartTime, senderMap.get(i).getOverallStartTime());
+                overallEndTime = Math.max(overallEndTime, senderMap.get(i).getOverallEndTime());
+                latencyMap.put(i, senderMap.get(i).getLatencyList());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -89,7 +77,7 @@ public class VNFManager {
         for (int i = 0; i < parallelism; i++) {
             instanceLatencyStats.clear();
             for (long latency : latencyMap.get(i)) {
-                instanceLatencyStats.addValue(latency);
+                instanceLatencyStats.addValue(latency); //TODO: Sorting request order based on requestID???
             }
             double minLatency = instanceLatencyStats.getMin();
             double maxLatency = instanceLatencyStats.getMax();

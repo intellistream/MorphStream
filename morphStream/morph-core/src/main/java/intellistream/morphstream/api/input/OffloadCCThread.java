@@ -116,7 +116,7 @@ public class OffloadCCThread implements Runnable {
                     offloadData.getSenderResponseQueue().add(1); //Immediate acknowledge write
                     VNFRequest request = new VNFRequest((int) offloadData.getTxnReqId(), offloadData.getInstanceID(),
                             offloadData.getTupleID(), 1, offloadData.getTimeStamp());
-                    VNFManager.getReceiver(offloadData.getInstanceID()).submitFinishedRequest(request);
+                    VNFManager.getSender(offloadData.getInstanceID()).submitFinishedRequest(request);
                 }
 
                 if (doStatePartitioning) {
@@ -284,7 +284,7 @@ public class OffloadCCThread implements Runnable {
 
         offloadData.getSenderResponseQueue().add(1);
         VNFRequest request = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp); //TODO: Optimization
-        VNFManager.getReceiver(instanceID).submitFinishedRequest(request);
+        VNFManager.getSender(instanceID).submitFinishedRequest(request);
 
     }
 

@@ -90,10 +90,10 @@ public class FastSLClient extends Client {
         } else {
             vnfClient.startAdaptiveCC();
             // A hardcoded overall-performance measurement latch
-            MorphStreamEnv.get().simVNFLatch = new CountDownLatch(MorphStreamEnv.get().configuration().getInt("vnfInstanceNum"));
+            MorphStreamEnv.get().simVNFLatch = new CountDownLatch(2); // This + the last finished instance
             Thread simVNFCompletionMonitor = new Thread(() -> {
                 try {
-                    MorphStreamEnv.get().simVNFLatch.await();
+                    MorphStreamEnv.get().simVNFLatch.await(); //TODO: Check usage
                     double overallThroughput = MorphStreamEnv.get().adaptiveCCManager().joinVNFInstances();
                     System.out.println("All VNF instances have completed processing.");
                     System.out.println("Overall throughput: " + overallThroughput + " events/second");

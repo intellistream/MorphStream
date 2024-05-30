@@ -76,6 +76,7 @@ public class VNFReceiverThread implements Runnable {
                 request = requestQueue.take();
 
                 if (actualRequestCount == expRequestCount) { // Stop signal indicated by VNF sender thread
+                    //TODO: Error: The finish_timestamp should be recorded when the request is inserted into receiver queue, not when it is recognized.
                     overallEndTime = System.nanoTime();
                     overallStartTime = VNFManager.getSenderMap().get(instanceID).getOverallStartTime();
                     long overallDuration = overallEndTime - overallStartTime;
@@ -96,6 +97,7 @@ public class VNFReceiverThread implements Runnable {
                     break;
 
                 } else {
+                    //TODO: Error: The finish_timestamp should be recorded when the request is inserted into receiver queue, not when it is recognized.
                     long requestLatency = System.nanoTime() - request.getCreateTime();
                     latencyList.add(requestLatency);
                     actualRequestCount++;
