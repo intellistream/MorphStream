@@ -12,7 +12,7 @@ function ResetParameters() {
   totalEvents=400000
 
   nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/nfvWorkload"
-  serveRemoteVNF=1
+  communicationChoice=1
   vnfInstanceNum=4
   offloadCCThreadNum=4
   offloadLockNum=1000
@@ -36,7 +36,7 @@ function runTStream() {
           --rootFilePath $rootFilePath \
           --totalEvents $totalEvents \
           --nfvWorkloadPath $nfvWorkloadPath \
-          --serveRemoteVNF $serveRemoteVNF \
+          --communicationChoice $communicationChoice \
           --vnfInstanceNum $vnfInstanceNum \
           --offloadCCThreadNum $offloadCCThreadNum \
           --offloadLockNum $offloadLockNum \
@@ -58,7 +58,7 @@ function runTStream() {
     --rootFilePath $rootFilePath \
     --totalEvents $totalEvents \
     --nfvWorkloadPath $nfvWorkloadPath \
-    --serveRemoteVNF $serveRemoteVNF \
+    --communicationChoice $communicationChoice \
     --vnfInstanceNum $vnfInstanceNum \
     --offloadCCThreadNum $offloadCCThreadNum \
     --offloadLockNum $offloadLockNum \

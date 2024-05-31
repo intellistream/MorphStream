@@ -22,7 +22,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>cli.FastSLClient</mainClass>
+                  <mainClass>cli.StateManagerRunner</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -78,7 +78,7 @@
     </dependency>
   </dependencies>
   <properties>
-    <main.class>cli.FastSLClient</main.class>
+    <main.class>cli.StateManagerRunner</main.class>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 </project>

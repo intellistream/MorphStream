@@ -41,7 +41,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public int isLogging;// Used by fault tolerance
     private native boolean nativeTxnUDF(String operatorID, StateAccess stateAccess);
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
-    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
@@ -101,7 +101,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             return;
         }
 
-        if (serveRemoteVNF) {
+        if (communicationChoice == 1) {
             // Simplified saData: saID, saType, tableName, tupleID, instanceID
             SchemaRecord simReadRecord = operation.d_record.content_.readPreValues(operation.bid);
             int saID = Integer.parseInt(operation.stateAccess[0]);
@@ -121,7 +121,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             simTempoRecord.getValues().get(1).setInt(simReadValue);
             operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, simTempoRecord);
 
-        } else {
+        } else if (communicationChoice == 0) {
             // Simplified saData: saID, saType, tableName, tupleID
             SchemaRecord simReadRecord = operation.d_record.content_.readPreValues(operation.bid);
             int simReadValue = simReadRecord.getValues().get(1).getInt();

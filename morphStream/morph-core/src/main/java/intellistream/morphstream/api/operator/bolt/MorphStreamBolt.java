@@ -5,7 +5,7 @@ import communication.dao.VNFRequest;
 import intellistream.morphstream.api.input.AdaptiveCCManager;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.TransactionalVNFEvent;
-import intellistream.morphstream.api.input.simVNF.VNFManager;
+import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
@@ -36,7 +36,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final int boltThreadCount = MorphStreamEnv.get().configuration().getInt("tthread");
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int expRequestCount = totalRequests / boltThreadCount;
-    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private int requestCounter;
     private static final int numInstance = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
@@ -92,7 +92,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         transactionManager.BeginTransaction(txnContext);
         String[] saData;
 
-        if (serveRemoteVNF) {
+        if (communicationChoice == 1) {
             //TODO: Note that here we bypass the transaction encapsulation, because the inputs are stateAccess UDF requests
             saData = new String[5]; //saID, saType, tableName, tupleID, instanceID
             String[] saTemplate = saTemplates.get(event.getFlag()); //saID, saType, tableName
@@ -102,8 +102,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             saData[3] = event.getTupleID();
             saData[4] = String.valueOf(event.getInstanceID());
 
-        } else {
+        } else if (communicationChoice == 0) {
             saData = new String[]{"0", String.valueOf(event.getSaType()), "testTable", event.getTupleID()}; //Hardcoded for preliminary study
+        } else {
+            throw new RuntimeException("Invalid communication choice");
         }
 
         transactionManager.submitStateAccess(saData, txnContext);
@@ -113,7 +115,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     protected void Transaction_Post_Process() {
 
-        if (serveRemoteVNF) {
+        if (communicationChoice == 1) {
             for (TransactionalVNFEvent event : eventQueue) {
                 try {
                     int instanceID = event.getInstanceID();
@@ -136,10 +138,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 System.out.println("TPG CC processed all " + requestCounter + " requests.");
             }
 
-        } else {
+        } else if (communicationChoice == 0) {
             for (TransactionalVNFEvent event : eventQueue) {
                 VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(), Integer.parseInt(event.getTupleID()), event.getSaType(), event.getBid());
-                VNFManager.getSender(event.getInstanceID()).submitFinishedRequest(request);
+                VNFRunner.getSender(event.getInstanceID()).submitFinishedRequest(request);
                 requestCounter++;
             }
             if (requestCounter == expRequestCount) {

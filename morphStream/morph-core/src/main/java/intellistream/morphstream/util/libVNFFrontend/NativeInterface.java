@@ -4,7 +4,7 @@ package intellistream.morphstream.util.libVNFFrontend;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 public class NativeInterface {
-    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("serveRemoteVNF");
 
     // Native method declaration for __init_SFC
     public native String __init_SFC(int argc, String[] argv);
@@ -14,7 +14,7 @@ public class NativeInterface {
 
     // Load the native library when the class is initialized
     static {
-        if (serveRemoteVNF) {
+        if (communicationChoice == 1) {
             System.load("/home/kailian/DB4NFV/tmp/lb-kernel-dynamic.so");
         }
     }

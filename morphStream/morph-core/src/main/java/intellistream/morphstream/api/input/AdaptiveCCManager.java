@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.input;
 
-import intellistream.morphstream.api.input.simVNF.VNFManager;
+import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import message.VNFCtlStub;
 
@@ -25,14 +25,14 @@ public class AdaptiveCCManager {
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
     public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();
-    private VNFManager vnfManager;
+    private VNFRunner vnfManager;
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     private final int writeThreadPoolSize = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
     private final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
     private final int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
-    private final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
 
     public AdaptiveCCManager() {
         monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
@@ -52,7 +52,7 @@ public class AdaptiveCCManager {
         }
     }
 
-    public void startCC123_Monitor() {
+    public void startAdaptiveCC() {
         monitorThread.start();
         partitionCCThread.start();
         cacheCCThread.start();
@@ -60,25 +60,31 @@ public class AdaptiveCCManager {
         System.out.println("CC123 and Monitor started");
     }
 
+    public void startPartitionCC() {
+        partitionCCThread.start();
+        System.out.println("Partition controller started");
+    }
+
+    public void startCacheCC() {
+        cacheCCThread.start();
+        System.out.println("Cache controller started");
+    }
+
+    public void startOffloadCC() {
+        offloadCCThread.start();
+        System.out.println("Offload controller started");
+    }
+
+    public void startPreemptiveCC() {
+        //TODO: Isolate execution of TPG from other CCs
+    }
+
     public void startOpenNF() {
         openNFCCThread.start();
-        System.out.println("OpenNF controller started");
     }
 
     public void startCHC() {
         chcThread.start();
-        System.out.println("CHC controller started");
-    }
-
-    /** For java simulated VNF instances only */
-    public void startVNFInstances() {
-        vnfManager = new VNFManager(totalRequests, vnfInstanceNum, tableSize, ccStrategy, pattern);
-        vnfManager.startVNFInstances();
-    }
-
-    /** For java simulated VNF instances only */
-    public double joinVNFInstances() {
-        return vnfManager.joinVNFInstances();
     }
 
     public BlockingQueue<TransactionalEvent> getTPGInputQueue(int spoutId) {
@@ -108,8 +114,14 @@ public class AdaptiveCCManager {
             return "Offloading";
         } else if (ccStrategy == 3) {
             return "Preemptive";
+        } else if (ccStrategy == 4) {
+            return "OpenNF";
+        } else if (ccStrategy == 5) {
+            return "CHC";
+        } else if (ccStrategy == 6) {
+            return "Adaptive";
         } else {
-            return "invalid";
+            return "Invalid";
         }
     }
 

@@ -11,7 +11,7 @@
     <name>morph-client</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <main.class>cli.FastSLClient</main.class>
+        <main.class>cli.StateManagerRunner</main.class>
     </properties>
     <dependencies>
         <dependency>
@@ -82,7 +82,7 @@
                     <configuration>
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                        <mainClass>cli.FastSLClient</mainClass>
+                        <mainClass>cli.StateManagerRunner</mainClass>
                         </transformer>
                     </transformers>
                     </configuration>

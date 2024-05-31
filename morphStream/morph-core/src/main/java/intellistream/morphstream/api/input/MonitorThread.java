@@ -40,7 +40,7 @@ public class MonitorThread implements Runnable {
     private static final Map<Integer, OutputStream> instanceOutputStreams = new HashMap<>();
     private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
-    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private static final ConcurrentHashMap<Integer, Integer> fetchedValues = MorphStreamEnv.fetchedValues;
 

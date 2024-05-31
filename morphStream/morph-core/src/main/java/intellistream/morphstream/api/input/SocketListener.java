@@ -186,7 +186,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static CacheData byteToCacheData(int instanceID, byte[] messageBytes) {
         int tupleID = decodeInt(copySubarray(messageBytes, 1, 4), 0);
         int value = decodeInt(copySubarray(messageBytes, 6, 9), 0);
-        return new CacheData(0, instanceID, tupleID, value);
+        return new CacheData(0, 0, instanceID, tupleID, value);
     }
 
     private static OffloadData byteToOffloadData(int instanceID, byte[] messageBytes) { //TODO: Align with libVNF

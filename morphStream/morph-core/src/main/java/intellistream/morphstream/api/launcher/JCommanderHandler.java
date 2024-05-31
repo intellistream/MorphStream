@@ -213,7 +213,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "StateAccessCC";
+    public String tableNames = "testTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
     public String numberItemsForTables = "10000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
@@ -241,7 +241,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
     public String dataDirectory = "morphStream/data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 400000;
+    public int totalEvents = 4000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
@@ -270,13 +270,13 @@ public class JCommanderHandler {
 
     //System configure
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 8;// default total execution threads
+    public int tthread = 4;// default total execution threads
     @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
-    public int spoutNum = 8;// number of spout threads
+    public int spoutNum = 4;// number of spout threads
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
     public String operatorThreadNum = "4";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 200;//checkpoint per thread.
+    public int checkpoint_interval = 100;//checkpoint per thread.
 
 
     /**
@@ -313,9 +313,9 @@ public class JCommanderHandler {
      * TransNFV Specific configurations
      */
     @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
-    public String nfvWorkloadPath = "morphStream/scripts/nfvWorkload";
-    @Parameter(names = {"--serveRemoteVNF"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
-    public int serveRemoteVNF = 1;
+    public String nfvWorkloadPath = "morphStream/scripts/TransNFV";
+    @Parameter(names = {"--communicationChoice"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
+    public int communicationChoice = 0;
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
     public int vnfInstanceNum = 4;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
@@ -328,8 +328,8 @@ public class JCommanderHandler {
     public int wRatioSharedWriters = 80;
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
-    @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: S6, 6: CHC
-    public int ccStrategy = 3;
+    @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
+    public int ccStrategy = 6;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
     public int workloadPattern = 2;
     @Parameter(names = {"--enableCCSwitch"}, description = "Chosen pattern workload")
@@ -532,7 +532,7 @@ public class JCommanderHandler {
 
         /* TransNFV workload configurations */
         config.put("nfvWorkloadPath", nfvWorkloadPath);
-        config.put("serveRemoteVNF", serveRemoteVNF);
+        config.put("communicationChoice", communicationChoice);
         config.put("vnfInstanceNum", vnfInstanceNum);
         config.put("offloadCCThreadNum", offloadCCThreadNum);
         config.put("offloadLockNum", offloadLockNum);

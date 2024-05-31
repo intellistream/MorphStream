@@ -3,7 +3,7 @@ package cli;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import commonStorage.RequestTemplates;
-import intellistream.morphstream.api.input.AdaptiveCCManager;
+import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
@@ -18,6 +18,8 @@ import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -38,7 +40,7 @@ public class CliFrontend {
     public void loadConfigStreaming(String[] args) throws IOException {
         try {
             LoadConfiguration(null, args);
-            prepareStreaming();
+            env.DatabaseInitialize();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,10 +48,6 @@ public class CliFrontend {
 
     public void prepareAdaptiveCC() {
         env.initializeAdaptiveCCManager();
-    }
-
-    public void startAdaptiveCC() {
-        env.startAdaptiveCC();
     }
 
     public void registerStateAccess(String saID, String saType, String tableName) {
@@ -95,15 +93,31 @@ public class CliFrontend {
     }
 
 
-    public void prepareStreaming() {
-        env.DatabaseInitialize();
-//        env.inputSource().initializeStreaming(MorphStreamEnv.get().configuration().getInt("tthread"));
+    public void start() throws InterruptedException {
+        int ccStrategy = env.configuration().getInt("ccStrategy");
+        if (ccStrategy == 0) {
+            env.getAdaptiveCCManager().startPartitionCC();
+            startVNF();
+        } else if (ccStrategy == 1) {
+            env.getAdaptiveCCManager().startCacheCC();
+            startVNF();
+        } else if (ccStrategy == 2) {
+            env.getAdaptiveCCManager().startOffloadCC();
+            startVNF();
+        } else if (ccStrategy == 3) {
+            runTopologyLocally();
+        } else if (ccStrategy == 4) {
+            env.getAdaptiveCCManager().startOpenNF();
+            startVNF();
+        } else if (ccStrategy == 5) {
+            env.getAdaptiveCCManager().startCHC();
+            startVNF();
+        } else if (ccStrategy == 6) {
+            env.getAdaptiveCCManager().startAdaptiveCC();
+            runTopologyLocally();
+        }
     }
 
-    public void start() throws InterruptedException {
-//        MeasureTools.Initialize();
-        runTopologyLocally();
-    }
     public void setSpoutCombo(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks) throws Exception {
         ApplicationSpoutCombo spout = new ApplicationSpoutCombo(id, txnDescriptionHashMap);
         env.setSpout(id, spout, numTasks);
@@ -141,23 +155,7 @@ public class CliFrontend {
 
     public void listenToStop() throws InterruptedException {
         executorThread sinkThread = env.OM().getEM().getSinkThread();
-        int ccStrategy = env.configuration().getInt("ccStrategy");
-
-        // Start simulated VNF instances
-        if (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") == 0) {
-            AdaptiveCCManager adaptiveCCManager = MorphStreamEnv.get().adaptiveCCManager();
-            adaptiveCCManager.startVNFInstances();
-
-        } else {
-            if (ccStrategy == 4) {
-                MorphStreamEnv.get().startOpenNF(); // Start OpenNF controller thread
-            } else if (ccStrategy == 5) {
-                MorphStreamEnv.get().startCHC(); // Start CHC controller thread
-            } else {
-                MorphStreamEnv.get().startAdaptiveCC(); // Start TransNFV: Partition_CC, Cache_CC, Offload_CC, and Monitor threads
-            }
-        }
-
+        startVNF();
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
         env.OM().join();
         env.OM().getEM().exist();
@@ -165,6 +163,40 @@ public class CliFrontend {
 
     public MorphStreamEnv env() {
         return env;
+    }
+
+    private static void startVNF() {
+        writeIndicatorFile("manager_ready");
+        Thread vnfThread = new Thread(new VNFRunner());
+        vnfThread.start();
+        LOG.info("VNF instances have started.");
+    }
+
+    private static void writeIndicatorFile(String fileName) {
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String directoryPath = rootPath + "/indicators";
+        String filePath = String.format("%s/%s.csv", directoryPath, fileName);
+        LOG.info("Writing indicator: " + fileName);
+
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return; // Stop further processing if unable to create the directory
+            }
+        }
+
+        File file = new File(filePath);
+        if (file.exists()) {
+            file.delete();
+        }
+
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            System.out.println("An error occurred while creating the file.");
+            e.printStackTrace();
+        }
     }
 
 }

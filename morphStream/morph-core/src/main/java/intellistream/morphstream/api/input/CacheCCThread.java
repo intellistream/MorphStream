@@ -1,7 +1,8 @@
 package intellistream.morphstream.api.input;
 
-import intellistream.morphstream.api.input.simVNF.VNFSenderThread;
-import intellistream.morphstream.api.input.simVNF.VNFManager;
+import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.simVNF.VNFInstance;
+import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.IOException;
@@ -12,7 +13,7 @@ import java.util.concurrent.BlockingQueue;
 public class CacheCCThread implements Runnable {
     private static BlockingQueue<CacheData> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
-    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
 
     public CacheCCThread(BlockingQueue<CacheData> operationQueue) {
         CacheCCThread.operationQueue = operationQueue;
@@ -29,7 +30,37 @@ public class CacheCCThread implements Runnable {
 
     @Override
     public void run() {
-        if (serveRemoteVNF) {
+        if (communicationChoice == 0) { // Java sim VNF
+            while (!Thread.currentThread().isInterrupted()) {
+                CacheData cacheData;
+                try {
+                    cacheData = operationQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                if (cacheData.getTimestamp() == -1) {
+                    System.out.println("Cache CC thread received stop signal");
+                    break;
+                }
+
+                // Simulating state update synchronization to other instances
+                for (Map.Entry<Integer, VNFInstance> entry : VNFRunner.getSenderMap().entrySet()) {
+                    if (entry.getKey() != cacheData.getInstanceID()) {
+                        SyncData syncData = new SyncData(cacheData.getTimestamp(), cacheData.getTupleID(), cacheData.getValue());
+                        entry.getValue().submitSyncData(syncData);
+                    }
+                }
+
+                try {
+                    VNFRequest request = new VNFRequest((int) cacheData.getTxnReqID(), cacheData.getInstanceID(), cacheData.getTupleID(), 0, cacheData.getTimestamp());
+                    VNFRunner.getSender(cacheData.getInstanceID()).submitFinishedRequest(request);
+                } catch (NullPointerException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+
+        } else if (communicationChoice == 1) {
             while (!Thread.currentThread().isInterrupted()) {
                 CacheData cacheData;
                 try {
@@ -53,29 +84,6 @@ public class CacheCCThread implements Runnable {
                         }
                     }
                 }
-            }
-
-        } else {
-            while (!Thread.currentThread().isInterrupted()) {
-                CacheData cacheData;
-                try {
-                    cacheData = operationQueue.take();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                if (cacheData.getTimestamp() == -1) {
-                    System.out.println("Cache CC thread received stop signal");
-                    break;
-                }
-
-                // Simulating state update synchronization to other instances
-                for (Map.Entry<Integer, VNFSenderThread> entry : VNFManager.getSenderMap().entrySet()) {
-                    if (entry.getKey() != cacheData.getInstanceID()) {
-                        SyncData syncData = new SyncData(cacheData.getTimestamp(), cacheData.getTupleID(), cacheData.getValue());
-                        entry.getValue().submitSyncData(syncData);
-                    }
-                }
-                cacheData.getSenderResponseQueue().add(1);
             }
         }
     }

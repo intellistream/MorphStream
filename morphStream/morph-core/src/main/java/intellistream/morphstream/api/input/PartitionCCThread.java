@@ -1,21 +1,20 @@
 package intellistream.morphstream.api.input;
 
-import intellistream.morphstream.api.input.simVNF.VNFManager;
+import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class PartitionCCThread implements Runnable {
     private static BlockingQueue<PartitionData> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
     private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance.
-    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
 
     public PartitionCCThread(BlockingQueue<PartitionData> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
@@ -35,7 +34,33 @@ public class PartitionCCThread implements Runnable {
     @Override
     public void run() {
 
-        if (serveRemoteVNF) {
+        if (communicationChoice == 0) {
+            while (!Thread.currentThread().isInterrupted()) {
+                PartitionData partitionData;
+                try {
+                    partitionData = operationQueue.take();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                if (partitionData.getTimeStamp() == -1) {
+                    System.out.println("Partition CC thread received stop signal");
+                    break;
+                }
+                int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
+
+                // Simulating cross-partition state access
+                try {
+                    int targetPartitionState = VNFRunner.getSender(targetInstanceID).readLocalState(partitionData.getTupleID());
+                    VNFRunner.getSender(targetInstanceID).writeLocalState(partitionData.getTupleID(), targetPartitionState);
+                    VNFRequest request = new VNFRequest((int) partitionData.getTxnReqId(), partitionData.getInstanceID(), partitionData.getTupleID(), 0, partitionData.getTimeStamp());
+                    VNFRunner.getSender(partitionData.getInstanceID()).submitFinishedRequest(request);
+
+                } catch (NullPointerException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        } else if (communicationChoice == 1) {
             while (!Thread.currentThread().isInterrupted()) {
                 int srcInstanceID = -1;
                 int targetInstanceID = -1;
@@ -70,32 +95,6 @@ public class PartitionCCThread implements Runnable {
 
                 } catch (Exception e) {
                     System.out.println("Runtime exception for partition req from instance " + srcInstanceID + " to instance " + targetInstanceID);
-                    throw new RuntimeException(e);
-                }
-            }
-
-        } else {
-            while (!Thread.currentThread().isInterrupted()) {
-                PartitionData partitionData;
-                try {
-                    partitionData = operationQueue.take();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                if (partitionData.getTimeStamp() == -1) {
-                    System.out.println("Partition CC thread received stop signal");
-                    break;
-                }
-                int targetInstanceID = partitionOwnership.get(partitionData.getTupleID());
-
-                // Simulating cross-partition state access
-                try {
-                    int targetPartitionState = VNFManager.getSender(targetInstanceID).readLocalState(partitionData.getTupleID());
-                    VNFManager.getSender(targetInstanceID).writeLocalState(partitionData.getTupleID(), targetPartitionState);
-                    //TODO: Add locking here
-                    partitionData.getSenderResponseQueue().add(1);
-
-                } catch (NullPointerException e) {
                     throw new RuntimeException(e);
                 }
             }

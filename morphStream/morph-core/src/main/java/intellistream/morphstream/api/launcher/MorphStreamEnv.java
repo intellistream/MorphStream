@@ -42,7 +42,6 @@ public class MorphStreamEnv {
     private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
     public static final ConcurrentHashMap<Integer, Object> instanceLocks = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<Integer, Integer> fetchedValues = new ConcurrentHashMap<>(); // tupleID -> value
-    public CountDownLatch simVNFLatch;
 
     public void initializeAdaptiveCCManager() {
         if (adaptiveCCManager == null) {
@@ -52,22 +51,9 @@ public class MorphStreamEnv {
         }
     }
 
-    public void startAdaptiveCC() {
-        adaptiveCCManager.startCC123_Monitor();
-    }
-
-    public void startOpenNF() {
-        adaptiveCCManager.startOpenNF();
-    }
-
-    public void startCHC() {
-        adaptiveCCManager.startCHC();
-    }
-
-    public AdaptiveCCManager adaptiveCCManager() {
+    public AdaptiveCCManager getAdaptiveCCManager() {
         return adaptiveCCManager;
     }
-
     public static MorphStreamEnv get() {
         return ourInstance;
     }
@@ -106,6 +92,9 @@ public class MorphStreamEnv {
             for (int i = 0; i < configuration.getInt("tthread", 4); i++)
                 databaseInitializer.setSpinlock_(i, new SpinLock());
             PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
+        }
+        for (int i = 0; i < configuration.getInt("tthread", 4); i++) {
+            databaseInitializer.loadDB(i, false);
         }
     }
     public void setSpout(String id, AbstractSpout spout, int numTasks) {

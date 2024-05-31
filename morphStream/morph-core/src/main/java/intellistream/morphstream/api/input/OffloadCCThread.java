@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.simVNF.VNFManager;
+import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -29,7 +29,7 @@ public class OffloadCCThread implements Runnable {
     private final HashMap<Integer, Integer> saTypeMap = MorphStreamEnv.get().getSaTypeMap();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final Map<Integer, Lock> partitionLocks = new HashMap<>(); //Each table partition holds one lock
-    private static final boolean serveRemoteVNF = (MorphStreamEnv.get().configuration().getInt("serveRemoteVNF") != 0);
+    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final int numPartitions = MorphStreamEnv.get().configuration().getInt("offloadLockNum");
     private static final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
@@ -65,7 +65,7 @@ public class OffloadCCThread implements Runnable {
     @Override
     public void run() {
 
-        if (serveRemoteVNF) {
+        if (communicationChoice == 1) {
             while (!Thread.currentThread().isInterrupted()) {
                 OffloadData offloadData;
                 try {
@@ -96,7 +96,7 @@ public class OffloadCCThread implements Runnable {
 
             }
 
-        } else {
+        } else if (communicationChoice == 0) {
             while (!Thread.currentThread().isInterrupted()) {
                 OffloadData offloadData;
                 try {
@@ -113,22 +113,21 @@ public class OffloadCCThread implements Runnable {
                 offloadData.setLogicalTimeStamp(requestCounter);
                 int saType = offloadData.getSaType();
                 if (saType == 1) {
-                    offloadData.getSenderResponseQueue().add(1); //Immediate acknowledge write
                     VNFRequest request = new VNFRequest((int) offloadData.getTxnReqId(), offloadData.getInstanceID(),
                             offloadData.getTupleID(), 1, offloadData.getTimeStamp());
-                    VNFManager.getSender(offloadData.getInstanceID()).submitFinishedRequest(request);
+                    VNFRunner.getSender(offloadData.getInstanceID()).submitFinishedRequest(request); //Send txn_finish signal to instance
                 }
 
                 if (doStatePartitioning) {
-                    offloadExecutor.submit(() -> processWithPartitionLock(offloadData));
+                    offloadExecutor.submit(() -> simProcessPartitionLock(offloadData));
                 } else {
-                    offloadExecutor.submit(() -> processWithGlobalLock(offloadData));
+                    offloadExecutor.submit(() -> simProcessGlobalLock(offloadData));
                 }
             }
         }
     }
 
-    private void processWithPartitionLock(OffloadData offloadData) { //TODO: Ordering needs to be guaranteed
+    private void simProcessPartitionLock(OffloadData offloadData) { //TODO: Ordering needs to be guaranteed
         int tupleID = offloadData.getTupleID();
         int saType = offloadData.getSaType();
         Lock lock = partitionLocks.get(partitionOwnership.get(tupleID));
@@ -144,7 +143,7 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    public void processWithGlobalLock(OffloadData offloadData) {
+    public void simProcessGlobalLock(OffloadData offloadData) {
         boolean processed = false;
         while (!processed) {
             // Check if this event is the next to be processed
@@ -282,9 +281,8 @@ public class OffloadCCThread implements Runnable {
             throw new RuntimeException(e);
         }
 
-        offloadData.getSenderResponseQueue().add(1);
         VNFRequest request = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp); //TODO: Optimization
-        VNFManager.getSender(instanceID).submitFinishedRequest(request);
+        VNFRunner.getSender(instanceID).submitFinishedRequest(request);
 
     }
 

@@ -89,7 +89,7 @@ public class VNFCtlStubImpl {
     static public void onPushDSMessage(int instanceID, setDSMessage msg) {
         System.out.println("Received instance push_DS for tuple " + msg.getKey() + ", value: " + msg.getValue());
         cacheReqCountPerInstance[instanceID]++;
-        CacheCCThread.submitReplicationRequest(new CacheData(System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
+        CacheCCThread.submitReplicationRequest(new CacheData(0, System.nanoTime(), instanceID, msg.getKey(), msg.getValue()));
 //        if (cacheReqCountPerInstance[instanceID] > 7400) {
 //            System.out.println("Instance "+instanceID+" has sent " + cacheReqCountPerInstance[instanceID] + " push DS Msg in response to cross-partition");
 //        }

@@ -55,7 +55,7 @@ public class DatabaseInitializer {
             LOG.info("Thread " + threadId + " loaded " + (right_bound - left_bound) + " records into table " + tableName);
         }
     }
-    public void loadDB(int threadId, boolean isPartition) {//Used by SStore
+    public void loadDB(int threadId, boolean isPartition) {//TODO: loadDB should be called by other CCs as well
         if (isPartition)
             loadDB(threadId, spinlock);
         else
