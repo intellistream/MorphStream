@@ -107,7 +107,7 @@ def stream_reader(pipe, pipe_name):
         for line in iter(pipe.readline, ''):
             print(f"{pipe_name}: {line.strip()}")
 
-def execute_bash_script(script_path, vnf_finished_indicator):
+def execute_bash_script(script_path):
     print(f"Executing bash script: {script_path}")
 
     # Execute the bash script
@@ -123,11 +123,6 @@ def execute_bash_script(script_path, vnf_finished_indicator):
     process.wait()
     stdout_thread.join()
     stderr_thread.join()
-
-    # Check for the specified file to be created
-    while not os.path.exists(vnf_finished_indicator):
-        print(f"Waiting for {vnf_finished_indicator} to be created...")
-        time.sleep(1)
 
     if process.returncode != 0:
         print(f"Bash script finished with errors.")
@@ -200,11 +195,10 @@ if __name__ == "__main__":
     enableCCSwitch = 0
     experimentID = "5.2.1_throughput"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
-    vnf_finished_indicator = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/indicators/vnf_finished.csv"
 
     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableCCSwitch, experimentID, script_path)
 
-    execute_bash_script(script_path, vnf_finished_indicator)
+    execute_bash_script(script_path)
 
-    root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/experiments/pre_study"
+    root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1_throughput"
     read_and_plot(root_directory)

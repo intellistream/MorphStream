@@ -68,7 +68,6 @@ public class VNFRunner implements Runnable {
         String ccStrategyString = toStringStrategy(ccStrategy);
 
         writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
-        writeIndicatorFile("vnf_finished");
     }
 
     public void startVNFInstances() {
@@ -111,8 +110,9 @@ public class VNFRunner implements Runnable {
     }
 
     public static void writeCSVThroughput(String pattern, String ccStrategy, double throughput) {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
-        String baseDirectory = rootPath + "/experiments/pre_study";
+        String baseDirectory = String.format("%s/%s/%s", rootPath, "results", experimentID);
         String directoryPath = String.format("%s/%s", baseDirectory, pattern);
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
         System.out.println("Writing to " + filePath);
