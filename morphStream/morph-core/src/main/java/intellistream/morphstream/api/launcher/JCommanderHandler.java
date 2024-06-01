@@ -329,13 +329,13 @@ public class JCommanderHandler {
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 0;
+    public int ccStrategy = 3;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 0;
+    public int workloadPattern = 3;
     @Parameter(names = {"--enableCCSwitch"}, description = "Enable dynamic CC switching or not")
     public int enableCCSwitch = 0;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.2.1_throughput";
+    public String experimentID = "5.2.1";
 
     public JCommanderHandler() {}
 

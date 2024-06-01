@@ -3,7 +3,9 @@ import os
 import time
 import threading
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import csv
 
 def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableCCSwitch, experimentID, script_path):
     script_content = f"""#!/bin/bash
@@ -129,7 +131,7 @@ def execute_bash_script(script_path):
     else:
         print(f"Bash script completed successfully.")
 
-def read_and_plot(root_directory):
+def plot_throughput_barchart(root_directory):
     # Define the pattern names and CC strategy names
     patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
     cc_strategies = ["Partitioning", "Replication", "Offloading", "Preemptive", "Broadcasting", "Flushing"]
@@ -167,9 +169,63 @@ def read_and_plot(root_directory):
 
     # Save the figure in the same directory as the script
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, 'throughput_comparison_figure.png'))  # Save the figure
+    plt.savefig(os.path.join(script_dir, '5.2.1_Throughput.png'))  # Save the figure
 
-    plt.show()  # Show the figure
+
+
+def plot_latency_CDF(root_directory):
+    patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
+    strategies = ["Partitioning", "Replication", "Offloading", "Preemptive", "Broadcasting", "Flushing"]
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    axes = axes.flatten()
+
+    for i, pattern in enumerate(patterns):
+        ax = axes[i]
+        for strategy in strategies:
+            file_path = os.path.join(root_directory, pattern, f"{strategy}.csv")
+            latency_data = []
+            try:
+                with open(file_path, 'r') as file:
+                    reader = csv.reader(file)
+                    next(reader)  # Skip the header
+                    for row in reader:
+                        latency_value = float(row[0])
+                        if latency_value < 0:
+                            print(f"Negative latency value found: {latency_value} in file {file_path}")
+                        latency_data.append(latency_value)
+            except FileNotFoundError:
+                print(f"File not found: {file_path}")
+                continue
+            except ValueError as e:
+                print(f"Value error for file {file_path}: {e}")
+                continue
+
+            if len(latency_data) == 0:
+                print(f"No data read from file: {file_path}")
+                continue
+
+            latency_data_sorted = np.sort(latency_data)
+            cdf = np.arange(1, len(latency_data_sorted) + 1) / len(latency_data_sorted)
+
+            if np.any(latency_data_sorted < 0):
+                print(f"Negative values in sorted data from file {file_path}")
+
+            if np.any(cdf < 0):
+                print(f"Negative values in CDF from file {file_path}")
+
+            ax.plot(latency_data_sorted, cdf, marker='.', linestyle='none', label=strategy)
+
+        ax.set_title(f"Pattern {pattern}")
+        ax.set_xlabel("Latency (10^-6 seconds)")
+        ax.set_ylabel("CDF")
+        ax.grid(True)
+        ax.legend()
+
+    plt.tight_layout()
+    script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
+    plt.savefig(os.path.join(script_dir, '5.2.1_Latency.png'))
+
 
 if __name__ == "__main__":
     # Define parameters
@@ -193,12 +249,13 @@ if __name__ == "__main__":
     ccStrategy = 0
     workloadPattern = 0
     enableCCSwitch = 0
-    experimentID = "5.2.1_throughput"
+    experimentID = "5.2.1"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableCCSwitch, experimentID, script_path)
+    # generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableCCSwitch, experimentID, script_path)
+    # execute_bash_script(script_path)
 
-    execute_bash_script(script_path)
-
-    root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1_throughput"
-    read_and_plot(root_directory)
+    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"
+    plot_throughput_barchart(throughput_root_directory)
+    latency_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/latency"
+    plot_latency_CDF(latency_root_directory)

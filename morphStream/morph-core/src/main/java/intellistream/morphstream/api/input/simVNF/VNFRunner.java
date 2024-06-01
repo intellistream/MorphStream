@@ -17,6 +17,7 @@ public class VNFRunner implements Runnable {
     private static HashMap<Integer, VNFInstance> senderMap = new HashMap<>();
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
     private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
+    private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
     private static HashMap<Integer, Double> throughputMap = new HashMap<>(); //instanceID -> instance's throughput
     private static HashMap<Integer, Double> minLatencyMap = new HashMap<>(); //instanceID -> instance's min latency
     private static HashMap<Integer, Double> maxLatencyMap = new HashMap<>(); //instanceID -> instance's max latency
@@ -67,7 +68,12 @@ public class VNFRunner implements Runnable {
         String patternString = toPatternString(pattern);
         String ccStrategyString = toStringStrategy(ccStrategy);
 
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        //TODO: Use experimentID to indicate which experiment to run.
+        // For example, 5.2.1 means compute throughput and latency comparison for all patterns and strategies.
+
         writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
+        writeCSVLatency(patternString, ccStrategyString);
     }
 
     public void startVNFInstances() {
@@ -89,30 +95,30 @@ public class VNFRunner implements Runnable {
             }
         }
 
-        SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
+        instanceLatencyStats.clear();
         for (int i = 0; i < parallelism; i++) {
-            instanceLatencyStats.clear();
             for (VNFRequest request : latencyMap.get(i)) {
                 long latency = request.getFinishTime() - request.getCreateTime();
-                instanceLatencyStats.addValue(latency); //TODO: Sorting request order based on requestID???
+                double latencyInUS = latency / 1E3;
+                instanceLatencyStats.addValue(latencyInUS);
             }
-            double minLatency = instanceLatencyStats.getMin();
-            double maxLatency = instanceLatencyStats.getMax();
-            double avgLatency = instanceLatencyStats.getMean();
-            double percentile95 = instanceLatencyStats.getPercentile(95);
         }
 
-        //TODO: Write latency data and stats to csv file
+        double minLatency = instanceLatencyStats.getMin();
+        double maxLatency = instanceLatencyStats.getMax();
+        double avgLatency = instanceLatencyStats.getMean();
+        double percentile95 = instanceLatencyStats.getPercentile(95); //TODO: Overall stat?
 
+        long size = instanceLatencyStats.getN();
         long overallDuration = overallEndTime - overallStartTime;
         double overallThroughput = totalRequestCounter / (overallDuration / 1E9);
         return overallThroughput;
     }
 
-    public static void writeCSVThroughput(String pattern, String ccStrategy, double throughput) {
+    private static void writeCSVLatency(String pattern, String ccStrategy) {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
-        String baseDirectory = String.format("%s/%s/%s", rootPath, "results", experimentID);
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "latency");
         String directoryPath = String.format("%s/%s", baseDirectory, pattern);
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
         System.out.println("Writing to " + filePath);
@@ -134,6 +140,41 @@ public class VNFRunner implements Runnable {
             }
         }
 
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            for (double latency : instanceLatencyStats.getValues()) {
+                String lineToWrite = String.valueOf(latency) + "\n";
+                fileWriter.write(lineToWrite);
+            }
+            System.out.println("Data written to CSV file successfully.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeCSVThroughput(String pattern, String ccStrategy, double throughput) {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
+        String directoryPath = String.format("%s/%s", baseDirectory, pattern);
+        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
+        System.out.println("Writing to " + filePath);
+
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
         try (FileWriter fileWriter = new FileWriter(file)) {
             String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
             fileWriter.write(lineToWrite);
