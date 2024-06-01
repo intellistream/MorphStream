@@ -115,9 +115,9 @@ public class AdaptiveCCManager {
         } else if (ccStrategy == 3) {
             return "Preemptive";
         } else if (ccStrategy == 4) {
-            return "OpenNF";
+            return "Broadcasting";
         } else if (ccStrategy == 5) {
-            return "CHC";
+            return "Flushing";
         } else if (ccStrategy == 6) {
             return "Adaptive";
         } else {

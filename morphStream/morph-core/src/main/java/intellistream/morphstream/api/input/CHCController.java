@@ -44,7 +44,7 @@ public class CHCController implements Runnable {
                     OffloadData request;
                     request = requestQueue.take();
                     if (request.getTimeStamp() == -1) {
-                        System.out.println("CHC CC thread received stop signal");
+                        System.out.println("Flushing CC thread received stop signal");
                         break;
                     }
                     int saIndex = request.getSaIndex();
@@ -111,13 +111,13 @@ public class CHCController implements Runnable {
             }
 
         } else if (communicationChoice == 0) {
-            System.out.println("CHC Controller has started.");
+            System.out.println("Flushing Controller has started.");
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     OffloadData request;
                     request = requestQueue.take();
                     if (request.getTimeStamp() == -1) {
-                        System.out.println("CHC CC thread received stop signal");
+                        System.out.println("Flushing CC thread received stop signal");
                         break;
                     }
                     int saIndex = request.getSaIndex();
@@ -127,19 +127,19 @@ public class CHCController implements Runnable {
                     long txnReqId = request.getTxnReqId();
 
                     if (tupleOwnership.get(tupleID) == null) { // State ownership is not yet assigned, assign it to the current instance
-                        System.out.println("Tuple " + tupleID + " is assigned to instance " + instanceID);
+//                        System.out.println("Tuple " + tupleID + " is assigned to instance " + instanceID);
                         tupleOwnership.put(tupleID, instanceID);
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                         SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                         VNFRunner.getSender(instanceID).writeLocalState(tupleID, readRecord.getValues().get(1).getInt());
 
                     } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
-                        System.out.println("Tuple " + tupleID + " is still owned by instance " + instanceID);
+//                        System.out.println("Tuple " + tupleID + " is still owned by instance " + instanceID);
                         //TODO: Simulate permission for instance to do local state access
                         //Maybe use a special value in the response to indicate this
 
                     } else { // State ownership has changed, fetch state from the current owner and perform RW centrally
-                        System.out.println("Tuple " + tupleID + " is accessed by another instance " + instanceID);
+//                        System.out.println("Tuple " + tupleID + " is accessed by another instance " + instanceID);
                         int currentOwner = tupleOwnership.get(tupleID);
 
                         // Fetch tuple value from the current owner instance

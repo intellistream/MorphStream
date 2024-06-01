@@ -9,7 +9,7 @@ function ResetParameters() {
   complexity=0
   NUM_ITEMS=10000
   rootFilePath="/home/shuhao/jjzhao/data"
-  totalEvents=400000
+  totalEvents=4000
 
   nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
   communicationChoice=0
@@ -22,6 +22,7 @@ function ResetParameters() {
   ccStrategy=0
   workloadPattern=0
   enableCCSwitch=0
+  experimentID="5.2.1_throughput"
 }
 
 function runTStream() {
@@ -45,7 +46,8 @@ function runTStream() {
           --rwRatioMutualInteractive $rwRatioMutualInteractive \
           --ccStrategy $ccStrategy \
           --workloadPattern $workloadPattern \
-          --enableCCSwitch $enableCCSwitch
+          --enableCCSwitch $enableCCSwitch \
+          --experimentID $experimentID
           "
   java -Xms20g -Xmx80g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \
     --app $app \
@@ -67,7 +69,8 @@ function runTStream() {
     --rwRatioMutualInteractive $rwRatioMutualInteractive \
     --ccStrategy $ccStrategy \
     --workloadPattern $workloadPattern \
-    --enableCCSwitch $enableCCSwitch
+    --enableCCSwitch $enableCCSwitch \
+    --experimentID $experimentID
 }
 
 function baselinePattern() {

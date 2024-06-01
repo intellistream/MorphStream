@@ -44,7 +44,7 @@ public class OpenNFController implements Runnable {
                     throw new RuntimeException(e);
                 }
                 if (request.getTimeStamp() == -1) {
-                    System.out.println("OpenNF CC thread received stop signal");
+                    System.out.println("Broadcasting CC thread received stop signal");
                     break;
                 }
                 int saIndex = request.getSaIndex();
@@ -83,7 +83,7 @@ public class OpenNFController implements Runnable {
             }
 
         } else if (communicationChoice == 0) {
-            System.out.println("OpenNF Controller started.");
+            System.out.println("Broadcasting Controller started.");
             while (!Thread.currentThread().isInterrupted()) {
                 OffloadData request;
                 try {
@@ -92,7 +92,7 @@ public class OpenNFController implements Runnable {
                     throw new RuntimeException(e);
                 }
                 if (request.getTimeStamp() == -1) {
-                    System.out.println("OpenNF CC thread received stop signal");
+                    System.out.println("Broadcasting Controller received stop signal");
                     break;
                 }
                 int saIndex = request.getSaIndex();

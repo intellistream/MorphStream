@@ -35,7 +35,7 @@ public class VNFRunner implements Runnable {
     public VNFRunner() {
         this.patternString = toPatternString(pattern);
         CyclicBarrier senderBarrier = new CyclicBarrier(parallelism);
-        String rootPath = "morphStream/scripts/TransNFV";
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
 
         for (int i = 0; i < parallelism; i++) {
             String csvFilePath = String.format(rootPath + "/pattern_files/%s/instance_%d.csv", patternString, i);
@@ -67,7 +67,8 @@ public class VNFRunner implements Runnable {
         String patternString = toPatternString(pattern);
         String ccStrategyString = toStringStrategy(ccStrategy);
 
-        writeToCSV(patternString, ccStrategyString, overallThroughput);
+        writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
+        writeIndicatorFile("vnf_finished");
     }
 
     public void startVNFInstances() {
@@ -109,15 +110,46 @@ public class VNFRunner implements Runnable {
         return overallThroughput;
     }
 
-    public static void writeToCSV(String pattern, String ccStrategy, double throughput) {
-        // Path where the directory and file will be created
-        String rootPath = "morphStream/scripts/TransNFV";
+    public static void writeCSVThroughput(String pattern, String ccStrategy, double throughput) {
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         String baseDirectory = rootPath + "/experiments/pre_study";
         String directoryPath = String.format("%s/%s", baseDirectory, pattern);
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
         System.out.println("Writing to " + filePath);
 
-        // Ensure directory exists
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
+            fileWriter.write(lineToWrite);
+            System.out.println("Data written to CSV file successfully.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeIndicatorFile(String fileName) {
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String directoryPath = rootPath + "/indicators";
+        String filePath = String.format("%s/%s.csv", directoryPath, fileName);
+        System.out.println("Writing indicator: " + fileName);
+
         File dir = new File(directoryPath);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -126,30 +158,15 @@ public class VNFRunner implements Runnable {
             }
         }
 
-        // Create a File object to represent the path
         File file = new File(filePath);
-
-        // Check if the file exists, and delete it if it does
         if (file.exists()) {
-            boolean isDeleted = file.delete();
-            if (!isDeleted) {
-                System.out.println("Failed to delete existing file.");
-                return; // Stop further processing if unable to delete the file
-            }
+            file.delete();
         }
 
-        // Using try-with-resources to handle file closing
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            // Create the line of data to write
-            String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
-
-            // Write the line to the file
-            fileWriter.write(lineToWrite);
-
-            // Feedback to know operation was successful
-            System.out.println("Data written to CSV file successfully.");
+        try {
+            file.createNewFile();
         } catch (IOException e) {
-            System.out.println("An error occurred while writing to the CSV file.");
+            System.out.println("An error occurred while creating the file.");
             e.printStackTrace();
         }
     }
@@ -179,9 +196,9 @@ public class VNFRunner implements Runnable {
         } else if (ccStrategy == 3) {
             return "Preemptive";
         } else if (ccStrategy == 4) {
-            return "OpenNF";
+            return "Broadcasting";
         } else if (ccStrategy == 5) {
-            return "CHC";
+            return "Flushing";
         } else if (ccStrategy == 6) {
             return "Adaptive";
         } else {

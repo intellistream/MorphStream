@@ -313,7 +313,7 @@ public class JCommanderHandler {
      * TransNFV Specific configurations
      */
     @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
-    public String nfvWorkloadPath = "morphStream/scripts/TransNFV";
+    public String nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV";
     @Parameter(names = {"--communicationChoice"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
     public int communicationChoice = 0;
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
@@ -329,11 +329,13 @@ public class JCommanderHandler {
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 6;
+    public int ccStrategy = 0;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 2;
-    @Parameter(names = {"--enableCCSwitch"}, description = "Chosen pattern workload")
+    public int workloadPattern = 0;
+    @Parameter(names = {"--enableCCSwitch"}, description = "Enable dynamic CC switching or not")
     public int enableCCSwitch = 0;
+    @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
+    public String experimentID = "5.2.1_throughput";
 
     public JCommanderHandler() {}
 
@@ -542,6 +544,7 @@ public class JCommanderHandler {
         config.put("ccStrategy", ccStrategy);
         config.put("workloadPattern", workloadPattern);
         config.put("enableCCSwitch", enableCCSwitch);
+        config.put("experimentID", experimentID);
 
         configSystem(config);
     }
