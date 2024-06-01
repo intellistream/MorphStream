@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class VNFInstance implements Runnable {
     private int instanceID;
@@ -23,8 +22,8 @@ public class VNFInstance implements Runnable {
     private final ConcurrentHashMap<Integer, Integer> localStateMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = AdaptiveCCManager.tpgQueues;
     private final BlockingQueue<SyncData> managerSyncQueue = new LinkedBlockingQueue<>();
-    private final BlockingQueue<VNFRequest> finishedRequestQueue = new LinkedBlockingQueue<>(); //Communication channel between VNFInstance and StateManager
-    private final ConcurrentLinkedDeque<VNFRequest> finishedReqStorage = new ConcurrentLinkedDeque<>(); //Stable storage of finished requests
+    private final BlockingQueue<VNFRequest> tempFinishedReqQueue = new LinkedBlockingQueue<>(); //Communication channel between VNFInstance and StateManager
+    private final ConcurrentLinkedDeque<VNFRequest> finishedReqStorage = new ConcurrentLinkedDeque<>(); //Permanent storage of finished requests
     private final int numTPGThreads;
     private int tpgRequestCount = 0;
     private int inputLineCounter = 0;
@@ -62,7 +61,7 @@ public class VNFInstance implements Runnable {
         try {
             request.setFinishTime(System.nanoTime());
             finishedReqStorage.add(request);
-            finishedRequestQueue.put(request); // This is dynamically pushed and polled
+            tempFinishedReqQueue.put(request); // This is dynamically pushed and polled
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -93,7 +92,7 @@ public class VNFInstance implements Runnable {
                     } else { // cross-partition state access
                         PartitionCCThread.submitPartitionRequest(new PartitionData(timestamp, reqID, instanceID, tupleID, 0, -1));
                         while (true) {
-                            VNFRequest lastFinishedReq = finishedRequestQueue.take();
+                            VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                             if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                                 break;
                             }
@@ -113,7 +112,7 @@ public class VNFInstance implements Runnable {
                         executeUDF(tupleID, type, 0);
                         CacheCCThread.submitReplicationRequest(new CacheData(reqID, timestamp, instanceID, tupleID, 0));
                         while (true) {
-                            VNFRequest lastFinishedReq = finishedRequestQueue.take();
+                            VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                             if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                                 break;
                             }
@@ -124,7 +123,7 @@ public class VNFInstance implements Runnable {
                     long timestamp = System.nanoTime();
                     OffloadCCThread.submitOffloadReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type));
                     while (true) {
-                        VNFRequest lastFinishedReq = finishedRequestQueue.take();
+                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                             break;
                         }
@@ -139,7 +138,7 @@ public class VNFInstance implements Runnable {
                     long timestamp = System.nanoTime();
                     OpenNFController.submitOpenNFReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type));
                     while (true) {
-                        VNFRequest lastFinishedReq = finishedRequestQueue.take();
+                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                             break;
                         }
@@ -149,7 +148,7 @@ public class VNFInstance implements Runnable {
                     long timestamp = System.nanoTime();
                     CHCController.submitCHCReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type));
                     while (true) {
-                        VNFRequest lastFinishedReq = finishedRequestQueue.take();
+                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                             break;
                         }
@@ -238,7 +237,7 @@ public class VNFInstance implements Runnable {
         }
     }
     public int getFinishedRequestCount() {
-        return finishedRequestQueue.size();
+        return finishedReqStorage.size();
     }
     public long getOverallStartTime() {
         return overallStartTime;

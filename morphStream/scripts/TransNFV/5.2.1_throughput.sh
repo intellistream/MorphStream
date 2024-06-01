@@ -12,7 +12,7 @@ function ResetParameters() {
   totalEvents=400000
 
   nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
-  communicationChoice=1
+  communicationChoice=0
   vnfInstanceNum=4
   offloadCCThreadNum=4
   offloadLockNum=1000
@@ -74,7 +74,7 @@ function baselinePattern() {
   ResetParameters
   for workloadPattern in 0 1 2 3
   do
-    for ccStrategy in 0 1 2 3
+    for ccStrategy in 0 1 2 3 4 5
     do
       runTStream
     done
