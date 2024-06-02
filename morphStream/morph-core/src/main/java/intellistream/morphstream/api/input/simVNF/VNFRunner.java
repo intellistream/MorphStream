@@ -27,7 +27,7 @@ public class VNFRunner implements Runnable {
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
     int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
-    int parallelism = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    static int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     int stateRange = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
     int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
@@ -35,13 +35,14 @@ public class VNFRunner implements Runnable {
 
     public VNFRunner() {
         this.patternString = toPatternString(pattern);
-        CyclicBarrier senderBarrier = new CyclicBarrier(parallelism);
+        CyclicBarrier senderBarrier = new CyclicBarrier(vnfInstanceNum);
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
 
-        for (int i = 0; i < parallelism; i++) {
-            String csvFilePath = String.format(rootPath + "/pattern_files/%s/instance_%d.csv", patternString, i);
-            int stateGap = stateRange / parallelism;
-            int instanceExpRequestCount = totalRequests / parallelism;
+        for (int i = 0; i < vnfInstanceNum; i++) {
+            String csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
+            int stateGap = stateRange / vnfInstanceNum;
+            int instanceExpRequestCount = totalRequests / vnfInstanceNum;
             VNFInstance sender = new VNFInstance(i,
                     stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange,
                     ccStrategy, numTPGThreads, csvFilePath, senderBarrier, instanceExpRequestCount);
@@ -69,21 +70,22 @@ public class VNFRunner implements Runnable {
         String ccStrategyString = toStringStrategy(ccStrategy);
 
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        //TODO: Use experimentID to indicate which experiment to run.
-        // For example, 5.2.1 means compute throughput and latency comparison for all patterns and strategies.
-
-        writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
-        writeCSVLatency(patternString, ccStrategyString);
+        if (experimentID.equals("5.2.1")) {
+            writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
+            writeCSVLatency(patternString, ccStrategyString);
+        } else if (experimentID.equals("5.2.2")) {
+            writeCSVScalability(patternString, ccStrategyString, overallThroughput);
+        }
     }
 
     public void startVNFInstances() {
-        for (int i = 0; i < parallelism; i++) {
+        for (int i = 0; i < vnfInstanceNum; i++) {
             senderThreadMap.get(i).start();
         }
     }
 
     public double joinVNFInstances() {
-        for (int i = 0; i < parallelism; i++) {
+        for (int i = 0; i < vnfInstanceNum; i++) {
             try {
                 senderThreadMap.get(i).join();
                 totalRequestCounter += senderMap.get(i).getFinishedRequestCount();
@@ -96,7 +98,7 @@ public class VNFRunner implements Runnable {
         }
 
         instanceLatencyStats.clear();
-        for (int i = 0; i < parallelism; i++) {
+        for (int i = 0; i < vnfInstanceNum; i++) {
             for (VNFRequest request : latencyMap.get(i)) {
                 long latency = request.getFinishTime() - request.getCreateTime();
                 double latencyInUS = latency / 1E3;
@@ -160,6 +162,38 @@ public class VNFRunner implements Runnable {
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
         System.out.println("Writing to " + filePath);
 
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
+            fileWriter.write(lineToWrite);
+            System.out.println("Data written to CSV file successfully.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeCSVScalability(String pattern, String ccStrategy, double throughput) {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
+        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, vnfInstanceNum, pattern);
+        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
+        System.out.println("Writing to " + filePath);
         File dir = new File(directoryPath);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {

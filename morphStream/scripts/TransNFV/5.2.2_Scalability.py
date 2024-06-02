@@ -89,9 +89,13 @@ function baselinePattern() {{
   do
     for ccStrategy in 0 1 2 3 4 5
     do
+      for vnfInstanceNum in 12
+      do
+        totalEvents=$((vnfInstanceNum * 1000))
       runTStream
     done
-  done
+    done
+    done
 }}
 
 baselinePattern
@@ -131,100 +135,58 @@ def execute_bash_script(script_path):
     else:
         print(f"Bash script completed successfully.")
 
-def plot_throughput_barchart(root_directory):
-    # Define the pattern names and CC strategy names
-    patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
-    cc_strategies = ["Partitioning", "Replication", "Offloading", "Preemptive", "Broadcasting", "Flushing"]
 
-    # Prepare the structure to hold data
-    data = {pattern: {} for pattern in patterns}
-
-    # Iterate over the patterns and ccStrategies
-    for pattern in patterns:
-        for strategy in cc_strategies:
-            file_path = f"{root_directory}/{pattern}/{strategy}.csv"
-
-            # Read the CSV file
-            try:
-                df = pd.read_csv(file_path, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
-                data[pattern][strategy] = df['Throughput'].iloc[0]
-            except Exception as e:
-                print(f"Failed to read {file_path}: {e}")
-                data[pattern][strategy] = None
-
-    # Plotting the data
-    fig, axs = plt.subplots(1, 4, figsize=(20, 5), sharey=True)
-    fig.suptitle('Throughput Comparison Across Different CC Strategies for Each Pattern')
-
-    for i, (pattern, strategies) in enumerate(data.items()):
-        strategies_names = list(strategies.keys())
-        throughputs = list(strategies.values())
-
-        axs[i].bar(strategies_names, throughputs, color='blue')
-        axs[i].set_title(f'Throughput for {pattern}')
-        axs[i].set_xlabel('CC Strategy')
-        axs[i].set_ylabel('Throughput (requests/second)')
-
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-    # Save the figure in the same directory as the script
-    script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.1_Throughput.png'))  # Save the figure
-
-
-
-def plot_latency_CDF(root_directory):
+def plot_scalability_comparison(root_dir):
+    # Define patterns, strategies, and number of parallel instances
     patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
     strategies = ["Partitioning", "Replication", "Offloading", "Preemptive", "Broadcasting", "Flushing"]
+    parallel_instances = [4, 8, 12]
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    axes = axes.flatten()
+    # Function to read throughput data from CSV
+    def read_throughput_data(pattern, strategy, instance_number):
+        file_path = f"{root_dir}/numInstance_{instance_number}/{pattern}/{strategy}.csv"
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            row = next(reader)
+            throughput = float(row[2])  # Assuming the throughput is the third element
+        return throughput
 
-    for i, pattern in enumerate(patterns):
-        ax = axes[i]
+    # Initialize a dictionary to store the throughput data
+    throughput_data = {pattern: {strategy: [] for strategy in strategies} for pattern in patterns}
+
+    # Read throughput data from CSV files
+    for pattern in patterns:
         for strategy in strategies:
-            file_path = os.path.join(root_directory, pattern, f"{strategy}.csv")
-            latency_data = []
-            try:
-                with open(file_path, 'r') as file:
-                    reader = csv.reader(file)
-                    next(reader)  # Skip the header
-                    for row in reader:
-                        latency_value = float(row[0])
-                        if latency_value < 0:
-                            print(f"Negative latency value found: {latency_value} in file {file_path}")
-                        latency_data.append(latency_value)
-            except FileNotFoundError:
-                print(f"File not found: {file_path}")
-                continue
-            except ValueError as e:
-                print(f"Value error for file {file_path}: {e}")
-                continue
+            for instance_number in parallel_instances:
+                throughput = read_throughput_data(pattern, strategy, instance_number)
+                throughput_data[pattern][strategy].append(throughput)
 
-            if len(latency_data) == 0:
-                print(f"No data read from file: {file_path}")
-                continue
+    # Create subplots
+    fig, axs = plt.subplots(2, 2, figsize=(15, 12))
 
-            latency_data_sorted = np.sort(latency_data)
-            cdf = np.arange(1, len(latency_data_sorted) + 1) / len(latency_data_sorted)
+    # Flatten axs array for easy iteration
+    axs = axs.flatten()
 
-            if np.any(latency_data_sorted < 0):
-                print(f"Negative values in sorted data from file {file_path}")
-
-            if np.any(cdf < 0):
-                print(f"Negative values in CDF from file {file_path}")
-
-            ax.plot(latency_data_sorted, cdf, marker='.', linestyle='none', label=strategy)
-
-        ax.set_title(f"Pattern {pattern}")
-        ax.set_xlabel("Latency (10^-6 seconds)")
-        ax.set_ylabel("CDF")
+    # Plot each pattern in a separate subplot
+    for i, pattern in enumerate(patterns):
+        ax = axs[i]
+        for strategy in strategies:
+            ax.plot(parallel_instances, throughput_data[pattern][strategy], marker='o', linestyle='-', label=strategy)
+        ax.set_title(f'{pattern} Workload')
+        ax.set_xlabel('Number of Parallel Instances')
+        ax.set_ylabel('Throughput')
+        ax.set_xticks(parallel_instances)  # Set x-ticks to only show actual data points
+        ax.set_xticklabels(parallel_instances)  # Explicitly set the tick labels
         ax.grid(True)
         ax.legend()
 
+    # Adjust layout
+    plt.tight_layout()
+
+    # Adjust layout
     plt.tight_layout()
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.1_Latency.png'))
+    plt.savefig(os.path.join(script_dir, '5.2.2_Scalability.png'))
 
 
 if __name__ == "__main__":
@@ -249,13 +211,11 @@ if __name__ == "__main__":
     ccStrategy = 0
     workloadPattern = 0
     enableCCSwitch = 0
-    experimentID = "5.2.1"
+    experimentID = "5.2.2"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableCCSwitch, experimentID, script_path)
     execute_bash_script(script_path)
 
-    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"
-    plot_throughput_barchart(throughput_root_directory)
-    latency_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/latency"
-    plot_latency_CDF(latency_root_directory)
+    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.2/throughput"
+    plot_scalability_comparison(throughput_root_directory)
