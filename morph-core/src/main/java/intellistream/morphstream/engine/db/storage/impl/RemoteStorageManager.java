@@ -176,7 +176,7 @@ public class RemoteStorageManager extends StorageManager {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
                 keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
-                size = this.tableNameToLength.get(tableName) + 8;
+                size = this.tableNameToLength.get(tableName);
                 break;
             }
         }
@@ -238,7 +238,7 @@ public class RemoteStorageManager extends StorageManager {
         }
         rdmaWorkerManager.sharedLockRelease(keyIndex, tableIndex, size);
     }
-    public void asyncReadRemoteDatabase(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
+    public void asyncReadRemoteDatabase(long bid, String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;
         int keyIndex = 0;
         int size = 0;
@@ -250,7 +250,7 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        rdmaWorkerManager.asyncReadRemoteDatabase(keyIndex, tableIndex, size, remoteObject);
+        rdmaWorkerManager.asyncReadRemoteDatabase(bid, keyIndex, tableIndex, size, remoteObject);
     }
     public void asyncReadRemoteDatabaseWithVersion(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, OCCContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;
@@ -316,7 +316,7 @@ public class RemoteStorageManager extends StorageManager {
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
-                keyIndex = Integer.parseInt(pKey) * (this.tableNameToLength.get(tableName) + 8) + 8;
+                keyIndex = Integer.parseInt(pKey) * (this.tableNameToLength.get(tableName) + 8) + 4;
                 size = this.tableNameToLength.get(tableName) + 4;//version + value
                 break;
             }

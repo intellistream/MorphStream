@@ -96,7 +96,7 @@ public class RLScheduler<Context extends RLContext> extends RemoteStorageSchedul
     private void asyncRead(Context context) {
         for (Operation operation : context.tempOperations) {
             try {
-                this.remoteStorageManager.asyncReadRemoteDatabase(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
+                this.remoteStorageManager.asyncReadRemoteDatabase(operation.bid, operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

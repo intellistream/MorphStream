@@ -63,7 +63,7 @@ public class OCCContext implements SchedulerContext {
     public static class RemoteObject {
         boolean successLocked;
         String value;
-        short version;
+        int version;
         short validationVersion;
         public RemoteObject() {
             this.successLocked = false;

@@ -44,18 +44,15 @@ public class OCCScheduler<Context extends OCCContext> extends RemoteStorageSched
         this.remoteStorageManager = remoteStorageManager;
     }
 
-
     @Override
     public boolean SubmitRequest(Context context, Request request) {
         context.push(request);
         return true;
     }
-
     @Override
     public void TxnSubmitBegin(Context context) {
         context.clear();
     }
-
     @Override
     public void TxnSubmitFinished(Context context, int batchID) {
         while(!context.successfullyCommit()){
@@ -80,13 +77,13 @@ public class OCCScheduler<Context extends OCCContext> extends RemoteStorageSched
         }
     }
 
-
     public void asyncRead(Context context) {
         for (Operation operation : context.tempOperations) {
             try {
-                if (dataCache.contains(operation.pKey))
-                    context.tempRemoteObjectMap.put(operation.pKey, dataCache.get(operation.pKey));
-                else {
+                if (dataCache.containsKey(operation.pKey)) {
+                    context.tempRemoteObjectMap.get(operation.pKey).setValue(dataCache.get(operation.pKey).getValue());
+                    context.tempRemoteObjectMap.get(operation.pKey).setVersion(dataCache.get(operation.pKey).getVersion());
+                } else {
                     this.remoteStorageManager.asyncReadRemoteDatabaseWithVersion(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
                 }
             } catch (Exception e) {
