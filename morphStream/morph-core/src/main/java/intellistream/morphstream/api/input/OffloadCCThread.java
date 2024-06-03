@@ -16,6 +16,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,6 +40,8 @@ public class OffloadCCThread implements Runnable {
     private final Condition nextEventCondition = globalLock.newCondition();
     private int watermark = 0;
     private boolean doStatePartitioning = false;
+    private static final AtomicLong aggSyncTime = new AtomicLong(0); //TODO: This can be optimized by creating separate aggregator for each worker thread
+    private static final AtomicLong aggUsefulTime = new AtomicLong(0);
 
 
     public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize) {
@@ -130,16 +133,25 @@ public class OffloadCCThread implements Runnable {
     private void simProcessPartitionLock(OffloadData offloadData) { //TODO: Ordering needs to be guaranteed
         int tupleID = offloadData.getTupleID();
         int saType = offloadData.getSaType();
+
+        long syncStartTime = System.nanoTime();
         Lock lock = partitionLocks.get(partitionOwnership.get(tupleID));
         lock.lock();
+        aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
+
         try {
+            long usefulStartTime = System.nanoTime();
             if (saType == 1) {
                 simOffloadWrite(offloadData);
             } else if (saType == 0 || saType == 2) {
                 simOffloadRead(offloadData);
             }
+            aggUsefulTime.addAndGet(System.nanoTime() - usefulStartTime);
+
         } finally {
+            long syncStartTime2 = System.nanoTime();
             lock.unlock();
+            aggSyncTime.addAndGet(System.nanoTime() - syncStartTime2);
         }
     }
 
@@ -148,15 +160,20 @@ public class OffloadCCThread implements Runnable {
         while (!processed) {
             // Check if this event is the next to be processed
             if (offloadData.getLogicalTimeStamp() == watermark + 1) {
+                long syncStartTime = System.nanoTime();
                 globalLock.lock();
+                aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
+
                 try {
                     if (offloadData.getLogicalTimeStamp() == watermark + 1) {
+                        long usefulStartTime = System.nanoTime();
                         int saType = offloadData.getSaType();
                         if (saType == 1) {
                             simOffloadWrite(offloadData);
                         } else if (saType == 0 || saType == 2) {
                             simOffloadRead(offloadData);
                         }
+                        aggUsefulTime.addAndGet(System.nanoTime() - usefulStartTime);
                         watermark++;
                         nextEventCondition.signalAll();  // Notify other waiting threads
                         processed = true;  // Mark as processed to break the loop
@@ -165,11 +182,17 @@ public class OffloadCCThread implements Runnable {
                     globalLock.unlock();  // Always release the lock
                 }
             } else {
+                long syncStartTime = System.nanoTime(); //TODO: Separate Lock and Sync (awaiting watermark) into two categories?
                 globalLock.lock();
+                aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
+
                 try {
+                    long syncStartTime2 = System.nanoTime();
                     while (offloadData.getLogicalTimeStamp() != watermark + 1) {
                         nextEventCondition.await();
                     }
+                    aggSyncTime.addAndGet(System.nanoTime() - syncStartTime2);
+
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } finally {
@@ -300,4 +323,11 @@ public class OffloadCCThread implements Runnable {
         return value;
     }
 
+    public static AtomicLong getAggSyncTime() {
+        return aggSyncTime;
+    }
+
+    public static AtomicLong getAggUsefulTime() {
+        return aggUsefulTime;
+    }
 }

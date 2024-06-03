@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.input.simVNF;
 
 import communication.dao.VNFRequest;
+import intellistream.morphstream.api.input.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
@@ -26,12 +27,17 @@ public class VNFRunner implements Runnable {
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
-    int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
-    static int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
-    int stateRange = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
-    int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
-    int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
-    int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
+    private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
+    private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    private static final int stateRange = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
+    private static final int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
+    private static final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
+    private static final int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
+    private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private static long totalParseTimeNS = 0;
+    private static long totalSyncTimeNS = 0;
+    private static long totalUsefulTimeNS = 0;
+    private static long totalCCSwitchTimeNS = 0;
 
     public VNFRunner() {
         this.patternString = toPatternString(pattern);
@@ -70,11 +76,18 @@ public class VNFRunner implements Runnable {
         String ccStrategyString = toStringStrategy(ccStrategy);
 
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        if (experimentID.equals("5.2.1")) {
-            writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
-            writeCSVLatency(patternString, ccStrategyString);
-        } else if (experimentID.equals("5.2.2")) {
-            writeCSVScalability(patternString, ccStrategyString, overallThroughput);
+        switch (experimentID) {
+            case "5.2.1":
+                writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
+                writeCSVLatency(patternString, ccStrategyString);
+                break;
+            case "5.2.2":
+                writeCSVScalability(patternString, ccStrategyString, overallThroughput);
+                break;
+            case "5.3.1":
+                computeTimeBreakdown();
+                writeCSVBreakdown();
+                break;
         }
     }
 
@@ -217,6 +230,91 @@ public class VNFRunner implements Runnable {
             System.out.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();
         }
+    }
+
+    private static void writeCSVBreakdown() {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "breakdown");
+        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, vnfInstanceNum, pattern);
+        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
+        System.out.println("Writing to " + filePath);
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String lineToWrite = totalParseTimeNS + "," + totalSyncTimeNS + "," + totalUsefulTimeNS + "," + totalCCSwitchTimeNS + "\n";
+            fileWriter.write(lineToWrite);
+            System.out.println("Data written to CSV file successfully.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
+    }
+
+    private void computeTimeBreakdown() {
+        long aggInstanceParseTime = 0;
+        long aggInstanceSyncTime = 0;
+        long aggInstanceUsefulTime = 0;
+        long aggManagerSyncTime = 0;
+        long aggManagerUsefulTime = 0;
+        long aggCCSwitchTime = 0;
+
+        for (int i = 0; i < vnfInstanceNum; i++) {
+            VNFInstance sender = senderMap.get(i);
+            for (long parseTime : sender.getAggParsingTimeMap().values()) {
+                aggInstanceParseTime += parseTime;
+            }
+            for (long syncTime : sender.getAggInstanceSyncTimeMap().values()) {
+                aggInstanceSyncTime += syncTime;
+            }
+            for (long usefulTime : sender.getAggInstanceUsefulTimeMap().values()) {
+                aggInstanceUsefulTime += usefulTime;
+            }
+            aggCCSwitchTime += sender.getAggCCSwitchTime();
+        }
+
+        if (ccStrategy == 0) { // Partitioning
+            aggManagerSyncTime = PartitionCCThread.getManagerEventSyncTime();
+            aggManagerUsefulTime = PartitionCCThread.getManagerEventUsefulTime();
+            // Caching time breakdown is done at instance level
+        } else if (ccStrategy == 2) { // Offloading
+            aggManagerSyncTime = OffloadCCThread.getAggSyncTime().get();
+            aggManagerUsefulTime = OffloadCCThread.getAggUsefulTime().get();
+        } else if (ccStrategy == 3) {
+            //TODO: Get time breakdown from TPG threads
+        } else if (ccStrategy == 4) { // OpenNF
+            aggManagerSyncTime = OpenNFController.getAggSyncTime();
+            aggManagerUsefulTime = OpenNFController.getAggUsefulTime();
+        } else if (ccStrategy == 5) {
+            aggManagerSyncTime = CHCController.getAggSyncTime();
+            aggManagerUsefulTime = CHCController.getAggUsefulTime();
+        } else if (ccStrategy == 6) {
+            aggManagerSyncTime += PartitionCCThread.getManagerEventSyncTime();
+            aggManagerSyncTime += OffloadCCThread.getAggSyncTime().get();
+            //TODO: Get time breakdown from TPG threads
+
+            aggManagerUsefulTime += PartitionCCThread.getManagerEventUsefulTime();
+            aggManagerUsefulTime += OffloadCCThread.getAggUsefulTime().get();
+            //TODO: Get time breakdown from TPG threads
+        }
+
+        totalParseTimeNS = aggInstanceParseTime;
+        totalSyncTimeNS = aggInstanceSyncTime + aggManagerSyncTime;
+        totalUsefulTimeNS = aggInstanceUsefulTime + aggManagerUsefulTime;
+        totalCCSwitchTimeNS = aggCCSwitchTime;
     }
 
     private static void writeIndicatorFile(String fileName) {

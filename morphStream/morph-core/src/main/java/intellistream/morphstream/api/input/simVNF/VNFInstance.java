@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.*;
 
 public class VNFInstance implements Runnable {
@@ -30,6 +31,12 @@ public class VNFInstance implements Runnable {
     private long overallStartTime;
     private long overallEndTime;
     private final int expectedRequestCount;
+    private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("patternPunctuation");
+    private HashMap<Integer, Long> aggParsingTimeMap = new HashMap<>(); // ccID -> total parsing time
+    private HashMap<Integer, Long> aggInstanceSyncTimeMap = new HashMap<>(); // ccID -> total sync time at instance, for CC with local sync
+    private HashMap<Integer, Long> aggInstanceUsefulTimeMap = new HashMap<>(); // ccID -> total useful time at instance, for CC with local RW
+    private Long aggCCSwitchTime = 0L; // ccID -> total time for CC switch
 
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, int ccStrategy, int numTPGThreads,
                        String csvFilePath, CyclicBarrier instancesBarrier, int expectedRequestCount) {
@@ -55,6 +62,13 @@ public class VNFInstance implements Runnable {
                 tupleCCMap.put(i, ccStrategy);
             }
         }
+        if (enableTimeBreakdown) {
+            for (int i = 0; i <= 5; i++) {
+                aggParsingTimeMap.put(i, 0L);
+                aggInstanceSyncTimeMap.put(i, 0L);
+                aggInstanceUsefulTimeMap.put(i, 0L);
+            }
+        }
     }
 
     public void submitFinishedRequest(VNFRequest request) {
@@ -75,68 +89,96 @@ public class VNFInstance implements Runnable {
             String line;
             overallStartTime = System.nanoTime();
             while ((line = reader.readLine()) != null) {
+                long packetStartTime = System.nanoTime();
+                long parsingStartTime = System.nanoTime();
+                inputLineCounter++;
                 String[] parts = line.split(",");
                 int reqID = Integer.parseInt(parts[0]);
                 int tupleID = Integer.parseInt(parts[1]);
                 int type = Integer.parseInt(parts[2]);
-
-                inputLineCounter++;
-
                 int tupleCC = tupleCCMap.get(tupleID);
+
+                //TODO: Proactively check for Pattern change? Or hardcode pattern change signals?
+
+                if (enableTimeBreakdown) {
+                    aggParsingTimeMap.put(tupleCC, aggParsingTimeMap.get(tupleCC) + (System.nanoTime() - parsingStartTime));
+                }
+
                 if (tupleCC == 0) { // local state access
-                    long timestamp = System.nanoTime();
                     if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
+                        long instanceUsefulStartTime = System.nanoTime();
                         executeUDF(tupleID, type, 0);
-                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                        if (enableTimeBreakdown) {
+                            aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                        }
+                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime));
 
                     } else { // cross-partition state access
-                        PartitionCCThread.submitPartitionRequest(new PartitionData(timestamp, reqID, instanceID, tupleID, 0, -1));
+                        long instanceSyncStartTime = System.nanoTime();
+                        PartitionCCThread.submitPartitionRequest(new PartitionData(packetStartTime, reqID, instanceID, tupleID, 0, -1));
                         while (true) {
                             VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                             if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                                 break;
                             }
+                        }
+                        if (enableTimeBreakdown) {
+                            aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                         }
                     }
 
                 } else if (tupleCC == 1) { // Replication
-                    long timestamp = System.nanoTime();
                     if (type == 0) { // read
+                        long instanceSyncStartTime = System.nanoTime();
                         if (!managerSyncQueue.isEmpty()) {
                             processAllQueueItems();
                         }
+                        if (enableTimeBreakdown) {
+                            aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                        }
+                        long instanceUsefulStartTime = System.nanoTime();
                         executeUDF(tupleID, type, 0);
-                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, timestamp));
+                        if (enableTimeBreakdown) {
+                            aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                        }
+                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime));
 
                     } else if (type == 1 || type == 2) { // write
+                        long instanceUsefulStartTime = System.nanoTime();
                         executeUDF(tupleID, type, 0);
-                        CacheCCThread.submitReplicationRequest(new CacheData(reqID, timestamp, instanceID, tupleID, 0));
+                        if (enableTimeBreakdown) {
+                            aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                        }
+                        long instanceSyncStartTime = System.nanoTime();
+                        CacheCCThread.submitReplicationRequest(new CacheData(reqID, packetStartTime, instanceID, tupleID, 0));
                         while (true) {
                             VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                             if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                                 break;
                             }
                         }
+                        if (enableTimeBreakdown) {
+                            aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                        }
                     }
 
                 } else if (tupleCC == 2) { // Offload
-                    long timestamp = System.nanoTime();
-                    OffloadCCThread.submitOffloadReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type));
+                    OffloadCCThread.submitOffloadReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type));
                     while (true) {
                         VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                             break;
                         }
                     }
+                    // For Offload CC, leave both Sync and Useful time measurement to manager
 
-                } else if (tupleCC == 3) { // TPG
-                    long timestamp = System.nanoTime();
-                    tpgQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, instanceID, timestamp, reqID, tupleID, 0, 0, 0));
+                } else if (tupleCC == 3) { // Preemptive
+                    tpgQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, instanceID, packetStartTime, reqID, tupleID, 0, 0, 0));
                     tpgRequestCount++;
+                    // For Preemptive CC, leave both Sync and Useful time measurement to manager
 
                 } else if (tupleCC == 4) { // OpenNF
-                    long timestamp = System.nanoTime();
-                    OpenNFController.submitOpenNFReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type));
+                    OpenNFController.submitOpenNFReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type));
                     while (true) {
                         VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -145,8 +187,7 @@ public class VNFInstance implements Runnable {
                     }
 
                 } else if (tupleCC == 5) { // CHC
-                    long timestamp = System.nanoTime();
-                    CHCController.submitCHCReq(new OffloadData(timestamp, instanceID, reqID, tupleID, 0, 0, 0, type));
+                    CHCController.submitCHCReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type));
                     while (true) {
                         VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -247,6 +288,18 @@ public class VNFInstance implements Runnable {
     }
     public ConcurrentLinkedDeque<VNFRequest> getFinishedReqStorage() {
         return finishedReqStorage;
+    }
+    public HashMap<Integer, Long> getAggParsingTimeMap() {
+        return aggParsingTimeMap;
+    }
+    public HashMap<Integer, Long> getAggInstanceSyncTimeMap() {
+        return aggInstanceSyncTimeMap;
+    }
+    public HashMap<Integer, Long> getAggInstanceUsefulTimeMap() {
+        return aggInstanceUsefulTimeMap;
+    }
+    public long getAggCCSwitchTime() {
+        return aggCCSwitchTime;
     }
     //TODO: Implement Lock for reading and writing states
     public int readLocalState(int tupleID) {

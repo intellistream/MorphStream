@@ -16,6 +16,8 @@ public class PartitionCCThread implements Runnable {
     private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance.
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
+    private static long managerEventSyncTime = 0;
+    private static long managerEventUsefulTime = 0;
 
     public PartitionCCThread(BlockingQueue<PartitionData> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
         PartitionCCThread.operationQueue = operationQueue;
@@ -50,8 +52,18 @@ public class PartitionCCThread implements Runnable {
 
                 // Simulating cross-partition state access
                 try {
+                    long syncStartTime = System.nanoTime();
                     int targetPartitionState = VNFRunner.getSender(targetInstanceID).readLocalState(partitionData.getTupleID());
+                    managerEventSyncTime += System.nanoTime() - syncStartTime;
+
+                    long usefulStartTime = System.nanoTime();
+                    simUDF(targetPartitionState); // Simulate UDF
+                    managerEventUsefulTime += System.nanoTime() - usefulStartTime; //TODO: This is not accurate, the actual state access is performed at target instance
+
+                    long syncStartTime2 = System.nanoTime();
                     VNFRunner.getSender(targetInstanceID).writeLocalState(partitionData.getTupleID(), targetPartitionState);
+                    managerEventSyncTime += System.nanoTime() - syncStartTime2;
+
                     VNFRequest request = new VNFRequest((int) partitionData.getTxnReqId(), partitionData.getInstanceID(), partitionData.getTupleID(), 0, partitionData.getTimeStamp());
                     VNFRunner.getSender(partitionData.getInstanceID()).submitFinishedRequest(request);
 
@@ -99,5 +111,19 @@ public class PartitionCCThread implements Runnable {
                 }
             }
         }
+    }
+
+    private int simUDF(int tupleValue) {
+//        Thread.sleep(10);
+        //TODO: Simulate UDF better
+        return tupleValue;
+    }
+
+    public static long getManagerEventSyncTime() {
+        return managerEventSyncTime;
+    }
+
+    public static long getManagerEventUsefulTime() {
+        return managerEventUsefulTime;
     }
 }

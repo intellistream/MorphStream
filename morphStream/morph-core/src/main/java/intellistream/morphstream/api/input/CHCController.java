@@ -23,6 +23,8 @@ public class CHCController implements Runnable {
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private static final ConcurrentHashMap<Integer, Integer> tupleOwnership = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> fetchedValues = MorphStreamEnv.fetchedValues;
+    private static long aggSyncTime = 0;
+    private static long aggUsefulTime = 0;
 
     public CHCController(BlockingQueue<OffloadData> requestQueue) {
         CHCController.requestQueue = requestQueue;
@@ -39,76 +41,7 @@ public class CHCController implements Runnable {
     @Override
     public void run() {
         if (communicationChoice == 1) {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    OffloadData request;
-                    request = requestQueue.take();
-                    if (request.getTimeStamp() == -1) {
-                        System.out.println("Flushing CC thread received stop signal");
-                        break;
-                    }
-                    int saIndex = request.getSaIndex();
-                    int instanceID = request.getInstanceID();
-                    int tupleID = request.getTupleID();
-                    long timeStamp = request.getTimeStamp();
-                    long txnReqId = request.getTxnReqId();
-
-                    if (tupleOwnership.get(tupleID) == null) {
-                        tupleOwnership.put(tupleID, instanceID);
-
-                    } else if (tupleOwnership.get(tupleID) == instanceID) {
-//                        System.out.println("Tuple " + tupleID + " is still owned by instance " + instanceID);
-                        synchronized (instanceLocks.get(instanceID)) {
-                            AdaptiveCCManager.vnfStubs.get(instanceID).txn_handle_done(txnReqId);
-                        }
-
-                    } else {
-//                        System.out.println("Tuple " + tupleID + " is accessed by another instance " + instanceID);
-                        int currentOwner = tupleOwnership.get(tupleID);
-
-                        // Fetch tuple value from the current owner instance
-                        synchronized (instanceLocks.get(currentOwner)) {
-                            AdaptiveCCManager.vnfStubs.get(currentOwner).fetch_value(tupleID);
-                        }
-                        while (!fetchedValues.containsKey(tupleID)) {
-                            try {
-                                // Avoid busy-waiting
-                                TimeUnit.MILLISECONDS.sleep(50); //TODO: Make sure it does not introduce bottleneck
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                break;
-                            }
-                        }
-                        int tupleValue = fetchedValues.get(tupleID);
-                        fetchedValues.remove(tupleID);
-
-                        // Execute SA UDF on the fetched value
-                        synchronized (instanceLocks.get(instanceID)) {
-                            AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, tupleValue);
-                        }
-
-                        // Update tuple value into global storage
-                        TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
-                        SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                        SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                        tempo_record.getValues().get(1).setInt(tupleValue);
-                        tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-                    }
-
-                } catch (InterruptedException e) {
-                    System.out.println("CHC Interrupted exception: " + e.getMessage());
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
-                    System.out.println("CHC IO exception: " + e.getMessage());
-                    throw new RuntimeException(e);
-                } catch (DatabaseException e) {
-                    System.out.println("CHC Database exception: " + e.getMessage());
-                    throw new RuntimeException(e);
-                } catch (RuntimeException e) {
-                    System.out.println("CHC Runtime exception: " + e.getMessage());
-                    throw new RuntimeException(e);
-                }
-            }
+            throw new RuntimeException("Remote communication not supported");
 
         } else if (communicationChoice == 0) {
             System.out.println("Flushing Controller has started.");
@@ -120,40 +53,37 @@ public class CHCController implements Runnable {
                         System.out.println("Flushing CC thread received stop signal");
                         break;
                     }
-                    int saIndex = request.getSaIndex();
                     int instanceID = request.getInstanceID();
                     int tupleID = request.getTupleID();
                     long timeStamp = request.getTimeStamp();
                     long txnReqId = request.getTxnReqId();
 
                     if (tupleOwnership.get(tupleID) == null) { // State ownership is not yet assigned, assign it to the current instance
-//                        System.out.println("Tuple " + tupleID + " is assigned to instance " + instanceID);
+                        long syncStartTime = System.nanoTime();
                         tupleOwnership.put(tupleID, instanceID);
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                         SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                         VNFRunner.getSender(instanceID).writeLocalState(tupleID, readRecord.getValues().get(1).getInt());
+                        aggSyncTime += System.nanoTime() - syncStartTime;
 
                     } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
-//                        System.out.println("Tuple " + tupleID + " is still owned by instance " + instanceID);
                         //TODO: Simulate permission for instance to do local state access
-                        //Maybe use a special value in the response to indicate this
+//                        VNFRunner.getSender(instanceID).permitLocalStateAccess(tupleID);
 
                     } else { // State ownership has changed, fetch state from the current owner and perform RW centrally
-//                        System.out.println("Tuple " + tupleID + " is accessed by another instance " + instanceID);
                         int currentOwner = tupleOwnership.get(tupleID);
-
-                        // Fetch tuple value from the current owner instance
+                        long syncStartTime = System.nanoTime();
                         int tupleValue = VNFRunner.getSender(currentOwner).readLocalState(tupleID);
+                        aggSyncTime += System.nanoTime() - syncStartTime;
 
-                        // Execute SA UDF on the fetched value
-                        simUDF(tupleValue);
-
-                        // Update tuple value into global storage
+                        long usefulStartTime = System.nanoTime();
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                         SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                         SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                        simUDF(tupleValue);
                         tempo_record.getValues().get(1).setInt(tupleValue);
                         tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+                        aggUsefulTime += System.nanoTime() - usefulStartTime;
                     }
 
                     VNFRequest response = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp);
@@ -174,6 +104,14 @@ public class CHCController implements Runnable {
 //        Thread.sleep(10);
         //TODO: Simulate UDF better
         return tupleValue;
+    }
+
+    public static long getAggSyncTime() {
+        return aggSyncTime;
+    }
+
+    public static long getAggUsefulTime() {
+        return aggUsefulTime;
     }
 
 }
