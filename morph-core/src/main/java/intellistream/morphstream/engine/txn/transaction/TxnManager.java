@@ -5,7 +5,9 @@ import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.scheduler.collector.Collector;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
-import intellistream.morphstream.engine.txn.scheduler.impl.ds.DSSchedule;
+import intellistream.morphstream.engine.txn.scheduler.impl.ds.DSScheduler;
+import intellistream.morphstream.engine.txn.scheduler.impl.ds.OCCScheduler;
+import intellistream.morphstream.engine.txn.scheduler.impl.ds.RLScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.og.nonstructured.OGNSAScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.og.nonstructured.OGNSScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.og.nonstructured.TStreamScheduler;
@@ -102,11 +104,19 @@ public abstract class TxnManager implements ITxnManager {
             scheduler = recoveryScheduler;
         }
     }
-    public static void initDScheduler(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager, RemoteStorageManager remoteStorageManager) {
-        scheduler = new DSSchedule(totalThreads, numItems, rdmaWorkerManager, remoteStorageManager);
-        scheduler.initTPG(0);
-        if (loggingManager != null) {
-            scheduler.setLoggingManager(loggingManager);
+    public static void initDistributedScheduler(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager, RemoteStorageManager remoteStorageManager, String schedulerType) {
+        switch (schedulerType) {
+            case "DScheduler":
+                scheduler = new DSScheduler(totalThreads, numItems, rdmaWorkerManager, remoteStorageManager);
+                scheduler.initTPG(0);
+                break;
+            case "RLScheduler":
+                scheduler = new RLScheduler<>(rdmaWorkerManager, remoteStorageManager);
+                break;
+            case "OCCScheduler":
+                scheduler = new OCCScheduler(rdmaWorkerManager, remoteStorageManager);
+            default:
+                throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }
     }
 

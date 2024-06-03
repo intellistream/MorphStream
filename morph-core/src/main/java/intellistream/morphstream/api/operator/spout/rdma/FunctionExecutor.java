@@ -4,6 +4,7 @@ import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.rdma.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
+import intellistream.morphstream.api.operator.bolt.rdma.RemoteStorageBolt;
 import intellistream.morphstream.api.operator.sink.rdma.ApplicationSink;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutCombo;
@@ -50,6 +51,10 @@ public class FunctionExecutor extends AbstractSpoutCombo {
         switch (config.getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
                 bolt = new MorphStreamBolt(operatorID, FunctionDescriptionHashMap, 0, this.sink);
+                break;
+            }
+            case CCOption_RemoteLock: {//Distributed
+                bolt = new RemoteStorageBolt(operatorID, FunctionDescriptionHashMap, 0, this.sink);
                 break;
             }
             case CCOption_SStore:

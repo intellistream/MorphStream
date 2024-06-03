@@ -31,7 +31,7 @@ public class DatabaseBuffer {
     public void initDatabaseBuffer() throws IOException {
         ByteBuffer byteBuffer = tableBuffer.getByteBuffer();
         for (int i = 0; i < numberItems; i++) {
-            byteBuffer.putShort((short) 0);
+            byteBuffer.putLong(0L);
             byteBuffer.put(FixedLengthRandomString.generateRandomFixedLengthString(itemSize).getBytes(StandardCharsets.UTF_8));
         }
         LOG.info("Table initialized with TableName: " + this.tableName + " ItemNumber: " + numberItems + " valueSize " + itemSize);

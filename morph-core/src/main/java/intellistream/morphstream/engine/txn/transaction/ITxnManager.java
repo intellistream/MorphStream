@@ -59,7 +59,9 @@ public interface ITxnManager {
         OP_DFS_A,
         TStream, // original TStream
         Recovery,
-        DScheduler
+        DScheduler,
+        RLScheduler,
+        OCCScheduler
     }
 
 }

@@ -5,7 +5,6 @@ import intellistream.morphstream.api.input.FunctionMessage;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.db.storage.datatype.DataBox;
-import intellistream.morphstream.engine.db.storage.datatype.IntDataBox;
 import intellistream.morphstream.engine.db.storage.datatype.StringDataBox;
 import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
@@ -26,10 +25,9 @@ import org.apache.log4j.Logger;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
-public class DSSchedule<Context extends DSContext> implements IScheduler<Context> {
-    private static final Logger LOG = Logger.getLogger(DSSchedule.class);
+public class DSScheduler<Context extends DSContext> implements IScheduler<Context> {
+    private static final Logger LOG = Logger.getLogger(DSScheduler.class);
     public final int delta;
     public final int totalThreads;
     public final TaskPrecedenceGraph<Context> tpg;
@@ -46,7 +44,7 @@ public class DSSchedule<Context extends DSContext> implements IScheduler<Context
             throw new RuntimeException(e);
         }
     }
-    public DSSchedule(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager, RemoteStorageManager remoteStorageManager) {
+    public DSScheduler(int totalThreads, int numItems, RdmaWorkerManager rdmaWorkerManager, RemoteStorageManager remoteStorageManager) {
         this.rdmaWorkerManager = rdmaWorkerManager;
         this.remoteStorageManager = remoteStorageManager;
         this.managerId = rdmaWorkerManager.getManagerId();

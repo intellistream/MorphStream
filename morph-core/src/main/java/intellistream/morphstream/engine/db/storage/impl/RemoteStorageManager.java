@@ -12,6 +12,8 @@ import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
+import intellistream.morphstream.engine.txn.scheduler.context.ds.OCCContext;
+import intellistream.morphstream.engine.txn.scheduler.context.ds.RLContext;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.apache.log4j.Logger;
 
@@ -103,7 +105,7 @@ public class RemoteStorageManager extends StorageManager {
            }
            for (int i = start; i < end; i++) {
                String key = keys.get(i);
-               this.readRemoteDatabase(tableName, key, rdmaWorkerManager, i, this.workerSideOwnershipTables.get(tableName).valueList, this.workerSideOwnershipTables.get(tableName).getTotalKeys());
+               this.readRemoteDatabaseForCache(tableName, key, rdmaWorkerManager, i, this.workerSideOwnershipTables.get(tableName).valueList, this.workerSideOwnershipTables.get(tableName).getTotalKeys());
            }
            LOG.info("Thread " + context.thisThreadId + " load cache for table " + tableName + " from remote database");
        }
@@ -166,19 +168,160 @@ public class RemoteStorageManager extends StorageManager {
     public void writeRemoteDatabase(String tableName, String key, int workerId) {
         //remoteCallLibrary.write(tableName, key, workerId);
     }
-    private void readRemoteDatabase(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
+    public void readRemoteDatabaseForCache(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
         int tableIndex = 0;
         int keyIndex = 0;
         int size = 0;
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
-                keyIndex = 0 * (this.tableNameToLength.get(tableName) + 2);
-                size = this.tableNameToLength.get(tableName) + 2;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = this.tableNameToLength.get(tableName) + 8;
                 break;
             }
         }
         rdmaWorkerManager.asyncReadRemoteDatabase(keyIndex, tableIndex, size, valueIndex, valueList, count);
+    }
+    public boolean exclusiveLockAcquisition(long bid, String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = 8;
+                break;
+            }
+        }
+        return rdmaWorkerManager.exclusiveLockAcquisition(bid, keyIndex, tableIndex, size, remoteObject);
+    }
+    public void exclusiveLockRelease(String tableName, String key, RdmaWorkerManager rdmaWorkerManager) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = 4;
+                break;
+            }
+        }
+        rdmaWorkerManager.exclusiveLockRelease(keyIndex, tableIndex, size);
+    }
+    public void sharedLockAcquisition(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = 8;
+                break;
+            }
+        }
+        rdmaWorkerManager.sharedLockAcquisition(keyIndex, tableIndex, size, remoteObject);
+    }
+    public void sharedLockRelease(String tableName, String key, RdmaWorkerManager rdmaWorkerManager) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = 8;
+                break;
+            }
+        }
+        rdmaWorkerManager.sharedLockRelease(keyIndex, tableIndex, size);
+    }
+    public void asyncReadRemoteDatabase(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = this.tableNameToLength.get(tableName) + 8;
+                break;
+            }
+        }
+        rdmaWorkerManager.asyncReadRemoteDatabase(keyIndex, tableIndex, size, remoteObject);
+    }
+    public void asyncReadRemoteDatabaseWithVersion(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, OCCContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = this.tableNameToLength.get(tableName) + 8;
+                break;
+            }
+        }
+        rdmaWorkerManager.asyncReadRemoteDatabaseWithVersion(keyIndex, tableIndex, size, remoteObject);
+    }
+    public boolean validationWriteLockAcquisition(long bid, String tableName, String key, RdmaWorkerManager rdmaWorkerManager, OCCContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = 8;
+                break;
+            }
+        }
+        return rdmaWorkerManager.validationLockAcquisition(bid, keyIndex, tableIndex, size, remoteObject);
+    }
+    public boolean validationReadAcquisition (String table, String key, RdmaWorkerManager rdmaWorkerManager, OCCContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(table)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(table) + 8);
+                size = 8;
+                break;
+            }
+        }
+        return rdmaWorkerManager.validationReadAcquisition(keyIndex, tableIndex, size, remoteObject);
+    }
+    public void asyncWriteRemoteDatabase(String tableName, String pKey, Object udfResult, RdmaWorkerManager rdmaWorkerManager) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(pKey) * (this.tableNameToLength.get(tableName) + 8) + 8;
+                size = this.tableNameToLength.get(tableName);
+                break;
+            }
+        }
+        rdmaWorkerManager.asyncWriteRemoteDatabase(keyIndex, tableIndex, size, udfResult);
+    }
+
+    public void asyncWriteRemoteDatabaseWithVersion(String tableName, String pKey, Object udfResult, RdmaWorkerManager rdmaWorkerManager, OCCContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(pKey) * (this.tableNameToLength.get(tableName) + 8) + 8;
+                size = this.tableNameToLength.get(tableName) + 4;//version + value
+                break;
+            }
+        }
+        rdmaWorkerManager.asyncWriteRemoteDatabaseWithVersion(keyIndex, tableIndex, size, udfResult, remoteObject);
     }
 
     @Override

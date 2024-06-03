@@ -59,7 +59,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--scheduler"},
             description = "Scheduler for MorphStream:" +
                     "OG_DFS,OG_DFS_A,OG_BFS,OG_BFS_A,OG_NS,OG_NS_A," +
-                    "OP_DFS,OP_DFS_A,OP_BFS,OP_BFS_A,OP_NS,OP_NS_A," + "DScheduler,TStream")
+                    "OP_DFS,OP_DFS_A,OP_BFS,OP_BFS_A,OP_NS,OP_NS_A," + "DScheduler, RLScheduler, TStream")
     public String scheduler = "DScheduler";
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
@@ -395,7 +395,7 @@ public class JCommanderHandler {
         } else {
             config.put("isDynamic", false);
             config.put("scheduler", scheduler);
-            config.put("defaultScheduler", defaultScheduler);
+            config.put("defaultScheduler", scheduler);
         }
         // Group scheduler
         if (isGroup == 1) {
@@ -540,6 +540,7 @@ public class JCommanderHandler {
                 content_type = LWM_CONTENT;
                 break;
             case Constants.CCOption_MorphStream:
+            case Constants.CCOption_RemoteLock:
                 if (config.getInt("FTOption") == 4) {
                     content_type = LVTSTREAM_CONTENT;//records the multi-version of table record.
                 } else {

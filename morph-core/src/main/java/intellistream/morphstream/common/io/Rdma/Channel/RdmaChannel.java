@@ -512,8 +512,68 @@ public class RdmaChannel {
         writeWRList.getLast().setWr_id(completionInfoId);
 
         try {
-            //TODO Problem Here
             rdmaPostWRListInQueue(new PendingSend(writeWRList, 0));
+        } catch (Exception e) {
+            removeCompletionInfo(completionInfoId);
+            throw e;
+        }
+    }
+    public void rdmaCASInQueue(RdmaCompletionListener listener, long localAddress, int localLength, int lKey, long remoteAddress, int rKey, long compareValue, long swapValue) throws IOException {
+        LinkedList<IbvSendWR> casWRList = new LinkedList<>();
+
+        IbvSge casSge = new IbvSge();
+        casSge.setAddr(localAddress);
+        casSge.setLength(localLength);
+        casSge.setLkey(lKey);
+
+        LinkedList<IbvSge> casSgeList = new LinkedList<>();
+        casSgeList.add(casSge);
+
+        IbvSendWR casWr = new IbvSendWR();
+        casWr.setOpcode(IbvSendWR.IbvWrOcode.IBV_WR_ATOMIC_CMP_AND_SWP.ordinal());
+        casWr.setSg_list(casSgeList);
+        casWr.getRdma().setRemote_addr(remoteAddress);
+        casWr.getRdma().setRkey(rKey);
+        casWr.getAtomic().setCompare_add(compareValue);
+        casWr.getAtomic().setSwap(swapValue);
+        casWr.setSend_flags(IbvSendWR.IBV_SEND_SIGNALED);
+        casWRList.add(casWr);
+
+        int completionInfoId = putCompletionInfo(new CompletionInfo(listener, 1));
+        casWRList.getLast().setWr_id(completionInfoId);
+
+        try {
+            rdmaPostWRListInQueue(new PendingSend(casWRList, 0));
+        } catch (Exception e) {
+            removeCompletionInfo(completionInfoId);
+            throw e;
+        }
+    }
+    public void rdmaFAAInQueue(RdmaCompletionListener listener, long localAddress, int localLength, int lKey, long remoteAddress, int rkey, long incrementValue) throws IOException {
+        LinkedList<IbvSendWR> faaWRList = new LinkedList<>();
+
+        IbvSge faaSge = new IbvSge();
+        faaSge.setAddr(localAddress);
+        faaSge.setLength(localLength);
+        faaSge.setLkey(lKey);
+
+        LinkedList<IbvSge> faaSgeList = new LinkedList<>();
+        faaSgeList.add(faaSge);
+
+        IbvSendWR faaWr = new IbvSendWR();
+        faaWr.setOpcode(IbvSendWR.IbvWrOcode.IBV_WR_ATOMIC_FETCH_AND_ADD.ordinal());
+        faaWr.setSg_list(faaSgeList);
+        faaWr.getRdma().setRemote_addr(remoteAddress);
+        faaWr.getRdma().setRkey(rkey);
+        faaWr.getAtomic().setCompare_add(incrementValue);
+        faaWr.setSend_flags(IbvSendWR.IBV_SEND_SIGNALED);
+        faaWRList.add(faaWr);
+
+        int completionInfoId = putCompletionInfo(new CompletionInfo(listener, 1));
+        faaWRList.getLast().setWr_id(completionInfoId);
+
+        try {
+            rdmaPostWRListInQueue(new PendingSend(faaWRList, 0));
         } catch (Exception e) {
             removeCompletionInfo(completionInfoId);
             throw e;

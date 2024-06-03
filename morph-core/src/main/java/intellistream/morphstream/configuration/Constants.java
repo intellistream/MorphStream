@@ -32,6 +32,7 @@ public interface Constants {
     int CCOption_LWM = 2;
     int CCOption_MorphStream = 3;
     int CCOption_SStore = 4;
+    int CCOption_RemoteLock = 6;
 
     interface EVENTS {
         String UNHALTED_CORE_CYCLES = "UNHALTED_CORE_CYCLES";
