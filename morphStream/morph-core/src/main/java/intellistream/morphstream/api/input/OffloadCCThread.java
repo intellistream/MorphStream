@@ -39,7 +39,8 @@ public class OffloadCCThread implements Runnable {
     private final ReentrantLock globalLock = new ReentrantLock();
     private final Condition nextEventCondition = globalLock.newCondition();
     private int watermark = 0;
-    private boolean doStatePartitioning = false;
+    private boolean doStatePartitioning = true;
+    private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private static final AtomicLong aggSyncTime = new AtomicLong(0); //TODO: This can be optimized by creating separate aggregator for each worker thread
     private static final AtomicLong aggUsefulTime = new AtomicLong(0);
 
@@ -51,7 +52,7 @@ public class OffloadCCThread implements Runnable {
         for (int i = 0; i < numPartitions; i++) {
             partitionLocks.put(i, new ReentrantLock(true));  // Create a fair lock for each partition
         }
-        int partitionGap = tableSize / numPartitions;
+        int partitionGap = tableSize / numPartitions; // 10000/1000 = 10
         for (int i = 0; i < tableSize; i++) {
             partitionOwnership.put(i, i / partitionGap);
         }
@@ -69,35 +70,7 @@ public class OffloadCCThread implements Runnable {
     public void run() {
 
         if (communicationChoice == 1) {
-            while (!Thread.currentThread().isInterrupted()) {
-                OffloadData offloadData;
-                try {
-                    offloadData = operationQueue.take();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                if (offloadData.getTimeStamp() == -1) {
-                    System.out.println("Offload CC received stop signal.");
-                    offloadExecutor.shutdownNow();
-                    break; // stop signal received
-                }
-                offloadData.setLogicalTimeStamp(requestCounter++);
-                int saType = saTypeMap.get(offloadData.getSaIndex());
-                if (saType == 1) {
-                    synchronized (instanceLocks.get(offloadData.getInstanceID())) {
-                        try {
-                            AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(offloadData.getTxnReqId());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    offloadExecutor.submit(() -> offloadWrite(offloadData));
-
-                } else if (saType == 0 || saType == 2) {
-                    offloadExecutor.submit(() -> offloadRead(offloadData));
-                }
-
-            }
+            throw new UnsupportedOperationException();
 
         } else if (communicationChoice == 0) {
             while (!Thread.currentThread().isInterrupted()) {
@@ -116,6 +89,11 @@ public class OffloadCCThread implements Runnable {
                 offloadData.setLogicalTimeStamp(requestCounter);
                 int saType = offloadData.getSaType();
                 if (saType == 1) {
+                    try {
+                        offloadData.getSenderResponseQueue().put(1);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     VNFRequest request = new VNFRequest((int) offloadData.getTxnReqId(), offloadData.getInstanceID(),
                             offloadData.getTupleID(), 1, offloadData.getTimeStamp());
                     VNFRunner.getSender(offloadData.getInstanceID()).submitFinishedRequest(request); //Send txn_finish signal to instance
@@ -137,7 +115,9 @@ public class OffloadCCThread implements Runnable {
         long syncStartTime = System.nanoTime();
         Lock lock = partitionLocks.get(partitionOwnership.get(tupleID));
         lock.lock();
-        aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
+        if (enableTimeBreakdown) {
+            aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
+        }
 
         try {
             long usefulStartTime = System.nanoTime();
@@ -146,12 +126,16 @@ public class OffloadCCThread implements Runnable {
             } else if (saType == 0 || saType == 2) {
                 simOffloadRead(offloadData);
             }
-            aggUsefulTime.addAndGet(System.nanoTime() - usefulStartTime);
+            if (enableTimeBreakdown) {
+                aggUsefulTime.addAndGet(System.nanoTime() - usefulStartTime);
+            }
 
         } finally {
             long syncStartTime2 = System.nanoTime();
             lock.unlock();
-            aggSyncTime.addAndGet(System.nanoTime() - syncStartTime2);
+            if (enableTimeBreakdown) {
+                aggSyncTime.addAndGet(System.nanoTime() - syncStartTime2);
+            }
         }
     }
 
@@ -304,6 +288,11 @@ public class OffloadCCThread implements Runnable {
             throw new RuntimeException(e);
         }
 
+        try {
+            offloadData.getSenderResponseQueue().put(1);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         VNFRequest request = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp); //TODO: Optimization
         VNFRunner.getSender(instanceID).submitFinishedRequest(request);
 

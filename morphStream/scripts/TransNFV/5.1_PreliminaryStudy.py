@@ -36,7 +36,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms20g -Xmx80g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --NUM_ITEMS $NUM_ITEMS \\
           --tthread $tthread \\
@@ -87,7 +87,7 @@ function baselinePattern() {{
   ResetParameters
   for workloadPattern in 0 1 2 3
   do
-    for ccStrategy in 0 1 2 3 4 5
+    for ccStrategy in 0 1 2 3
     do
       runTStream
     done
@@ -134,8 +134,8 @@ def execute_bash_script(script_path):
 def plot_throughput_barchart(root_directory):
     # Define the pattern names and CC strategy names
     patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
-    cc_strategies = ["Partitioning", "Replication", "Offloading", "Preemptive", "Broadcasting", "Flushing"]
-    colors = ['blue', 'green', 'red', 'purple', "orange", "grey"]
+    cc_strategies = ["Partitioning", "Replication", "Offloading", "Preemptive"]
+    colors = ['blue', 'green', 'red', 'purple']
 
     # Prepare the structure to hold data
     data = {pattern: {} for pattern in patterns}
@@ -169,103 +169,44 @@ def plot_throughput_barchart(root_directory):
     # Create custom legend
     handles = [plt.Rectangle((0,0),1,1, color=color) for color in colors]
     labels = cc_strategies
-    fig.legend(handles, labels, loc='upper center', ncol=6, fontsize=16)
+    fig.legend(handles, labels, loc='upper center', ncol=4, fontsize=16)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     # Save the figure in the same directory as the script
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.1_Throughput.pdf'))  # Save the figure
-    plt.savefig(os.path.join(script_dir, '5.2.1_Throughput.png'))  # Save the figure
-
-
-
-def plot_latency_CDF(root_directory):
-    patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
-    strategies = ["Partitioning", "Replication", "Offloading", "Preemptive", "Broadcasting", "Flushing"]
-
-    fig, axes = plt.subplots(1, 4, figsize=(20, 5))  # Adjusted figsize for a 1x4 layout
-    axes = axes.flatten()
-
-    for i, pattern in enumerate(patterns):
-        ax = axes[i]
-        for strategy in strategies:
-            file_path = os.path.join(root_directory, pattern, f"{strategy}.csv")
-            latency_data = []
-            try:
-                with open(file_path, 'r') as file:
-                    reader = csv.reader(file)
-                    next(reader)  # Skip the header
-                    for row in reader:
-                        latency_value = float(row[0])
-                        if latency_value < 0:
-                            print(f"Negative latency value found: {latency_value} in file {file_path}")
-                        latency_data.append(latency_value)
-            except FileNotFoundError:
-                print(f"File not found: {file_path}")
-                continue
-            except ValueError as e:
-                print(f"Value error for file {file_path}: {e}")
-                continue
-
-            if len(latency_data) == 0:
-                print(f"No data read from file: {file_path}")
-                continue
-
-            latency_data_sorted = np.sort(latency_data)
-            cdf = np.arange(1, len(latency_data_sorted) + 1) / len(latency_data_sorted)
-
-            if np.any(latency_data_sorted < 0):
-                print(f"Negative values in sorted data from file {file_path}")
-
-            if np.any(cdf < 0):
-                print(f"Negative values in CDF from file {file_path}")
-
-            ax.plot(latency_data_sorted, cdf, marker='.', linestyle='none', label=strategy)
-
-        ax.set_title(f"Pattern {pattern}")
-        ax.set_xlabel("Latency (10^-6 seconds)")
-        ax.set_ylabel("CDF")
-        ax.grid(True)
-        ax.legend()
-
-    plt.tight_layout()
-    script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.1_Latency.pdf'))
-    plt.savefig(os.path.join(script_dir, '5.2.1_Latency.png'))
+    plt.savefig(os.path.join(script_dir, '5.1_Throughput.pdf'))  # Save the figure
+    plt.savefig(os.path.join(script_dir, '5.1_Throughput.png'))  # Save the figure
 
 
 if __name__ == "__main__":
     # Define parameters
     app = "nfv_test"
-    checkpointInterval = 100
-    tthread = 4
+    checkpointInterval = 500
+    tthread = 8
     scheduler = "OP_BFS_A"
     defaultScheduler = "OP_BFS_A"
     complexity = 0
     NUM_ITEMS = 10000
     rootFilePath = "/home/shuhao/jjzhao/data"
-    totalEvents = 4000
+    totalEvents = 400000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
-    offloadCCThreadNum = 4
-    offloadLockNum = 1000
+    offloadCCThreadNum = 16
+    offloadLockNum = 10000
     rRatioSharedReaders = 80
     wRatioSharedWriters = 80
     rwRatioMutualInteractive = 80
     ccStrategy = 0
     workloadPattern = 0
     enableTimeBreakdown = 0
-    experimentID = "5.2.1"
+    experimentID = "5.1"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    # generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-    # execute_bash_script(script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
+    execute_bash_script(script_path)
 
-    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"
+    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.1/throughput"
     plot_throughput_barchart(throughput_root_directory)
-    print("5.2.1 throughput figure generated.")
-    latency_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/latency"
-    plot_latency_CDF(latency_root_directory)
-    print("5.2.1 latency figure generated.")
+    print("5.1 throughput figure generated.")

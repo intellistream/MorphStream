@@ -77,6 +77,9 @@ public class VNFRunner implements Runnable {
 
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         switch (experimentID) {
+            case "5.1":
+                writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
+                break;
             case "5.2.1":
                 writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
                 writeCSVLatency(patternString, ccStrategyString);

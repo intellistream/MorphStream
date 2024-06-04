@@ -241,7 +241,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
     public String dataDirectory = "morphStream/data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 4000;
+    public int totalEvents = 400000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
@@ -270,13 +270,13 @@ public class JCommanderHandler {
 
     //System configure
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
+    public int tthread = 8;// default total execution threads
     @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
-    public int spoutNum = 4;// number of spout threads
+    public int spoutNum = 8;// number of spout threads
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
-    public String operatorThreadNum = "4";// number of threads for each operator
+    public String operatorThreadNum = "8";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 100;//checkpoint per thread.
+    public int checkpoint_interval = 200;//checkpoint per thread.
 
 
     /**
@@ -319,9 +319,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
     public int vnfInstanceNum = 4;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadCCThreadNum = 4;
+    public int offloadCCThreadNum = 8;
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadLockNum = 1000;
+    public int offloadLockNum = 10000;
     @Parameter(names = {"--rRatioSharedReaders"}, description = "Read ratio for shared readers pattern")
     public int rRatioSharedReaders = 80;
     @Parameter(names = {"--wRatioSharedWriters"}, description = "Write ratio for shared writers pattern")
@@ -329,15 +329,15 @@ public class JCommanderHandler {
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 4;
+    public int ccStrategy = 2;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 3;
+    public int workloadPattern = 2;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
     @Parameter(names = {"--patternPunctuation"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int patternPunctuation = 200;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.2.3";
+    public String experimentID = "5.1";
 
     public JCommanderHandler() {}
 

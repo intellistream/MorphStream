@@ -163,13 +163,18 @@ public class VNFInstance implements Runnable {
                     }
 
                 } else if (tupleCC == 2) { // Offload
-                    OffloadCCThread.submitOffloadReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type));
-                    while (true) {
-                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
-                        if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                            break;
-                        }
+                    BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
+                    OffloadCCThread.submitOffloadReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type, responseQueue));
+                    while (responseQueue.isEmpty()) {
+                        //Wait for manager's ack
                     }
+//                    System.out.println("Offload response:" + responseQueue.take());
+//                    while (true) {
+//                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
+//                        if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+//                            break;
+//                        }
+//                    }
                     // For Offload CC, leave both Sync and Useful time measurement to manager
 
                 } else if (tupleCC == 3) { // Preemptive

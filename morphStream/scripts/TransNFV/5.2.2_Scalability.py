@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
-def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableCCSwitch, experimentID, script_path):
+def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -31,7 +31,7 @@ function ResetParameters() {{
   rwRatioMutualInteractive={rwRatioMutualInteractive}
   ccStrategy={ccStrategy}
   workloadPattern={workloadPattern}
-  enableCCSwitch={enableCCSwitch}
+  enableTimeBreakdown={enableTimeBreakdown}
   experimentID="{experimentID}"
 }}
 
@@ -56,7 +56,7 @@ function runTStream() {{
           --rwRatioMutualInteractive $rwRatioMutualInteractive \\
           --ccStrategy $ccStrategy \\
           --workloadPattern $workloadPattern \\
-          --enableCCSwitch $enableCCSwitch \\
+          --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID
           "
   java -Xms20g -Xmx80g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
@@ -79,7 +79,7 @@ function runTStream() {{
     --rwRatioMutualInteractive $rwRatioMutualInteractive \\
     --ccStrategy $ccStrategy \\
     --workloadPattern $workloadPattern \\
-    --enableCCSwitch $enableCCSwitch \\
+    --enableTimeBreakdown $enableTimeBreakdown \\
     --experimentID $experimentID
 }}
 
@@ -210,11 +210,11 @@ if __name__ == "__main__":
     rwRatioMutualInteractive = 80
     ccStrategy = 0
     workloadPattern = 0
-    enableCCSwitch = 0
+    enableTimeBreakdown = 0
     experimentID = "5.2.2"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableCCSwitch, experimentID, script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
     execute_bash_script(script_path)
 
     throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.2/throughput"
