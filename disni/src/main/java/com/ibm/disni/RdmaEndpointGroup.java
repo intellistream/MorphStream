@@ -156,6 +156,9 @@ public abstract class RdmaEndpointGroup <C extends RdmaEndpoint> {
 	public RdmaConnParam getConnParam() {
 		return connParam;
 	}
+	public void setConnParam(RdmaConnParam connParam) {
+		this.connParam = connParam;
+	}
 
 	public synchronized void close() throws IOException, InterruptedException {
 		logger.info("shutting down group");
