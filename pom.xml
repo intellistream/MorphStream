@@ -8,6 +8,7 @@
     <packaging>pom</packaging>
     <version>0.1</version>
     <modules>
+        <module>disni</module>
         <module>morph-core</module>
         <module>morph-clients</module>
         <module>morph-web</module>
