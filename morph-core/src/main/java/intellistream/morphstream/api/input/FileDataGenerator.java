@@ -69,6 +69,7 @@ public class FileDataGenerator {
         String[] tableNames = configuration.getString("tableNames","table1,table2").split(";");
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
+            LOG.info("Table: " + tableName + " has " + numItemMaps.get(tableName) + " items");
         }
         rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark");
         if (!new File(rootPath).exists()) {
@@ -82,7 +83,7 @@ public class FileDataGenerator {
                 Files.createFile(inputFile);
             }
         } catch (IOException e) {
-            System.out.println("Error in locating input file: " + e.getMessage());
+            LOG.warn("Error in locating input file: " + e.getMessage());
         }
         totalPartition = configuration.getInt("tthread", 4) * configuration.getInt("nodeNum", 1);
         punctuation = configuration.getInt("checkpoint", 1000);
@@ -167,9 +168,6 @@ public class FileDataGenerator {
         for (Map.Entry<String, Integer> entry : keysForTable.entrySet()) {//TableName -> keyNumber
             List<String> keys = new ArrayList<>();
             int key = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
-            if (key == numItemMaps.get(entry.getKey())) {
-                System.out.println("Error");
-            }
             keys.add(String.valueOf(key));
             int partition = key_to_partition(entry.getKey(), key);
             if (random.nextInt(1000) < eventMultiPartitionMap.get(eventType)) {

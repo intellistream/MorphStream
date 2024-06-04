@@ -21,7 +21,7 @@ public class DatabaseBuffer {
     public DatabaseBuffer(String tableName, int numberItems, int itemSize, IbvPd ibvPd) throws Exception {
         this.numberItems = numberItems;
         this.itemSize = itemSize;
-        this.tableBuffer = new RdmaBuffer(ibvPd, numberItems * (itemSize + 2));
+        this.tableBuffer = new RdmaBuffer(ibvPd, numberItems * (itemSize + 8));
         this.tableName = tableName;
     }
     public RegionToken createRegionToken() {

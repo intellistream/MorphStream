@@ -62,17 +62,22 @@ public class RLScheduler<Context extends RLContext> extends RemoteStorageSchedul
             releaseLock(context);
             lock = getLock(context);
         } while (!lock);
+        LOG.info("ThreadId:" + context.thisThreadId + " get lock");
         //Execution
         asyncRead(context);
+        LOG.info("ThreadId:" + context.thisThreadId + " read");
         while(context.hasUnExecuted()) {
             execute(context);
         }
+        LOG.info("ThreadId:" + context.thisThreadId + " execute");
         //Commit
         if (context.canCommit()) {
             commit(context);
         }
+        LOG.info("ThreadId:" + context.thisThreadId + " commit");
         //Release Lock
         releaseLock(context);
+        LOG.info("ThreadId:" + context.thisThreadId + " release lock");
     }
     private boolean getLock(Context context) {
         try {

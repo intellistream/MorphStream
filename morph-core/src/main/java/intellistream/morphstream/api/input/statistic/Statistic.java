@@ -24,9 +24,12 @@ public class Statistic {
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
     private final ConcurrentHashMap<Integer, List<Integer>> tempVotes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Map<Integer, Integer>> tempVoteCount = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedQueue<String> tempKeys = new ConcurrentLinkedQueue();
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> tempKeys = new ConcurrentHashMap<>();//Table name -> keys
     public Statistic(int workerNum, int shuffleType, String[] tableNames, int frontendNumber) {
         this.tableNames = tableNames;
+        for (String tableName : tableNames) {
+            tempKeys.put(tableName, new ConcurrentLinkedQueue<>());
+        }
         for (int i = 0; i < workerNum; i++) {
             workerIdToInputStatisticMap.put(i, new InputStatistic(i, tableNames));
         }
@@ -48,7 +51,7 @@ public class Statistic {
 
     public DriverSideOwnershipTable getOwnershipTable(String tableName) {
         DriverSideOwnershipTable driverSideOwnershipTable = new DriverSideOwnershipTable(workNum);
-        for(String key : this.tempKeys) {
+        for(String key : this.tempKeys.get(tableName)) {
             int id = 0;
             int max = Integer.MIN_VALUE;
             for (InputStatistic inputStatistic : workerIdToInputStatisticMap.values()) {
@@ -125,8 +128,8 @@ public class Statistic {
         for (String tableName : keyMap.keySet()) {
             for (String key : keyMap.get(tableName)) {
                 this.tempVotes.get(frontendId).add(targetWorkerId);
-                if (!this.tempKeys.contains(key)) {
-                    this.tempKeys.add(key);
+                if (!this.tempKeys.get(tableName).contains(key)) {
+                    this.tempKeys.get(tableName).add(key);
                 }
             }
         }
@@ -136,8 +139,8 @@ public class Statistic {
             for (String key : keyMap.get(tableName)) {
                 int targetWorkerId = random.nextInt(workerIdToInputStatisticMap.size());
                 this.tempVotes.get(frontendId).add(targetWorkerId);
-                if (!this.tempKeys.contains(key)) {
-                    this.tempKeys.add(key);
+                if (!this.tempKeys.get(tableName).contains(key)) {
+                    this.tempKeys.get(tableName).add(key);
                 }
             }
         }
@@ -147,8 +150,8 @@ public class Statistic {
             for (String key : keyMap.get(tableName)) {
                 int targetWorkerId = Integer.parseInt(key) / delta;
                 this.tempVotes.get(frontendId).add(targetWorkerId);
-                if (!this.tempKeys.contains(key)) {
-                    this.tempKeys.add(key);
+                if (!this.tempKeys.get(tableName).contains(key)) {
+                    this.tempKeys.get(tableName).add(key);
                 }
             }
         }
@@ -168,8 +171,8 @@ public class Statistic {
 
                 int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0.5, 0.5);
 
-                if (!this.tempKeys.contains(key)) {
-                    this.tempKeys.add(key);
+                if (!this.tempKeys.get(tableName).contains(key)) {
+                    this.tempKeys.get(tableName).add(key);
                 }
                 this.tempVotes.get(frontendId).add(targetWorkerId);
             }

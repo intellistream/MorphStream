@@ -1,6 +1,7 @@
 package intellistream.morphstream.engine.db.storage.impl;
 
 import intellistream.morphstream.api.input.statistic.WorkerSideOwnershipTable;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CacheBuffer;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
@@ -18,6 +19,7 @@ import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -29,6 +31,7 @@ public class RemoteStorageManager extends StorageManager {
     private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
     private final String[] tableNames;
     private final ConcurrentHashMap<String, Integer> tableNameToLength;
+    public ConcurrentHashMap<String, Integer> tableNameToItemNumber = new ConcurrentHashMap<>();
     public CacheBuffer cacheBuffer;
     public ConcurrentHashMap<String, String> tempValueForTables = new ConcurrentHashMap<>();
     public int totalWorker;
@@ -45,6 +48,7 @@ public class RemoteStorageManager extends StorageManager {
             int length = this.cacheBuffer.getTableNameToLength().get(tableName);
             this.tempValueForTables.put(tableName, padStringToLength(tableName, length));
             workerSideOwnershipTables.put(tableName, new WorkerSideOwnershipTable(totalWorker));
+            tableNameToItemNumber.put(tableName, MorphStreamEnv.get().configuration().getInt(tableName + "_num_items"));
         }
     }
 
@@ -68,7 +72,7 @@ public class RemoteStorageManager extends StorageManager {
                         int keyLength = workerSideOwnershipTable.ownershipTableBuffer.getInt();
                         byte[] keyBytes = new byte[keyLength];
                         workerSideOwnershipTable.ownershipTableBuffer.get(keyBytes);
-                        String key = new String(keyBytes);
+                        String key = new String(keyBytes, StandardCharsets.UTF_8);
                         workerSideOwnershipTable.putEachOwnership(key, workerId, index);
                         if (workerId == rdmaWorkerManager.getManagerId()) {
                             workerSideOwnershipTable.putEachKeyForThisWorker(key);
@@ -175,7 +179,11 @@ public class RemoteStorageManager extends StorageManager {
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
-                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                if (Integer.parseInt(key) >= this.tableNameToItemNumber.get(tableName)) {
+                    LOG.info("Key is out of range with key " + key + " and table " + tableName);
+                    throw new DatabaseException("Key is out of range");
+                }
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8) + 8;
                 size = this.tableNameToLength.get(tableName);
                 break;
             }
@@ -217,6 +225,10 @@ public class RemoteStorageManager extends StorageManager {
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
+                if (Integer.parseInt(key) >= this.tableNameToItemNumber.get(tableName)) {
+                    LOG.info("Key is out of range with key " + key + " and table " + tableName);
+                    throw new DatabaseException("Key is out of range");
+                }
                 keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
                 size = 8;
                 break;
@@ -231,6 +243,10 @@ public class RemoteStorageManager extends StorageManager {
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
+                if (Integer.parseInt(key) >= this.tableNameToItemNumber.get(tableName)) {
+                    LOG.info("Key is out of range with key " + key + " and table " + tableName);
+                    throw new DatabaseException("Key is out of range");
+                }
                 keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
                 size = 8;
                 break;

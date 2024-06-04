@@ -255,8 +255,7 @@ public class RdmaChannel {
             numWrElements = NOOP_RESERVED_INDEX;
         }
 
-        stack = svcPostSendCache.computeIfAbsent(numWrElements,
-                numElements -> new ConcurrentLinkedDeque<>());
+        stack = svcPostSendCache.computeIfAbsent(numWrElements, numElements -> new ConcurrentLinkedDeque<>());
 
         // To avoid buffer allocations in disni update cached SVCPostSendObject
         if (sendWRList.getFirst().getOpcode() == IbvSendWR.IbvWrOcode.IBV_WR_RDMA_READ.ordinal()
@@ -536,7 +535,7 @@ public class RdmaChannel {
         casWr.getRdma().setRkey(rKey);
         casWr.getAtomic().setCompare_add(compareValue);
         casWr.getAtomic().setSwap(swapValue);
-        casWr.setSend_flags(IbvSendWR.IBV_SEND_SIGNALED);
+        casWr.setSend_flags(IbvSendWR.IBV_WR_ATOMIC_CMP_AND_SWP);
         casWRList.add(casWr);
 
         int completionInfoId = putCompletionInfo(new CompletionInfo(listener, 1));
@@ -563,9 +562,9 @@ public class RdmaChannel {
         IbvSendWR faaWr = new IbvSendWR();
         faaWr.setOpcode(IbvSendWR.IbvWrOcode.IBV_WR_ATOMIC_FETCH_AND_ADD.ordinal());
         faaWr.setSg_list(faaSgeList);
-        faaWr.getRdma().setRemote_addr(remoteAddress);
-        faaWr.getRdma().setRkey(rkey);
         faaWr.getAtomic().setCompare_add(incrementValue);
+        faaWr.getAtomic().setRkey(rkey);
+        faaWr.getAtomic().setRemote_addr(remoteAddress);
         faaWr.setSend_flags(IbvSendWR.IBV_SEND_SIGNALED);
         faaWRList.add(faaWr);
 
@@ -682,14 +681,17 @@ public class RdmaChannel {
                 for (int i = 0; i < res; i++) {
                     boolean wcSuccess = ibvWCs[i].getStatus() == IbvWC.IbvWcStatus.IBV_WC_SUCCESS.ordinal();
                     if (!wcSuccess && !isError()) {
+                        LOG.error(String.valueOf(ibvWCs[i].getOpcode()));
                         setRdmaChannelState(RdmaChannelState.ERROR);
                         LOG.error("Completion with error: " + IbvWC.IbvWcStatus.values()[ibvWCs[i].getStatus()].name());
                     }
 
                     if (ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_SEND.getOpcode() ||
                             ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_RDMA_WRITE.getOpcode() ||
-                            ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_RDMA_READ.getOpcode()) {
-                        int completionInfoId = (int)ibvWCs[i].getWr_id();
+                            ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_RDMA_READ.getOpcode() ||
+                            ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_COMP_SWAP.getOpcode() ||
+                            ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_FETCH_ADD.getOpcode()){
+                        int completionInfoId = (int) ibvWCs[i].getWr_id();
                         if (completionInfoId != NOOP_RESERVED_INDEX) {
                             CompletionInfo completionInfo = removeCompletionInfo(completionInfoId);
                             if (completionInfo != null) {
@@ -719,8 +721,7 @@ public class RdmaChannel {
                                     completionInfo.listener.onSuccess(null, null);
                                 } else {
                                     completionInfo.listener.onFailure(
-                                            new IOException(this + "RDMA Receive WR completed with error: " +
-                                                    IbvWC.IbvWcStatus.values()[ibvWCs[i].getStatus()]));
+                                            new IOException(this + "RDMA Receive WR completed with error: " + IbvWC.IbvWcStatus.values()[ibvWCs[i].getStatus()]));
                                 }
 
                                 reclaimedRecvWrs += 1;
@@ -729,8 +730,7 @@ public class RdmaChannel {
                                 LOG.warn("Couldn't find CompletionInfo with index: " + reclaimedRecvWrs);
                             }
                         }
-                    } else if (ibvWCs[i].getOpcode() ==
-                            IbvWC.IbvWcOpcode.IBV_WC_RECV_RDMA_WITH_IMM.getOpcode()) {
+                    } else if (ibvWCs[i].getOpcode() == IbvWC.IbvWcOpcode.IBV_WC_RECV_RDMA_WITH_IMM.getOpcode()) {
                         //TODO Software-level flow control enabled can't use sendIMM
                         if (conf.swFlowControl()){
                             // Receive credit report - update new credits
@@ -742,7 +742,7 @@ public class RdmaChannel {
                                 firstRecvWrIndex = recvWrId;
                             }
                             reclaimedRecvWrs += 1;
-                        }else {
+                        } else {
                             //Software-level flow control is disabled
                             int recvWrId = (int)ibvWCs[i].getWr_id();
                             if (recvWrId != NOOP_RESERVED_INDEX) {
@@ -862,8 +862,7 @@ public class RdmaChannel {
                     // this run AND from the semaphore, then it means that there are
                     // more completions coming and they will exhaust the queue later
                     if (pendingReceive.ibvRecvWRList.size() > reclaimedRecvWrs) {
-                        if (!recvBudgetSemaphore.tryAcquire(
-                                pendingReceive.ibvRecvWRList.size() - reclaimedRecvWrs)) {
+                        if (!recvBudgetSemaphore.tryAcquire(pendingReceive.ibvRecvWRList.size() - reclaimedRecvWrs)) {
                             recvWrQueue.push(pendingReceive);
                             recvBudgetSemaphore.release(reclaimedRecvWrs);
                             break;
@@ -899,7 +898,7 @@ public class RdmaChannel {
         // Disni's API uses a CQ here, which is wrong
         boolean success = compChannel.getCqEvent(cq, 50);
         if (success) {
-            ackCounter++;
+            ackCounter ++;
             if (ackCounter == MAX_ACK_COUNT) {
                 cq.ackEvents(ackCounter);
                 ackCounter = 0;
@@ -1026,7 +1025,7 @@ public class RdmaChannel {
     public boolean isConnected() { return rdmaChannelState.get() == RdmaChannelState.CONNECTED.ordinal(); }
     public boolean isError() { return rdmaChannelState.get() == RdmaChannelState.ERROR.ordinal(); }
 
-    private class CompletionInfo {
+    private static class CompletionInfo {
         final RdmaCompletionListener listener;
         final int sendPermitsToReclaim;
         CompletionInfo(RdmaCompletionListener rdmaCompletionListener, int sendPermitsToReclaim) {

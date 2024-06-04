@@ -342,7 +342,7 @@ public class RdmaWorkerManager implements Serializable {
         databaseRdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
-                String value = StandardCharsets.UTF_8.decode(buffer).toString();
+                String value = StandardCharsets.UTF_8.decode(dataBuffer).toString();
                 valueList[valueIndex] = value;
                 count.incrementAndGet();
                 rdmaBufferManager.put(readData);
@@ -385,7 +385,6 @@ public class RdmaWorkerManager implements Serializable {
             }
             @Override
             public void onFailure(Throwable exception) {
-                remoteObject.setSuccessLocked(false);
                 rdmaBufferManager.put(resultBuffer);
                 latch.countDown();
             }}, resultBuffer.getAddress(), resultBuffer.getLength(), resultBuffer.getLkey(), remoteAddress, rkey, comparedValue, swapValue);
@@ -414,7 +413,6 @@ public class RdmaWorkerManager implements Serializable {
             }
             @Override
             public void onFailure(Throwable exception) {
-                remoteObject.setSuccessLocked(false);
                 rdmaBufferManager.put(readData);
             }
         }, readData.getAddress(), readData.getLkey(), new int[]{size}, new long[]{remoteAddress}, new int[]{rkey});
@@ -463,8 +461,8 @@ public class RdmaWorkerManager implements Serializable {
 
             @Override
             public void onFailure(Throwable exception) {
-                remoteObject.setSuccessLocked(false);
                 rdmaBufferManager.put(resultBuffer);
+                LOG.error("Shared lock acquisition failed");
                 latch.countDown();
             }
         }, resultBuffer.getAddress(), resultBuffer.getLength(), resultBuffer.getLkey(), remoteAddress, rkey, incrementValue);

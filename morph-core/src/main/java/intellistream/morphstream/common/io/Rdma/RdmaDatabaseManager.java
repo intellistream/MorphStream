@@ -28,7 +28,7 @@ public class RdmaDatabaseManager {
         this.databaseHost = conf.getString("morphstream.rdma.databaseHost");
         this.databasePort = conf.getInt("morphstream.rdma.databasePort");
         workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
-        rdmaNode = new RdmaNode(databaseHost ,databasePort , conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, this.isDriver, true);
+        rdmaNode = new RdmaNode(databaseHost ,databasePort , conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_RESPONDER, this.isDriver, true);
         databaseBufferManager = (DatabaseBufferManager) rdmaNode.getRdmaBufferManager();
         tableNames = conf.getString("tableNames", "table1,table2").split(";");
         valueSize = new int[tableNames.length];
