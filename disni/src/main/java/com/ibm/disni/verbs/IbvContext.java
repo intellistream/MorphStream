@@ -101,6 +101,4 @@ public class IbvContext  {
 	}
 
 	public int queryOdpSupport() throws IOException { return verbs.queryOdpSupport(this); }
-
-	public IbvDeviceAttr queryDevice() throws IOException { return verbs.queryDevice(this); }
 }

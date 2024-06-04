@@ -3,6 +3,7 @@ package intellistream.morphstream.engine.db.storage.impl;
 import intellistream.morphstream.api.input.statistic.WorkerSideOwnershipTable;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CacheBuffer;
+import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.db.impl.remote.RemoteCallLibrary;
@@ -16,7 +17,8 @@ import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.OCCContext;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.RLContext;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RemoteStorageManager extends StorageManager {
-    private static final Logger LOG = Logger.getLogger(RemoteStorageManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RemoteStorageManager.class);
     private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
     private final String[] tableNames;
     private final ConcurrentHashMap<String, Integer> tableNameToLength;

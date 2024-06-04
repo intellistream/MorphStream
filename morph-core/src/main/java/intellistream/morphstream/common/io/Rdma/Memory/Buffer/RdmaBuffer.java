@@ -59,7 +59,7 @@ public class RdmaBuffer {
         this.block = block;
     }
     private static IbvMr register(IbvPd ibvPd, long address, int length) throws IOException {
-        int access = IbvMr.IBV_ACCESS_LOCAL_WRITE | IbvMr.IBV_ACCESS_REMOTE_WRITE | IbvMr.IBV_ACCESS_REMOTE_READ;
+        int access = IbvMr.IBV_ACCESS_LOCAL_WRITE | IbvMr.IBV_ACCESS_REMOTE_WRITE | IbvMr.IBV_ACCESS_REMOTE_READ | IbvMr.IBV_ACCESS_REMOTE_ATOMIC;
 
         SVCRegMr sMr = ibvPd.regMr(address, length, access).execute();
         IbvMr ibvMr = sMr.getMr();

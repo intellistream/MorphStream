@@ -22,8 +22,6 @@
 package com.ibm.disni.verbs;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 // TODO: Auto-generated Javadoc
 //struct rdma_conn_param {
@@ -51,10 +49,7 @@ public class RdmaConnParam {
 	protected byte retry_count;
 	protected byte rnr_retry_count;
 	protected byte srq;
-	protected byte reserved;
 	protected int qp_num;
-
-	public static int CSIZE = 24;
 
 	public RdmaConnParam() {
 		this.private_data_addr = 0;
@@ -65,7 +60,6 @@ public class RdmaConnParam {
 		this.retry_count = 0;
 		this.rnr_retry_count = 0;
 		this.srq = 0;
-		this.reserved = 0;
 		this.qp_num = 0;
 	}
 
@@ -117,7 +111,7 @@ public class RdmaConnParam {
 	 * @param responder_resources the new responder resources.
 	 */
 	public void setResponder_resources(byte responder_resources) throws IOException {
-		this.responder_resources = responder_resources;
+		throw new IOException("Operation currently not supported");
 	}
 
 	/**
@@ -135,7 +129,7 @@ public class RdmaConnParam {
 	 * @param initiator_depth the new initiater depth.
 	 */
 	public void setInitiator_depth(byte initiator_depth) throws IOException {
-		this.initiator_depth = initiator_depth;
+		throw new IOException("Operation currently not supported");
 	}
 
 	/**
@@ -153,7 +147,7 @@ public class RdmaConnParam {
 	 * @param flow_control the new flow control.
 	 */
 	public void setFlow_control(byte flow_control) throws IOException {
-		this.flow_control = flow_control;
+		throw new IOException("Operation currently not supported");
 	}
 
 	/**
@@ -207,7 +201,7 @@ public class RdmaConnParam {
 	 * @param srq the new shared receive queue.
 	 */
 	public void setSrq(byte srq) throws IOException {
-		this.srq = srq;
+		throw new IOException("Operation currently not supported");
 	}
 
 	/**
@@ -225,24 +219,6 @@ public class RdmaConnParam {
 	 * @param qp_num the new qp_num
 	 */
 	public void setQp_num(int qp_num) throws IOException {
-		this.qp_num = qp_num;
-	}
-
-
-	public void writeBack(ByteBuffer buffer) {
-		buffer.putLong(private_data_addr);
-		buffer.put(private_data_len);
-		buffer.put(responder_resources);
-		buffer.put(initiator_depth);
-		buffer.put(flow_control);
-		buffer.put(retry_count);
-		buffer.put(rnr_retry_count);
-		buffer.put(srq);
-		buffer.put(reserved);
-		buffer.putInt(qp_num);
-	}
-
-	public int size() {
-		return CSIZE;
+		throw new IOException("Operation currently not supported");
 	}
 }
