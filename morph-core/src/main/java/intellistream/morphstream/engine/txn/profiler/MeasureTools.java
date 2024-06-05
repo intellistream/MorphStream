@@ -18,7 +18,7 @@ public class MeasureTools {
     private static String MetricsDirectory;
 
     public static void Initialize(Configuration configuration) {
-        MetricsDirectory = configuration.getString("rootPath") + OsUtils.OS_wrapper("metrics") + OsUtils.OS_wrapper(configuration.getString("clientClassName"));
+        MetricsDirectory = configuration.getString("rootPath") + OsUtils.OS_wrapper("metrics") + OsUtils.OS_wrapper(configuration.getString("clientClassName") + OsUtils.OS_wrapper(configuration.getString("clientID")) + OsUtils.OS_wrapper(configuration.getString("clientInstanceID")) + OsUtils.OS_wrapper(configuration.getString("scheduler")));
         Metrics.DriverRuntime.Initialize();
         Metrics.WorkerRuntime.Initialize();
     }
