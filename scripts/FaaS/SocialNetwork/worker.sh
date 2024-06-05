@@ -7,6 +7,8 @@ batch=$4
 frontend=$5
 worker=$6
 thread=$7
+s=$8
+c=$9
 function ResetParameters() {
     #Cluster Configurations
     isDriver=0
@@ -61,10 +63,10 @@ function ResetParameters() {
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
     #System Configurations
-    schedulerPool="DScheduler"
-    scheduler="DScheduler"
-    defaultScheduler="DScheduler"
-    CCOption=3 #TSTREAM
+    schedulerPool="${s}Scheduler"
+    scheduler="${s}Scheduler"
+    defaultScheduler="${s}Scheduler"
+    CCOption=$c #TSTREAM
     complexity=0
 }
 

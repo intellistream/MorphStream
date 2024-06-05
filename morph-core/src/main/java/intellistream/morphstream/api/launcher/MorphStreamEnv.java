@@ -26,6 +26,7 @@ import org.zeromq.ZContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.concurrent.CountDownLatch;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
@@ -78,6 +79,11 @@ public class MorphStreamEnv {
     public boolean isDriver() {return isDriver;}
     public boolean isDatabase() {return isDatabase;}
     public void LoadConfiguration(String configPath, String[] args) throws IOException, DatabaseException {
+        if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+            LOG.info("Native order is little endian");
+        } else {
+            LOG.info("Native order is big endian");
+        }
         if (configPath != null) {
             this.jCommanderHandler().loadProperties(configPath);
         }

@@ -15,7 +15,8 @@ import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.util.AppConfig;
 import lombok.Getter;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class OCCScheduler<Context extends OCCContext> extends RemoteStorageScheduler<Context> {
-    private static final Logger LOG = Logger.getLogger(OCCScheduler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OCCScheduler.class);
     public final RdmaWorkerManager rdmaWorkerManager;
     public final RemoteStorageManager remoteStorageManager;
     @Getter

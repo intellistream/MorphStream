@@ -61,7 +61,7 @@ public class NatPostSendCall extends SVCPostSend {
 		int size = 0;
 		for (IbvSendWR sendWR : wrList){
 			size += NatIbvSendWR.CSIZE;
-			size += sendWR.getSg_list().size()*NatIbvSge.CSIZE;
+			size += sendWR.getSg_list().size() * NatIbvSge.CSIZE;
 		}
 		this.cmd = memAlloc.allocate(size);
 		setWrList(wrList);
@@ -72,7 +72,7 @@ public class NatPostSendCall extends SVCPostSend {
 		sgeNatList.clear();
 		cmd.getBuffer().clear();
 		
-		long sgeOffset = wrList.size()*NatIbvSendWR.CSIZE;
+		long sgeOffset = wrList.size() * NatIbvSendWR.CSIZE;
 		long wrOffset = NatIbvSendWR.CSIZE;
 		for (IbvSendWR sendWR : wrList){
 			LinkedList<IbvSge> sg_list = new LinkedList<IbvSge>();
@@ -83,14 +83,14 @@ public class NatPostSendCall extends SVCPostSend {
 			}
 			
 			NatRdma natRdma = new NatRdma(sendWR.getRdma(), this);
-			NatAtomic natAtomic = new NatIbvSendWR.NatAtomic(sendWR.getAtomic(), this);
+			NatAtomic natAtomic = new NatAtomic(sendWR.getAtomic(), this);
 			NatIbvSendWR natSendWR = new NatIbvSendWR(this, natRdma, natAtomic, sendWR, sg_list);
 			natSendWR.setPtr_sge_list(sgeOffset);
 			natSendWR.setNext(wrOffset);
 			wrNatList.add(natSendWR);
 
 			wrOffset += NatIbvSendWR.CSIZE;
-			sgeOffset += sendWR.getSg_list().size()*NatIbvSge.CSIZE;
+			sgeOffset += sendWR.getSg_list().size() * NatIbvSge.CSIZE;
 		}
 		
 		for (NatIbvSendWR natWR : wrNatList){

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 public class DatabaseBuffer {
@@ -30,6 +31,7 @@ public class DatabaseBuffer {
 
     public void initDatabaseBuffer() throws IOException {
         ByteBuffer byteBuffer = tableBuffer.getByteBuffer();
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
         for (int i = 0; i < numberItems; i++) {
             byteBuffer.putLong(0L);
             byteBuffer.put(FixedLengthRandomString.generateRandomFixedLengthString(itemSize).getBytes(StandardCharsets.UTF_8));

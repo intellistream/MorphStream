@@ -15,7 +15,8 @@ import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.util.AppConfig;
 import lombok.Getter;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RLScheduler<Context extends RLContext> extends RemoteStorageScheduler<Context> {
-    private static final Logger LOG = Logger.getLogger(RLScheduler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RLScheduler.class);
     public final RdmaWorkerManager rdmaWorkerManager;
     public final RemoteStorageManager remoteStorageManager;
     @Getter
@@ -62,22 +63,17 @@ public class RLScheduler<Context extends RLContext> extends RemoteStorageSchedul
             releaseLock(context);
             lock = getLock(context);
         } while (!lock);
-        LOG.info("ThreadId:" + context.thisThreadId + " get lock");
         //Execution
         asyncRead(context);
-        LOG.info("ThreadId:" + context.thisThreadId + " read");
         while(context.hasUnExecuted()) {
             execute(context);
         }
-        LOG.info("ThreadId:" + context.thisThreadId + " execute");
         //Commit
         if (context.canCommit()) {
             commit(context);
         }
-        LOG.info("ThreadId:" + context.thisThreadId + " commit");
         //Release Lock
         releaseLock(context);
-        LOG.info("ThreadId:" + context.thisThreadId + " release lock");
     }
     private boolean getLock(Context context) {
         try {
@@ -101,7 +97,14 @@ public class RLScheduler<Context extends RLContext> extends RemoteStorageSchedul
     private void asyncRead(Context context) {
         for (Operation operation : context.tempOperations) {
             try {
-                this.remoteStorageManager.asyncReadRemoteDatabase(operation.bid, operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
+                if (operation.accessType == CommonMetaTypes.AccessType.READ) {
+                    boolean success = this.remoteStorageManager.syncReadRemoteDatabaseWithSharedLock(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
+                    while (!success) {
+                        success = this.remoteStorageManager.syncReadRemoteDatabaseWithSharedLock(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
+                    }
+                } else if (operation.accessType == CommonMetaTypes.AccessType.WRITE) {
+                    this.remoteStorageManager.asyncReadRemoteDatabaseWithExclusiveLock(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

@@ -114,9 +114,7 @@ public class NatIbvSendWR extends IbvSendWR implements SendWRMod {
 			buffer.position(initialPos + NatIbvSendWR.REMOTEADDR_OFFSET);
 			natRdma.writeBack(buffer);
 		}
-		
-		buffer.position(initialPos + NatIbvSendWR.REMOTEADDR_OFFSET);
-		natRdma.writeBack(buffer);
+
 		int newPos = initialPos + CSIZE;
 		buffer.position(newPos);
 	}

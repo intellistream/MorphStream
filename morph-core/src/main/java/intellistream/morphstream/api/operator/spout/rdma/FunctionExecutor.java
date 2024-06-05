@@ -80,7 +80,7 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
                 eventCount ++;
                 MeasureTools.WorkerPrepareEndTime(threadId);
-                if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+                if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore || ccOption == CCOption_RemoteLock) {// This is only required by T-Stream.
                     if (model_switch(counter) && !msgBuffer.hasRemaining()) {
                         marker = new Tuple(this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, counter, myiteration, "punctuation"));
                         bolt.execute(marker);

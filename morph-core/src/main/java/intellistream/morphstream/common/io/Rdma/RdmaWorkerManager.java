@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -330,7 +331,7 @@ public class RdmaWorkerManager implements Serializable {
             throw new RuntimeException(e);
         }
     }
-    public void asyncReadRemoteDatabase(int keyIndex, int tableIndex, int length, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
+    public void asyncReadRemoteDatabaseWithExclusiveLock(int keyIndex, int tableIndex, int length, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
         RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
 
         long remoteAddress = regionToken.getAddress() + keyIndex;
@@ -362,9 +363,10 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer resultBuffer = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = resultBuffer.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         long comparedValue = 0L;
-        long swapValue = bid << 32;
+        long swapValue = bid;
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean isAbortLock = new AtomicBoolean();
         databaseRdmaChannel.rdmaCASInQueue(new RdmaCompletionListener() {
@@ -388,9 +390,10 @@ public class RdmaWorkerManager implements Serializable {
                 rdmaBufferManager.put(resultBuffer);
                 latch.countDown();
             }}, resultBuffer.getAddress(), resultBuffer.getLength(), resultBuffer.getLkey(), remoteAddress, rkey, comparedValue, swapValue);
+        latch.await();
         return isAbortLock.get();
     }
-    public void asyncReadRemoteDatabase(long bid, int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
+    public void asyncReadRemoteDatabaseWithExclusiveLock(int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
         RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
 
         long remoteAddress = regionToken.getAddress() + keyIndex;
@@ -398,17 +401,16 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer readData = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         databaseRdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
-                int exclusiveLock = dataBuffer.getInt();
-                if (bid == exclusiveLock || exclusiveLock == 0) {
-                    dataBuffer.getInt();
-                    ByteBuffer valueBuffer = dataBuffer.slice();
-                    String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
-                    remoteObject.setValue(value);
-                }
+                dataBuffer.getInt();
+                dataBuffer.getInt();
+                ByteBuffer valueBuffer = dataBuffer.slice();
+                String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
+                remoteObject.setValue(value);
                 rdmaBufferManager.put(readData);
             }
             @Override
@@ -448,7 +450,7 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer resultBuffer = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = resultBuffer.getByteBuffer();
-        long incrementValue = 1L;
+        long incrementValue = 1L << 32;
 
         CountDownLatch latch = new CountDownLatch(1);
         databaseRdmaChannel.rdmaFAAInQueue(new RdmaCompletionListener() {
@@ -466,6 +468,44 @@ public class RdmaWorkerManager implements Serializable {
                 latch.countDown();
             }
         }, resultBuffer.getAddress(), resultBuffer.getLength(), resultBuffer.getLkey(), remoteAddress, rkey, incrementValue);
+        latch.await();
+    }
+    public boolean syncReadRemoteDatabaseWithSharedLock(int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
+        RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
+
+        long remoteAddress = regionToken.getAddress() + keyIndex;
+        int rkey = regionToken.getLocalKey();
+
+        RdmaBuffer readData = rdmaBufferManager.get(size);
+        ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        AtomicBoolean canRead = new AtomicBoolean();
+        CountDownLatch latch = new CountDownLatch(1);
+        databaseRdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                int exclusiveLock = dataBuffer.getInt();
+                dataBuffer.getInt();
+                if (exclusiveLock == 0) {
+                    ByteBuffer valueBuffer = dataBuffer.slice();
+                    String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
+                    remoteObject.setValue(value);
+                    canRead.set(true);
+                } else {
+                    canRead.set(false);
+                }
+                rdmaBufferManager.put(readData);
+                latch.countDown();
+            }
+            @Override
+            public void onFailure(Throwable exception) {
+                rdmaBufferManager.put(readData);
+                canRead.set(false);
+                latch.countDown();
+            }
+        }, readData.getAddress(), readData.getLkey(), new int[]{size}, new long[]{remoteAddress}, new int[]{rkey});
+        latch.await();
+        return canRead.get();
     }
     public void sharedLockRelease(int keyIndex, int tableIndex, int size) throws Exception {
         RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
@@ -475,7 +515,7 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer resultBuffer = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = resultBuffer.getByteBuffer();
-        long incrementValue = -1L;
+        long incrementValue = -1L << 32;
 
         databaseRdmaChannel.rdmaFAAInQueue(new RdmaCompletionListener() {
             @Override
@@ -522,6 +562,7 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer readData = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         databaseRdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
@@ -550,9 +591,10 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer resultBuffer = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = resultBuffer.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         long comparedValue = remoteObject.getVersion();
-        long swapValue = bid << 32;
+        long swapValue = bid;
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean isAbortLock = new AtomicBoolean();
         databaseRdmaChannel.rdmaCASInQueue(new RdmaCompletionListener() {
@@ -577,6 +619,7 @@ public class RdmaWorkerManager implements Serializable {
                 rdmaBufferManager.put(resultBuffer);
                 latch.countDown();
             }}, resultBuffer.getAddress(), resultBuffer.getLength(), resultBuffer.getLkey(), remoteAddress, rkey, comparedValue, swapValue);
+        latch.await();
         return isAbortLock.get();
     }
 
@@ -588,6 +631,8 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer readData = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        CountDownLatch count = new CountDownLatch(1);
 
         AtomicBoolean isAbortLock = new AtomicBoolean();
         try {
@@ -597,16 +642,20 @@ public class RdmaWorkerManager implements Serializable {
                     dataBuffer.getInt();
                     int version = dataBuffer.getInt();
                     isAbortLock.set(version != remoteObject.getVersion());
+                    rdmaBufferManager.put(readData);
+                    count.countDown();
                 }
                 @Override
                 public void onFailure(Throwable exception) {
                     isAbortLock.set(true);
                     rdmaBufferManager.put(readData);
+                    count.countDown();
                 }
             }, readData.getAddress(), readData.getLkey(), new int[]{size}, new long[]{remoteAddress}, new int[]{rkey});
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        count.await();
         return isAbortLock.get();
     }
 
@@ -618,6 +667,7 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer writeData = rdmaBufferManager.get(size);
         ByteBuffer dataBuffer = writeData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         dataBuffer.putInt(remoteObject.getVersion() + 1);
         dataBuffer.put(udfResult.toString().getBytes(StandardCharsets.UTF_8));

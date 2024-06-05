@@ -531,11 +531,13 @@ public class RdmaChannel {
         IbvSendWR casWr = new IbvSendWR();
         casWr.setOpcode(IbvSendWR.IbvWrOcode.IBV_WR_ATOMIC_CMP_AND_SWP.ordinal());
         casWr.setSg_list(casSgeList);
-        casWr.getRdma().setRemote_addr(remoteAddress);
         casWr.getRdma().setRkey(rKey);
+        casWr.getRdma().setRemote_addr(remoteAddress);
+        casWr.getAtomic().setRemote_addr(remoteAddress);
+        casWr.getAtomic().setRkey(rKey);
         casWr.getAtomic().setCompare_add(compareValue);
         casWr.getAtomic().setSwap(swapValue);
-        casWr.setSend_flags(IbvSendWR.IBV_WR_ATOMIC_CMP_AND_SWP);
+        casWr.setSend_flags(IbvSendWR.IBV_SEND_SIGNALED);
         casWRList.add(casWr);
 
         int completionInfoId = putCompletionInfo(new CompletionInfo(listener, 1));
@@ -562,6 +564,8 @@ public class RdmaChannel {
         IbvSendWR faaWr = new IbvSendWR();
         faaWr.setOpcode(IbvSendWR.IbvWrOcode.IBV_WR_ATOMIC_FETCH_AND_ADD.ordinal());
         faaWr.setSg_list(faaSgeList);
+        faaWr.getRdma().setRkey(rkey);
+        faaWr.getRdma().setRemote_addr(remoteAddress);
         faaWr.getAtomic().setCompare_add(incrementValue);
         faaWr.getAtomic().setRkey(rkey);
         faaWr.getAtomic().setRemote_addr(remoteAddress);

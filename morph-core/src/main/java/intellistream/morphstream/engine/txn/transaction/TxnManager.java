@@ -115,6 +115,7 @@ public abstract class TxnManager implements ITxnManager {
                 break;
             case "OCCScheduler":
                 scheduler = new OCCScheduler(rdmaWorkerManager, remoteStorageManager);
+                break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }

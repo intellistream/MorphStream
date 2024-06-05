@@ -3,7 +3,6 @@ package intellistream.morphstream.engine.db.storage.impl;
 import intellistream.morphstream.api.input.statistic.WorkerSideOwnershipTable;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl.CacheBuffer;
-import intellistream.morphstream.common.io.Rdma.Memory.Manager.WorkerRdmaBufferManager;
 import intellistream.morphstream.common.io.Rdma.RdmaWorkerManager;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.db.impl.remote.RemoteCallLibrary;
@@ -190,7 +189,7 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        rdmaWorkerManager.asyncReadRemoteDatabase(keyIndex, tableIndex, size, valueIndex, valueList, count);
+        rdmaWorkerManager.asyncReadRemoteDatabaseWithExclusiveLock(keyIndex, tableIndex, size, valueIndex, valueList, count);
     }
     public boolean exclusiveLockAcquisition(long bid, String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;
@@ -256,7 +255,7 @@ public class RemoteStorageManager extends StorageManager {
         }
         rdmaWorkerManager.sharedLockRelease(keyIndex, tableIndex, size);
     }
-    public void asyncReadRemoteDatabase(long bid, String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
+    public void asyncReadRemoteDatabaseWithExclusiveLock(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;
         int keyIndex = 0;
         int size = 0;
@@ -268,7 +267,21 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        rdmaWorkerManager.asyncReadRemoteDatabase(bid, keyIndex, tableIndex, size, remoteObject);
+        rdmaWorkerManager.asyncReadRemoteDatabaseWithExclusiveLock(keyIndex, tableIndex, size, remoteObject);
+    }
+    public boolean syncReadRemoteDatabaseWithSharedLock(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
+        int tableIndex = 0;
+        int keyIndex = 0;
+        int size = 0;
+        for (int i = 0; i < tableNames.length; i++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8);
+                size = 8 + this.tableNameToLength.get(tableName);
+                break;
+            }
+        }
+        return rdmaWorkerManager.syncReadRemoteDatabaseWithSharedLock(keyIndex, tableIndex, size, remoteObject);
     }
     public void asyncReadRemoteDatabaseWithVersion(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, OCCContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;

@@ -11,7 +11,7 @@ import java.util.*;
 
 public class OCCContext implements SchedulerContext {
     public final int thisThreadId;
-    public ArrayDeque<Request> requests;//functions in one DAG
+    public ArrayDeque<Request> requests = new ArrayDeque<>();//functions in one DAG
     private final Queue<RemoteObject> remoteObjectsBuffer = new ArrayDeque<>();
 
     public HashMap<String, RemoteObject> tempRemoteObjectMap = new HashMap<>();
