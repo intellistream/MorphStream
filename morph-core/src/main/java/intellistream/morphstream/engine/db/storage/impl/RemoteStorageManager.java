@@ -81,7 +81,7 @@ public class RemoteStorageManager extends StorageManager {
                     }
                 }
                 workerSideOwnershipTable.initValueList();
-                LOG.info("Get ownership table");
+                LOG.info("Get ownership table for table " + tableName + " successfully");
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -189,7 +189,7 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        rdmaWorkerManager.asyncReadRemoteDatabaseWithExclusiveLock(keyIndex, tableIndex, size, valueIndex, valueList, count);
+        rdmaWorkerManager.asyncReadRemoteForCache(keyIndex, tableIndex, size, valueIndex, valueList, count);
     }
     public boolean exclusiveLockAcquisition(long bid, String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;
@@ -267,7 +267,7 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        rdmaWorkerManager.asyncReadRemoteDatabaseWithExclusiveLock(keyIndex, tableIndex, size, remoteObject);
+        rdmaWorkerManager.asyncReadRemoteWithExclusiveLock(keyIndex, tableIndex, size, remoteObject);
     }
     public boolean syncReadRemoteDatabaseWithSharedLock(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;

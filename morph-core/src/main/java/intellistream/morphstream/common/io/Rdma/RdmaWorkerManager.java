@@ -331,7 +331,7 @@ public class RdmaWorkerManager implements Serializable {
             throw new RuntimeException(e);
         }
     }
-    public void asyncReadRemoteDatabaseWithExclusiveLock(int keyIndex, int tableIndex, int length, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
+    public void asyncReadRemoteForCache(int keyIndex, int tableIndex, int length, int valueIndex, String[] valueList, AtomicInteger count) throws Exception {
         RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
 
         long remoteAddress = regionToken.getAddress() + keyIndex;
@@ -393,7 +393,7 @@ public class RdmaWorkerManager implements Serializable {
         latch.await();
         return isAbortLock.get();
     }
-    public void asyncReadRemoteDatabaseWithExclusiveLock(int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
+    public void asyncReadRemoteWithExclusiveLock(int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
         RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
 
         long remoteAddress = regionToken.getAddress() + keyIndex;

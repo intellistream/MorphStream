@@ -21,13 +21,14 @@ import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
 import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DSScheduler<Context extends DSContext> implements IScheduler<Context> {
-    private static final Logger LOG = Logger.getLogger(DSScheduler.class);
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DSScheduler.class);
     public final int delta;
     public final int totalThreads;
     public final TaskPrecedenceGraph<Context> tpg;
