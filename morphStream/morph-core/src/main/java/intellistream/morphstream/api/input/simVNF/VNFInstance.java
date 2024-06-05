@@ -53,7 +53,7 @@ public class VNFInstance implements Runnable {
             int stateDefaultValue = 0;
             localStateMap.put(i, stateDefaultValue);
         }
-        if (ccStrategy == 6) { // Adaptive CC started from default CC strategy - Partitioning
+        if (ccStrategy == 7) { // Adaptive CC started from default CC strategy - Partitioning
             for (int i = 0; i <= stateRange; i++) {
                 tupleCCMap.put(i, 0);
             }
@@ -197,6 +197,41 @@ public class VNFInstance implements Runnable {
                         VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                             break;
+                        }
+                    }
+
+                } else if (tupleCC == 6) { // S6
+                    if (type == 0) { // read
+                        long instanceSyncStartTime = System.nanoTime();
+                        if (!managerSyncQueue.isEmpty()) {
+                            processAllQueueItems();
+                        }
+                        if (enableTimeBreakdown) {
+                            aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                        }
+                        long instanceUsefulStartTime = System.nanoTime();
+                        executeUDF(tupleID, type, 0);
+                        if (enableTimeBreakdown) {
+                            aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                        }
+                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime));
+
+                    } else if (type == 1 || type == 2) { // write
+                        long instanceUsefulStartTime = System.nanoTime();
+                        executeUDF(tupleID, type, 0);
+                        if (enableTimeBreakdown) {
+                            aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                        }
+                        long instanceSyncStartTime = System.nanoTime();
+                        CacheCCThread.submitReplicationRequest(new CacheData(reqID, packetStartTime, instanceID, tupleID, 0));
+                        while (true) {
+                            VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
+                            if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                                break;
+                            }
+                        }
+                        if (enableTimeBreakdown) {
+                            aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                         }
                     }
 

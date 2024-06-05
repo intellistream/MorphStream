@@ -276,8 +276,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
     public String operatorThreadNum = "8";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 200;//checkpoint per thread.
-
+    public int checkpoint_interval = 100;//checkpoint per thread.
 
     /**
      * Benchmarking and evaluation parameters
@@ -329,15 +328,15 @@ public class JCommanderHandler {
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 2;
+    public int ccStrategy = 6;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 2;
+    public int workloadPattern = 0;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
     @Parameter(names = {"--patternPunctuation"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int patternPunctuation = 200;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.1";
+    public String experimentID = "5.2.1";
 
     public JCommanderHandler() {}
 

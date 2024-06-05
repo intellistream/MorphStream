@@ -125,7 +125,12 @@ public class VNFRunner implements Runnable {
         double minLatency = instanceLatencyStats.getMin();
         double maxLatency = instanceLatencyStats.getMax();
         double avgLatency = instanceLatencyStats.getMean();
-        double percentile95 = instanceLatencyStats.getPercentile(95); //TODO: Overall stat?
+        double percentile95 = instanceLatencyStats.getPercentile(95);
+
+        System.out.println(ccStrategy + " min latency (1e-6): " + minLatency);
+        System.out.println(ccStrategy + " max latency (1e-6): " + maxLatency);
+        System.out.println(ccStrategy + " avg latency (1e-6): " + avgLatency);
+        System.out.println(ccStrategy + " 95 latency (1e-6): " + percentile95);
 
         long size = instanceLatencyStats.getN();
         long overallDuration = overallEndTime - overallStartTime;
@@ -372,10 +377,12 @@ public class VNFRunner implements Runnable {
         } else if (ccStrategy == 3) {
             return "Preemptive";
         } else if (ccStrategy == 4) {
-            return "Broadcasting";
+            return "OpenNF";
         } else if (ccStrategy == 5) {
-            return "Flushing";
+            return "CHC";
         } else if (ccStrategy == 6) {
+            return "S6";
+        } else if (ccStrategy == 7) {
             return "Adaptive";
         } else {
             return "Invalid";
