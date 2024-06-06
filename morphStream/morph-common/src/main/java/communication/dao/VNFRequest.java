@@ -80,4 +80,8 @@ public class VNFRequest {
     public BlockingQueue<Integer> getTxnACKQueue() {
         return txnACKQueue;
     }
+
+    public void setTxnACKQueue(BlockingQueue<Integer> txnACKQueue) {
+        this.txnACKQueue = txnACKQueue;
+    }
 }
