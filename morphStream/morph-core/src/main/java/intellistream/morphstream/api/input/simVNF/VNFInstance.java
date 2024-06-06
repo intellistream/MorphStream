@@ -57,7 +57,7 @@ public class VNFInstance implements Runnable {
         }
         if (ccStrategy == 7) { // Adaptive CC started from default CC strategy - Partitioning
             for (int i = 0; i <= stateRange; i++) {
-                tupleCCMap.put(i, 0);
+                tupleCCMap.put(i, -1);
             }
         } else { // Static CC are fixed throughout the runtime
             for (int i = 0; i <= stateRange; i++) {

@@ -90,6 +90,10 @@ public class VNFRunner implements Runnable {
                 computeDynamicThroughput();
                 writeCSVDynamicThroughput(patternString, ccStrategyString);
                 break;
+            case "5.2.2_dynamic": // Dynamic throughput
+                computeDynamicThroughput();
+                writeCSVDynamicThroughput(patternString, ccStrategyString);
+                break;
             case "5.3.1":
                 computeTimeBreakdown();
                 writeCSVBreakdown();

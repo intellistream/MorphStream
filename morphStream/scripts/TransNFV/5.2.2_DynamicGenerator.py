@@ -8,7 +8,7 @@ class PatternGenerator:
         self.tuple_range = tuple_range
         self.instance_count = instance_count
         self.request_count = request_count
-        self.base_dir = os.path.join(os.getcwd(), 'scripts/TransNFV/pattern_files/5.2.2/' + f"instanceNum_{self.instance_count}" + "/dynamic/")
+        self.base_dir = os.path.join(os.getcwd(), 'scripts/TransNFV/pattern_files/5.2.2_dynamic/' + f"instanceNum_{self.instance_count}" + "/dynamic")
         self.type_zero_probability = pattern_1_prob  # Probability for type 0 in sharedReaders pattern
         self.type_one_probability = pattern_2_prob    # Probability for type 1 in sharedWriters pattern
         self.type_two_probability = pattern_3_prob    # Probability for type 2 in mutualInteractive pattern
