@@ -146,7 +146,7 @@ public class VNFRunner implements Runnable {
 
     private void computeDynamicThroughput() {
         int numPunc = totalRequests / (puncInterval * vnfInstanceNum);
-        for (int puncID = 0; puncID < numPunc; puncID++) {
+        for (int puncID = 1; puncID <= numPunc; puncID++) {
             long puncStartTime = Long.MAX_VALUE;
             long puncEndTime = Long.MIN_VALUE;
             for (int i = 0; i < vnfInstanceNum; i++) {
