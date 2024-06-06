@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class CHCController implements Runnable {
-    private static BlockingQueue<OffloadData> requestQueue; // Assume all states are sharing by all instances
+    private static BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
@@ -26,11 +26,11 @@ public class CHCController implements Runnable {
     private static long aggSyncTime = 0;
     private static long aggUsefulTime = 0;
 
-    public CHCController(BlockingQueue<OffloadData> requestQueue) {
+    public CHCController(BlockingQueue<VNFRequest> requestQueue) {
         CHCController.requestQueue = requestQueue;
     }
 
-    public static void submitCHCReq(OffloadData request) {
+    public static void submitCHCReq(VNFRequest request) {
         try {
             requestQueue.put(request);
         } catch (InterruptedException e) {
@@ -47,16 +47,16 @@ public class CHCController implements Runnable {
             System.out.println("Flushing Controller has started.");
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    OffloadData request;
+                    VNFRequest request;
                     request = requestQueue.take();
-                    if (request.getTimeStamp() == -1) {
+                    if (request.getCreateTime() == -1) {
                         System.out.println("Flushing CC thread received stop signal");
                         break;
                     }
                     int instanceID = request.getInstanceID();
                     int tupleID = request.getTupleID();
-                    long timeStamp = request.getTimeStamp();
-                    long txnReqId = request.getTxnReqId();
+                    long timeStamp = request.getCreateTime();
+                    long txnReqId = request.getReqID();
 
                     if (tupleOwnership.get(tupleID) == null) { // State ownership is not yet assigned, assign it to the current instance
                         long syncStartTime = System.nanoTime();
@@ -86,8 +86,7 @@ public class CHCController implements Runnable {
                         aggUsefulTime += System.nanoTime() - usefulStartTime;
                     }
 
-                    VNFRequest response = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp, request.getPuncID());
-                    VNFRunner.getSender(instanceID).submitFinishedRequest(response);
+                    VNFRunner.getSender(instanceID).submitFinishedRequest(request);
 
                 } catch (InterruptedException | DatabaseException | RuntimeException e) {
                     System.out.println("CHC Interrupted exception: " + e.getMessage());

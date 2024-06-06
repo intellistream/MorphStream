@@ -12,11 +12,10 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     private int txnID; //E.g., "txn1", txnID
     private String saID; //E.g., "Deposit" or "Transfer", txnFlag
     private int saType; // 0: Read, 1: Write, 2: RW
-    private boolean isAbort;
     private int instanceID;
     private int puncID;
 
-    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int isAbort, int puncID) {
+    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int puncID) {
         super(timestamp);
         this.saType = saType;
         this.instanceID = instanceID;
@@ -24,7 +23,6 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         this.tupleID = String.valueOf(tupleID);
         this.txnID = txnID;
         this.saID = String.valueOf(saID);
-        this.isAbort = (isAbort == 1);
         this.puncID = puncID;
     }
 
@@ -59,9 +57,6 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         return this.saID;
     }
 
-    public boolean isAbort() {
-        return isAbort;
-    }
     public void setSaType(int saType) {
         this.saType = saType;
     }
@@ -80,7 +75,6 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         stringBuilder.append(";");
         stringBuilder.append(saID);
         stringBuilder.append(";");
-        stringBuilder.append(isAbort);
         return stringBuilder.toString();
     }
 }

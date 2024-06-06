@@ -11,18 +11,18 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class CacheCCThread implements Runnable {
-    private static BlockingQueue<CacheData> operationQueue;
+    private static BlockingQueue<VNFRequest> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
 
-    public CacheCCThread(BlockingQueue<CacheData> operationQueue) {
+    public CacheCCThread(BlockingQueue<VNFRequest> operationQueue) {
         CacheCCThread.operationQueue = operationQueue;
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     }
 
-    public static void submitReplicationRequest(CacheData cacheData) {
+    public static void submitReplicationRequest(VNFRequest request) {
         try {
-            operationQueue.put(cacheData);
+            operationQueue.put(request);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -32,28 +32,27 @@ public class CacheCCThread implements Runnable {
     public void run() {
         if (communicationChoice == 0) { // Java sim VNF
             while (!Thread.currentThread().isInterrupted()) {
-                CacheData cacheData;
+                VNFRequest request;
                 try {
-                    cacheData = operationQueue.take();
+                    request = operationQueue.take();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                if (cacheData.getTimestamp() == -1) {
+                if (request.getCreateTime() == -1) {
                     System.out.println("Cache CC thread received stop signal");
                     break;
                 }
 
                 // Simulating state update synchronization to other instances
                 for (Map.Entry<Integer, VNFInstance> entry : VNFRunner.getSenderMap().entrySet()) {
-                    if (entry.getKey() != cacheData.getInstanceID()) {
-                        SyncData syncData = new SyncData(cacheData.getTimestamp(), cacheData.getTupleID(), cacheData.getValue());
+                    if (entry.getKey() != request.getInstanceID()) {
+                        SyncData syncData = new SyncData(request.getCreateTime(), request.getTupleID(), request.getValue());
                         entry.getValue().submitSyncData(syncData);
                     }
                 }
 
                 try {
-                    VNFRequest request = new VNFRequest((int) cacheData.getTxnReqID(), cacheData.getInstanceID(), cacheData.getTupleID(), 0, cacheData.getTimestamp(), cacheData.getPuncID());
-                    VNFRunner.getSender(cacheData.getInstanceID()).submitFinishedRequest(request);
+                    VNFRunner.getSender(request.getInstanceID()).submitFinishedRequest(request);
                 } catch (NullPointerException e) {
                     throw new RuntimeException(e);
                 }
@@ -62,23 +61,23 @@ public class CacheCCThread implements Runnable {
 
         } else if (communicationChoice == 1) {
             while (!Thread.currentThread().isInterrupted()) {
-                CacheData cacheData;
+                VNFRequest request;
                 try {
-                    cacheData = operationQueue.take();
+                    request = operationQueue.take();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                if (cacheData.getTimestamp() == -1) {
+                if (request.getCreateTime() == -1) {
                     System.out.println("Cache CC thread received stop signal");
                     break;
                 }
-                int tupleID = cacheData.getTupleID();
-                int value = cacheData.getValue();
+                int tupleID = request.getTupleID();
+                int value = request.getValue();
 
                 for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
-                    if (entry.getKey() != cacheData.getInstanceID()) {
+                    if (entry.getKey() != request.getInstanceID()) {
                         try {
-                            AdaptiveCCManager.vnfStubs.get(cacheData.getInstanceID()).update_value(tupleID, value);
+                            AdaptiveCCManager.vnfStubs.get(request.getInstanceID()).update_value(tupleID, value);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }

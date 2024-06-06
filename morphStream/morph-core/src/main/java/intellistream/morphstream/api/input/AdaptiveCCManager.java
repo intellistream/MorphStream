@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.input;
 
+import communication.dao.VNFRequest;
 import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import message.VNFCtlStub;
@@ -17,11 +18,11 @@ public class AdaptiveCCManager {
     private Thread openNFCCThread;
     private Thread chcThread;
     private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<PartitionData> partitionQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<CacheData> cacheQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<OffloadData> offloadQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<OffloadData> openNFQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<OffloadData> chcQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> partitionQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> cacheQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> offloadQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> openNFQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> chcQueue = new LinkedBlockingQueue<>();
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
     public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();

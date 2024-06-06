@@ -1,5 +1,7 @@
 package communication.dao;
 
+import java.util.concurrent.BlockingQueue;
+
 public class VNFRequest {
     private int reqID;
     private int instanceID;
@@ -7,46 +9,50 @@ public class VNFRequest {
     private int type; // 0: read, 1: write, 2: read-write
     private long createTime; // Time when the request is created by the instance
     private long finishTime; // Time when the finished request is received by the instance
-    private int puncID; // Punctuation ID of the request
+    private int instancePuncID; // Punctuation ID of the request
+    private int value;
+    private int saID;
+    private int logicalTS; // For offloading central locks
+    private BlockingQueue<Integer> txnACKQueue;
 
-    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int puncID) {
+    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int saID) {
         this.reqID = reqID;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.type = type;
         this.createTime = createTime;
-        this.puncID = puncID;
+        this.instancePuncID = instancePuncID;
+        this.value = value;
+        this.saID = saID;
     }
 
+    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int saID, BlockingQueue<Integer> txnACKQueue) {
+        this.reqID = reqID;
+        this.instanceID = instanceID;
+        this.tupleID = tupleID;
+        this.type = type;
+        this.createTime = createTime;
+        this.instancePuncID = instancePuncID;
+        this.value = value;
+        this.saID = saID;
+        this.txnACKQueue = txnACKQueue;
+    }
+
+    //reqID, tupleID, instanceID, value, saID, type, instancePuncID, pktStartTime, pktEndTime, (responseQueue)
     public int getReqID() {
         return reqID;
-    }
-    public void setReqID(int reqID) {
-        this.reqID = reqID;
     }
     public int getInstanceID() {
         return instanceID;
     }
-    public void setInstanceID(int instanceID) {
-        this.instanceID = instanceID;
-    }
     public int getTupleID() {
         return tupleID;
-    }
-    public void setTupleID(int tupleID) {
-        this.tupleID = tupleID;
     }
     public int getType() {
         return type;
     }
-    public void setType(int type) {
-        this.type = type;
-    }
     public long getCreateTime() {
         return createTime;
-    }
-    public void setCreateTime(long createTime) {
-        this.createTime = createTime;
     }
     public long getFinishTime() {
         return finishTime;
@@ -54,7 +60,24 @@ public class VNFRequest {
     public void setFinishTime(long finishTime) {
         this.finishTime = finishTime;
     }
-    public int getPuncID() {
-        return puncID;
+    public int getInstancePuncID() {
+        return instancePuncID;
+    }
+    public int getValue() {
+        return value;
+    }
+    public int getSaID() {
+        return saID;
+    }
+    public int getLogicalTS() {
+        return logicalTS;
+    }
+
+    public void setLogicalTS(int logicalTS) {
+        this.logicalTS = logicalTS;
+    }
+
+    public BlockingQueue<Integer> getTxnACKQueue() {
+        return txnACKQueue;
     }
 }

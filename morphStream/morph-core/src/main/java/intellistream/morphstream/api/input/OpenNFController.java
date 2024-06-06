@@ -8,13 +8,12 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
 public class OpenNFController implements Runnable {
     // TODO: Add partitionable-state performance study later, each state-partition should be handled by one queue
-    private static BlockingQueue<OffloadData> requestQueue; // Assume all states are sharing by all instances
+    private static BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
@@ -23,11 +22,11 @@ public class OpenNFController implements Runnable {
     private static long aggSyncTime = 0;
     private static long aggUsefulTime = 0;
 
-    public OpenNFController(BlockingQueue<OffloadData> requestQueue) {
+    public OpenNFController(BlockingQueue<VNFRequest> requestQueue) {
         OpenNFController.requestQueue = requestQueue;
     }
 
-    public static void submitOpenNFReq(OffloadData request) {
+    public static void submitOpenNFReq(VNFRequest request) {
         try {
             requestQueue.put(request);
         } catch (InterruptedException e) {
@@ -43,21 +42,20 @@ public class OpenNFController implements Runnable {
         } else if (communicationChoice == 0) {
             System.out.println("Broadcasting Controller started.");
             while (!Thread.currentThread().isInterrupted()) {
-                OffloadData request;
+                VNFRequest request;
                 try {
                     request = requestQueue.take();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                if (request.getTimeStamp() == -1) {
+                if (request.getCreateTime() == -1) {
                     System.out.println("Broadcasting Controller received stop signal");
                     break;
                 }
-                int saIndex = request.getSaIndex();
                 int instanceID = request.getInstanceID();
                 int tupleID = request.getTupleID();
-                long timeStamp = request.getTimeStamp();
-                long txnReqId = request.getTxnReqId();
+                long timeStamp = request.getCreateTime();
+                long txnReqId = request.getReqID();
 
                 long usefulStartTime = System.nanoTime();
                 TableRecord tableRecord;
@@ -83,8 +81,7 @@ public class OpenNFController implements Runnable {
 
                 //TODO: Here we should add lock to all instance, but since OpenNF only has a single controller thread, it is fine
 
-                VNFRequest response = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp, request.getPuncID());
-                VNFRunner.getSender(instanceID).submitFinishedRequest(response);
+                VNFRunner.getSender(instanceID).submitFinishedRequest(request);
 
             }
         }

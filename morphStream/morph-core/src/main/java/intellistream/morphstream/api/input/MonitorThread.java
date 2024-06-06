@@ -77,7 +77,7 @@ public class MonitorThread implements Runnable {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            if (patternData.getTimeStamp() == -1) {
+            if (patternData.getInstanceID() == -1) {
                 System.out.println("Pattern monitor thread received stop signal");
                 break;
             }

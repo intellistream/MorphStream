@@ -337,6 +337,8 @@ public class JCommanderHandler {
     public int patternPunctuation = 2500;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
     public String experimentID = "5.2.2_dynamic";
+    @Parameter(names = {"--enableHardcodeCCSwitch"}, description = "If enabled, pattern_punc and cc_switch are performed at instance level. Otherwise monitor level.")
+    public int enableHardcodeCCSwitch = 0;
 
     public JCommanderHandler() {}
 
@@ -547,6 +549,7 @@ public class JCommanderHandler {
         config.put("enableTimeBreakdown", enableTimeBreakdown);
         config.put("patternPunctuation", patternPunctuation);
         config.put("experimentID", experimentID);
+        config.put("enableHardcodeCCSwitch", enableHardcodeCCSwitch);
 
         configSystem(config);
     }

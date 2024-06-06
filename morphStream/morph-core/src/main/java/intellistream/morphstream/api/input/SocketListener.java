@@ -174,7 +174,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static PatternData byteToPatternData(int instanceID, byte[] messageBytes) {
         int tupleID = decodeInt(copySubarray(messageBytes, 1, 4), 0);
         boolean isWrite = decodeBoolean(copySubarray(messageBytes, 6, 6), 0);
-        return new PatternData(0, instanceID, tupleID, isWrite);
+        return new PatternData(instanceID, tupleID, isWrite);
     }
 
     private static PartitionData byteToPartitionData(int instanceID, byte[] messageBytes) {
@@ -205,8 +205,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         int tupleID = decodeInt(copySubarray(messageBytes, 0, 3), 0);
         int txnIndex = decodeInt(copySubarray(messageBytes, 4, 7), 0);
         int saIndex = decodeInt(copySubarray(messageBytes, 8, 11), 0);
-        int isAbort = decodeInt(copySubarray(messageBytes, 12, 15), 0);
-        return new TransactionalVNFEvent(-1, instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort, -1);
+        return new TransactionalVNFEvent(-1, instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, -1);
     }
 
     public static byte[] copySubarray(byte[] inputArray, int startIndex, int endIndex) {

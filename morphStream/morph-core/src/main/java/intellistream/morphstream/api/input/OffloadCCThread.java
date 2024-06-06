@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 public class OffloadCCThread implements Runnable {
-    private static BlockingQueue<OffloadData> operationQueue;
+    private static BlockingQueue<VNFRequest> operationQueue;
     private final ExecutorService offloadExecutor;
     private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
@@ -45,7 +45,7 @@ public class OffloadCCThread implements Runnable {
     private static final AtomicLong aggUsefulTime = new AtomicLong(0);
 
 
-    public OffloadCCThread(BlockingQueue<OffloadData> operationQueue, int writeThreadPoolSize) {
+    public OffloadCCThread(BlockingQueue<VNFRequest> operationQueue, int writeThreadPoolSize) {
         OffloadCCThread.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
@@ -58,9 +58,9 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    public static void submitOffloadReq(OffloadData offloadData) {
+    public static void submitOffloadReq(VNFRequest request) {
         try {
-            operationQueue.put(offloadData);
+            operationQueue.put(request);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -74,43 +74,41 @@ public class OffloadCCThread implements Runnable {
 
         } else if (communicationChoice == 0) {
             while (!Thread.currentThread().isInterrupted()) {
-                OffloadData offloadData;
+                VNFRequest request;
                 try {
-                    offloadData = operationQueue.take();
+                    request = operationQueue.take();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                if (offloadData.getTimeStamp() == -1) {
+                if (request.getCreateTime() == -1) {
                     System.out.println("Offload CC received stop signal. Total requests: " + requestCounter);
                     offloadExecutor.shutdownNow();
                     break;
                 }
                 requestCounter++;
-                offloadData.setLogicalTimeStamp(requestCounter);
-                int saType = offloadData.getSaType();
+                request.setLogicalTS(requestCounter);
+                int saType = request.getType();
                 if (saType == 1) {
                     try {
-                        offloadData.getSenderResponseQueue().put(1);
+                        request.getTxnACKQueue().put(1);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    VNFRequest request = new VNFRequest((int) offloadData.getTxnReqId(), offloadData.getInstanceID(),
-                            offloadData.getTupleID(), 1, offloadData.getTimeStamp(), offloadData.getPuncID());
-                    VNFRunner.getSender(offloadData.getInstanceID()).submitFinishedRequest(request); //Send txn_finish signal to instance
+                    VNFRunner.getSender(request.getInstanceID()).submitFinishedRequest(request); //Send txn_finish signal to instance
                 }
 
                 if (doStatePartitioning) {
-                    offloadExecutor.submit(() -> simProcessPartitionLock(offloadData));
+                    offloadExecutor.submit(() -> simProcessPartitionLock(request));
                 } else {
-                    offloadExecutor.submit(() -> simProcessGlobalLock(offloadData));
+                    offloadExecutor.submit(() -> simProcessGlobalLock(request));
                 }
             }
         }
     }
 
-    private void simProcessPartitionLock(OffloadData offloadData) { //TODO: Ordering needs to be guaranteed
+    private void simProcessPartitionLock(VNFRequest offloadData) { //TODO: Ordering needs to be guaranteed
         int tupleID = offloadData.getTupleID();
-        int saType = offloadData.getSaType();
+        int saType = offloadData.getType();
 
         long syncStartTime = System.nanoTime();
         Lock lock = partitionLocks.get(partitionOwnership.get(tupleID));
@@ -139,19 +137,19 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    public void simProcessGlobalLock(OffloadData offloadData) {
+    public void simProcessGlobalLock(VNFRequest offloadData) {
         boolean processed = false;
         while (!processed) {
             // Check if this event is the next to be processed
-            if (offloadData.getLogicalTimeStamp() == watermark + 1) {
+            if (offloadData.getLogicalTS() == watermark + 1) {
                 long syncStartTime = System.nanoTime();
                 globalLock.lock();
                 aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
 
                 try {
-                    if (offloadData.getLogicalTimeStamp() == watermark + 1) {
+                    if (offloadData.getLogicalTS() == watermark + 1) {
                         long usefulStartTime = System.nanoTime();
-                        int saType = offloadData.getSaType();
+                        int saType = offloadData.getType();
                         if (saType == 1) {
                             simOffloadWrite(offloadData);
                         } else if (saType == 0 || saType == 2) {
@@ -172,7 +170,7 @@ public class OffloadCCThread implements Runnable {
 
                 try {
                     long syncStartTime2 = System.nanoTime();
-                    while (offloadData.getLogicalTimeStamp() != watermark + 1) {
+                    while (offloadData.getLogicalTS() != watermark + 1) {
                         nextEventCondition.await();
                     }
                     aggSyncTime.addAndGet(System.nanoTime() - syncStartTime2);
@@ -248,8 +246,8 @@ public class OffloadCCThread implements Runnable {
 
     }
 
-    private void simOffloadWrite(OffloadData offloadData) {
-        long timeStamp = offloadData.getTimeStamp();
+    private void simOffloadWrite(VNFRequest offloadData) {
+        long timeStamp = offloadData.getCreateTime();
         int tupleID = offloadData.getTupleID();
 
         try {
@@ -268,11 +266,10 @@ public class OffloadCCThread implements Runnable {
 
     }
 
-    private void simOffloadRead(OffloadData offloadData) {
-        long timeStamp = offloadData.getTimeStamp();
-        long txnReqId = offloadData.getTxnReqId();
-        int tupleID = offloadData.getTupleID();
-        int instanceID = offloadData.getInstanceID();
+    private void simOffloadRead(VNFRequest request) {
+        long timeStamp = request.getCreateTime();
+        int tupleID = request.getTupleID();
+        int instanceID = request.getInstanceID();
 
         try {
             TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
@@ -289,11 +286,10 @@ public class OffloadCCThread implements Runnable {
         }
 
         try {
-            offloadData.getSenderResponseQueue().put(1);
+            request.getTxnACKQueue().put(1);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        VNFRequest request = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp, offloadData.getPuncID()); //TODO: Optimization
         VNFRunner.getSender(instanceID).submitFinishedRequest(request);
 
     }

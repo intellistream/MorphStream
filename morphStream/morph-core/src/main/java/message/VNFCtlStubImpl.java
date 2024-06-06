@@ -29,8 +29,8 @@ public class VNFCtlStubImpl {
     /** Offloading CC, TPG CC, submit txn req to executor */
     static public void onTxnReqMessage(int instanceID, TxnReqMessage msg) {
         if (msg.getCc().getNumber() == 0) { // Partition
-            PartitionCCThread.submitPartitionRequest(
-                    new PartitionData(System.nanoTime(), msg.getId(), instanceID, msg.getKey(), -1, msg.getSaIdx(), -1));
+//            PartitionCCThread.submitPartitionRequest(
+//                    new PartitionData(System.nanoTime(), msg.getId(), instanceID, msg.getKey(), -1, msg.getSaIdx(), -1));
             partitionReqCountPerInstance[instanceID]++;
 //            System.out.println("Server received Partition_Req from client: " + msg.getId());
             if (partitionReqCountPerInstance[instanceID] > 7400) {
@@ -38,13 +38,13 @@ public class VNFCtlStubImpl {
             }
 
         } else if (msg.getCc().getNumber() == 2) { // Offloading
-            OffloadCCThread.submitOffloadReq(
-                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1, -1));
+//            OffloadCCThread.submitOffloadReq(
+//                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1, -1));
             System.out.println("Server received Offloading_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 3) { // TPG
             tpgQueues.get(tpgReqCountPerInstance[instanceID] % numSpouts).offer(
-                    new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1));
+                    new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), -1));
             tpgReqCountPerInstance[instanceID]++;
             tpgReqCountPerQueue[tpgReqCountPerInstance[instanceID] % numSpouts]++;
 
@@ -56,13 +56,13 @@ public class VNFCtlStubImpl {
             }
 
         } else if (msg.getCc().getNumber() == 4) { // OpenNF broadcasting
-            OpenNFController.submitOpenNFReq(
-                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1, -1));
+//            OpenNFController.submitOpenNFReq(
+//                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1, -1));
             System.out.println("Server received OpenNF_Req from client: " + msg.getId());
 
         } else if (msg.getCc().getNumber() == 5) { // CHC
-            CHCController.submitCHCReq(
-                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1, -1));
+//            CHCController.submitCHCReq(
+//                    new OffloadData(System.nanoTime(), instanceID, msg.getId(), msg.getKey(), 0, msg.getSaIdx(), 0, -1, -1));
             System.out.println("Server received CHC_Req from client: " + msg.getId());
         }
 
@@ -76,7 +76,7 @@ public class VNFCtlStubImpl {
 
     /** Monitor pattern report */
     static public void onMonitorReportMessage(int instanceID, MonitorReportMessage msg) {
-        MonitorThread.submitPatternData(new PatternData(System.nanoTime(), instanceID, msg.getKey(), msg.getIsWrite()));
+        MonitorThread.submitPatternData(new PatternData(instanceID, msg.getKey(), msg.getIsWrite()));
 //        System.out.println("Server received MonitorReport from client: " + msg.getCcValue());
     }
 
@@ -89,7 +89,7 @@ public class VNFCtlStubImpl {
     static public void onPushDSMessage(int instanceID, setDSMessage msg) {
         System.out.println("Received instance push_DS for tuple " + msg.getKey() + ", value: " + msg.getValue());
         cacheReqCountPerInstance[instanceID]++;
-        CacheCCThread.submitReplicationRequest(new CacheData(0, System.nanoTime(), instanceID, msg.getKey(), msg.getValue(), -1));
+//        CacheCCThread.submitReplicationRequest(new CacheData(0, System.nanoTime(), instanceID, msg.getKey(), msg.getValue(), -1));
 //        if (cacheReqCountPerInstance[instanceID] > 7400) {
 //            System.out.println("Instance "+instanceID+" has sent " + cacheReqCountPerInstance[instanceID] + " push DS Msg in response to cross-partition");
 //        }
