@@ -79,7 +79,8 @@ class PatternGenerator:
             print(f'Generated file: {file_name}')
 
 # Example list of instance counts to iterate through
-instance_counts = [4,8,12]
+instance_counts = [4,8,16]
+request_counts = [80000, 40000, 20000]
 
 # Usage
 if __name__ == "__main__":
@@ -91,5 +92,6 @@ if __name__ == "__main__":
 
     for count in instance_counts:
         print(f"Generating files with instance count: {count}")
-        generator = PatternGenerator(instance_count=count, pattern_1_prob=0.8)
+        request_count = int(320000 / count)
+        generator = PatternGenerator(instance_count=count, request_count=request_count)
         generator.generate_files()

@@ -100,8 +100,10 @@ public class AdaptiveCCManager {
             return "sharedWriters";
         } else if (pattern == 3) {
             return "mutualInteractive";
+        } else if (pattern == 4) {
+            return "dynamic";
         } else {
-            return "invalid";
+            throw new UnsupportedOperationException();
         }
     }
 

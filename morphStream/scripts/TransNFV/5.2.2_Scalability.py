@@ -36,7 +36,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms20g -Xmx80g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --NUM_ITEMS $NUM_ITEMS \\
           --tthread $tthread \\
@@ -59,7 +59,7 @@ function runTStream() {{
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID
           "
-  java -Xms20g -Xmx80g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --NUM_ITEMS $NUM_ITEMS \\
     --tthread $tthread \\
@@ -89,9 +89,9 @@ function baselinePattern() {{
   do
     for ccStrategy in 0 1 2 3 4 5
     do
-      for vnfInstanceNum in 12
+      for vnfInstanceNum in 4 8 16
       do
-        totalEvents=$((vnfInstanceNum * 1000))
+        totalEvents=320000
       runTStream
     done
     done
@@ -162,7 +162,7 @@ def plot_scalability_comparison(root_dir):
                 throughput_data[pattern][strategy].append(throughput)
 
     # Create subplots
-    fig, axs = plt.subplots(2, 2, figsize=(15, 12))
+    fig, axs = plt.subplots(1, 4, figsize=(20, 5))
 
     # Flatten axs array for easy iteration
     axs = axs.flatten()
@@ -187,6 +187,7 @@ def plot_scalability_comparison(root_dir):
     plt.tight_layout()
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
     plt.savefig(os.path.join(script_dir, '5.2.2_Scalability.png'))
+    plt.savefig(os.path.join(script_dir, '5.2.2_Scalability.pdf'))
 
 
 if __name__ == "__main__":
@@ -214,8 +215,9 @@ if __name__ == "__main__":
     experimentID = "5.2.2"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-    execute_bash_script(script_path)
+    # generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
+    # execute_bash_script(script_path)
 
     throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.2/throughput"
     plot_scalability_comparison(throughput_root_directory)
+    print("5.2.2 scalability figure generated.")

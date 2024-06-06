@@ -59,7 +59,7 @@ function runTStream() {{
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID
           "
-  java -Xms20g -Xmx80g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --NUM_ITEMS $NUM_ITEMS \\
     --tthread $tthread \\

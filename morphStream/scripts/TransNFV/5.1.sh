@@ -2,31 +2,31 @@
 
 function ResetParameters() {
   app="nfv_test"
-  checkpointInterval=100
-  tthread=4
+  checkpointInterval=500
+  tthread=8
   scheduler="OP_BFS_A"
   defaultScheduler="OP_BFS_A"
   complexity=0
   NUM_ITEMS=10000
   rootFilePath="/home/shuhao/jjzhao/data"
-  totalEvents=4000
+  totalEvents=400000
 
   nfvWorkloadPath="/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
   communicationChoice=0
   vnfInstanceNum=4
-  offloadCCThreadNum=4
-  offloadLockNum=1000
+  offloadCCThreadNum=16
+  offloadLockNum=10000
   rRatioSharedReaders=80
   wRatioSharedWriters=80
   rwRatioMutualInteractive=80
   ccStrategy=0
   workloadPattern=0
-  enableCCSwitch=0
-  experimentID="5.2.1_throughput"
+  enableTimeBreakdown=0
+  experimentID="5.1"
 }
 
 function runTStream() {
-  echo "java -Xms20g -Xmx80g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \
+  echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -46,7 +46,7 @@ function runTStream() {
           --rwRatioMutualInteractive $rwRatioMutualInteractive \
           --ccStrategy $ccStrategy \
           --workloadPattern $workloadPattern \
-          --enableCCSwitch $enableCCSwitch \
+          --enableTimeBreakdown $enableTimeBreakdown \
           --experimentID $experimentID
           "
   java -Xms20g -Xmx80g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \
@@ -69,7 +69,7 @@ function runTStream() {
     --rwRatioMutualInteractive $rwRatioMutualInteractive \
     --ccStrategy $ccStrategy \
     --workloadPattern $workloadPattern \
-    --enableCCSwitch $enableCCSwitch \
+    --enableTimeBreakdown $enableTimeBreakdown \
     --experimentID $experimentID
 }
 
@@ -77,7 +77,7 @@ function baselinePattern() {
   ResetParameters
   for workloadPattern in 0 1 2 3
   do
-    for ccStrategy in 0 1 2 3 4 5
+    for ccStrategy in 0 1 2 3
     do
       runTStream
     done
