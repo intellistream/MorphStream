@@ -8,23 +8,26 @@ public class CacheData {
     private final int instanceID;
     private final int tupleID;
     private final int value;
+    private final int puncID;
     private final BlockingQueue<Integer> senderResponseQueue; //For efficient response handling through CacheData itself
 
-    public CacheData(long txnReqID, long timestamp, int instanceID, int tupleID, int value) {
+    public CacheData(long txnReqID, long timestamp, int instanceID, int tupleID, int value, int puncID) {
         this.txnReqID = txnReqID;
         this.timestamp = timestamp;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.value = value;
+        this.puncID = puncID;
         this.senderResponseQueue = null;
     }
 
-    public CacheData(long txnReqID, long timestamp, int instanceID, int tupleID, int value, BlockingQueue<Integer> senderResponseQueue) {
+    public CacheData(long txnReqID, long timestamp, int instanceID, int tupleID, int value, int puncID, BlockingQueue<Integer> senderResponseQueue) {
         this.txnReqID = txnReqID;
         this.timestamp = timestamp;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.value = value;
+        this.puncID = puncID;
         this.senderResponseQueue = senderResponseQueue;
     }
 
@@ -42,6 +45,9 @@ public class CacheData {
     }
     public long getTxnReqID() {
         return txnReqID;
+    }
+    public int getPuncID() {
+        return puncID;
     }
     public BlockingQueue<Integer> getSenderResponseQueue() {
         return senderResponseQueue;

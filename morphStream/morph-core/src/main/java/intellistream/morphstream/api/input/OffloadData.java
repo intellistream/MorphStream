@@ -12,9 +12,10 @@ public class OffloadData {
     private final int isAbort;
     private final int saType;
     private int logicalTimeStamp;
+    private final int puncID;
     private final BlockingQueue<Integer> senderResponseQueue;
 
-    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType) {
+    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType, int puncID) {
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.timeStamp = timeStamp;
@@ -23,10 +24,11 @@ public class OffloadData {
         this.saIndex = saIndex;
         this.isAbort = isAbort;
         this.saType = saType;
+        this.puncID = puncID;
         this.senderResponseQueue = null;
     }
 
-    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType, BlockingQueue<Integer> senderResponseQueue) {
+    public OffloadData(long timeStamp, int instanceID, long txnReqId, int tupleID, int txnIndex, int saIndex, int isAbort, int saType, int puncID, BlockingQueue<Integer> senderResponseQueue) {
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.timeStamp = timeStamp;
@@ -35,6 +37,7 @@ public class OffloadData {
         this.saIndex = saIndex;
         this.isAbort = isAbort;
         this.saType = saType;
+        this.puncID = puncID;
         this.senderResponseQueue = senderResponseQueue;
     }
 
@@ -68,6 +71,10 @@ public class OffloadData {
 
     public int getSaType() {
         return saType;
+    }
+
+    public int getPuncID() {
+        return puncID;
     }
 
     public BlockingQueue<Integer> getSenderResponseQueue() {

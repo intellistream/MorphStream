@@ -9,25 +9,28 @@ public class PartitionData {
     private final int tupleID;
     private final int value;
     private final int saIndex;
+    private final int puncID;
     private final BlockingQueue<Integer> senderResponseQueue;
 
-    public PartitionData(long timeStamp, long txnReqId, int instanceID, int tupleID, int value, int saIndex, BlockingQueue<Integer> senderResponseQueue) {
+    public PartitionData(long timeStamp, long txnReqId, int instanceID, int tupleID, int value, int saIndex, int puncID, BlockingQueue<Integer> senderResponseQueue) {
         this.timeStamp = timeStamp;
         this.txnReqId = txnReqId;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.value = value;
         this.saIndex = saIndex;
+        this.puncID = puncID;
         this.senderResponseQueue = senderResponseQueue;
     }
 
-    public PartitionData(long timeStamp, long txnReqId, int instanceID, int tupleID, int value, int saIndex) {
+    public PartitionData(long timeStamp, long txnReqId, int instanceID, int tupleID, int value, int saIndex, int puncID) {
         this.timeStamp = timeStamp;
         this.txnReqId = txnReqId;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.value = value;
         this.saIndex = saIndex;
+        this.puncID = puncID;
         this.senderResponseQueue = null;
     }
 
@@ -45,6 +48,9 @@ public class PartitionData {
     }
     public long getTxnReqId() {
         return txnReqId;
+    }
+    public int getPuncID() {
+        return puncID;
     }
     public int getSaIndex() {
         return saIndex;

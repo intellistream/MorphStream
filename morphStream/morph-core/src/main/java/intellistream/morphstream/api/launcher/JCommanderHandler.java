@@ -334,7 +334,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
     @Parameter(names = {"--patternPunctuation"}, description = "Enable measurement for execution time breakdown analysis or not")
-    public int patternPunctuation = 200;
+    public int patternPunctuation = 2500;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
     public String experimentID = "5.2.1";
 

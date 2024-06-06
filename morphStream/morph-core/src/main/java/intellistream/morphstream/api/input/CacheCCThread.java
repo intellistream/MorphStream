@@ -52,7 +52,7 @@ public class CacheCCThread implements Runnable {
                 }
 
                 try {
-                    VNFRequest request = new VNFRequest((int) cacheData.getTxnReqID(), cacheData.getInstanceID(), cacheData.getTupleID(), 0, cacheData.getTimestamp());
+                    VNFRequest request = new VNFRequest((int) cacheData.getTxnReqID(), cacheData.getInstanceID(), cacheData.getTupleID(), 0, cacheData.getTimestamp(), cacheData.getPuncID());
                     VNFRunner.getSender(cacheData.getInstanceID()).submitFinishedRequest(request);
                 } catch (NullPointerException e) {
                     throw new RuntimeException(e);

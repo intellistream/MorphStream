@@ -83,7 +83,7 @@ public class OpenNFController implements Runnable {
 
                 //TODO: Here we should add lock to all instance, but since OpenNF only has a single controller thread, it is fine
 
-                VNFRequest response = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp);
+                VNFRequest response = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp, request.getPuncID());
                 VNFRunner.getSender(instanceID).submitFinishedRequest(response);
 
             }

@@ -64,7 +64,7 @@ public class PartitionCCThread implements Runnable {
                     VNFRunner.getSender(targetInstanceID).writeLocalState(partitionData.getTupleID(), targetPartitionState);
                     managerEventSyncTime += System.nanoTime() - syncStartTime2;
 
-                    VNFRequest request = new VNFRequest((int) partitionData.getTxnReqId(), partitionData.getInstanceID(), partitionData.getTupleID(), 0, partitionData.getTimeStamp());
+                    VNFRequest request = new VNFRequest((int) partitionData.getTxnReqId(), partitionData.getInstanceID(), partitionData.getTupleID(), 0, partitionData.getTimeStamp(), partitionData.getPuncID());
                     VNFRunner.getSender(partitionData.getInstanceID()).submitFinishedRequest(request);
 
                 } catch (NullPointerException e) {

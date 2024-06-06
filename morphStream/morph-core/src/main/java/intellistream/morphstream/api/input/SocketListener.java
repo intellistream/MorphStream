@@ -180,13 +180,13 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static PartitionData byteToPartitionData(int instanceID, byte[] messageBytes) {
         int tupleID = decodeInt(copySubarray(messageBytes, 1, 4), 0);
         int value = decodeInt(copySubarray(messageBytes, 6, 9), 0);
-        return new PartitionData(-1, -1, instanceID, tupleID, value, -1);
+        return new PartitionData(-1, -1, instanceID, tupleID, value, -1, -1);
     }
 
     private static CacheData byteToCacheData(int instanceID, byte[] messageBytes) {
         int tupleID = decodeInt(copySubarray(messageBytes, 1, 4), 0);
         int value = decodeInt(copySubarray(messageBytes, 6, 9), 0);
-        return new CacheData(0, 0, instanceID, tupleID, value);
+        return new CacheData(0, 0, instanceID, tupleID, value, -1);
     }
 
     private static OffloadData byteToOffloadData(int instanceID, byte[] messageBytes) { //TODO: Align with libVNF
@@ -196,7 +196,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         int txnIndex = decodeInt(copySubarray(messageBytes, 4, 7), 0);
         int saIndex = decodeInt(copySubarray(messageBytes, 8, 11), 0);
         int isAbort = decodeInt(copySubarray(messageBytes, 12, 15), 0);
-        return new OffloadData(-1, instanceID, 0, tupleID, txnIndex, saIndex, isAbort, -1);
+        return new OffloadData(-1, instanceID, 0, tupleID, txnIndex, saIndex, isAbort, -1, -1);
     }
 
     private static TransactionalEvent byteToTPGData(int instanceID, byte[] messageBytes) {
@@ -206,7 +206,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         int txnIndex = decodeInt(copySubarray(messageBytes, 4, 7), 0);
         int saIndex = decodeInt(copySubarray(messageBytes, 8, 11), 0);
         int isAbort = decodeInt(copySubarray(messageBytes, 12, 15), 0);
-        return new TransactionalVNFEvent(-1, instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort);
+        return new TransactionalVNFEvent(-1, instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, isAbort, -1);
     }
 
     public static byte[] copySubarray(byte[] inputArray, int startIndex, int endIndex) {

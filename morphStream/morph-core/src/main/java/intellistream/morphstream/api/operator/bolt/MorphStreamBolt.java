@@ -121,13 +121,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     int instanceID = event.getInstanceID();
                     synchronized (instanceLocks.get(instanceID)) {
                         AdaptiveCCManager.vnfStubs.get(instanceID).txn_handle_done(event.getTxnRequestID());
-                        instanceFinishReqCounter.compute(instanceID, (key, value) -> value == null ? 1 : value + 1);
-                        if (instanceFinishReqCounter.get(instanceID) % 100 == 0) {
-                            System.out.println("TPG threads sent finished req to instance" + instanceID + ": " + instanceFinishReqCounter.get(instanceID));
-                        }
-                        if (totalFinishedReqCounter.incrementAndGet() == 40000) {
-                            System.out.println("Total requests 10000, all finished");
-                        }
+//                        instanceFinishReqCounter.compute(instanceID, (key, value) -> value == null ? 1 : value + 1);
+//                        if (instanceFinishReqCounter.get(instanceID) % 100 == 0) {
+//                            System.out.println("TPG threads sent finished req to instance" + instanceID + ": " + instanceFinishReqCounter.get(instanceID));
+//                        }
+//                        if (totalFinishedReqCounter.incrementAndGet() == 40000) {
+//                            System.out.println("Total requests 10000, all finished");
+//                        }
                     }
 
                 } catch (IOException e) {
@@ -140,7 +140,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         } else if (communicationChoice == 0) {
             for (TransactionalVNFEvent event : eventQueue) {
-                VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(), Integer.parseInt(event.getTupleID()), event.getSaType(), event.getBid());
+                VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(), Integer.parseInt(event.getTupleID()), event.getSaType(), event.getBid(), event.getPuncID());
                 VNFRunner.getSender(event.getInstanceID()).submitFinishedRequest(request);
                 requestCounter++;
             }

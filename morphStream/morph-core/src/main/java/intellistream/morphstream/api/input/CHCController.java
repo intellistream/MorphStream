@@ -86,7 +86,7 @@ public class CHCController implements Runnable {
                         aggUsefulTime += System.nanoTime() - usefulStartTime;
                     }
 
-                    VNFRequest response = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp);
+                    VNFRequest response = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp, request.getPuncID());
                     VNFRunner.getSender(instanceID).submitFinishedRequest(response);
 
                 } catch (InterruptedException | DatabaseException | RuntimeException e) {

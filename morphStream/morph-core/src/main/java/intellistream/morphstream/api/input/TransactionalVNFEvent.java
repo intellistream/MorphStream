@@ -14,8 +14,9 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     private int saType; // 0: Read, 1: Write, 2: RW
     private boolean isAbort;
     private int instanceID;
+    private int puncID;
 
-    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int isAbort) {
+    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int isAbort, int puncID) {
         super(timestamp);
         this.saType = saType;
         this.instanceID = instanceID;
@@ -24,6 +25,7 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         this.txnID = txnID;
         this.saID = String.valueOf(saID);
         this.isAbort = (isAbort == 1);
+        this.puncID = puncID;
     }
 
     public TransactionalVNFEvent(long bid) {
@@ -65,6 +67,9 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     }
     public int getSaType() {
         return this.saType;
+    }
+    public int getPuncID() {
+        return this.puncID;
     }
 
     @Override

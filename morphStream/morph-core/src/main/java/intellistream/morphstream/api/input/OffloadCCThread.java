@@ -95,7 +95,7 @@ public class OffloadCCThread implements Runnable {
                         throw new RuntimeException(e);
                     }
                     VNFRequest request = new VNFRequest((int) offloadData.getTxnReqId(), offloadData.getInstanceID(),
-                            offloadData.getTupleID(), 1, offloadData.getTimeStamp());
+                            offloadData.getTupleID(), 1, offloadData.getTimeStamp(), offloadData.getPuncID());
                     VNFRunner.getSender(offloadData.getInstanceID()).submitFinishedRequest(request); //Send txn_finish signal to instance
                 }
 
@@ -293,7 +293,7 @@ public class OffloadCCThread implements Runnable {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        VNFRequest request = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp); //TODO: Optimization
+        VNFRequest request = new VNFRequest((int) txnReqId, instanceID, tupleID, 0, timeStamp, offloadData.getPuncID()); //TODO: Optimization
         VNFRunner.getSender(instanceID).submitFinishedRequest(request);
 
     }

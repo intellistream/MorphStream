@@ -7,13 +7,15 @@ public class VNFRequest {
     private int type; // 0: read, 1: write, 2: read-write
     private long createTime; // Time when the request is created by the instance
     private long finishTime; // Time when the finished request is received by the instance
+    private int puncID; // Punctuation ID of the request
 
-    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime) {
+    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int puncID) {
         this.reqID = reqID;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.type = type;
         this.createTime = createTime;
+        this.puncID = puncID;
     }
 
     public int getReqID() {
@@ -51,5 +53,8 @@ public class VNFRequest {
     }
     public void setFinishTime(long finishTime) {
         this.finishTime = finishTime;
+    }
+    public int getPuncID() {
+        return puncID;
     }
 }

@@ -25,6 +25,7 @@ public class VNFInstance implements Runnable {
     private final BlockingQueue<SyncData> managerSyncQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<VNFRequest> tempFinishedReqQueue = new LinkedBlockingQueue<>(); //Communication channel between VNFInstance and StateManager
     private final ConcurrentLinkedDeque<VNFRequest> finishedReqStorage = new ConcurrentLinkedDeque<>(); //Permanent storage of finished requests
+    private int currentPuncID = 0;
     private final int numTPGThreads;
     private int tpgRequestCount = 0;
     private int inputLineCounter = 0;
@@ -33,6 +34,7 @@ public class VNFInstance implements Runnable {
     private final int expectedRequestCount;
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("patternPunctuation");
+    private long puncStartTime = 0L;
     private HashMap<Integer, Long> aggParsingTimeMap = new HashMap<>(); // ccID -> total parsing time
     private HashMap<Integer, Long> aggInstanceSyncTimeMap = new HashMap<>(); // ccID -> total sync time at instance, for CC with local sync
     private HashMap<Integer, Long> aggInstanceUsefulTimeMap = new HashMap<>(); // ccID -> total useful time at instance, for CC with local RW
@@ -89,16 +91,22 @@ public class VNFInstance implements Runnable {
             String line;
             overallStartTime = System.nanoTime();
             while ((line = reader.readLine()) != null) {
+                if (ccStrategy == 7 && inputLineCounter % patternPunctuation == 0) { // Adaptive CC pattern change apply (simulated)
+                    if (inputLineCounter % 10000 == 0) {
+                        // TODO: Hardcoded cc switch process
+                        tupleCCMap.replaceAll((k, v) -> v + 1);
+                    }
+                    currentPuncID++; // Start from 1
+                }
+
                 long packetStartTime = System.nanoTime();
                 long parsingStartTime = System.nanoTime();
-                inputLineCounter++;
                 String[] parts = line.split(",");
                 int reqID = Integer.parseInt(parts[0]);
                 int tupleID = Integer.parseInt(parts[1]);
                 int type = Integer.parseInt(parts[2]);
                 int tupleCC = tupleCCMap.get(tupleID);
-
-                //TODO: Proactively check for Pattern change? Or hardcode pattern change signals?
+                inputLineCounter++;
 
                 if (enableTimeBreakdown) {
                     aggParsingTimeMap.put(tupleCC, aggParsingTimeMap.get(tupleCC) + (System.nanoTime() - parsingStartTime));
@@ -111,11 +119,11 @@ public class VNFInstance implements Runnable {
                         if (enableTimeBreakdown) {
                             aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                         }
-                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime));
+                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, currentPuncID));
 
                     } else { // cross-partition state access
                         long instanceSyncStartTime = System.nanoTime();
-                        PartitionCCThread.submitPartitionRequest(new PartitionData(packetStartTime, reqID, instanceID, tupleID, 0, -1));
+                        PartitionCCThread.submitPartitionRequest(new PartitionData(packetStartTime, reqID, instanceID, tupleID, 0, -1, currentPuncID));
                         while (true) {
                             VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                             if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -141,7 +149,7 @@ public class VNFInstance implements Runnable {
                         if (enableTimeBreakdown) {
                             aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                         }
-                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime));
+                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, currentPuncID));
 
                     } else if (type == 1 || type == 2) { // write
                         long instanceUsefulStartTime = System.nanoTime();
@@ -150,7 +158,7 @@ public class VNFInstance implements Runnable {
                             aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                         }
                         long instanceSyncStartTime = System.nanoTime();
-                        CacheCCThread.submitReplicationRequest(new CacheData(reqID, packetStartTime, instanceID, tupleID, 0));
+                        CacheCCThread.submitReplicationRequest(new CacheData(reqID, packetStartTime, instanceID, tupleID, 0, currentPuncID));
                         while (true) {
                             VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                             if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -164,7 +172,7 @@ public class VNFInstance implements Runnable {
 
                 } else if (tupleCC == 2) { // Offload
                     BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
-                    OffloadCCThread.submitOffloadReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type, responseQueue));
+                    OffloadCCThread.submitOffloadReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type, currentPuncID, responseQueue));
                     while (responseQueue.isEmpty()) {
                         //Wait for manager's ack
                     }
@@ -178,12 +186,12 @@ public class VNFInstance implements Runnable {
                     // For Offload CC, leave both Sync and Useful time measurement to manager
 
                 } else if (tupleCC == 3) { // Preemptive
-                    tpgQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, instanceID, packetStartTime, reqID, tupleID, 0, 0, 0));
+                    tpgQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, instanceID, packetStartTime, reqID, tupleID, 0, 0, 0, currentPuncID));
                     tpgRequestCount++;
                     // For Preemptive CC, leave both Sync and Useful time measurement to manager
 
                 } else if (tupleCC == 4) { // OpenNF
-                    OpenNFController.submitOpenNFReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type));
+                    OpenNFController.submitOpenNFReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type, currentPuncID));
                     while (true) {
                         VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -192,7 +200,7 @@ public class VNFInstance implements Runnable {
                     }
 
                 } else if (tupleCC == 5) { // CHC
-                    CHCController.submitCHCReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type));
+                    CHCController.submitCHCReq(new OffloadData(packetStartTime, instanceID, reqID, tupleID, 0, 0, 0, type, currentPuncID));
                     while (true) {
                         VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                         if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -214,7 +222,7 @@ public class VNFInstance implements Runnable {
                         if (enableTimeBreakdown) {
                             aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                         }
-                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime));
+                        submitFinishedRequest(new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, currentPuncID));
 
                     } else if (type == 1 || type == 2) { // write
                         long instanceUsefulStartTime = System.nanoTime();
@@ -223,7 +231,7 @@ public class VNFInstance implements Runnable {
                             aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                         }
                         long instanceSyncStartTime = System.nanoTime();
-                        CacheCCThread.submitReplicationRequest(new CacheData(reqID, packetStartTime, instanceID, tupleID, 0));
+                        CacheCCThread.submitReplicationRequest(new CacheData(reqID, packetStartTime, instanceID, tupleID, 0, currentPuncID));
                         while (true) {
                             VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                             if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -257,13 +265,13 @@ public class VNFInstance implements Runnable {
                 System.out.println("All instances have finished, sending stop signals to StateManager...");
 
                 MonitorThread.submitPatternData(new PatternData(-1, instanceID, 0, false));
-                PartitionCCThread.submitPartitionRequest(new PartitionData(-1, 0, instanceID, 0, 0, -1));
-                CacheCCThread.submitReplicationRequest(new CacheData(0, -1, 0, instanceID, 0));
-                OffloadCCThread.submitOffloadReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0));
-                OpenNFController.submitOpenNFReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0));
-                CHCController.submitCHCReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0));
+                PartitionCCThread.submitPartitionRequest(new PartitionData(-1, 0, instanceID, 0, 0, -1, -1));
+                CacheCCThread.submitReplicationRequest(new CacheData(0, -1, 0, instanceID, 0, -1));
+                OffloadCCThread.submitOffloadReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0, -1));
+                OpenNFController.submitOpenNFReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0, -1));
+                CHCController.submitCHCReq(new OffloadData(-1, instanceID, 0, 0, 0, 0, 0, 0, -1));
                 for (int tpgQueueIndex = 0; tpgQueueIndex < tpgQueues.size(); tpgQueueIndex++) {
-                    tpgQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, instanceID, -1, 0, 0, 0, 0, 0));
+                    tpgQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, instanceID, -1, 0, 0, 0, 0, 0, -1));
                 }
             }
 
@@ -317,6 +325,27 @@ public class VNFInstance implements Runnable {
             throw new RuntimeException(e);
         }
     }
+
+    /** For performance measurements */
+    public long[] getPuncStartEndTimes(int puncID) {
+        long minStartTime = Long.MAX_VALUE;
+        long maxEndTime = Long.MIN_VALUE;
+        for (VNFRequest request : this.finishedReqStorage) {
+            if (request.getPuncID() == puncID) {
+                if (request.getCreateTime() < minStartTime) {
+                    minStartTime = request.getCreateTime();
+                }
+                if (request.getFinishTime() > maxEndTime) {
+                    maxEndTime = request.getFinishTime();
+                }
+            }
+        }
+        if (minStartTime == Long.MAX_VALUE && maxEndTime == Long.MIN_VALUE) {
+            throw new RuntimeException("Error: No requests found for the given punctuation ID");
+        }
+        return new long[]{minStartTime, maxEndTime};
+    }
+
     public int getFinishedRequestCount() {
         return finishedReqStorage.size();
     }

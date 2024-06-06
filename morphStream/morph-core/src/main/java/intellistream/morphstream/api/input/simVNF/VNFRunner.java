@@ -19,6 +19,7 @@ public class VNFRunner implements Runnable {
     private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
     private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
     private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
+    private static HashMap<Integer, Double> puncThroughputMap = new HashMap<>(); //punctuationID -> punctuation overall throughput
     private static HashMap<Integer, Double> throughputMap = new HashMap<>(); //instanceID -> instance's throughput
     private static HashMap<Integer, Double> minLatencyMap = new HashMap<>(); //instanceID -> instance's min latency
     private static HashMap<Integer, Double> maxLatencyMap = new HashMap<>(); //instanceID -> instance's max latency
@@ -28,6 +29,7 @@ public class VNFRunner implements Runnable {
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
+    private final int puncInterval = MorphStreamEnv.get().configuration().getInt("patternPunctuation");
     private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     private static final int stateRange = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private static final int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
@@ -77,19 +79,23 @@ public class VNFRunner implements Runnable {
 
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         switch (experimentID) {
-            case "5.1":
+            case "5.1": // Preliminary study
                 writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
                 break;
-            case "5.2.1":
+            case "5.2.1": // Static throughput and latency
                 writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
                 writeCSVLatency(patternString, ccStrategyString);
                 break;
-            case "5.2.2":
-                writeCSVScalability(patternString, ccStrategyString, overallThroughput);
+            case "5.2.2": // Dynamic throughput
+                computeDynamicThroughput();
+                writeCSVDynamicThroughput("DynamicWorkload", ccStrategyString);
                 break;
             case "5.3.1":
                 computeTimeBreakdown();
                 writeCSVBreakdown();
+                break;
+            case "5.4.3":
+                writeCSVScalability(patternString, ccStrategyString, overallThroughput);
                 break;
         }
     }
@@ -136,6 +142,55 @@ public class VNFRunner implements Runnable {
         long overallDuration = overallEndTime - overallStartTime;
         double overallThroughput = totalRequestCounter / (overallDuration / 1E9);
         return overallThroughput;
+    }
+
+    private void computeDynamicThroughput() {
+        int numPunc = totalRequests / (puncInterval * vnfInstanceNum);
+        for (int puncID = 0; puncID < numPunc; puncID++) {
+            long puncStartTime = Long.MAX_VALUE;
+            long puncEndTime = Long.MIN_VALUE;
+            for (int i = 0; i < vnfInstanceNum; i++) {
+                long[] instancePuncTimes = senderMap.get(i).getPuncStartEndTimes(puncID);
+                puncStartTime = Math.min(puncStartTime, instancePuncTimes[0]);
+                puncEndTime = Math.max(puncEndTime, instancePuncTimes[1]);
+            }
+            double puncThroughput = puncInterval * vnfInstanceNum / ((puncEndTime - puncStartTime) / 1E9);
+            puncThroughputMap.put(puncID, puncThroughput);
+        }
+    }
+
+    private static void writeCSVDynamicThroughput(String pattern, String ccStrategy) {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
+        String directoryPath = String.format("%s/%s", baseDirectory, pattern);
+        File dir = new File(directoryPath);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        for (int puncID : puncThroughputMap.keySet()) {
+            String filePath = String.format("%s/%s/punc_%d.csv", directoryPath, ccStrategy, puncID);
+            System.out.println("Writing to " + filePath);
+            File file = new File(filePath);
+            if (file.exists()) {
+                boolean isDeleted = file.delete();
+                if (!isDeleted) {
+                    System.out.println("Failed to delete existing file.");
+                    return;
+                }
+            }
+            try (FileWriter fileWriter = new FileWriter(file)) {
+                String lineToWrite = pattern + "," + ccStrategy + "," + puncThroughputMap.get(puncID) + "\n";
+                fileWriter.write(lineToWrite);
+                System.out.println("Data written to CSV file successfully.");
+            } catch (IOException e) {
+                System.out.println("An error occurred while writing to the CSV file.");
+                e.printStackTrace();
+            }
+        }
     }
 
     private static void writeCSVLatency(String pattern, String ccStrategy) {
