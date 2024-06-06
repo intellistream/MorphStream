@@ -15,7 +15,7 @@ public class VNFInstance implements Runnable {
     private int instanceID;
     private String csvFilePath;
     private final int ccStrategy;
-    private static final ConcurrentHashMap<Integer, Integer> tupleCCMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Integer> tupleCCMap = new ConcurrentHashMap<>();
     private final int statePartitionStart;
     private final int statePartitionEnd;
     private final int stateRange; //entire state space
@@ -91,10 +91,11 @@ public class VNFInstance implements Runnable {
             String line;
             overallStartTime = System.nanoTime();
             while ((line = reader.readLine()) != null) {
-                if (ccStrategy == 7 && inputLineCounter % patternPunctuation == 0) { // Adaptive CC pattern change apply (simulated)
-                    if (inputLineCounter % 10000 == 0) {
+                if (inputLineCounter % patternPunctuation == 0) { // Adaptive CC pattern change apply (simulated)
+                    if (ccStrategy == 7 && inputLineCounter % 10000 == 0) {
                         // TODO: Hardcoded cc switch process
                         tupleCCMap.replaceAll((k, v) -> v + 1);
+                        System.out.println("Instance " + instanceID + " switches to cc " + tupleCCMap.get(1));
                     }
                     currentPuncID++; // Start from 1
                 }

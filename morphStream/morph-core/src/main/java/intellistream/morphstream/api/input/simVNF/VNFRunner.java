@@ -88,7 +88,7 @@ public class VNFRunner implements Runnable {
                 break;
             case "5.2.2": // Dynamic throughput
                 computeDynamicThroughput();
-                writeCSVDynamicThroughput("DynamicWorkload", ccStrategyString);
+                writeCSVDynamicThroughput(patternString, ccStrategyString);
                 break;
             case "5.3.1":
                 computeTimeBreakdown();
@@ -164,30 +164,43 @@ public class VNFRunner implements Runnable {
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
         String directoryPath = String.format("%s/%s", baseDirectory, pattern);
+
+        // Create the directory if it does not exist
         File dir = new File(directoryPath);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory.");
+                System.out.println("Failed to create the directory: " + directoryPath);
                 return;
             }
         }
+
+        // Ensure the subdirectory for the strategy exists
+        String strategyDirectoryPath = String.format("%s/%s", directoryPath, ccStrategy);
+        File strategyDir = new File(strategyDirectoryPath);
+        if (!strategyDir.exists()) {
+            if (!strategyDir.mkdirs()) {
+                System.out.println("Failed to create the strategy directory: " + strategyDirectoryPath);
+                return;
+            }
+        }
+
         for (int puncID : puncThroughputMap.keySet()) {
-            String filePath = String.format("%s/%s/punc_%d.csv", directoryPath, ccStrategy, puncID);
+            String filePath = String.format("%s/punc_%d.csv", strategyDirectoryPath, puncID);
             System.out.println("Writing to " + filePath);
             File file = new File(filePath);
             if (file.exists()) {
                 boolean isDeleted = file.delete();
                 if (!isDeleted) {
-                    System.out.println("Failed to delete existing file.");
+                    System.out.println("Failed to delete existing file: " + filePath);
                     return;
                 }
             }
             try (FileWriter fileWriter = new FileWriter(file)) {
                 String lineToWrite = pattern + "," + ccStrategy + "," + puncThroughputMap.get(puncID) + "\n";
                 fileWriter.write(lineToWrite);
-                System.out.println("Data written to CSV file successfully.");
+                System.out.println("Data written to CSV file successfully: " + filePath);
             } catch (IOException e) {
-                System.out.println("An error occurred while writing to the CSV file.");
+                System.out.println("An error occurred while writing to the CSV file: " + filePath);
                 e.printStackTrace();
             }
         }
@@ -417,6 +430,8 @@ public class VNFRunner implements Runnable {
                 return "sharedWriters";
             case 3:
                 return "mutualInteractive";
+            case 4:
+                return "dynamic";
             default:
                 return "invalid";
         }

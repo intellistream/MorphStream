@@ -265,6 +265,86 @@ def plot_latency_CDF(root_directory):
     plt.savefig(os.path.join(script_dir, '5.2.1_Latency.pdf'))
     plt.savefig(os.path.join(script_dir, '5.2.1_Latency.png'))
 
+def read_throughput_values(root_dir, system):
+    patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
+    punctuations = [1, 2, 3, 4]
+
+    throughput_values = []
+
+    for pattern in patterns:
+        for punc in punctuations:
+            file_path = os.path.join(root_dir, f"{pattern}/{system}/punc_{punc}.csv")
+            try:
+                with open(file_path, 'r') as file:
+                    reader = csv.reader(file)
+                    for row in reader:
+                        throughput_values.append(float(row[-1]))  # Append the last element as throughput value
+            except FileNotFoundError:
+                print(f"File not found: {file_path}")
+            except ValueError:
+                print(f"Invalid data in file: {file_path}")
+
+    return throughput_values
+
+def calculate_transnfv(throughput_lists):
+    transnfv_throughput = []
+    for values in zip(*throughput_lists):
+        transnfv_throughput.append(max(values))
+    return transnfv_throughput
+
+def calculate_s6(replication_throughput, s6_throughput):
+    s6_min_throughput = []
+    for rep_val, s6_val in zip(replication_throughput, s6_throughput):
+        s6_min_throughput.append(min(rep_val, s6_val))
+    return s6_min_throughput
+
+def plot_dynamic_throughput_linechart():
+    # Root directory containing the CSV files
+    root_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.2/throughput"
+
+    throughput_partitioning = read_throughput_values(root_dir, "Partitioning")
+    throughput_replication = read_throughput_values(root_dir, "Replication")
+    throughput_offloading = read_throughput_values(root_dir, "Offloading")
+    throughput_preemptive = read_throughput_values(root_dir, "Preemptive")
+    throughput_opennf = read_throughput_values(root_dir, "OpenNF")
+    throughput_chc = read_throughput_values(root_dir, "CHC")
+    throughput_s6_original = read_throughput_values(root_dir, "S6")
+
+    # Calculate TransNFV and S6 throughputs
+    throughput_transnfv = calculate_transnfv([
+        throughput_partitioning,
+        throughput_replication,
+        throughput_offloading,
+        throughput_preemptive,
+        throughput_s6_original
+    ])
+
+    throughput_s6 = calculate_s6(throughput_replication, throughput_s6_original)
+
+    # Generate the x-axis values based on the number of throughput values
+    punctuations = np.arange(1, len(throughput_transnfv) + 1)
+
+    # Plot the data
+    plt.figure(figsize=(14, 10))
+
+    plt.plot(punctuations, throughput_transnfv, marker='o', linestyle='-', color='b', label='TransNFV')
+    plt.plot(punctuations, throughput_opennf, marker='s', linestyle='-', color='g', label='OpenNF')
+    plt.plot(punctuations, throughput_chc, marker='^', linestyle='-', color='r', label='CHC')
+    plt.plot(punctuations, throughput_s6, marker='d', linestyle='-', color='purple', label='S6')
+
+    # Adding title and labels
+#     plt.title('Throughput Changes Over Time for Different Systems')
+    plt.xlabel('Punctuation', fontsize=16)
+    plt.ylabel("Throughput (10^6 packet/sec)", fontsize=16)
+    plt.xticks(punctuations, fontsize=16)  # Ensure all punctuations are shown on the x-axis
+    plt.legend(fontsize=16)
+
+    # Show grid
+    plt.grid(True)
+    script_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/"
+    plt.savefig(os.path.join(script_dir, '5.2.2_Throughput.pdf'))
+    plt.savefig(os.path.join(script_dir, '5.2.2_Throughput.png'))
+
 
 if __name__ == "__main__":
     # Define parameters
@@ -288,15 +368,17 @@ if __name__ == "__main__":
     ccStrategy = 0
     workloadPattern = 0
     enableTimeBreakdown = 0
-    experimentID = "5.2.1"
+    experimentID = "5.2.2"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-    execute_bash_script(script_path)
+#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
+#     execute_bash_script(script_path)
 
-    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"
-    plot_throughput_barchart(throughput_root_directory)
-    print("5.2.1 throughput figure generated.")
+    plot_dynamic_throughput_linechart()
+
+#     throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"
+#     plot_throughput_barchart(throughput_root_directory)
+#     print("5.2.1 throughput figure generated.")
 #     latency_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/latency"
 #     plot_latency_CDF(latency_root_directory)
 #     print("5.2.1 latency figure generated.")

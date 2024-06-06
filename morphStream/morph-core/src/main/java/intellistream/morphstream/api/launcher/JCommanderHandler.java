@@ -249,7 +249,7 @@ public class JCommanderHandler {
             "Down_skew,Down_skew,Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort," +
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
             "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging," +
-            "unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging";
+            "unchanging,unchanging,unchangin,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging,unchanging";
     //OP_BFS -> OP_NS -> OP_NS_A -> OP_NS -> OP_BFS -> OP_NS -> OP_NS_A -> OP_NS
     @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
     public String eventTypes = "transfer;deposit";
@@ -328,15 +328,15 @@ public class JCommanderHandler {
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 6;
+    public int ccStrategy = 3;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 0;
+    public int workloadPattern = 1;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
     @Parameter(names = {"--patternPunctuation"}, description = "Enable measurement for execution time breakdown analysis or not")
-    public int patternPunctuation = 2500;
+    public int patternPunctuation = 25000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.2.1";
+    public String experimentID = "5.2.2";
 
     public JCommanderHandler() {}
 
