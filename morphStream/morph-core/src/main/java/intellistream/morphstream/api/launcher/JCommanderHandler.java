@@ -557,6 +557,8 @@ public class JCommanderHandler {
         config.put("managerPatternPunctuation", managerPatternPunctuation);
         config.put("experimentID", experimentID);
         config.put("enableHardcodeCCSwitch", enableHardcodeCCSwitch);
+        config.put("conflictThreshold", conflictThreshold);
+        config.put("typeThreshold", typeThreshold);
 
         configSystem(config);
     }
