@@ -62,7 +62,7 @@ function runTStream() {{
           --workloadPattern $workloadPattern \\
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID \\
-            --enableHardcodeCCSwitch $enableHardcodeCCSwitch"
+          --enableHardcodeCCSwitch $enableHardcodeCCSwitch
           "
   java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
@@ -378,8 +378,8 @@ if __name__ == "__main__":
     enableHardcodeCCSwitch = 1
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-#     execute_bash_script(script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch)
+    execute_bash_script(script_path)
 
     plot_dynamic_throughput_linechart()
 

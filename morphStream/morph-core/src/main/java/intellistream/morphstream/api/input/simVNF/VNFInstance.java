@@ -172,8 +172,12 @@ public class VNFInstance implements Runnable {
                         }
 
                     } else if (ccStrategy == 7) {
+                        long ccSwitchStartTime = System.nanoTime();
                         int nextPuncID = monitorMsgQueue.take(); // Wait for pattern monitor's signal to begin next punctuation
                         assert nextPuncID == instancePuncID;
+                        if (enableTimeBreakdown) {
+                            aggCCSwitchTime += System.nanoTime() - ccSwitchStartTime;
+                        }
                         LOG.info("Instance " + instanceID + " starts punctuation " + instancePuncID);
                     }
                 }

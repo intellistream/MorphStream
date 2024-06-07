@@ -62,7 +62,7 @@ function runTStream() {{
           --workloadPattern $workloadPattern \\
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID \\
-            --enableHardcodeCCSwitch $enableHardcodeCCSwitch"
+          --enableHardcodeCCSwitch $enableHardcodeCCSwitch
           "
   java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
@@ -91,9 +91,9 @@ function runTStream() {{
 
 function baselinePattern() {{
   ResetParameters
-  for workloadPattern in 0 1 2 3
+  for workloadPattern in 4
   do
-    for ccStrategy in 0 1 2 3 4 5 6
+    for ccStrategy in 4 5 6 7
     do
       runTStream
     done
@@ -362,7 +362,7 @@ if __name__ == "__main__":
     complexity = 0
     NUM_ITEMS = 10000
     rootFilePath = "/home/shuhao/jjzhao/data"
-    totalEvents = 400000
+    totalEvents = 120000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
@@ -373,19 +373,11 @@ if __name__ == "__main__":
     rwRatioMutualInteractive = 80
     ccStrategy = 0
     workloadPattern = 0
-    enableTimeBreakdown = 0
-    experimentID = "5.2.2"
-    enableHardcodeCCSwitch = 1
+    enableTimeBreakdown = 1
+    experimentID = "5.3.1"
+    enableHardcodeCCSwitch = 0
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-#     execute_bash_script(script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch)
+    execute_bash_script(script_path)
 
-    plot_dynamic_throughput_linechart()
-
-#     throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"
-#     plot_throughput_barchart(throughput_root_directory)
-#     print("5.2.1 throughput figure generated.")
-#     latency_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/latency"
-#     plot_latency_CDF(latency_root_directory)
-#     print("5.2.1 latency figure generated.")
