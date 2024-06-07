@@ -259,6 +259,7 @@ public class VNFInstance implements Runnable {
 
         } else if (tupleCC == 2) { // Offload
             BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
+            request.setTxnACKQueue(responseQueue);
             OffloadCCThread.submitOffloadReq(request);
             while (responseQueue.isEmpty()) {
                 //Wait for manager's ack
