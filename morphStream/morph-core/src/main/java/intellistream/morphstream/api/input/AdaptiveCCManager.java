@@ -36,7 +36,7 @@ public class AdaptiveCCManager {
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
 
     public AdaptiveCCManager() {
-        monitorThread = new Thread(new MonitorThread(monitorQueue, 1000000));
+        monitorThread = new Thread(new MonitorThread(monitorQueue));
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
         offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize));

@@ -36,7 +36,7 @@ public class VNFInstance implements Runnable {
     private long overallEndTime;
     private final int expectedRequestCount;
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
-    private final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("patternPunctuation");
+    private final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
     private final boolean enableHardcodeCCSwitch = (MorphStreamEnv.get().configuration().getInt("enableHardcodeCCSwitch") == 1);
     private long puncStartTime = 0L;
     private HashMap<Integer, Long> aggParsingTimeMap = new HashMap<>(); // ccID -> total parsing time
@@ -87,13 +87,13 @@ public class VNFInstance implements Runnable {
         }
     }
 
-    public void notifyTupleCCSwitch(CCSwitchData data) {
-        tupleUnderCCSwitch.put(data.getTupleID(), data.getNewCC());
+    public void notifyTupleCCSwitch(int tupleID, int newCC) {
+        tupleUnderCCSwitch.put(tupleID, newCC);
     }
 
-    public void endTupleCCSwitch(CCSwitchData data) {
-        tupleUnderCCSwitch.remove(data.getTupleID());
-        tupleCCMap.put(data.getTupleID(), data.getNewCC());
+    public void endTupleCCSwitch(int tupleID, int newCC) {
+        tupleUnderCCSwitch.remove(tupleID);
+        tupleCCMap.put(tupleID, newCC);
     }
 
     @Override
@@ -423,9 +423,6 @@ public class VNFInstance implements Runnable {
     }
     public void writeLocalState(int tupleID, int value) {
         localStates.put(tupleID, value);
-    }
-    public void changeCCStrategy(int tupleID, int newCCStrategy) { //TODO: Implement pause & continue for CC strategy change
-        tupleCCMap.put(tupleID, newCCStrategy);
     }
 
     public static void writeIndicatorFile(String fileName) {

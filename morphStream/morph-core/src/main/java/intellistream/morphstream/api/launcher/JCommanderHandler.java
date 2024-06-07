@@ -333,12 +333,18 @@ public class JCommanderHandler {
     public int workloadPattern = 4;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
-    @Parameter(names = {"--patternPunctuation"}, description = "Enable measurement for execution time breakdown analysis or not")
-    public int patternPunctuation = 2500;
+    @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
+    public int instancePatternPunctuation = 2500;
+    @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
+    public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
     public String experimentID = "5.2.2_dynamic";
     @Parameter(names = {"--enableHardcodeCCSwitch"}, description = "If enabled, pattern_punc and cc_switch are performed at instance level. Otherwise monitor level.")
     public int enableHardcodeCCSwitch = 1;
+    @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")
+    public int conflictThreshold = 20;
+    @Parameter(names = {"--typeThreshold"}, description = "Threshold for monitor to judge the ratio of read/write operations")
+    public int typeThreshold = 20;
 
     public JCommanderHandler() {}
 
@@ -547,7 +553,8 @@ public class JCommanderHandler {
         config.put("ccStrategy", ccStrategy);
         config.put("workloadPattern", workloadPattern);
         config.put("enableTimeBreakdown", enableTimeBreakdown);
-        config.put("patternPunctuation", patternPunctuation);
+        config.put("instancePatternPunctuation", instancePatternPunctuation);
+        config.put("managerPatternPunctuation", managerPatternPunctuation);
         config.put("experimentID", experimentID);
         config.put("enableHardcodeCCSwitch", enableHardcodeCCSwitch);
 
