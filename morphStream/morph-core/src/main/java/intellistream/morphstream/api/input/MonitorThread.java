@@ -2,7 +2,6 @@ package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.api.input.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
@@ -10,16 +9,15 @@ import intellistream.morphstream.engine.txn.storage.TableRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class MonitorThread implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(MonitorThread.class);
     private static int txnCounter = 0;
+    private static int nextPunctuationID = 1; // The next punctuation ID that instances can begin, start from 1
     private static BlockingQueue<PatternData> patternDataQueue;
     private static final ConcurrentHashMap<Integer, Integer> readCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> writeCountMap = new ConcurrentHashMap<>();
@@ -82,11 +80,12 @@ public class MonitorThread implements Runnable {
             updatePatternData(patternData);
             txnCounter++;
             if (txnCounter % patternPunctuation == 0) {
+                nextPunctuationID++;
                 LOG.info("Pattern monitor judge pattern changes...");
                 judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
 
                 if (!statesPattern_0_to_23.isEmpty() || !statesPattern_1_to_23.isEmpty() || !statesPattern_23_to_0.isEmpty() || !statesPattern_23_to_1.isEmpty()) {
-                    ccSwitch();
+                    ccSwitch(nextPunctuationID);
                 } else {
                     LOG.info("No pattern change detected");
                 }
@@ -199,13 +198,21 @@ public class MonitorThread implements Runnable {
         }
     }
 
-    private static void ccSwitch() {
+    private static void ccSwitch(int nextPunctuationID) {
         LOG.info("Monitor starts CC switch");
 
         //Notify instances for pattern change
         for (Map.Entry<Integer, Integer> entry : statesPatternChanges.entrySet()) {
             int tupleID = entry.getKey();
-            VNFRunner.getSender(statePartitionMap.get(tupleID)).notifyTupleCCSwitch(tupleID, entry.getValue()); //Pattern -> CC: 1-to-1 mapping
+            int newPattern = entry.getValue();
+            for (int instanceID = 0; instanceID < vnfInstanceNum; instanceID++) {
+                VNFRunner.getSender(instanceID).addTupleCCSwitch(tupleID, newPattern);
+            }
+        }
+
+        //Notify instances to start the next punctuation
+        for (int instanceID = 0; instanceID < vnfInstanceNum; instanceID++) {
+            VNFRunner.getSender(instanceID).notifyNextPuncStart(nextPunctuationID);
         }
 
         //From dedicated local cache partition to global store

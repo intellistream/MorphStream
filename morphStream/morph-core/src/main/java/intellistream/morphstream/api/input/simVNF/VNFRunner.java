@@ -43,7 +43,7 @@ public class VNFRunner implements Runnable {
 
     public VNFRunner() {
         this.patternString = toPatternString(pattern);
-        CyclicBarrier senderBarrier = new CyclicBarrier(vnfInstanceNum);
+        CyclicBarrier finishBarrier = new CyclicBarrier(vnfInstanceNum);
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
 
@@ -53,7 +53,7 @@ public class VNFRunner implements Runnable {
             int instanceExpRequestCount = totalRequests / vnfInstanceNum;
             VNFInstance sender = new VNFInstance(i,
                     stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange,
-                    ccStrategy, numTPGThreads, csvFilePath, senderBarrier, instanceExpRequestCount);
+                    ccStrategy, numTPGThreads, csvFilePath, finishBarrier, instanceExpRequestCount);
             Thread senderThread = new Thread(sender);
             senderMap.put(i, sender);
             senderThreadMap.put(i, senderThread);

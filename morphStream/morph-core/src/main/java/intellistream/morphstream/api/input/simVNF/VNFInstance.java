@@ -3,6 +3,8 @@ package intellistream.morphstream.api.input.simVNF;
 import communication.dao.VNFRequest;
 import intellistream.morphstream.api.input.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,13 +14,14 @@ import java.util.HashMap;
 import java.util.concurrent.*;
 
 public class VNFInstance implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(VNFInstance.class);
     private int instanceID;
     private String csvFilePath;
     private final int ccStrategy;
     private final int statePartitionStart;
     private final int statePartitionEnd;
     private final int stateRange; //entire state space
-    private final CyclicBarrier instancesBarrier;
+    private final CyclicBarrier finishBarrier;
     private final ConcurrentHashMap<Integer, Integer> localStates = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Integer> tupleCCMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = AdaptiveCCManager.tpgQueues;
@@ -28,7 +31,8 @@ public class VNFInstance implements Runnable {
     private final HashMap<Integer, Long> bufferReqStartTimeMap = new HashMap<>();
     private final BlockingQueue<VNFRequest> tempFinishedReqQueue = new LinkedBlockingQueue<>(); //Communication channel between VNFInstance and StateManager
     private final ConcurrentLinkedDeque<VNFRequest> finishedReqStorage = new ConcurrentLinkedDeque<>(); //Permanent storage of finished requests
-    private int instancePuncID = 0;
+    private final BlockingQueue<Integer> monitorMsgQueue = new LinkedBlockingQueue<>();
+    private int instancePuncID = 1; //Start from 1
     private final int numTPGThreads;
     private int tpgRequestCount = 0;
     private int inputLineCounter = 0;
@@ -45,7 +49,7 @@ public class VNFInstance implements Runnable {
     private Long aggCCSwitchTime = 0L; // ccID -> total time for CC switch
 
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, int ccStrategy, int numTPGThreads,
-                       String csvFilePath, CyclicBarrier instancesBarrier, int expectedRequestCount) {
+                       String csvFilePath, CyclicBarrier finishBarrier, int expectedRequestCount) {
         this.instanceID = instanceID;
         this.statePartitionStart = statePartitionStart;
         this.statePartitionEnd = statePartitionEnd;
@@ -53,7 +57,7 @@ public class VNFInstance implements Runnable {
         this.ccStrategy = ccStrategy;
         this.numTPGThreads = numTPGThreads;
         this.csvFilePath = csvFilePath;
-        this.instancesBarrier = instancesBarrier;
+        this.finishBarrier = finishBarrier;
         this.expectedRequestCount = expectedRequestCount;
         for (int i = 0; i <= stateRange; i++) {
             int stateDefaultValue = 0;
@@ -62,7 +66,7 @@ public class VNFInstance implements Runnable {
         if (ccStrategy == 7) { // Adaptive CC started from default CC strategy - Partitioning
             if (enableHardcodeCCSwitch) {
                 for (int i = 0; i <= stateRange; i++) {
-                    tupleCCMap.put(i, -1);
+                    tupleCCMap.put(i, 0);
                 }
             } else {
                 for (int i = 0; i <= stateRange; i++) {
@@ -94,8 +98,16 @@ public class VNFInstance implements Runnable {
         }
     }
 
-    public void notifyTupleCCSwitch(int tupleID, int newCC) {
+    public void addTupleCCSwitch(int tupleID, int newCC) {
         tupleUnderCCSwitch.put(tupleID, newCC);
+    }
+
+    public void notifyNextPuncStart(int nextPuncID) {
+        try {
+            monitorMsgQueue.put(nextPuncID);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void endTupleCCSwitch(int tupleID, int newCC) {
@@ -111,14 +123,6 @@ public class VNFInstance implements Runnable {
             String line;
             overallStartTime = System.nanoTime();
             while ((line = reader.readLine()) != null) {
-                if (enableHardcodeCCSwitch && inputLineCounter % patternPunctuation == 0) { // Hardcode pattern phase & CC switch, for exp 5.2.2 only
-                    if (ccStrategy == 7 && inputLineCounter % 10000 == 0) {
-                        // TODO: This is the hardcoded cc switch process
-                        tupleCCMap.replaceAll((k, v) -> v + 1);
-                        System.out.println("Instance " + instanceID + " switches to cc " + tupleCCMap.get(1));
-                    }
-                    instancePuncID++; // Start from 1
-                }
 
                 long packetStartTime = System.nanoTime();
                 long parsingStartTime = System.nanoTime();
@@ -133,7 +137,7 @@ public class VNFInstance implements Runnable {
                 }
                 inputLineCounter++;
                 if (enableTimeBreakdown) {
-                    aggParsingTimeMap.put(ccStrategy, aggParsingTimeMap.get(ccStrategy) + (System.nanoTime() - parsingStartTime));
+                    aggParsingTimeMap.put(tupleCC, aggParsingTimeMap.get(tupleCC) + (System.nanoTime() - parsingStartTime));
                 }
 
                 if (ccStrategy == 7 && tupleUnderCCSwitch.containsKey(tupleID)) {
@@ -156,6 +160,23 @@ public class VNFInstance implements Runnable {
                         tupleBufferReqMap.remove(tupleId);
                     }
                 }
+
+                if (inputLineCounter % patternPunctuation == 0) {
+                    instancePuncID++; // Start from 1
+
+                    if (enableHardcodeCCSwitch && ccStrategy == 7) {
+                        if (inputLineCounter % 10000 == 0) {
+                            // TODO: Hardcode pattern phase & CC switch, for exp 5.2.2 only
+                            tupleCCMap.replaceAll((k, v) -> v + 1);
+                            System.out.println("Instance " + instanceID + " switches to cc " + tupleCCMap.get(1));
+                        }
+
+                    } else if (ccStrategy == 7) {
+                        int nextPuncID = monitorMsgQueue.take(); // Wait for pattern monitor's signal to begin next punctuation
+                        assert nextPuncID == instancePuncID;
+                        LOG.info("Instance " + instanceID + " starts punctuation " + instancePuncID);
+                    }
+                }
             }
 
             System.out.println("Instance " + instanceID + " finished parsing " + inputLineCounter + " requests.");
@@ -170,7 +191,7 @@ public class VNFInstance implements Runnable {
             long overallDuration = overallEndTime - overallStartTime;
             System.out.println("Instance " + instanceID + " processed all " + expectedRequestCount + " requests, Throughput " + (expectedRequestCount / (overallDuration / 1E9)) + " events/sec");
 
-            int arrivedIndex = instancesBarrier.await(); // Wait for other instances
+            int arrivedIndex = finishBarrier.await(); // Wait for other instances
             if (arrivedIndex == 0) {
                 System.out.println("All instances have finished, sending stop signals to StateManager...");
 
@@ -211,7 +232,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 submitFinishedRequest(request);
 
@@ -225,7 +246,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
             }
 
@@ -236,12 +257,12 @@ public class VNFInstance implements Runnable {
                     processSyncQueue();
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 submitFinishedRequest(request);
 
@@ -249,7 +270,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 long instanceSyncStartTime = System.nanoTime();
                 CacheCCThread.submitReplicationRequest(request);
@@ -260,7 +281,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
             }
 
@@ -310,12 +331,12 @@ public class VNFInstance implements Runnable {
                     processSyncQueue();
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 submitFinishedRequest(request);
 
@@ -323,7 +344,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 long instanceSyncStartTime = System.nanoTime();
                 CacheCCThread.submitReplicationRequest(request);
@@ -334,7 +355,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
             }
 
