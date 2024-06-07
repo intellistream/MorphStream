@@ -60,16 +60,23 @@ public class VNFInstance implements Runnable {
             localStates.put(i, stateDefaultValue);
         }
         if (ccStrategy == 7) { // Adaptive CC started from default CC strategy - Partitioning
-            for (int i = 0; i <= stateRange; i++) {
-                tupleCCMap.put(i, -1);
+            if (enableHardcodeCCSwitch) {
+                for (int i = 0; i <= stateRange; i++) {
+                    tupleCCMap.put(i, -1);
+                }
+            } else {
+                for (int i = 0; i <= stateRange; i++) {
+                    tupleCCMap.put(i, 0);
+                }
             }
+
         } else { // Static CC are fixed throughout the runtime
             for (int i = 0; i <= stateRange; i++) {
                 tupleCCMap.put(i, ccStrategy);
             }
         }
         if (enableTimeBreakdown) {
-            for (int i = 0; i <= 5; i++) {
+            for (int i = 0; i <= 7; i++) {
                 aggParsingTimeMap.put(i, 0L);
                 aggInstanceSyncTimeMap.put(i, 0L);
                 aggInstanceUsefulTimeMap.put(i, 0L);
@@ -126,7 +133,7 @@ public class VNFInstance implements Runnable {
                 }
                 inputLineCounter++;
                 if (enableTimeBreakdown) {
-                    aggParsingTimeMap.put(ccStrategy, aggParsingTimeMap.get(tupleCC) + (System.nanoTime() - parsingStartTime));
+                    aggParsingTimeMap.put(ccStrategy, aggParsingTimeMap.get(ccStrategy) + (System.nanoTime() - parsingStartTime));
                 }
 
                 if (ccStrategy == 7 && tupleUnderCCSwitch.containsKey(tupleID)) {

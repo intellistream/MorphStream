@@ -241,7 +241,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
     public String dataDirectory = "morphStream/data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 160000;
+    public int totalEvents = 120000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
@@ -332,15 +332,15 @@ public class JCommanderHandler {
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
     public int workloadPattern = 4;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
-    public int enableTimeBreakdown = 0;
+    public int enableTimeBreakdown = 1;
     @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
     public int instancePatternPunctuation = 2500;
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.2.2_dynamic";
+    public String experimentID = "5.3.1";
     @Parameter(names = {"--enableHardcodeCCSwitch"}, description = "If enabled, pattern_punc and cc_switch are performed at instance level. Otherwise monitor level.")
-    public int enableHardcodeCCSwitch = 1;
+    public int enableHardcodeCCSwitch = 0;
     @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")
     public int conflictThreshold = 20;
     @Parameter(names = {"--typeThreshold"}, description = "Threshold for monitor to judge the ratio of read/write operations")

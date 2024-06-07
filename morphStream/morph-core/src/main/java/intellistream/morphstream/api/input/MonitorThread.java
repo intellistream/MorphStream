@@ -82,11 +82,13 @@ public class MonitorThread implements Runnable {
             updatePatternData(patternData);
             txnCounter++;
             if (txnCounter % patternPunctuation == 0) {
-                System.out.println("Pattern monitor judge pattern changes...");
+                LOG.info("Pattern monitor judge pattern changes...");
                 judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
 
                 if (!statesPattern_0_to_23.isEmpty() || !statesPattern_1_to_23.isEmpty() || !statesPattern_23_to_0.isEmpty() || !statesPattern_23_to_1.isEmpty()) {
                     ccSwitch();
+                } else {
+                    LOG.info("No pattern change detected");
                 }
                 readCountMap.clear();
                 writeCountMap.clear();
@@ -110,6 +112,8 @@ public class MonitorThread implements Runnable {
         Integer currentOwnership = ownershipMap.get(tupleID);
         if (currentOwnership != null && !currentOwnership.equals(instanceID)) {
             conflictCountMap.merge(tupleID, 1, Integer::sum);
+        } else {
+            conflictCountMap.put(tupleID, 0);
         }
         ownershipMap.put(tupleID, instanceID);
     }

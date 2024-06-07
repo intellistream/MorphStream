@@ -29,7 +29,7 @@ public class VNFRunner implements Runnable {
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
-    private final int puncInterval = MorphStreamEnv.get().configuration().getInt("patternPunctuation");
+    private final int instancePatternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
     private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     private static final int stateRange = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private static final int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
@@ -149,7 +149,7 @@ public class VNFRunner implements Runnable {
     }
 
     private void computeDynamicThroughput() {
-        int numPunc = totalRequests / (puncInterval * vnfInstanceNum);
+        int numPunc = totalRequests / (instancePatternPunctuation * vnfInstanceNum);
         for (int puncID = 1; puncID <= numPunc; puncID++) {
             long puncStartTime = Long.MAX_VALUE;
             long puncEndTime = Long.MIN_VALUE;
@@ -158,7 +158,7 @@ public class VNFRunner implements Runnable {
                 puncStartTime = Math.min(puncStartTime, instancePuncTimes[0]);
                 puncEndTime = Math.max(puncEndTime, instancePuncTimes[1]);
             }
-            double puncThroughput = puncInterval * vnfInstanceNum / ((puncEndTime - puncStartTime) / 1E9);
+            double puncThroughput = instancePatternPunctuation * vnfInstanceNum / ((puncEndTime - puncStartTime) / 1E9);
             puncThroughputMap.put(puncID, puncThroughput);
         }
     }
