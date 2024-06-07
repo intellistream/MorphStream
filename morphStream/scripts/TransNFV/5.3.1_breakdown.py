@@ -351,6 +351,46 @@ def plot_dynamic_throughput_linechart():
     plt.savefig(os.path.join(script_dir, '5.2.2_Throughput.pdf'))
     plt.savefig(os.path.join(script_dir, '5.2.2_Throughput.png'))
 
+def plot_time_breakdown_barchart():
+    # Define file paths for each system
+    base_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.1/breakdown/numInstance_4/dynamic/"
+    systems = ["OpenNF", "CHC", "S6", "TransNFV"]
+    categories = ['Parsing', 'Sync', 'Useful', 'CC Switch']
+
+    # Read data from CSV files
+    sub_bar_values = {}
+    for system in systems:
+        file_path = f"{base_path}{system}.csv"
+        data = pd.read_csv(file_path, header=None).values.flatten().tolist()
+        sub_bar_values[system] = data
+
+    # Data preparation
+    systems = list(sub_bar_values.keys())
+    values = np.array(list(sub_bar_values.values()))
+
+    # Generate the figure
+    fig, ax = plt.subplots()
+
+    # Calculate the bottom values for stacking
+    cumulative_values = np.zeros(len(systems))
+    bar_height = 0.4  # Reduced bar width
+    for i in range(values.shape[1]):
+        ax.barh(systems, values[:, i], left=cumulative_values, height=bar_height, label=categories[i])
+        cumulative_values += values[:, i]
+
+    # Add labels and title
+    ax.set_xlabel('Execution Time')
+    ax.set_ylabel('System')
+    ax.set_title('Execution Time Breakdown for Different Systems')
+    ax.legend(title='Categories')
+
+    # Show the plot
+    plt.tight_layout()
+    script_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/"
+    plt.savefig(os.path.join(script_dir, '5.3.1_Overhead.pdf'))
+    plt.savefig(os.path.join(script_dir, '5.3.1_Overhead.png'))
+
+
 
 if __name__ == "__main__":
     # Define parameters
@@ -378,6 +418,8 @@ if __name__ == "__main__":
     enableHardcodeCCSwitch = 0
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch)
-    execute_bash_script(script_path)
+#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch)
+#     execute_bash_script(script_path)
+
+    plot_time_breakdown_barchart()
 

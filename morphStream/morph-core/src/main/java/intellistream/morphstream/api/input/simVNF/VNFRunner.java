@@ -316,8 +316,8 @@ public class VNFRunner implements Runnable {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "breakdown");
-        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, vnfInstanceNum, pattern);
-        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
+        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, vnfInstanceNum, toPatternString(pattern));
+        String filePath = String.format("%s/%s.csv", directoryPath, toStringStrategy(ccStrategy));
         System.out.println("Writing to " + filePath);
         File dir = new File(directoryPath);
         if (!dir.exists()) {
@@ -425,7 +425,7 @@ public class VNFRunner implements Runnable {
         }
     }
 
-    private String toPatternString(int pattern) {
+    private static String toPatternString(int pattern) {
         switch (pattern) {
             case 0:
                 return "loneOperative";
@@ -442,7 +442,7 @@ public class VNFRunner implements Runnable {
         }
     }
 
-    public String toStringStrategy(int ccStrategy) {
+    public static String toStringStrategy(int ccStrategy) {
         if (ccStrategy == 0) {
             return "Partitioning";
         } else if (ccStrategy == 1) {
@@ -458,7 +458,7 @@ public class VNFRunner implements Runnable {
         } else if (ccStrategy == 6) {
             return "S6";
         } else if (ccStrategy == 7) {
-            return "Adaptive";
+            return "TransNFV";
         } else {
             return "Invalid";
         }
