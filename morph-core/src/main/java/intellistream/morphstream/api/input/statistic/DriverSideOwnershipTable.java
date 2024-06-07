@@ -62,16 +62,6 @@ public class DriverSideOwnershipTable {
                 }
             }
             bout.writeShort(SOURCE_CONTROL.END_FLAG);
-            ByteBuffer test = bout.buffer();
-            test.flip();
-            LOG.info("StartFlag:" + test.getShort());
-            LOG.info("TotalLength:" + test.getInt());
-            for (int i = 0; i < totalWorkers; i++) {
-                LOG.info("TotalNumberForEachWorker:" + test.getInt());
-            }
-            byte[] data = new byte[encoded_length];
-            test.get(data);
-            LOG.info("EndFlag:" + test.getShort());
         } catch (Exception e) {
             e.printStackTrace();
         }
