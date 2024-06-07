@@ -85,8 +85,11 @@ public class MonitorThread implements Runnable {
                 judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
 
                 if (!statesPattern_0_to_23.isEmpty() || !statesPattern_1_to_23.isEmpty() || !statesPattern_23_to_0.isEmpty() || !statesPattern_23_to_1.isEmpty()) {
-                    ccSwitch(nextPunctuationID);
+                    notifyCCSwitch();
+                    notifyStartNextPunctuation();
+                    ccSwitch();
                 } else {
+                    notifyStartNextPunctuation();
                     LOG.info("No pattern change detected");
                 }
                 readCountMap.clear();
@@ -198,9 +201,7 @@ public class MonitorThread implements Runnable {
         }
     }
 
-    private static void ccSwitch(int nextPunctuationID) {
-        LOG.info("Monitor starts CC switch");
-
+    private static void notifyCCSwitch() {
         //Notify instances for pattern change
         for (Map.Entry<Integer, Integer> entry : statesPatternChanges.entrySet()) {
             int tupleID = entry.getKey();
@@ -209,11 +210,17 @@ public class MonitorThread implements Runnable {
                 VNFRunner.getSender(instanceID).addTupleCCSwitch(tupleID, newPattern);
             }
         }
+    }
 
+    private static void notifyStartNextPunctuation() {
         //Notify instances to start the next punctuation
         for (int instanceID = 0; instanceID < vnfInstanceNum; instanceID++) {
             VNFRunner.getSender(instanceID).notifyNextPuncStart(nextPunctuationID);
         }
+    }
+
+    private static void ccSwitch() {
+        LOG.info("Monitor starts CC switch");
 
         //From dedicated local cache partition to global store
         for (Map.Entry<Integer, Integer> entry : statesPattern_0_to_23.entrySet()) {
