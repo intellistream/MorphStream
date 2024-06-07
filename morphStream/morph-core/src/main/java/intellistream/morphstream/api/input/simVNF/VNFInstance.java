@@ -25,6 +25,7 @@ public class VNFInstance implements Runnable {
     private final BlockingQueue<SyncData> managerStateSyncQueue = new LinkedBlockingQueue<>();
     private final ConcurrentHashMap<Integer, Integer> tupleUnderCCSwitch = new ConcurrentHashMap<>(); // Affected tupleID -> new CC
     private final ConcurrentHashMap<Integer, ConcurrentLinkedQueue<VNFRequest>> tupleBufferReqMap = new ConcurrentHashMap<>();
+    private final HashMap<Integer, Long> bufferReqStartTimeMap = new HashMap<>();
     private final BlockingQueue<VNFRequest> tempFinishedReqQueue = new LinkedBlockingQueue<>(); //Communication channel between VNFInstance and StateManager
     private final ConcurrentLinkedDeque<VNFRequest> finishedReqStorage = new ConcurrentLinkedDeque<>(); //Permanent storage of finished requests
     private int instancePuncID = 0;
@@ -120,24 +121,29 @@ public class VNFInstance implements Runnable {
                 int type = Integer.parseInt(parts[2]);
                 int tupleCC = tupleCCMap.get(tupleID);
                 VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, instancePuncID, 0, 0);
-                MonitorThread.submitPatternData(new PatternData(instanceID, tupleID, (type == 1)));
+                if (ccStrategy == 7) {
+                    MonitorThread.submitPatternData(new PatternData(instanceID, tupleID, (type == 1)));
+                }
                 inputLineCounter++;
                 if (enableTimeBreakdown) {
-                    aggParsingTimeMap.put(tupleCC, aggParsingTimeMap.get(tupleCC) + (System.nanoTime() - parsingStartTime));
+                    aggParsingTimeMap.put(ccStrategy, aggParsingTimeMap.get(tupleCC) + (System.nanoTime() - parsingStartTime));
                 }
 
-                if (tupleUnderCCSwitch.containsKey(tupleID)) {
+                if (ccStrategy == 7 && tupleUnderCCSwitch.containsKey(tupleID)) {
                     tupleBufferReqMap.computeIfAbsent(tupleID, k -> new ConcurrentLinkedQueue<>()).add(request); // Buffer affected tuples
+                    bufferReqStartTimeMap.put(reqID, System.nanoTime());
                 } else {
                     txnProcess(request);
                 }
 
-                //TODO: Need to measure the delay for buffered transactions as the overhead for CC Switch
-
-                // TODO: Periodically check for buffered inputs to be released
+                // TODO: Optimization: Periodically check for buffered inputs to be released
                 for (Integer tupleId : tupleBufferReqMap.keySet()) {
                     if (!tupleUnderCCSwitch.containsKey(tupleId)) {
                         for (VNFRequest bufferedRequest : tupleBufferReqMap.get(tupleId)) {
+                            long bufferReqStartTime = bufferReqStartTimeMap.get(bufferedRequest.getReqID());
+                            if (enableTimeBreakdown) {
+                                aggCCSwitchTime += System.nanoTime() - bufferReqStartTime;
+                            }
                             txnProcess(bufferedRequest);
                         }
                         tupleBufferReqMap.remove(tupleId);
@@ -198,7 +204,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 submitFinishedRequest(request);
 
@@ -212,7 +218,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
             }
 
@@ -223,12 +229,12 @@ public class VNFInstance implements Runnable {
                     processSyncQueue();
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 submitFinishedRequest(request);
 
@@ -236,7 +242,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 long instanceSyncStartTime = System.nanoTime();
                 CacheCCThread.submitReplicationRequest(request);
@@ -247,7 +253,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
             }
 
@@ -296,12 +302,12 @@ public class VNFInstance implements Runnable {
                     processSyncQueue();
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 submitFinishedRequest(request);
 
@@ -309,7 +315,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    aggInstanceUsefulTimeMap.put(ccStrategy, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
                 }
                 long instanceSyncStartTime = System.nanoTime();
                 CacheCCThread.submitReplicationRequest(request);
@@ -320,7 +326,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    aggInstanceSyncTimeMap.put(ccStrategy, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
                 }
             }
 

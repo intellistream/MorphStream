@@ -352,6 +352,7 @@ public class VNFRunner implements Runnable {
         long aggManagerUsefulTime = 0;
         long aggCCSwitchTime = 0;
 
+        /** Breakdown at instance level */
         for (int i = 0; i < vnfInstanceNum; i++) {
             VNFInstance sender = senderMap.get(i);
             for (long parseTime : sender.getAggParsingTimeMap().values()) {
@@ -366,6 +367,7 @@ public class VNFRunner implements Runnable {
             aggCCSwitchTime += sender.getAggCCSwitchTime();
         }
 
+        /** Breakdown at manager level */
         if (ccStrategy == 0) { // Partitioning
             aggManagerSyncTime = PartitionCCThread.getManagerEventSyncTime();
             aggManagerUsefulTime = PartitionCCThread.getManagerEventUsefulTime();
@@ -381,11 +383,10 @@ public class VNFRunner implements Runnable {
         } else if (ccStrategy == 5) {
             aggManagerSyncTime = CHCController.getAggSyncTime();
             aggManagerUsefulTime = CHCController.getAggUsefulTime();
-        } else if (ccStrategy == 6) {
+        } else if (ccStrategy == 7) {
             aggManagerSyncTime += PartitionCCThread.getManagerEventSyncTime();
             aggManagerSyncTime += OffloadCCThread.getAggSyncTime().get();
             //TODO: Get time breakdown from TPG threads
-
             aggManagerUsefulTime += PartitionCCThread.getManagerEventUsefulTime();
             aggManagerUsefulTime += OffloadCCThread.getAggUsefulTime().get();
             //TODO: Get time breakdown from TPG threads
