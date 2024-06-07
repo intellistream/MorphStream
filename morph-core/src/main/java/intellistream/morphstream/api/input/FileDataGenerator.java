@@ -46,6 +46,7 @@ public class FileDataGenerator {
     private String[] eventTypes;//event list
     private int eventID = 0;
     private HashMap<String, HashMap<String, FastZipfGenerator>> zipfGeneratorHashMap= new HashMap<>();//event -> key -> zipf generator
+    private HashMap<String, List<String>> locaityMap = new HashMap<>();//event -> locality
     private HashMap<String, HashMap<String, List<FastZipfGenerator>>> partitionZipfGeneratorHashMap = new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, Double> eventAbortMap = new HashMap<>();//event -> AbortRatio
     private HashMap<String, Integer> eventMultiPartitionMap = new HashMap<>();//event -> MultiPartitionRatio
@@ -85,7 +86,7 @@ public class FileDataGenerator {
         } catch (IOException e) {
             LOG.warn("Error in locating input file: " + e.getMessage());
         }
-        totalPartition = configuration.getInt("tthread", 4) * configuration.getInt("nodeNum", 1);
+        totalPartition = configuration.getInt("tthread", 4) * configuration.getInt("workerNum", 1);
         punctuation = configuration.getInt("checkpoint", 1000);
         totalEvents = configuration.getInt("totalEvents", totalPartition * punctuation);
         phaseType = configuration.getString("workloadType", "default").split(",");
@@ -149,7 +150,7 @@ public class FileDataGenerator {
     }
     private void generateTuple(String eventType) {
         TransactionalEvent inputEvent;
-        HashMap<String, List<String>> keys = generateKey(eventType);
+        HashMap<String, List<String>> keys = generateKeyWithoutPartition(eventType);
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
         generateValue(eventType, valueMap, valueTypeMap);
@@ -181,6 +182,29 @@ public class FileDataGenerator {
                     int anotherKey = partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition).next();
                     while (keys.contains(String.valueOf(anotherKey))) anotherKey = partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition).next();
                     keys.add(String.valueOf(anotherKey));
+                }
+            }
+            keyMap.put(entry.getKey(), keys);
+        }
+        return keyMap;
+    }
+    private HashMap<String, List<String>> generateKeyWithoutPartition(String eventType) {//TableName -> List of keys
+        HashMap<String, List<String>> keyMap = new HashMap<>();
+        HashMap<String, Integer> keysForTable = this.eventKeyMap.get(eventType);
+        for (Map.Entry<String, Integer> entry : keysForTable.entrySet()) {//TableName -> keyNumber
+            List<String> keys = new ArrayList<>();
+            int key = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
+            keys.add(String.valueOf(key));
+            if (this.locaityMap.get(String.valueOf(key)) != null) {
+                keys.addAll(this.locaityMap.get(String.valueOf(key)));
+            } else {
+                for (int i = 1; i < entry.getValue(); i++) {
+                    int anotherKey = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
+                    while (keys.contains(String.valueOf(anotherKey)) && this.locaityMap.get(String.valueOf(anotherKey)) == null) anotherKey = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
+                    keys.add(String.valueOf(anotherKey));
+                }
+                for (String key1 : keys) {
+                    this.locaityMap.put(key1, this.filterList(keys, key1));
                 }
             }
             keyMap.put(entry.getKey(), keys);
@@ -327,5 +351,16 @@ public class FileDataGenerator {
             sb.append(' ');
         }
         return sb.toString();
+    }
+    public ArrayList<String> filterList(List<String> list, String key) {
+        ArrayList<String> result = new ArrayList<>();
+
+        for (String item : list) {
+            if (!item.equals(key)) {
+                result.add(item);
+            }
+        }
+
+        return result;
     }
 }

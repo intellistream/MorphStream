@@ -15,6 +15,7 @@ import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.OCCContext;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.RLContext;
+import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +137,7 @@ public class RemoteStorageManager extends StorageManager {
             throw new RuntimeException(e);
         }
     }
-    public String syncReadRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key)  {
+    public void asyncReadRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, Operation.RemoteObject remoteObject)  {
         int keyIndex = 0;
         int tableIndex = 0;
         for (int i = 0; i < this.tableNames.length; i ++) {
@@ -148,7 +149,7 @@ public class RemoteStorageManager extends StorageManager {
         keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 2);
         int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
-            return rdmaWorkerManager.syncReadRemoteCache(workerId, keyIndex, tableIndex, this.tableNameToLength.get(tableName) + 2);
+            rdmaWorkerManager.asyncReadRemoteCache(workerId, keyIndex, tableIndex, this.tableNameToLength.get(tableName) + 2, remoteObject);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

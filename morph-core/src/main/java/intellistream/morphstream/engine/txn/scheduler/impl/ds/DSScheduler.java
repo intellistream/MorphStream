@@ -20,7 +20,6 @@ import intellistream.morphstream.engine.txn.scheduler.struct.ds.TaskPrecedenceGr
 import intellistream.morphstream.engine.db.storage.record.SchemaRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.util.AppConfig;
-import org.apache.log4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
@@ -102,9 +101,11 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                         this.rdmaWorkerManager.sendRemoteOperations(context.thisThreadId, remoteWorkerId, new FunctionMessage(op.getOperationRef()));
                     }
                     oc.setLocalState(false);
+                    this.tpg.getRemoteOCs().add(oc);
                 } else {
                     oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, context.thisThreadId));
                     oc.setLocalState(true);
+                    this.tpg.getLocalOCs().add(oc);
                 }
             }
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -114,15 +115,10 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             MeasureTools.WorkerRdmaRemoteOperationEndEventTime(context.thisThreadId);
             MeasureTools.WorkerSetupDependenciesStartEventTime(context.thisThreadId);
-            tpg.setupDependencies(context);
-            for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
-                if (oc.operations.isEmpty()) {
-                    continue;
-                }
-                oc.setDsContext(context);
-                context.addTasks(oc);
-            }
-            LOG.info("Finish initialize: " + context.thisThreadId);
+            this.setLocalOCs(context);
+            this.setRemoteOcs(context);
+            context.setupDependencies();
+            LOG.info("Finish initialize: " + context.thisThreadId + " with local ops :" + context.allocatedLocalTasks.size() + " with remote ops: " + context.allocatedRemoteTasks.size());
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             MeasureTools.WorkerSetupDependenciesEndEventTime(context.thisThreadId);
         } catch (Exception e) {
@@ -170,18 +166,12 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                     execute(op, oc);
                     break;
                 } else {
-                    if (op.earlyAbort()) {
-                        oc.deleteOperation(op);
-                        continue;
-                    } else {
-                        execute(op, oc);
-                    }
-                    if (op.getOperationType().equals(MetaTypes.OperationStateType.ABORTED)) {
-                        oc.deleteOperation(op);
-                    } else if (op.getOperationType().equals(MetaTypes.OperationStateType.EXECUTED)) {
-                        op.tryToCommit(oc);
-                    } else if (op.getOperationType().equals(MetaTypes.OperationStateType.READY)) {
+                    execute(op, oc);
+                    if (op.getOperationType().equals(MetaTypes.OperationStateType.READY)) {
                         break;
+                    } else {
+                        op.notifyChildren();
+                        oc.deleteOperation(op);
                     }
                 }
             } else {
@@ -211,15 +201,15 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             if (oc.isLocalState()) {
                 stringDataBox.setString(oc.getTempValue().toString());
             } else {
-                String value = this.remoteStorageManager.syncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey);
-                oc.tryTimes ++;
-                if (value.equals("false")) {
-                    return;
-                } else {
-                    stringDataBox.setString(value);
+                this.remoteStorageManager.asyncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, operation.remoteObject);
+                if (operation.remoteObject.value != null) {
+                    stringDataBox.setString(operation.remoteObject.value);
                     LOG.info("Read from remote cache with " +  oc.tryTimes + " times");
                     MeasureTools.WorkerRdmaRound(oc.getDsContext().thisThreadId, oc.tryTimes);
                     oc.tryTimes = 0;
+                } else {
+                    oc.tryTimes ++;
+                    return;
                 }
             }
             dataBoxes.add(stringDataBox);
@@ -260,5 +250,47 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
     @Override
     public void setLoggingManager(LoggingManager loggingManager) {
         throw new UnsupportedOperationException();
+    }
+    public void setLocalOCs(Context context) {
+        int totalLocalOps = tpg.getLocalOCs().size();
+        int delta = totalLocalOps / totalThreads;
+        int leftBound = delta * context.thisThreadId;
+        int rightBound;
+        if (context.thisThreadId == totalThreads - 1) {
+            rightBound = totalLocalOps;
+        } else {
+            rightBound = delta * (context.thisThreadId + 1);
+        }
+        int i = 0;
+        for (OperationChain oc : tpg.getLocalOCs()) {
+            if (i >= leftBound && i < rightBound) {
+                oc.setDsContext(context);
+                context.addTasks(oc);
+            } else if (i > rightBound) {
+                break;
+            }
+            i ++;
+        }
+    }
+    public void setRemoteOcs(Context context) {
+        int totalRemoteOps = tpg.getRemoteOCs().size();
+        int delta = totalRemoteOps / totalThreads;
+        int leftBound = delta * context.thisThreadId;
+        int rightBound;
+        if (context.thisThreadId == totalThreads - 1) {
+            rightBound = totalRemoteOps;
+        } else {
+            rightBound = delta * (context.thisThreadId + 1);
+        }
+        int i = 0;
+        for (OperationChain oc : tpg.getRemoteOCs()) {
+            if (i >= leftBound && i < rightBound) {
+                oc.setDsContext(context);
+                context.addTasks(oc);
+            } else if (i > rightBound) {
+                break;
+            }
+            i ++;
+        }
     }
 }

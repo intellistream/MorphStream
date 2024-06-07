@@ -4,6 +4,8 @@ import junit.framework.TestCase;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RDMAAtomicTest extends TestCase {
     public RDMAAtomicTest(String testName) {

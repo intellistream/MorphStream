@@ -101,11 +101,11 @@ public class Utils {
         // 示例数据
         HashMap<Integer, Integer> totalEventsToWorkerIdMap = new HashMap<>();
 
-        totalEventsToWorkerIdMap.put(3, 3);//2.0  //0.0
-        totalEventsToWorkerIdMap.put(2, 3);//2.0  //0.0
-        totalEventsToWorkerIdMap.put(1, 1);//2.0  //0.0
+        totalEventsToWorkerIdMap.put(1, 0);//2.0  //0.0
+        totalEventsToWorkerIdMap.put(2, 0);//2.0  //0.0
+        totalEventsToWorkerIdMap.put(3, 0);//2.0  //0.0
         // 调用排序方法
-        Map<Integer, Double> sortedKeysAndValues = assignLowScoresToSmall(totalEventsToWorkerIdMap);
+        Map<Integer, Double> sortedKeysAndValues = assignHighScoresToSmall(totalEventsToWorkerIdMap);
 
         // 打印排序后的键和分值
         for (Map.Entry<Integer, Double> entry : sortedKeysAndValues.entrySet()) {

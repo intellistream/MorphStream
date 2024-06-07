@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 
 public class TaskPrecedenceGraph<Context extends DSContext> {
@@ -18,7 +19,11 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
     @Getter
     private final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;//Exactly which OCs are executed by each thread.
     @Getter
-    private final ConcurrentHashMap<Integer, Context> threadToContext;//
+    private final ConcurrentHashMap<Integer, Context> threadToContext;
+    @Getter
+    private final ConcurrentSkipListSet<OperationChain> localOCs = new ConcurrentSkipListSet<>();
+    @Getter
+    private final ConcurrentSkipListSet<OperationChain> remoteOCs = new ConcurrentSkipListSet<>();
     private final ConcurrentHashMap<String, TableOCs<OperationChain>> tableNameToOCs;//shared data structure.
     private final String[] tableNames;
 
@@ -74,20 +79,13 @@ public class TaskPrecedenceGraph<Context extends DSContext> {
                 }
             }
             //Add to operation chain
-            getOC(tableName, entry.getValue().pKey).addOperation(entry.getValue());
+            getOC(tableName, entry.getValue().pKey).addOperation(entry.getValue(), false);
         }
     }
     public void setupRemoteOperations(List<Operation> operations) {
         for (Operation operation : operations) {
             String tableName = operation.table_name;
-            getOC(tableName, operation.pKey).addOperation(operation);
-        }
-    }
-    public void setupDependencies(Context context) {
-        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-            if (!oc.operations.isEmpty()) {
-                oc.updateDependencies();
-            }
+            getOC(tableName, operation.pKey).addOperation(operation, true);
         }
     }
     private void resetOCs(Context context) {

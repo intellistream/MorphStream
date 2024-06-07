@@ -7,6 +7,8 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static intellistream.morphstream.util.PrintTable.printAlignedBorderedTable;
 
@@ -14,8 +16,7 @@ public class Statistic {
     public int shuffleType = 0;
     public int workNum;
     private Random random = new Random();
-    private int delta;
-    private int totalEvents = 0;
+    private int sendCount = -1;
     private String[] tableNames;
     private final ConcurrentHashMap<Integer, Double> frontendIdToThroughput = new ConcurrentHashMap<>();
     @Getter
@@ -24,11 +25,13 @@ public class Statistic {
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
     private final ConcurrentHashMap<Integer, List<Integer>> tempVotes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Map<Integer, Integer>> tempVoteCount = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> tempKeys = new ConcurrentHashMap<>();//Table name -> keys
+    private final ConcurrentHashMap<String, ConcurrentSkipListSet<String>> tempKeys = new ConcurrentHashMap<>();//Table name -> keys
+    private final ConcurrentHashMap<String, Integer> deltaMap = new ConcurrentHashMap<>();
     public Statistic(int workerNum, int shuffleType, String[] tableNames, int frontendNumber) {
         this.tableNames = tableNames;
         for (String tableName : tableNames) {
-            tempKeys.put(tableName, new ConcurrentLinkedQueue<>());
+            tempKeys.put(tableName, new ConcurrentSkipListSet<>());
+            deltaMap.put(tableName, MorphStreamEnv.get().configuration().getInt(tableName + "_num_items") / workerNum);
         }
         for (int i = 0; i < workerNum; i++) {
             workerIdToInputStatisticMap.put(i, new InputStatistic(i, tableNames));
@@ -39,7 +42,6 @@ public class Statistic {
         }
         this.shuffleType = shuffleType;
         this.workNum = workerNum;
-        delta = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS") / workerNum;
     }
     public int add(HashMap<String, List<String>> keyMap, int frontendId) {
         int targetWorkerId = getTargetWorkerId(keyMap, frontendId);
@@ -124,7 +126,7 @@ public class Statistic {
         return winner;
     }
     private void getVotesSort(HashMap<String, List<String>> keyMap, int frontendId) {
-        int targetWorkerId = totalEvents % workerIdToInputStatisticMap.size();
+        int targetWorkerId = getWorkerIdInSort();
         for (String tableName : keyMap.keySet()) {
             for (String key : keyMap.get(tableName)) {
                 this.tempVotes.get(frontendId).add(targetWorkerId);
@@ -147,8 +149,8 @@ public class Statistic {
     }
     private void getVotesPartition(HashMap<String, List<String>> keyMap, int frontendId) {
         for (String tableName : keyMap.keySet()) {
+            int targetWorkerId = Integer.parseInt(keyMap.get(tableName).get(0)) / deltaMap.get(tableName) % workNum;
             for (String key : keyMap.get(tableName)) {
-                int targetWorkerId = Integer.parseInt(key) / delta;
                 this.tempVotes.get(frontendId).add(targetWorkerId);
                 if (!this.tempKeys.get(tableName).contains(key)) {
                     this.tempKeys.get(tableName).add(key);
@@ -205,6 +207,10 @@ public class Statistic {
     }
     public double getLatency(double percentile) {
         return latencyStatistics.getPercentile(percentile);
+    }
+    public synchronized int getWorkerIdInSort() {
+        sendCount ++;
+        return sendCount % workNum;
     }
 
 }

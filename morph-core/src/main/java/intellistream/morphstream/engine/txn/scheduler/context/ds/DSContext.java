@@ -7,6 +7,7 @@ import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.OperationChain;
 import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 public class DSContext implements SchedulerContext {
-    private final static Logger LOG = Logger.getLogger(DSContext.class);
+    private final static org.slf4j.Logger LOG = LoggerFactory.getLogger(DSContext.class);
     public int thisThreadId;
     private final int totalWorker;
     private final List<Integer> receivedWorker = new ArrayList<>();
@@ -23,8 +24,8 @@ public class DSContext implements SchedulerContext {
     private final List<Operation> remoteOperations = new ArrayList<>();
     public ArrayDeque<Request> requests;//functions in one DAG
     public final transient HashMap<String, Operation> tempOperationMap = new HashMap<>();//temp map for operations to set up dependencies
-    private final Deque<OperationChain> allocatedLocalTasks = new ArrayDeque<>();
-    private final Deque<OperationChain> allocatedRemoteTasks = new ArrayDeque<>();
+    public final Deque<OperationChain> allocatedLocalTasks = new ArrayDeque<>();
+    public final Deque<OperationChain> allocatedRemoteTasks = new ArrayDeque<>();
     private boolean useLocal = true;
     private int localCount = 0;
     private int remoteCount = 0;
@@ -90,6 +91,18 @@ public class DSContext implements SchedulerContext {
             this.allocatedRemoteTasks.add(oc);
         }
         totalOperations = totalOperations + oc.operations.size();
+    }
+    public void setupDependencies() {
+        for (OperationChain oc : this.allocatedLocalTasks) {
+            if (!oc.operations.isEmpty()) {
+                oc.updateDependencies();
+            }
+        }
+        for (OperationChain oc : this.allocatedRemoteTasks) {
+            if (!oc.operations.isEmpty()) {
+                oc.updateDependencies();
+            }
+        }
     }
     public boolean isFinished() {
         assert scheduledOperations <= totalOperations;

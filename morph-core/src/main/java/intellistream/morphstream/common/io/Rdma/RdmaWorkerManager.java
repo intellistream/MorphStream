@@ -18,6 +18,7 @@ import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.OCCContext;
 import intellistream.morphstream.engine.txn.scheduler.context.ds.RLContext;
+import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.RemoteOperationBatch;
 import lombok.Getter;
 
@@ -32,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class RdmaWorkerManager implements Serializable {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RdmaWorkerManager.class);
@@ -260,7 +260,7 @@ public class RdmaWorkerManager implements Serializable {
             }
         }, rdmaBuffer.getAddress(), rdmaBuffer.getLength(), rdmaBuffer.getLkey(), remoteAddress, rkey);
     }
-    public String syncReadRemoteCache(int workerId, int keyIndex, int tableIndex, int length) throws Exception {
+    public void asyncReadRemoteCache(int workerId, int keyIndex, int tableIndex, int length, Operation.RemoteObject remoteObject) throws Exception {
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workerId);
         RegionToken regionToken = workerRegionTokenMap.get(workerId).getRegionTokens().get(tableIndex);
 
@@ -269,9 +269,6 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer readData = rdmaBufferManager.get(length);
         ByteBuffer dataBuffer = readData.getByteBuffer();
-
-        AtomicReference<String> result = new AtomicReference<>("false");
-
         CountDownLatch latch = new CountDownLatch(1);
         rdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
@@ -280,8 +277,9 @@ public class RdmaWorkerManager implements Serializable {
                 ByteBuffer valueBuffer = dataBuffer.slice();
                 String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
                 if (ownershipId == managerId) {
-                    result.set(value);
+                  remoteObject.value = value;
                 }
+                remoteObject.isReturn = true;
                 rdmaBufferManager.put(readData);
                 latch.countDown();
             }
@@ -292,7 +290,6 @@ public class RdmaWorkerManager implements Serializable {
             }
         }, readData.getAddress(), readData.getLkey(), new int[]{length}, new long[]{remoteAddress}, new int[]{rkey});
         latch.await();
-        return result.get();
     }
     public void syncWriteRemoteCache(int workerId, int keyIndex, int tableIndex, String value) throws Exception {
         RdmaChannel rdmaChannel = workerRdmaChannelMap.get(workerId);
@@ -308,21 +305,17 @@ public class RdmaWorkerManager implements Serializable {
         dataBuffer.put(value.getBytes(StandardCharsets.UTF_8));
         dataBuffer.flip();
 
-        CountDownLatch latch = new CountDownLatch(1);
         rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 rdmaBufferManager.put(readData);
-                latch.countDown();
                 LOG.info("Write to remote cache with workerId: " +  workerId);
             }
             @Override
             public void onFailure(Throwable exception) {
                 rdmaBufferManager.put(readData);
-                latch.countDown();
             }
         }, readData.getAddress(), readData.getLength(), readData.getLkey(), remoteAddress, rkey);
-        latch.await();
     }
     public void close() {
         try {

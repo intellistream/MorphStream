@@ -15,6 +15,7 @@ import static intellistream.morphstream.util.PrintTable.printAlignedBorderedTabl
  *  OwnershipTable for each key
  */
 public class DriverSideOwnershipTable {
+    private final static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DriverSideOwnershipTable.class);
     @Getter
     protected final int totalWorkers;
     protected final List<ConcurrentSkipListSet<String>> ownershipTableForEachWorker = new ArrayList<>();
@@ -25,7 +26,7 @@ public class DriverSideOwnershipTable {
             ownershipTableForEachWorker.add(new ConcurrentSkipListSet());
         }
     }
-    public void put(String key, Integer workerId) {
+    public void put(String key, int workerId) {
         encoded_length += key.getBytes().length + 4;//Key length + Total length
         this.ownershipTableForEachWorker.get(workerId).add(key);
     }
@@ -61,6 +62,16 @@ public class DriverSideOwnershipTable {
                 }
             }
             bout.writeShort(SOURCE_CONTROL.END_FLAG);
+            ByteBuffer test = bout.buffer();
+            test.flip();
+            LOG.info("StartFlag:" + test.getShort());
+            LOG.info("TotalLength:" + test.getInt());
+            for (int i = 0; i < totalWorkers; i++) {
+                LOG.info("TotalNumberForEachWorker:" + test.getInt());
+            }
+            byte[] data = new byte[encoded_length];
+            test.get(data);
+            LOG.info("EndFlag:" + test.getShort());
         } catch (Exception e) {
             e.printStackTrace();
         }

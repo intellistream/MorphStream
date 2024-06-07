@@ -18,13 +18,17 @@ public class OperationChain implements Comparable<OperationChain> {
     @Setter @Getter
     private boolean isLocalState = false;
     public int tryTimes = 0;
+    private int refNumber = 0;
     public OperationChain(String tableName, String primaryKey) {
         this.primaryKey = primaryKey;
         this.tableName = tableName;
         operations = new MyList<>(tableName, primaryKey);
     }
-    public void addOperation(Operation operation) {
+    public void addOperation(Operation operation, boolean isRef) {
         boolean isadd = operations.add(operation);
+        if (isRef) {
+            refNumber ++;
+        }
         if (!isadd) {
             System.out.println("add operation failed");
         }
@@ -50,10 +54,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
     @Override
     public int compareTo(OperationChain o) {
-        if (o.toString().equals(toString()))
-            return 0;
-        else
-            return -1;
+        return this.primaryKey.compareTo(o.primaryKey);
     }
     public void setTempValue(Object tempValue) {
         if (tempValue == null) {
