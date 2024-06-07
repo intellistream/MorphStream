@@ -355,7 +355,7 @@ def plot_time_breakdown_barchart():
     # Define file paths for each system
     base_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.1/breakdown/numInstance_4/dynamic/"
     systems = ["OpenNF", "CHC", "S6", "TransNFV"]
-    categories = ['Parsing', 'Sync', 'Useful', 'CC Switch']
+    categories = ['Parsing', 'Sync', 'Useful', 'CC Switch', 'Overhead']
 
     # Read data from CSV files
     sub_bar_values = {}

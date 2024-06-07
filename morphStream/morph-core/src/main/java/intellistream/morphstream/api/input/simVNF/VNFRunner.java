@@ -40,6 +40,7 @@ public class VNFRunner implements Runnable {
     private static long totalSyncTimeNS = 0;
     private static long totalUsefulTimeNS = 0;
     private static long totalCCSwitchTimeNS = 0;
+    private static long totalOverheadTimeNS = 0;
 
     public VNFRunner() {
         this.patternString = toPatternString(pattern);
@@ -335,7 +336,7 @@ public class VNFRunner implements Runnable {
             }
         }
         try (FileWriter fileWriter = new FileWriter(file)) {
-            String lineToWrite = totalParseTimeNS + "," + totalSyncTimeNS + "," + totalUsefulTimeNS + "," + totalCCSwitchTimeNS + "\n";
+            String lineToWrite = totalParseTimeNS + "," + totalSyncTimeNS + "," + totalUsefulTimeNS + "," + totalCCSwitchTimeNS + ", " + totalOverheadTimeNS + "\n";
             fileWriter.write(lineToWrite);
             System.out.println("Data written to CSV file successfully.");
         } catch (IOException e) {
@@ -351,6 +352,7 @@ public class VNFRunner implements Runnable {
         long aggManagerSyncTime = 0;
         long aggManagerUsefulTime = 0;
         long aggCCSwitchTime = 0;
+        long aggTotalTime = 0;
 
         /** Breakdown at instance level */
         for (int i = 0; i < vnfInstanceNum; i++) {
@@ -365,6 +367,9 @@ public class VNFRunner implements Runnable {
                 aggInstanceUsefulTime += usefulTime;
             }
             aggCCSwitchTime += sender.getAggCCSwitchTime();
+            for (VNFRequest request : latencyMap.get(i)) {
+                aggTotalTime += request.getFinishTime() - request.getCreateTime();
+            }
         }
 
         /** Breakdown at manager level */
@@ -396,6 +401,7 @@ public class VNFRunner implements Runnable {
         totalSyncTimeNS = aggInstanceSyncTime + aggManagerSyncTime;
         totalUsefulTimeNS = aggInstanceUsefulTime + aggManagerUsefulTime;
         totalCCSwitchTimeNS = aggCCSwitchTime;
+        totalOverheadTimeNS = aggTotalTime - totalParseTimeNS - totalSyncTimeNS - totalUsefulTimeNS;
     }
 
     private static void writeIndicatorFile(String fileName) {
