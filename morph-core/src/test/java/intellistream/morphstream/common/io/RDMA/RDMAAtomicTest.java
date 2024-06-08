@@ -65,4 +65,39 @@ public class RDMAAtomicTest extends TestCase {
         System.out.println("First int: " + first2);
         System.out.println("Second int: " + second2);
     }
+    public void testValidationLock() {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        int version = 60;
+        int bid = 1480;
+        long compareValue = (long) version << 32;
+        byteBuffer.putLong(compareValue);
+        byteBuffer.flip();
+        ByteBuffer byteBuffer1 = ByteBuffer.allocate(8);
+        byteBuffer1.order(ByteOrder.LITTLE_ENDIAN);
+        byteBuffer1.put(byteBuffer);
+        byteBuffer1.flip();
+        int first = byteBuffer1.getInt();
+        int second = byteBuffer1.getInt();
+        System.out.println("First int: " + first);
+        System.out.println("Second int: " + second);
+    }
+    public void testValidationLock2() {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        int version = 60;
+        int bid = 1480;
+        long compareValue = (long) version << 32;
+        byteBuffer.putInt(bid);
+        byteBuffer.putInt(version);
+        byteBuffer.flip();
+        ByteBuffer byteBuffer1 = ByteBuffer.allocate(8);
+        byteBuffer1.order(ByteOrder.LITTLE_ENDIAN);
+        byteBuffer1.put(byteBuffer);
+        byteBuffer1.flip();
+        int first = byteBuffer1.getInt();
+        int second = byteBuffer1.getInt();
+        System.out.println("First int: " + first);
+        System.out.println("Second int: " + second);
+    }
 }

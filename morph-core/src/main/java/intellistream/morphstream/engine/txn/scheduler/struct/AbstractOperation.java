@@ -24,7 +24,7 @@ public abstract class AbstractOperation {
     //required by READ_WRITE_and Condition.
     public final String table_name;
     public final FunctionContext txn_context;
-    public final CommonMetaTypes.AccessType accessType;
+    public CommonMetaTypes.AccessType accessType;
     public final TableRecord d_record;
     public final long bid;
     //required by READ_WRITE_and Condition.

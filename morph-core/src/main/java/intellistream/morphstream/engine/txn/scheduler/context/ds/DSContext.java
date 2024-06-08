@@ -149,7 +149,7 @@ public class DSContext implements SchedulerContext {
                             byte[] bytes = new byte[operationSize];
                             remoteOperationBuffer.get(bytes);
                             String[] operationInfo = new String(bytes).split(":");//bid, table, pk
-                            remoteOperations.add(new Operation(operationInfo[1], operationInfo[2], Long.parseLong(operationInfo[0]), true, i));
+                            remoteOperations.add(new Operation(operationInfo[1], operationInfo[2], Long.parseLong(operationInfo[0]), true, i, Integer.parseInt(operationInfo[3])));
                             operationNum ++;
                         }
                         receivedWorker.add(i);

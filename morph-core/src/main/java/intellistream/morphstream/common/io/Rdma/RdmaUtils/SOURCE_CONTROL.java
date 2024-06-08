@@ -10,6 +10,7 @@ public class SOURCE_CONTROL {
     public static short START_FLAG = 0x6FFF;
     public static short END_FLAG = 0x7FFF;
     public static short FINISH_FLAG = 0x5FFF;
+    public static int SHARED_LOCK = 0x0400;
     private CyclicBarrier driverStartBarrier;
     private CyclicBarrier driverEndBarrier;
     private CyclicBarrier workerStartBarrier;

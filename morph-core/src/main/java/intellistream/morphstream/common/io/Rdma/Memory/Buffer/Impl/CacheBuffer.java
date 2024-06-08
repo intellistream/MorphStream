@@ -3,6 +3,7 @@ package intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl;
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import lombok.Getter;
 import org.slf4j.Logger;
 
@@ -11,6 +12,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL.SHARED_LOCK;
 
 public class CacheBuffer {
     private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(CacheBuffer.class);
@@ -51,38 +54,51 @@ public class CacheBuffer {
         ByteBuffer byteBuffer = tableNameToRdmaBuffer.get(tableName).getByteBuffer();
 
         for (int i = 0; i < keys.size(); i ++) {
-            byteBuffer.putShort((short) workerId);//OwnershipId (Short) 2
+            byteBuffer.putLong(0);//32bit ownership 32bit shared lock
             byteBuffer.put(values[i].getBytes(StandardCharsets.UTF_8));
             tableNameToKeyIndexMap.get(tableName).put(keys.get(i), i);//Key, index
         }
         byteBuffer.flip();
     }
 
-    public String readCache(String tableName, String key, int workerId, int threadId) throws IOException {
+    public String directReadCache(String tableName, String key, int threadId) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         int length = this.tableNameToLength.get(tableName);
-        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2), length + 2);
-        short ownershipId = readBuffer[threadId].getShort();
-        if (ownershipId == workerId) {
-            byte[] valueBytes = new byte[length];
-            readBuffer[threadId].get(valueBytes);
-            return new String(valueBytes, StandardCharsets.UTF_8);
-        } else {
-            return "false";
-        }
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8) + 8, length );
+        byte[] valueBytes = new byte[length];
+        readBuffer[threadId].get(valueBytes);
+        return new String(valueBytes, StandardCharsets.UTF_8);
     }
-    public void updateOwnership(String tableName, String key, int workerId, int threadId) throws IOException {
+    public void updateWriteOwnership(String tableName, String key, int workerId, int threadId) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         int length = this.tableNameToLength.get(tableName);
-        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2), 2);
-        readBuffer[threadId].putShort((short) workerId);
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8), 4);
+        readBuffer[threadId].putInt(workerId);
+    }
+    public void updateSharedOwnership(String tableName, String key, int threadId, int numberToRead) throws IOException {
+        int index = tableNameToKeyIndexMap.get(tableName).get(key);
+        int length = this.tableNameToLength.get(tableName);
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8), 8);
+        readBuffer[threadId].putInt(SHARED_LOCK);
+        readBuffer[threadId].putInt(numberToRead);
     }
     public boolean checkOwnership(String tableName, String key, int threadId) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         int length = this.tableNameToLength.get(tableName);
-        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2),  2);
-        short ownershipId = readBuffer[threadId].getShort();
-        return ownershipId == (short) workerId;
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2),  8);
+        int ownershipId = readBuffer[threadId].getInt();
+        int numberToRead = readBuffer[threadId].getInt();
+        if (ownershipId == SHARED_LOCK) {
+            if (numberToRead == 0) {
+                readBuffer[threadId].flip();
+                readBuffer[threadId].putInt(0);
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return ownershipId == (short) workerId;
+        }
     }
 
 }

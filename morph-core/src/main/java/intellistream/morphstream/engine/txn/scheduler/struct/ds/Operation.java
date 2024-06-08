@@ -24,9 +24,15 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public int sourceWorkerId;
     public volatile ArrayList<String> stateObjectName = new ArrayList<>();
     public RemoteObject remoteObject = new RemoteObject();
+    public int numberToRead = 0;
 
-    public Operation(String tableName, String pKey, long bid, boolean isReference, int sourceWorkerId) {
+    public Operation(String tableName, String pKey, long bid, boolean isReference, int sourceWorkerId, int isRead) {
         super(tableName, null, null, null, null, null, bid, null, pKey);
+        if (isRead == 1) {
+            this.accessType = CommonMetaTypes.AccessType.READ;
+        } else {
+            this.accessType = CommonMetaTypes.AccessType.WRITE;
+        }
         this.isReference = isReference;
         this.sourceWorkerId = sourceWorkerId;
     }
@@ -108,7 +114,13 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             return Long.compare(this.bid, operation.bid);
     }
     public String getOperationRef() {
-        return this.bid + ":" + this.table_name + ":" + this.pKey;
+        int i;
+        if (accessType == CommonMetaTypes.AccessType.READ) {
+            i = 1;
+        } else {
+            i = 0;
+        }
+        return this.bid + ":" + this.table_name + ":" + this.pKey + ":" + i;
     }
     public static class RemoteObject{
         public String value;

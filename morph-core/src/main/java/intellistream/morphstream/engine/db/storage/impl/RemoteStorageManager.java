@@ -112,9 +112,16 @@ public class RemoteStorageManager extends StorageManager {
            }
        }
     }
-    public void updateOwnership(String tableName, String key, int ownershipWorkerId, int threadId) {
+    public void updateWriteOwnership(String tableName, String key, int ownershipWorkerId, int threadId) {
         try {
-            this.cacheBuffer.updateOwnership(tableName, key, ownershipWorkerId, threadId);
+            this.cacheBuffer.updateWriteOwnership(tableName, key, ownershipWorkerId, threadId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public void updateSharedOwnership(String tableName, String key, int threadId, int numberToRead) {
+        try {
+            this.cacheBuffer.updateSharedOwnership(tableName, key, threadId, numberToRead);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -126,14 +133,14 @@ public class RemoteStorageManager extends StorageManager {
             throw new RuntimeException(e);
         }
     }
-    public String readLocalCache(String tableName, String key, int workerId, int tthread) {
+    public String directReadLocalCache(String tableName, String key, int tthread) {
         try {
-            return this.cacheBuffer.readCache(tableName, key, workerId, tthread);
+            return this.cacheBuffer.directReadCache(tableName, key, tthread);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    public void asyncReadRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, Operation.RemoteObject remoteObject)  {
+    public void asyncReadRemoteCacheForExclusiveLock(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, Operation.RemoteObject remoteObject)  {
         int keyIndex = 0;
         int tableIndex = 0;
         for (int i = 0; i < this.tableNames.length; i ++) {
@@ -142,15 +149,15 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 2);
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 8);
         int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
-            rdmaWorkerManager.asyncReadRemoteCache(workerId, keyIndex, tableIndex, this.tableNameToLength.get(tableName) + 2, remoteObject);
+            rdmaWorkerManager.asyncReadRemoteCacheForExclusiveLock(workerId, keyIndex, tableIndex, this.tableNameToLength.get(tableName) + 8, remoteObject);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-    public void syncWriteRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, String value) {
+    public void asyncReadRemoteCacheForSharedLock(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, Operation.RemoteObject remoteObject)  {
         int keyIndex = 0;
         int tableIndex = 0;
         for (int i = 0; i < this.tableNames.length; i ++) {
@@ -159,10 +166,44 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 2);
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 8);
         int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
         try {
-            rdmaWorkerManager.syncWriteRemoteCache(workerId, keyIndex, tableIndex, value);
+            rdmaWorkerManager.asyncReadRemoteCacheForSharedLock(workerId, keyIndex, tableIndex, this.tableNameToLength.get(tableName) + 8, remoteObject);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public void asyncWriteRemoteCache(RdmaWorkerManager rdmaWorkerManager, String tableName, String key, String value) {
+        int keyIndex = 0;
+        int tableIndex = 0;
+        for (int i = 0; i < this.tableNames.length; i ++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                break;
+            }
+        }
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 8);
+        int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
+        try {
+            rdmaWorkerManager.asyncWriteRemoteCache(workerId, keyIndex, tableIndex, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public void asyncSharedLockRelease(RdmaWorkerManager rdmaWorkerManager, String tableName, String key) {
+        int keyIndex = 0;
+        int tableIndex = 0;
+        for (int i = 0; i < this.tableNames.length; i ++) {
+            if (tableNames[i].equals(tableName)) {
+                tableIndex = i;
+                break;
+            }
+        }
+        keyIndex = keyIndex + this.workerSideOwnershipTables.get(tableName).getOwnershipIndex(key) * (this.tableNameToLength.get(tableName) + 8);
+        int workerId = this.workerSideOwnershipTables.get(tableName).getOwnershipWorkerId(key);
+        try {
+            rdmaWorkerManager.asyncSharedLockRelease(workerId, keyIndex, tableIndex, 8);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
