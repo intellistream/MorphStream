@@ -40,7 +40,7 @@ public class VNFRunner implements Runnable {
     private static double totalSyncTimeMS = 0;
     private static double totalUsefulTimeMS = 0;
     private static double totalCCSwitchTimeMS = 0;
-    private static double totalOverheadTimeMS = 0;
+    private static double totalTimeMS = 0;
 
     public VNFRunner() {
         this.patternString = toPatternString(pattern);
@@ -162,6 +162,60 @@ public class VNFRunner implements Runnable {
             double puncThroughput = instancePatternPunctuation * vnfInstanceNum / ((puncEndTime - puncStartTime) / 1E9);
             puncThroughputMap.put(puncID, puncThroughput);
         }
+    }
+
+
+    private void computeTimeBreakdown() {
+        double aggInstanceParseTime = 0;
+        double aggInstanceSyncTime = 0;
+        double aggInstanceUsefulTime = 0;
+        double aggManagerSyncTime = 0;
+        double aggManagerUsefulTime = 0;
+        double aggCCSwitchTime = 0;
+        double aggTotalTime = 0;
+
+        /** Breakdown at instance level */
+        for (int i = 0; i < vnfInstanceNum; i++) {
+            VNFInstance sender = senderMap.get(i);
+            aggInstanceParseTime = (double) sender.getAggParsingTime() / 1E6; // Millisecond
+            aggInstanceSyncTime = (double) sender.getAGG_SYNC_TIME() / 1E6;
+            aggInstanceUsefulTime = (double) sender.getAGG_USEFUL_TIME() / 1E6;
+            aggCCSwitchTime += (double) sender.getAggCCSwitchTime() / 1E6;
+            for (VNFRequest request : latencyMap.get(i)) {
+                aggTotalTime += (double) (request.getFinishTime() - request.getCreateTime()) / 1E6;
+            }
+        }
+
+        /** Breakdown at manager level */
+        if (ccStrategy == 0) { // Partitioning
+            aggManagerSyncTime = PartitionCCThread.getManagerEventSyncTime() / 1E6;
+            aggManagerUsefulTime = PartitionCCThread.getManagerEventUsefulTime() / 1E6;
+            // Caching time breakdown is done at instance level
+        } else if (ccStrategy == 2) { // Offloading
+            aggManagerSyncTime = OffloadCCThread.getAggSyncTime().get() / 1E6;
+            aggManagerUsefulTime = OffloadCCThread.getAggUsefulTime().get() / 1E6;
+        } else if (ccStrategy == 3) {
+            //TODO: Get time breakdown from TPG threads
+        } else if (ccStrategy == 4) { // OpenNF
+            aggManagerUsefulTime = OpenNFController.getAggUsefulTime() / 1E6;
+            aggManagerSyncTime = aggTotalTime - aggManagerUsefulTime;
+        } else if (ccStrategy == 5) {
+            aggManagerUsefulTime = CHCController.getAggUsefulTime() / 1E6;
+            aggManagerSyncTime = aggTotalTime - aggManagerUsefulTime;
+        } else if (ccStrategy == 7) {
+            aggManagerSyncTime += PartitionCCThread.getManagerEventSyncTime() / 1E6;
+            aggManagerSyncTime += OffloadCCThread.getAggSyncTime().get() / 1E6;
+            //TODO: Get time breakdown from TPG threads
+            aggManagerUsefulTime += PartitionCCThread.getManagerEventUsefulTime() / 1E6;
+            aggManagerUsefulTime += OffloadCCThread.getAggUsefulTime().get() / 1E6;
+            //TODO: Get time breakdown from TPG threads
+        }
+
+        totalParseTimeMS = aggInstanceParseTime;
+        totalSyncTimeMS = aggInstanceSyncTime + aggManagerSyncTime;
+        totalUsefulTimeMS = aggInstanceUsefulTime + aggManagerUsefulTime;
+        totalCCSwitchTimeMS = aggCCSwitchTime;
+        totalTimeMS = aggTotalTime;
     }
 
     private static void writeCSVDynamicThroughput(String pattern, String ccStrategy) {
@@ -336,73 +390,14 @@ public class VNFRunner implements Runnable {
             }
         }
         try (FileWriter fileWriter = new FileWriter(file)) {
-//            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "," + totalOverheadTimeMS + "\n";
-            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "\n";
+            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "," + totalTimeMS + "\n";
+//            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "\n";
             fileWriter.write(lineToWrite);
             System.out.println("Data written to CSV file successfully.");
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();
         }
-    }
-
-    private void computeTimeBreakdown() {
-        double aggInstanceParseTime = 0;
-        double aggInstanceSyncTime = 0;
-        double aggInstanceUsefulTime = 0;
-        double aggManagerSyncTime = 0;
-        double aggManagerUsefulTime = 0;
-        double aggCCSwitchTime = 0;
-        double aggTotalTime = 0;
-
-        /** Breakdown at instance level */
-        for (int i = 0; i < vnfInstanceNum; i++) {
-            VNFInstance sender = senderMap.get(i);
-            for (long parseTime : sender.getAggParsingTimeMap().values()) {
-                aggInstanceParseTime += (double) parseTime / 1E6; // Millisecond
-            }
-            for (long syncTime : sender.getAggInstanceSyncTimeMap().values()) {
-                aggInstanceSyncTime += (double) syncTime / 1E6;
-            }
-            for (long usefulTime : sender.getAggInstanceUsefulTimeMap().values()) {
-                aggInstanceUsefulTime += (double) usefulTime / 1E6;
-            }
-            aggCCSwitchTime += sender.getAggCCSwitchTime() / 1E6;
-            for (VNFRequest request : latencyMap.get(i)) {
-                aggTotalTime += (double) (request.getFinishTime() - request.getCreateTime()) / 1E6;
-            }
-        }
-
-        /** Breakdown at manager level */
-        if (ccStrategy == 0) { // Partitioning
-            aggManagerSyncTime = PartitionCCThread.getManagerEventSyncTime() / 1E6;
-            aggManagerUsefulTime = PartitionCCThread.getManagerEventUsefulTime() / 1E6;
-            // Caching time breakdown is done at instance level
-        } else if (ccStrategy == 2) { // Offloading
-            aggManagerSyncTime = OffloadCCThread.getAggSyncTime().get() / 1E6;
-            aggManagerUsefulTime = OffloadCCThread.getAggUsefulTime().get() / 1E6;
-        } else if (ccStrategy == 3) {
-            //TODO: Get time breakdown from TPG threads
-        } else if (ccStrategy == 4) { // OpenNF
-            aggManagerSyncTime = OpenNFController.getAggSyncTime() / 1E6;
-            aggManagerUsefulTime = OpenNFController.getAggUsefulTime() / 1E6;
-        } else if (ccStrategy == 5) {
-            aggManagerSyncTime = CHCController.getAggSyncTime() / 1E6;
-            aggManagerUsefulTime = CHCController.getAggUsefulTime() / 1E6;
-        } else if (ccStrategy == 7) {
-            aggManagerSyncTime += PartitionCCThread.getManagerEventSyncTime() / 1E6;
-            aggManagerSyncTime += OffloadCCThread.getAggSyncTime().get() / 1E6;
-            //TODO: Get time breakdown from TPG threads
-            aggManagerUsefulTime += PartitionCCThread.getManagerEventUsefulTime() / 1E6;
-            aggManagerUsefulTime += OffloadCCThread.getAggUsefulTime().get() / 1E6;
-            //TODO: Get time breakdown from TPG threads
-        }
-
-        totalParseTimeMS = aggInstanceParseTime;
-        totalSyncTimeMS = aggInstanceSyncTime + aggManagerSyncTime;
-        totalUsefulTimeMS = aggInstanceUsefulTime + aggManagerUsefulTime;
-        totalCCSwitchTimeMS = aggCCSwitchTime;
-        totalOverheadTimeMS = aggTotalTime - totalParseTimeMS - totalSyncTimeMS - totalUsefulTimeMS;
     }
 
     private static void writeIndicatorFile(String fileName) {

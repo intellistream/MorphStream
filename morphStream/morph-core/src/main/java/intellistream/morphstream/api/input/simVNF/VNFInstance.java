@@ -42,11 +42,10 @@ public class VNFInstance implements Runnable {
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
     private final boolean enableHardcodeCCSwitch = (MorphStreamEnv.get().configuration().getInt("enableHardcodeCCSwitch") == 1);
-    private long puncStartTime = 0L;
-    private HashMap<Integer, Long> aggParsingTimeMap = new HashMap<>(); // ccID -> total parsing time
-    private HashMap<Integer, Long> aggInstanceSyncTimeMap = new HashMap<>(); // ccID -> total sync time at instance, for CC with local sync
-    private HashMap<Integer, Long> aggInstanceUsefulTimeMap = new HashMap<>(); // ccID -> total useful time at instance, for CC with local RW
-    private Long aggCCSwitchTime = 0L; // ccID -> total time for CC switch
+    private long aggParsingTime = 0; // ccID -> total parsing time
+    private long AGG_SYNC_TIME = 0; // ccID -> total sync time at instance, for CC with local sync
+    private long AGG_USEFUL_TIME = 0; // ccID -> total useful time at instance, for CC with local RW
+    private long aggCCSwitchTime = 0; // ccID -> total time for CC switch
 
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, int ccStrategy, int numTPGThreads,
                        String csvFilePath, CyclicBarrier finishBarrier, int expectedRequestCount) {
@@ -77,13 +76,6 @@ public class VNFInstance implements Runnable {
         } else { // Static CC are fixed throughout the runtime
             for (int i = 0; i <= stateRange; i++) {
                 tupleCCMap.put(i, ccStrategy);
-            }
-        }
-        if (enableTimeBreakdown) {
-            for (int i = 0; i <= 7; i++) {
-                aggParsingTimeMap.put(i, 0L);
-                aggInstanceSyncTimeMap.put(i, 0L);
-                aggInstanceUsefulTimeMap.put(i, 0L);
             }
         }
     }
@@ -131,15 +123,16 @@ public class VNFInstance implements Runnable {
                 int tupleID = Integer.parseInt(parts[1]);
                 int type = Integer.parseInt(parts[2]);
                 int tupleCC = tupleCCMap.get(tupleID);
+                //TODO: Add transaction construction, create transaction based on pre-defined SA structures
                 VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, instancePuncID, 0, 0);
+                inputLineCounter++;
+                if (enableTimeBreakdown) {
+                    aggParsingTime += System.nanoTime() - parsingStartTime;
+                }
+
                 if (ccStrategy == 7) {
                     MonitorThread.submitPatternData(new PatternData(instanceID, tupleID, (type == 1)));
                 }
-                inputLineCounter++;
-                if (enableTimeBreakdown) {
-                    aggParsingTimeMap.put(tupleCC, aggParsingTimeMap.get(tupleCC) + (System.nanoTime() - parsingStartTime));
-                }
-
                 if (ccStrategy == 7 && tupleUnderCCSwitch.containsKey(tupleID)) {
                     tupleBufferReqMap.computeIfAbsent(tupleID, k -> new ConcurrentLinkedQueue<>()).add(request); // Buffer affected tuples
                     bufferReqStartTimeMap.put(reqID, System.nanoTime());
@@ -164,21 +157,22 @@ public class VNFInstance implements Runnable {
                 if (inputLineCounter % patternPunctuation == 0) {
                     instancePuncID++; // Start from 1
 
-                    if (enableHardcodeCCSwitch && ccStrategy == 7) {
-                        if (inputLineCounter % 10000 == 0) {
-                            // TODO: Hardcode pattern phase & CC switch, for exp 5.2.2 only
-                            tupleCCMap.replaceAll((k, v) -> v + 1);
-                            System.out.println("Instance " + instanceID + " switches to cc " + tupleCCMap.get(1));
+                    if (ccStrategy == 7) {
+                        if (enableHardcodeCCSwitch) {
+                            if (inputLineCounter % 10000 == 0) {
+                                // TODO: Hardcode pattern phase & CC switch, for exp 5.2.2 only
+                                tupleCCMap.replaceAll((k, v) -> v + 1);
+                                System.out.println("Instance " + instanceID + " switches to cc " + tupleCCMap.get(1));
+                            }
+                        } else {
+                            long ccSwitchStartTime = System.nanoTime();
+                            int nextPuncID = monitorMsgQueue.take(); // Wait for pattern monitor's signal to begin next punctuation
+                            assert nextPuncID == instancePuncID;
+                            if (enableTimeBreakdown) {
+                                aggCCSwitchTime += System.nanoTime() - ccSwitchStartTime;
+                            }
+                            LOG.info("Instance " + instanceID + " starts punctuation " + instancePuncID);
                         }
-
-                    } else if (ccStrategy == 7) {
-                        long ccSwitchStartTime = System.nanoTime();
-                        int nextPuncID = monitorMsgQueue.take(); // Wait for pattern monitor's signal to begin next punctuation
-                        assert nextPuncID == instancePuncID;
-                        if (enableTimeBreakdown) {
-                            aggCCSwitchTime += System.nanoTime() - ccSwitchStartTime;
-                        }
-                        LOG.info("Instance " + instanceID + " starts punctuation " + instancePuncID);
                     }
                 }
             }
@@ -233,10 +227,10 @@ public class VNFInstance implements Runnable {
 
         if (tupleCC == 0) { // local state access
             if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
-                long instanceUsefulStartTime = System.nanoTime();
+                long usefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
                 }
                 submitFinishedRequest(request);
 
@@ -250,7 +244,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
                 }
             }
 
@@ -261,12 +255,12 @@ public class VNFInstance implements Runnable {
                     processSyncQueue();
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
                 }
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
                 }
                 submitFinishedRequest(request);
 
@@ -274,7 +268,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
                 }
                 long instanceSyncStartTime = System.nanoTime();
                 CacheCCThread.submitReplicationRequest(request);
@@ -285,7 +279,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
                 }
             }
 
@@ -335,12 +329,12 @@ public class VNFInstance implements Runnable {
                     processSyncQueue();
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
                 }
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
                 }
                 submitFinishedRequest(request);
 
@@ -348,7 +342,7 @@ public class VNFInstance implements Runnable {
                 long instanceUsefulStartTime = System.nanoTime();
                 executeUDF(tupleID, type, 0);
                 if (enableTimeBreakdown) {
-                    aggInstanceUsefulTimeMap.put(tupleCC, aggInstanceUsefulTimeMap.get(tupleCC) + (System.nanoTime() - instanceUsefulStartTime));
+                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
                 }
                 long instanceSyncStartTime = System.nanoTime();
                 CacheCCThread.submitReplicationRequest(request);
@@ -359,7 +353,7 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    aggInstanceSyncTimeMap.put(tupleCC, aggInstanceSyncTimeMap.get(tupleCC) + (System.nanoTime() - instanceSyncStartTime));
+                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
                 }
             }
 
@@ -437,14 +431,14 @@ public class VNFInstance implements Runnable {
     public ConcurrentLinkedDeque<VNFRequest> getFinishedReqStorage() {
         return finishedReqStorage;
     }
-    public HashMap<Integer, Long> getAggParsingTimeMap() {
-        return aggParsingTimeMap;
+    public Long getAggParsingTime() {
+        return aggParsingTime;
     }
-    public HashMap<Integer, Long> getAggInstanceSyncTimeMap() {
-        return aggInstanceSyncTimeMap;
+    public Long getAGG_SYNC_TIME() {
+        return AGG_SYNC_TIME;
     }
-    public HashMap<Integer, Long> getAggInstanceUsefulTimeMap() {
-        return aggInstanceUsefulTimeMap;
+    public Long getAGG_USEFUL_TIME() {
+        return AGG_USEFUL_TIME;
     }
     public long getAggCCSwitchTime() {
         return aggCCSwitchTime;

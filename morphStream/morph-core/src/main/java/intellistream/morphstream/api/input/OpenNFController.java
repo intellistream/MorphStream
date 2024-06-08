@@ -19,7 +19,6 @@ public class OpenNFController implements Runnable {
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
-    private static long aggSyncTime = 0;
     private static long aggUsefulTime = 0;
 
     public OpenNFController(BlockingQueue<VNFRequest> requestQueue) {
@@ -43,46 +42,42 @@ public class OpenNFController implements Runnable {
             System.out.println("Broadcasting Controller started.");
             while (!Thread.currentThread().isInterrupted()) {
                 VNFRequest request;
+
                 try {
                     request = requestQueue.take();
+                    if (request.getCreateTime() == -1) {
+                        System.out.println("Broadcasting Controller received stop signal");
+                        break;
+                    }
+                    int instanceID = request.getInstanceID();
+                    int tupleID = request.getTupleID();
+                    long timeStamp = request.getCreateTime();
+                    long txnReqId = request.getReqID();
+
+                    long usefulStartTime = System.nanoTime();
+                    TableRecord tableRecord;
+                    tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                    SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                    int readValue = readRecord.getValues().get(1).getInt();
+
+                    simUDF(readValue);
+                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                    tempo_record.getValues().get(1).setInt(readValue);
+                    tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+                    aggUsefulTime += System.nanoTime() - usefulStartTime;
+
+                    for (int i = 0; i < vnfInstanceNum; i++) {
+                        VNFRunner.getSender(i).writeLocalState(tupleID, readValue);
+                    }
+
+                    //TODO: Here we should add lock to all instance, but since OpenNF only has a single controller thread, it is fine
+                    VNFRunner.getSender(instanceID).submitFinishedRequest(request);
+
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
-                }
-                if (request.getCreateTime() == -1) {
-                    System.out.println("Broadcasting Controller received stop signal");
-                    break;
-                }
-                int instanceID = request.getInstanceID();
-                int tupleID = request.getTupleID();
-                long timeStamp = request.getCreateTime();
-                long txnReqId = request.getReqID();
-
-                long usefulStartTime = System.nanoTime();
-                TableRecord tableRecord;
-                try {
-                    tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                 } catch (DatabaseException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                int readValue = readRecord.getValues().get(1).getInt();
-
-                simUDF(readValue);
-                SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                tempo_record.getValues().get(1).setInt(readValue);
-                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-                aggUsefulTime += System.nanoTime() - usefulStartTime;
-
-                long syncStartTime = System.nanoTime();
-                for (int i = 0; i < vnfInstanceNum; i++) {
-                    VNFRunner.getSender(i).writeLocalState(tupleID, readValue);
-                }
-                aggSyncTime += System.nanoTime() - syncStartTime;
-
-                //TODO: Here we should add lock to all instance, but since OpenNF only has a single controller thread, it is fine
-
-                VNFRunner.getSender(instanceID).submitFinishedRequest(request);
-
             }
         }
     }
@@ -91,10 +86,6 @@ public class OpenNFController implements Runnable {
 //        Thread.sleep(10);
         //TODO: Simulate UDF better
         return tupleValue;
-    }
-
-    public static long getAggSyncTime() {
-        return aggSyncTime;
     }
 
     public static long getAggUsefulTime() {

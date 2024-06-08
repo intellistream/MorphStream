@@ -23,7 +23,6 @@ public class CHCController implements Runnable {
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private static final ConcurrentHashMap<Integer, Integer> tupleOwnership = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> fetchedValues = MorphStreamEnv.fetchedValues;
-    private static long aggSyncTime = 0;
     private static long aggUsefulTime = 0;
 
     public CHCController(BlockingQueue<VNFRequest> requestQueue) {
@@ -64,7 +63,6 @@ public class CHCController implements Runnable {
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                         SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                         VNFRunner.getSender(instanceID).writeLocalState(tupleID, readRecord.getValues().get(1).getInt());
-                        aggSyncTime += System.nanoTime() - syncStartTime;
 
                     } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
                         //TODO: Simulate permission for instance to do local state access
@@ -72,9 +70,7 @@ public class CHCController implements Runnable {
 
                     } else { // State ownership has changed, fetch state from the current owner and perform RW centrally
                         int currentOwner = tupleOwnership.get(tupleID);
-                        long syncStartTime = System.nanoTime();
                         int tupleValue = VNFRunner.getSender(currentOwner).readLocalState(tupleID);
-                        aggSyncTime += System.nanoTime() - syncStartTime;
 
                         long usefulStartTime = System.nanoTime();
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
@@ -103,10 +99,6 @@ public class CHCController implements Runnable {
 //        Thread.sleep(10);
         //TODO: Simulate UDF better
         return tupleValue;
-    }
-
-    public static long getAggSyncTime() {
-        return aggSyncTime;
     }
 
     public static long getAggUsefulTime() {
