@@ -192,16 +192,16 @@ public class VNFRunner implements Runnable {
             aggManagerUsefulTime = PartitionCCThread.getManagerEventUsefulTime() / 1E6;
             // Caching time breakdown is done at instance level
         } else if (ccStrategy == 2) { // Offloading
-            aggManagerSyncTime = OffloadCCThread.getAggSyncTime().get() / 1E6;
             aggManagerUsefulTime = OffloadCCThread.getAggUsefulTime().get() / 1E6;
+            aggInstanceSyncTime -= aggManagerUsefulTime;
         } else if (ccStrategy == 3) {
             //TODO: Get time breakdown from TPG threads
         } else if (ccStrategy == 4) { // OpenNF
             aggManagerUsefulTime = OpenNFController.getAggUsefulTime() / 1E6;
-            aggManagerSyncTime = aggTotalTime - aggManagerUsefulTime;
-        } else if (ccStrategy == 5) {
+            aggInstanceSyncTime -= aggManagerUsefulTime;
+        } else if (ccStrategy == 5) { // CHC
             aggManagerUsefulTime = CHCController.getAggUsefulTime() / 1E6;
-            aggManagerSyncTime = aggTotalTime - aggManagerUsefulTime;
+            aggInstanceSyncTime -= aggManagerUsefulTime;
         } else if (ccStrategy == 7) {
             aggManagerSyncTime += PartitionCCThread.getManagerEventSyncTime() / 1E6;
             aggManagerSyncTime += OffloadCCThread.getAggSyncTime().get() / 1E6;

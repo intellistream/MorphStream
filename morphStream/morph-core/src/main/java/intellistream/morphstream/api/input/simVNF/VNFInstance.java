@@ -287,8 +287,12 @@ public class VNFInstance implements Runnable {
             BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
             request.setTxnACKQueue(responseQueue);
             OffloadCCThread.submitOffloadReq(request);
+            long syncStartTime = System.nanoTime();
             while (responseQueue.isEmpty()) {
                 //Wait for manager's ack
+            }
+            if (enableTimeBreakdown) {
+                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
             }
 //                    System.out.println("Offload response:" + responseQueue.take());
 //                    while (true) {
@@ -306,20 +310,28 @@ public class VNFInstance implements Runnable {
 
         } else if (tupleCC == 4) { // OpenNF
             OpenNFController.submitOpenNFReq(request);
+            long syncStartTime = System.nanoTime();
             while (true) {
                 VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                     break;
                 }
             }
+            if (enableTimeBreakdown) {
+                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
+            }
 
         } else if (tupleCC == 5) { // CHC
             CHCController.submitCHCReq(request);
+            long syncStartTime = System.nanoTime();
             while (true) {
                 VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                     break;
                 }
+            }
+            if (enableTimeBreakdown) {
+                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
             }
 
         } else if (tupleCC == 6) { // S6
