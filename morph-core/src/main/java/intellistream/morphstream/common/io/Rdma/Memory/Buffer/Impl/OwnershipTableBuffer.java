@@ -25,7 +25,6 @@ public class OwnershipTableBuffer {
     public ByteBuffer getOwnershipTable() throws IOException {
         ownershipTable = buffer.getByteBuffer(readOffset, 6);//START_FLAG(Short) + TotalLength(Int)
         short start_flag = ownershipTable.getShort();
-        LOG.info("start_flag: " + start_flag);
         if (start_flag == SOURCE_CONTROL.START_FLAG) {
             int totalLength = ownershipTable.getInt();
             ownershipTable = buffer.getByteBuffer(readOffset + 6 + totalLength, 2);

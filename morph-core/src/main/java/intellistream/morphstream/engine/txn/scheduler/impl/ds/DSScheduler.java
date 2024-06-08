@@ -118,7 +118,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             this.setLocalOCs(context);
             this.setRemoteOcs(context);
             context.setupDependencies();
-            LOG.info("Finish initialize: " + context.thisThreadId + " with local ops :" + context.allocatedLocalTasks.size() + " with remote ops: " + context.allocatedRemoteTasks.size());
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             MeasureTools.WorkerSetupDependenciesEndEventTime(context.thisThreadId);
         } catch (Exception e) {
@@ -148,7 +147,7 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
         for (Operation op : oc.operations) {
             if (op.getOperationType().equals(MetaTypes.OperationStateType.EXECUTED)) {
                 if (op.isReference) {
-                    if (this.remoteStorageManager.checkOwnership(op.table_name, op.pKey, context.thisThreadId)) {
+                    if (this.remoteStorageManager.checkExclusiveOwnership(op.table_name, op.pKey, context.thisThreadId)) {
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
                         oc.setTempValue(this.remoteStorageManager.directReadLocalCache(oc.getTableName(), oc.getPrimaryKey(), context.thisThreadId));
                         oc.deleteOperation(op);
@@ -192,7 +191,12 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             if (operation.accessType == CommonMetaTypes.AccessType.WRITE) {
                 this.remoteStorageManager.updateWriteOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId, oc.getDsContext().thisThreadId);
             } else {
-                this.remoteStorageManager.updateSharedOwnership(operation.table_name, operation.pKey, oc.getDsContext().thisThreadId, operation.numberToRead);
+                this.remoteStorageManager.updateSharedOwnership(operation.table_name, operation.pKey, oc.getDsContext().thisThreadId, operation.numberToRead, (int) operation.biggestBid);
+                if (operation.localReads != null && !operation.localReads.isEmpty()) {
+                    for (Operation localRead : operation.localReads) {
+                        read(localRead, oc);
+                    }
+                }
             }
             operation.operationType = MetaTypes.OperationStateType.EXECUTED;
         } else {
@@ -226,9 +230,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
         boolean udfSuccess = clientObj.transactionUDF(operation.function);
         AppConfig.randomDelay();//To quantify the overhead of user-defined function
         if (udfSuccess) {
-            //Update udf results to writeRecord
-            Object udfResult = operation.function.udfResult; //value to be written
-            //Update State
             if (!oc.isLocalState()) {
                 this.remoteStorageManager.asyncSharedLockRelease(this.rdmaWorkerManager, operation.table_name, operation.pKey);
             }

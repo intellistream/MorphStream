@@ -44,22 +44,27 @@ public class OperationChain implements Comparable<OperationChain> {
     }
     public void updateDependencies() {
         List<Operation> buffer = new ArrayList<>();
+        List<Operation> localBuffer = new ArrayList<>();
         Iterator<Operation> iterator = operations.iterator();
         List<Operation> toRemove = new ArrayList<>();
-        Operation tempOperation;
+        Operation tempOperation = null;
         while (iterator.hasNext()) {
             tempOperation = iterator.next();
-            if (tempOperation.accessType == CommonMetaTypes.AccessType.READ) {
+            if (tempOperation.accessType == CommonMetaTypes.AccessType.READ && tempOperation.isReference) {
                 buffer.add(tempOperation);
-            } else {
+            } else if (!tempOperation.isReference) {
+                buffer.add(tempOperation);
+                localBuffer.add(tempOperation);
+            } else if (tempOperation.accessType == CommonMetaTypes.AccessType.WRITE) {
                 if (!buffer.isEmpty()) {
-                    aggregateRead(buffer, toRemove);
+                    aggregateRead(buffer, localBuffer, toRemove, tempOperation);
                     buffer.clear();
+                    localBuffer.clear();
                 }
             }
         }
         if (!buffer.isEmpty()) {
-            aggregateRead(buffer, toRemove);
+            aggregateRead(buffer, localBuffer, toRemove, tempOperation);
         }
         toRemove.forEach(operations::remove);
 //        Operation prevOperation = null;
@@ -72,8 +77,10 @@ public class OperationChain implements Comparable<OperationChain> {
 //            }
 //        }
     }
-    private void aggregateRead(List<Operation> buffer, List<Operation> toRemove) {
+    private void aggregateRead(List<Operation> buffer, List<Operation> localBuffer, List<Operation> toRemove, Operation write) {
         buffer.get(0).numberToRead = buffer.size();
+        buffer.get(0).biggestBid = write.bid;
+        buffer.get(0).localReads = localBuffer;
         for (int i = 1; i < buffer.size(); i++) {
             toRemove.add(buffer.get(i));
         }

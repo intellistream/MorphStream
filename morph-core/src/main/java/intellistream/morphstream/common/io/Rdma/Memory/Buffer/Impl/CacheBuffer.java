@@ -3,12 +3,12 @@ package intellistream.morphstream.common.io.Rdma.Memory.Buffer.Impl;
 import com.ibm.disni.verbs.IbvPd;
 import intellistream.morphstream.common.io.Rdma.Memory.Buffer.RdmaBuffer;
 import intellistream.morphstream.common.io.Rdma.Msg.RegionToken;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.SOURCE_CONTROL;
 import lombok.Getter;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,9 +52,11 @@ public class CacheBuffer {
     public void initLocalCacheBuffer(List<String> keys, String[] values, String tableName) throws IOException {
         LOG.info("The number of ownership keys is " + keys.size());
         ByteBuffer byteBuffer = tableNameToRdmaBuffer.get(tableName).getByteBuffer();
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         for (int i = 0; i < keys.size(); i ++) {
-            byteBuffer.putLong(0);//32bit ownership 32bit shared lock
+            byteBuffer.putInt(workerId);
+            byteBuffer.putInt(0);//32bit ownership 32bit shared lock
             byteBuffer.put(values[i].getBytes(StandardCharsets.UTF_8));
             tableNameToKeyIndexMap.get(tableName).put(keys.get(i), i);//Key, index
         }
@@ -73,31 +75,40 @@ public class CacheBuffer {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         int length = this.tableNameToLength.get(tableName);
         readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8), 4);
+        readBuffer[threadId].order(ByteOrder.LITTLE_ENDIAN);
         readBuffer[threadId].putInt(workerId);
     }
-    public void updateSharedOwnership(String tableName, String key, int threadId, int numberToRead) throws IOException {
+    public void updateSharedOwnership(String tableName, String key, int threadId, int numberToRead, int biggestBid) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         int length = this.tableNameToLength.get(tableName);
         readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8), 8);
-        readBuffer[threadId].putInt(SHARED_LOCK);
+        readBuffer[threadId].order(ByteOrder.LITTLE_ENDIAN);
+        readBuffer[threadId].putInt(biggestBid);
         readBuffer[threadId].putInt(numberToRead);
     }
-    public boolean checkOwnership(String tableName, String key, int threadId) throws IOException {
+    public boolean checkExclusiveOwnership(String tableName, String key, int threadId) throws IOException {
         int index = tableNameToKeyIndexMap.get(tableName).get(key);
         int length = this.tableNameToLength.get(tableName);
-        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 2),  8);
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8),  4);
+        readBuffer[threadId].order(ByteOrder.LITTLE_ENDIAN);
+
+        int ownershipId = readBuffer[threadId].getInt();
+        return ownershipId ==  workerId;
+    }
+    public boolean checkSharedOwnership(String tableName, String key, int threadId) throws IOException {
+        int index = tableNameToKeyIndexMap.get(tableName).get(key);
+        int length = this.tableNameToLength.get(tableName);
+        readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8),  8);
+        readBuffer[threadId].order(ByteOrder.LITTLE_ENDIAN);
+
         int ownershipId = readBuffer[threadId].getInt();
         int numberToRead = readBuffer[threadId].getInt();
-        if (ownershipId == SHARED_LOCK) {
-            if (numberToRead == 0) {
-                readBuffer[threadId].flip();
-                readBuffer[threadId].putInt(0);
-                return true;
-            } else {
-                return false;
-            }
+        if (numberToRead == 0) {
+            readBuffer[threadId].flip();
+            readBuffer[threadId].putInt(workerId);
+            return true;
         } else {
-            return ownershipId == (short) workerId;
+            return false;
         }
     }
 

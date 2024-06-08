@@ -119,16 +119,23 @@ public class RemoteStorageManager extends StorageManager {
             throw new RuntimeException(e);
         }
     }
-    public void updateSharedOwnership(String tableName, String key, int threadId, int numberToRead) {
+    public void updateSharedOwnership(String tableName, String key, int threadId, int numberToRead, int bigestBid) {
         try {
-            this.cacheBuffer.updateSharedOwnership(tableName, key, threadId, numberToRead);
+            this.cacheBuffer.updateSharedOwnership(tableName, key, threadId, numberToRead,bigestBid);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    public boolean checkOwnership(String tableName, String key, int threadId) {
+    public boolean checkExclusiveOwnership(String tableName, String key, int threadId) {
         try {
-            return this.cacheBuffer.checkOwnership(tableName, key, threadId);
+            return this.cacheBuffer.checkExclusiveOwnership(tableName, key, threadId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public boolean checkSharedOwnership(String tableName, String key, int threadId) {
+        try {
+            return this.cacheBuffer.checkSharedOwnership(tableName, key, threadId);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

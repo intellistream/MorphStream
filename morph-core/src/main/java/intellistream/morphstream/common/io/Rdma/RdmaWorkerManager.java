@@ -243,7 +243,6 @@ public class RdmaWorkerManager implements Serializable {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
                     regionToken.setAddress(remoteAddress + byteBuffer.capacity());
-                    LOG.info(String.format("Worker (%d) sends (%d) remote operations to worker (%d)", managerId, remoteOperationBatch.getTotalMessagesSize(), senderId));
                     remoteOperationBatch.clear();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -269,12 +268,13 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer readData = rdmaBufferManager.get(length);
         ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
         CountDownLatch latch = new CountDownLatch(1);
         rdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 int ownershipId = dataBuffer.getInt();
-                dataBuffer.getInt();
+                int numberToShared = dataBuffer.getInt();
                 ByteBuffer valueBuffer = dataBuffer.slice();
                 String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
                 if (ownershipId == managerId) {
@@ -301,15 +301,17 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer readData = rdmaBufferManager.get(length);
         ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
         CountDownLatch latch = new CountDownLatch(1);
         rdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
-                int ownershipId = dataBuffer.getInt();
+                int biggestBid = dataBuffer.getInt();
                 int numberToRead = dataBuffer.getInt();
                 ByteBuffer valueBuffer = dataBuffer.slice();
                 String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
-                if (ownershipId == SOURCE_CONTROL.SHARED_LOCK) {
+                if (biggestBid > remoteObject.bid && numberToRead > 0) {
                     remoteObject.value = value;
                 }
                 remoteObject.isReturn = true;
@@ -333,6 +335,7 @@ public class RdmaWorkerManager implements Serializable {
 
         RdmaBuffer readData = rdmaBufferManager.get(value.getBytes(StandardCharsets.UTF_8).length + 8);
         ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         dataBuffer.putInt(workerId);
         dataBuffer.putInt(0);

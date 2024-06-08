@@ -23,8 +23,10 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public MetaTypes.OperationStateType operationType = MetaTypes.OperationStateType.BLOCKED;
     public int sourceWorkerId;
     public volatile ArrayList<String> stateObjectName = new ArrayList<>();
-    public RemoteObject remoteObject = new RemoteObject();
+    public RemoteObject remoteObject;
     public int numberToRead = 0;
+    public long biggestBid;
+    public List<Operation> localReads;
 
     public Operation(String tableName, String pKey, long bid, boolean isReference, int sourceWorkerId, int isRead) {
         super(tableName, null, null, null, null, null, bid, null, pKey);
@@ -41,6 +43,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
                                                  CommonMetaTypes.AccessType accessType, Set<String> stateObjectName, Function function) {
         super(table_name, function, null, txn_context, accessType, null, bid, null, pKey);
         this.isReference = false;
+        this.remoteObject = new RemoteObject(bid);
         for (String name : stateObjectName) {
             this.stateObjectName.add(name);
         }
@@ -123,9 +126,11 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         return this.bid + ":" + this.table_name + ":" + this.pKey + ":" + i;
     }
     public static class RemoteObject{
+        public long bid;
         public String value;
         public boolean isReturn;
-        public RemoteObject() {
+        public RemoteObject(long bid) {
+            this.bid = bid;
             this.value = null;
             this.isReturn = true;
         }
