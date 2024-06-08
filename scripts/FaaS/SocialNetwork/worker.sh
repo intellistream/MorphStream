@@ -37,7 +37,7 @@ function ResetParameters() {
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
-    numberItemsForTables="10000;10000;100000"
+    numberItemsForTables="10000;10000;20000"
     NUM_ITEMS=100000
     tableNames="user_pwd;user_profile;tweet"
     keyDataTypesForTables="String;String;String"
