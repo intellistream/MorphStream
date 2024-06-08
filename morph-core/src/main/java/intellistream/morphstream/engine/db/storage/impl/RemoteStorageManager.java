@@ -58,12 +58,10 @@ public class RemoteStorageManager extends StorageManager {
         WorkerSideOwnershipTable workerSideOwnershipTable;
         if (this.ownershipTableReady.compareAndSet(false, true)) {
             for (String tableName: tableNames) {
-                LOG.info("Start to get ownership table for table " + tableName);
                 workerSideOwnershipTable = this.workerSideOwnershipTables.get(tableName);
                 while (workerSideOwnershipTable.ownershipTableBuffer == null) {
                     workerSideOwnershipTable.ownershipTableBuffer = rdmaWorkerManager.getTableBuffer().getOwnershipTable();
                 }
-                LOG.info("Start to receive ownership table for table " + tableName);
                 int[] length = new int[totalWorker];
                 for (int i = 0; i < totalWorker; i++) {
                     length[i] = workerSideOwnershipTable.ownershipTableBuffer.getInt();
@@ -82,7 +80,6 @@ public class RemoteStorageManager extends StorageManager {
                     }
                 }
                 workerSideOwnershipTable.initValueList();
-                LOG.info("Get ownership table for table " + tableName + " successfully");
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -113,7 +110,6 @@ public class RemoteStorageManager extends StorageManager {
                String key = keys.get(i);
                this.readRemoteDatabaseForCache(tableName, key, rdmaWorkerManager, i, this.workerSideOwnershipTables.get(tableName).valueList, this.workerSideOwnershipTables.get(tableName).getTotalKeys());
            }
-           LOG.info("Thread " + context.thisThreadId + " load cache for table " + tableName + " from remote database");
        }
     }
     public void updateOwnership(String tableName, String key, int ownershipWorkerId, int threadId) {
@@ -181,10 +177,6 @@ public class RemoteStorageManager extends StorageManager {
         for (int i = 0; i < tableNames.length; i++) {
             if (tableNames[i].equals(tableName)) {
                 tableIndex = i;
-                if (Integer.parseInt(key) >= this.tableNameToItemNumber.get(tableName)) {
-                    LOG.info("Key is out of range with key " + key + " and table " + tableName);
-                    throw new DatabaseException("Key is out of range");
-                }
                 keyIndex = Integer.parseInt(key) * (this.tableNameToLength.get(tableName) + 8) + 8;
                 size = this.tableNameToLength.get(tableName);
                 break;

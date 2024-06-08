@@ -146,7 +146,6 @@ public class RdmaDriverManager {
                 try {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
-                    LOG.info("Driver sends " + totalMessageCount + " functions to worker " + workId);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -193,7 +192,6 @@ public class RdmaDriverManager {
                     rdmaBufferManager.put(writeData);
                     regionToken.setAddress(remoteAddress + dataBuffer.capacity());
                     latch.countDown();
-                    LOG.info("Driver sends finish flag to worker " + workId);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -251,7 +249,6 @@ public class RdmaDriverManager {
                     rdmaBufferManager.put(rdmaBuffer);
                     regionToken.setAddress(remoteAddress + finalRdmaBufferCapacity);
                     latch.countDown();
-                    LOG.info("Driver sends ownership table to worker " + workId);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

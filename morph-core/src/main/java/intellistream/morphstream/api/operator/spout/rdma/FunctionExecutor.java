@@ -107,12 +107,10 @@ public class FunctionExecutor extends AbstractSpoutCombo {
                 if (myLength != 0) {
                     msgBuffer = MorphStreamEnv.get().rdmaWorkerManager().getCircularRdmaBuffer().read(myOffset, myLength);
                     counter ++;
-                    LOG.info("ThreadId : " + threadId + " receive: " + counter);
                 } else {
                     context.stop_running();
                     return null;
                 }
-                LOG.info("ThreadId : " + threadId + " receive: " + eventCount);
             } else {
                 return null;
             }

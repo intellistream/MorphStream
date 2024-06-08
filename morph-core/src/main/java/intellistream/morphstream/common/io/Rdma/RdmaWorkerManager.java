@@ -309,7 +309,6 @@ public class RdmaWorkerManager implements Serializable {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 rdmaBufferManager.put(readData);
-                LOG.info("Write to remote cache with workerId: " +  workerId);
             }
             @Override
             public void onFailure(Throwable exception) {
@@ -586,15 +585,20 @@ public class RdmaWorkerManager implements Serializable {
         ByteBuffer dataBuffer = resultBuffer.getByteBuffer();
         dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        long comparedValue = remoteObject.getVersion();
-        long swapValue = bid;
+        long comparedValue = (long) remoteObject.getVersion() << 32;
+        ByteBuffer swapBuffer = ByteBuffer.allocate(8);
+        dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        swapBuffer.putInt((int) bid);
+        swapBuffer.putInt(remoteObject.getVersion());
+        swapBuffer.flip();
+        long swapValue = swapBuffer.getLong();
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean isAbortLock = new AtomicBoolean();
         databaseRdmaChannel.rdmaCASInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
-                int lock = dataBuffer.getShort();
-                int newVersion = dataBuffer.getShort();
+                int lock = dataBuffer.getInt();
+                int newVersion = dataBuffer.getInt();
                 if (lock == 0 && newVersion == remoteObject.getVersion()) {
                     remoteObject.setSuccessLocked(true);
                     isAbortLock.set(false);

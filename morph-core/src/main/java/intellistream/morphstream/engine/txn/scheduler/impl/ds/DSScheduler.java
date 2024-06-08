@@ -127,7 +127,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
     }
     @Override
     public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
-        LOG.info("Start evaluation: " + context.thisThreadId);
         INITIALIZE(context);
         MeasureTools.WorkerExecuteStartEventTime(context.thisThreadId);
         do {
@@ -135,7 +134,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             PROCESS(context, mark_ID, batchID);
         } while (!FINISHED(context));
         RESET(context);
-        LOG.info("Finish evaluation: " + context.thisThreadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.WorkerExecuteEndEventTime(context.thisThreadId);
     }
@@ -154,7 +152,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
                         oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, context.thisThreadId));
                         oc.deleteOperation(op);
-                        LOG.info("Commit reference operation");
                     } else {
                         break;
                     }
@@ -194,7 +191,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
         if (operation.isReference) {
             this.remoteStorageManager.updateOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId, oc.getDsContext().thisThreadId);
             operation.operationType = MetaTypes.OperationStateType.EXECUTED;
-            LOG.info("Reference operation from worker: " + operation.sourceWorkerId);
         } else {
             List<DataBox> dataBoxes = new ArrayList<>();
             StringDataBox stringDataBox = new StringDataBox();
@@ -204,7 +200,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                 this.remoteStorageManager.asyncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, operation.remoteObject);
                 if (operation.remoteObject.value != null) {
                     stringDataBox.setString(operation.remoteObject.value);
-                    LOG.info("Read from remote cache with " +  oc.tryTimes + " times");
                     MeasureTools.WorkerRdmaRound(oc.getDsContext().thisThreadId, oc.tryTimes);
                     oc.tryTimes = 0;
                 } else {

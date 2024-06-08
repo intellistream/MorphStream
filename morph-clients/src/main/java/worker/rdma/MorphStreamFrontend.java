@@ -133,7 +133,6 @@ public class MorphStreamFrontend extends Thread{
                     ByteBuffer byteBuffer = workerIdToCircularRdmaBufferMap.get(i).read(myOffset, myLength);
                     workerIdToResultBufferMap.put(i, byteBuffer);
                     receiveCount --;
-                    LOG.info("ThreadId : " + threadId + " receive results from worker " + i);
                 }
             }
             if (hasRemaining() == -1)

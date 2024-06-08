@@ -153,7 +153,6 @@ public class DSContext implements SchedulerContext {
                             operationNum ++;
                         }
                         receivedWorker.add(i);
-                        LOG.info(String.format("Thread(%d) receive remote %d operations from worker(%d) ",this.thisThreadId, operationNum, i));
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
