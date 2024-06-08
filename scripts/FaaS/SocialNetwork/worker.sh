@@ -126,7 +126,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms48g -Xmx48g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
+  java -Xms48g -Xmx48g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar $JAR \
       --isDriver $isDriver \
       --isDatabase $isDatabase \
       --workerId $workerId \
