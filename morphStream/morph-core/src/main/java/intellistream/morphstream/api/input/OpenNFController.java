@@ -54,17 +54,19 @@ public class OpenNFController implements Runnable {
                     long timeStamp = request.getCreateTime();
                     long txnReqId = request.getReqID();
 
-                    long usefulStartTime = System.nanoTime();
+
                     TableRecord tableRecord;
                     tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                     SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                     int readValue = readRecord.getValues().get(1).getInt();
 
+                    long usefulStartTime = System.nanoTime();
                     simUDF(readValue);
+                    aggUsefulTime += System.nanoTime() - usefulStartTime;
+
                     SchemaRecord tempo_record = new SchemaRecord(readRecord);
                     tempo_record.getValues().get(1).setInt(readValue);
                     tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-                    aggUsefulTime += System.nanoTime() - usefulStartTime;
 
                     for (int i = 0; i < vnfInstanceNum; i++) {
                         VNFRunner.getSender(i).writeLocalState(tupleID, readValue);

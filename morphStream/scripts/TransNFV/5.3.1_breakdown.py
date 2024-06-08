@@ -10,7 +10,8 @@ import csv
 def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath,
                          totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum,
                          rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern,
-                         enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch):
+                         enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
+                         instancePatternPunctuation, managerPatternPunctuation):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -37,6 +38,8 @@ function ResetParameters() {{
   enableTimeBreakdown={enableTimeBreakdown}
   experimentID="{experimentID}"
   enableHardcodeCCSwitch="{enableHardcodeCCSwitch}"
+  instancePatternPunctuation={instancePatternPunctuation}
+  managerPatternPunctuation={managerPatternPunctuation}
 }}
 
 function runTStream() {{
@@ -62,7 +65,9 @@ function runTStream() {{
           --workloadPattern $workloadPattern \\
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID \\
-          --enableHardcodeCCSwitch $enableHardcodeCCSwitch
+          --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
+          --instancePatternPunctuation $instancePatternPunctuation \\
+          --managerPatternPunctuation $managerPatternPunctuation
           "
   java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
@@ -86,7 +91,9 @@ function runTStream() {{
     --workloadPattern $workloadPattern \\
     --enableTimeBreakdown $enableTimeBreakdown \\
     --experimentID $experimentID \\
-    --enableHardcodeCCSwitch $enableHardcodeCCSwitch
+    --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
+    --instancePatternPunctuation $instancePatternPunctuation \\
+    --managerPatternPunctuation $managerPatternPunctuation
 }}
 
 function baselinePattern() {{
@@ -143,7 +150,7 @@ def plot_time_breakdown_barchart():
     base_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.1/breakdown/numInstance_4/dynamic/"
     systems = ["OpenNF", "CHC", "S6", "TransNFV"]
     categories = ['Parsing', 'Sync', 'Useful', 'CC Switch']
-#     categories = ['Parsing', 'Sync', 'Useful', 'CC Switch', 'Overhead']
+#     categories = ['Parsing', 'Sync', 'Useful', 'CC Switch', 'Total']
 
     # Read data from CSV files
     sub_bar_values = {}
@@ -167,7 +174,7 @@ def plot_time_breakdown_barchart():
         cumulative_values += values[:, i]
 
     # Add labels and title
-    ax.set_xlabel('Execution Time')
+    ax.set_xlabel('Execution Time (ms)')
     ax.set_ylabel('System')
     ax.set_title('Execution Time Breakdown for Different Systems')
     ax.legend(title='Categories')
@@ -191,7 +198,7 @@ if __name__ == "__main__":
     complexity = 0
     NUM_ITEMS = 10000
     rootFilePath = "/home/shuhao/jjzhao/data"
-    totalEvents = 120000
+    totalEvents = 1200000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
@@ -205,9 +212,11 @@ if __name__ == "__main__":
     enableTimeBreakdown = 1
     experimentID = "5.3.1"
     enableHardcodeCCSwitch = 0
+    instancePatternPunctuation = 25000
+    managerPatternPunctuation = 100000
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch, instancePatternPunctuation, managerPatternPunctuation)
     execute_bash_script(script_path)
 
     plot_time_breakdown_barchart()

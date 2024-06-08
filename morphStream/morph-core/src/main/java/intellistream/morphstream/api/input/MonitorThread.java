@@ -87,7 +87,7 @@ public class MonitorThread implements Runnable {
                 if (!statesPattern_0_to_23.isEmpty() || !statesPattern_1_to_23.isEmpty() || !statesPattern_23_to_0.isEmpty() || !statesPattern_23_to_1.isEmpty()) {
                     notifyCCSwitch();
                     notifyStartNextPunctuation();
-                    ccSwitch();
+//                    ccSwitch();
                 } else {
                     notifyStartNextPunctuation();
                     LOG.info("No pattern change detected");

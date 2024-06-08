@@ -390,8 +390,8 @@ public class VNFRunner implements Runnable {
             }
         }
         try (FileWriter fileWriter = new FileWriter(file)) {
-            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "," + totalTimeMS + "\n";
-//            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "\n";
+//            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "," + totalTimeMS + "\n";
+            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "\n";
             fileWriter.write(lineToWrite);
             System.out.println("Data written to CSV file successfully.");
         } catch (IOException e) {

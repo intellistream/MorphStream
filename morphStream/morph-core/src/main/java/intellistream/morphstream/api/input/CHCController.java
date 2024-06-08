@@ -72,14 +72,17 @@ public class CHCController implements Runnable {
                         int currentOwner = tupleOwnership.get(tupleID);
                         int tupleValue = VNFRunner.getSender(currentOwner).readLocalState(tupleID);
 
-                        long usefulStartTime = System.nanoTime();
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                         SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                         SchemaRecord tempo_record = new SchemaRecord(readRecord);
+
+                        long usefulStartTime = System.nanoTime();
                         simUDF(tupleValue);
+                        aggUsefulTime += System.nanoTime() - usefulStartTime;
+
                         tempo_record.getValues().get(1).setInt(tupleValue);
                         tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-                        aggUsefulTime += System.nanoTime() - usefulStartTime;
+
                     }
 
                     VNFRunner.getSender(instanceID).submitFinishedRequest(request);

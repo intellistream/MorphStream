@@ -328,7 +328,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
     public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 6;
+    public int ccStrategy = 7;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
     public int workloadPattern = 4;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
