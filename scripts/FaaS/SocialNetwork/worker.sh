@@ -42,7 +42,7 @@ function ResetParameters() {
     tableNames="user_pwd;user_profile;tweet"
     keyDataTypesForTables="String;String;String"
     valueDataTypesForTables="String;String;String"
-    valueDataSizesForTables="16;128;128"
+    valueDataSizesForTables="16;64;64"
     valueNamesForTables="password;profile;tweet"
     #Input Configurations
     rootFilePath="${RSTDIR}"
@@ -51,7 +51,7 @@ function ResetParameters() {
     tableNameForEvents="user_pwd;user_profile;tweet;tweet"
     keyNumberForEvents="1;1;2;2"
     valueNameForEvents="password;;;tweet1,tweet2"
-    valueSizeForEvents="16;0;0;128,128"
+    valueSizeForEvents="16;0;0;64,64"
     eventRatio="0;0;90;10"
     ratioOfMultiPartitionTransactionsForEvents="0;0;0;0"
     stateAccessSkewnessForEvents="0;0;0;0"
