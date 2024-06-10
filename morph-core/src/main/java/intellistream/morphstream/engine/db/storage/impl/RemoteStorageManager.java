@@ -121,7 +121,7 @@ public class RemoteStorageManager extends StorageManager {
     }
     public void updateSharedOwnership(String tableName, String key, int threadId, int numberToRead, int bigestBid) {
         try {
-            this.cacheBuffer.updateSharedOwnership(tableName, key, threadId, numberToRead,bigestBid);
+            this.cacheBuffer.updateSharedOwnership(tableName, key, threadId, numberToRead, bigestBid);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

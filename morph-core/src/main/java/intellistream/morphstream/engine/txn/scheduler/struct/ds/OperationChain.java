@@ -45,20 +45,20 @@ public class OperationChain implements Comparable<OperationChain> {
     public void updateDependencies() {
         List<Operation> buffer = new ArrayList<>();
         List<Operation> localBuffer = new ArrayList<>();
-        Iterator<Operation> iterator = operations.iterator();
         List<Operation> toRemove = new ArrayList<>();
         Operation tempOperation = null;
-        while (iterator.hasNext()) {
-            tempOperation = iterator.next();
+        for (Operation operation : operations) {
+            tempOperation = operation;
             if (tempOperation.accessType == CommonMetaTypes.AccessType.READ && tempOperation.isReference) {
                 buffer.add(tempOperation);
-            } else if (!tempOperation.isReference) {
-                buffer.add(tempOperation);
+            } else if (tempOperation.accessType == CommonMetaTypes.AccessType.READ) {
                 localBuffer.add(tempOperation);
             } else if (tempOperation.accessType == CommonMetaTypes.AccessType.WRITE) {
                 if (!buffer.isEmpty()) {
                     aggregateRead(buffer, localBuffer, toRemove, tempOperation);
                     buffer.clear();
+                }
+                if (!localBuffer.isEmpty()) {
                     localBuffer.clear();
                 }
             }
@@ -67,6 +67,7 @@ public class OperationChain implements Comparable<OperationChain> {
             aggregateRead(buffer, localBuffer, toRemove, tempOperation);
         }
         toRemove.forEach(operations::remove);
+        dsContext.scheduledOperations += toRemove.size();
 //        Operation prevOperation = null;
 //        for (Operation curOperation : operations) {
 //            if (prevOperation == null) {
@@ -80,10 +81,11 @@ public class OperationChain implements Comparable<OperationChain> {
     private void aggregateRead(List<Operation> buffer, List<Operation> localBuffer, List<Operation> toRemove, Operation write) {
         buffer.get(0).numberToRead = buffer.size();
         buffer.get(0).biggestBid = write.bid;
-        buffer.get(0).localReads = localBuffer;
+        buffer.get(0).localReads.addAll(localBuffer);
         for (int i = 1; i < buffer.size(); i++) {
             toRemove.add(buffer.get(i));
         }
+        toRemove.addAll(localBuffer);
     }
     public boolean isFinished() {
         return operations.isEmpty();

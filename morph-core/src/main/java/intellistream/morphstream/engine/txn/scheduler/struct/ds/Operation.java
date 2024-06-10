@@ -26,7 +26,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public RemoteObject remoteObject;
     public int numberToRead = 0;
     public long biggestBid;
-    public List<Operation> localReads;
+    public List<Operation> localReads = new ArrayList<>();
 
     public Operation(String tableName, String pKey, long bid, boolean isReference, int sourceWorkerId, int isRead) {
         super(tableName, null, null, null, null, null, bid, null, pKey);

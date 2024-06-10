@@ -83,6 +83,7 @@ public class CacheBuffer {
         int length = this.tableNameToLength.get(tableName);
         readBuffer[threadId] = tableNameToRdmaBuffer.get(tableName).getByteBufferFromOffset(index * (length + 8), 8);
         readBuffer[threadId].order(ByteOrder.LITTLE_ENDIAN);
+
         readBuffer[threadId].putInt(biggestBid);
         readBuffer[threadId].putInt(numberToRead);
     }

@@ -147,9 +147,12 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
         for (Operation op : oc.operations) {
             if (op.getOperationType().equals(MetaTypes.OperationStateType.EXECUTED)) {
                 if (op.isReference) {
-                    if (this.remoteStorageManager.checkExclusiveOwnership(op.table_name, op.pKey, context.thisThreadId)) {
+                    if (op.accessType == CommonMetaTypes.AccessType.WRITE && this.remoteStorageManager.checkExclusiveOwnership(op.table_name, op.pKey, context.thisThreadId)) {
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
                         oc.setTempValue(this.remoteStorageManager.directReadLocalCache(oc.getTableName(), oc.getPrimaryKey(), context.thisThreadId));
+                        oc.deleteOperation(op);
+                    } else if (op.accessType == CommonMetaTypes.AccessType.READ && this.remoteStorageManager.checkSharedOwnership(op.table_name, op.pKey, context.thisThreadId)) {
+                        op.operationType = MetaTypes.OperationStateType.COMMITTED;
                         oc.deleteOperation(op);
                     } else {
                         break;

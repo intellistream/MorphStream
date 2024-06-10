@@ -311,7 +311,7 @@ public class RdmaWorkerManager implements Serializable {
                 int numberToRead = dataBuffer.getInt();
                 ByteBuffer valueBuffer = dataBuffer.slice();
                 String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
-                if (biggestBid > remoteObject.bid && numberToRead > 0) {
+                if (biggestBid >= remoteObject.bid && numberToRead > 0) {
                     remoteObject.value = value;
                 }
                 remoteObject.isReturn = true;

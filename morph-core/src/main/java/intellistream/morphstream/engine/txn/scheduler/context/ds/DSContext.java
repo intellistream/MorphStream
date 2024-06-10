@@ -98,11 +98,11 @@ public class DSContext implements SchedulerContext {
                 oc.updateDependencies();
             }
         }
-        for (OperationChain oc : this.allocatedRemoteTasks) {
-            if (!oc.operations.isEmpty()) {
-                oc.updateDependencies();
-            }
-        }
+//        for (OperationChain oc : this.allocatedRemoteTasks) {
+//            if (!oc.operations.isEmpty()) {
+//                oc.updateDependencies();
+//            }
+//        }
     }
     public boolean isFinished() {
         assert scheduledOperations <= totalOperations;
