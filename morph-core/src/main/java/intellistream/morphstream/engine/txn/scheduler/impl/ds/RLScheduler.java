@@ -98,10 +98,7 @@ public class RLScheduler<Context extends RLContext> extends RemoteStorageSchedul
         for (Operation operation : context.tempOperations) {
             try {
                 if (operation.accessType == CommonMetaTypes.AccessType.READ) {
-                    boolean success = this.remoteStorageManager.syncReadRemoteDatabaseWithSharedLock(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
-                    while (!success) {
-                        success = this.remoteStorageManager.syncReadRemoteDatabaseWithSharedLock(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
-                    }
+                    this.remoteStorageManager.syncReadRemoteDatabaseWithSharedLock(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
                 } else if (operation.accessType == CommonMetaTypes.AccessType.WRITE) {
                     this.remoteStorageManager.asyncReadRemoteDatabaseWithExclusiveLock(operation.table_name, operation.pKey, this.rdmaWorkerManager, context.tempRemoteObjectMap.get(operation.pKey));
                 }

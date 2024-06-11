@@ -98,11 +98,11 @@ public class DSContext implements SchedulerContext {
                 oc.updateDependencies();
             }
         }
-//        for (OperationChain oc : this.allocatedRemoteTasks) {
-//            if (!oc.operations.isEmpty()) {
-//                oc.updateDependencies();
-//            }
-//        }
+        for (OperationChain oc : this.allocatedRemoteTasks) {
+            if (!oc.operations.isEmpty()) {
+                oc.updateDependencies();
+            }
+        }
     }
     public boolean isFinished() {
         assert scheduledOperations <= totalOperations;
@@ -149,7 +149,7 @@ public class DSContext implements SchedulerContext {
                             byte[] bytes = new byte[operationSize];
                             remoteOperationBuffer.get(bytes);
                             String[] operationInfo = new String(bytes).split(":");//bid, table, pk
-                            remoteOperations.add(new Operation(operationInfo[1], operationInfo[2], Long.parseLong(operationInfo[0]), true, i, Integer.parseInt(operationInfo[3])));
+                            remoteOperations.add(new Operation(operationInfo[1], operationInfo[2], Long.parseLong(operationInfo[0]), true, i));
                             operationNum ++;
                         }
                         receivedWorker.add(i);

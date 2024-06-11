@@ -103,7 +103,7 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                     oc.setLocalState(false);
                     this.tpg.getRemoteOCs().add(oc);
                 } else {
-                    oc.setTempValue(this.remoteStorageManager.directReadLocalCache(oc.getTableName(), oc.getPrimaryKey(), context.thisThreadId));
+                    oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, context.thisThreadId));
                     oc.setLocalState(true);
                     this.tpg.getLocalOCs().add(oc);
                 }
@@ -118,6 +118,7 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             this.setLocalOCs(context);
             this.setRemoteOcs(context);
             context.setupDependencies();
+            LOG.info("Finish initialize: " + context.thisThreadId + " with local ops :" + context.allocatedLocalTasks.size() + " with remote ops: " + context.allocatedRemoteTasks.size());
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             MeasureTools.WorkerSetupDependenciesEndEventTime(context.thisThreadId);
         } catch (Exception e) {
@@ -147,12 +148,9 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
         for (Operation op : oc.operations) {
             if (op.getOperationType().equals(MetaTypes.OperationStateType.EXECUTED)) {
                 if (op.isReference) {
-                    if (op.accessType == CommonMetaTypes.AccessType.WRITE && this.remoteStorageManager.checkExclusiveOwnership(op.table_name, op.pKey, context.thisThreadId)) {
+                    if (this.remoteStorageManager.checkOwnership(op.table_name, op.pKey, context.thisThreadId)) {
                         op.operationType = MetaTypes.OperationStateType.COMMITTED;
-                        oc.setTempValue(this.remoteStorageManager.directReadLocalCache(oc.getTableName(), oc.getPrimaryKey(), context.thisThreadId));
-                        oc.deleteOperation(op);
-                    } else if (op.accessType == CommonMetaTypes.AccessType.READ && this.remoteStorageManager.checkSharedOwnership(op.table_name, op.pKey, context.thisThreadId)) {
-                        op.operationType = MetaTypes.OperationStateType.COMMITTED;
+                        oc.setTempValue(this.remoteStorageManager.readLocalCache(oc.getTableName(), oc.getPrimaryKey(), this.managerId, context.thisThreadId));
                         oc.deleteOperation(op);
                     } else {
                         break;
@@ -191,94 +189,56 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
     }
     private void execute(Operation operation, OperationChain oc) {
         if (operation.isReference) {
-            if (operation.accessType == CommonMetaTypes.AccessType.WRITE) {
-                this.remoteStorageManager.updateWriteOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId, oc.getDsContext().thisThreadId);
+            this.remoteStorageManager.updateOwnership(operation.table_name, operation.pKey, operation.sourceWorkerId, oc.getDsContext().thisThreadId);
+            operation.operationType = MetaTypes.OperationStateType.EXECUTED;
+        } else {
+            List<DataBox> dataBoxes = new ArrayList<>();
+            StringDataBox stringDataBox = new StringDataBox();
+            if (oc.isLocalState()) {
+                stringDataBox.setString(oc.getTempValue().toString());
             } else {
-                this.remoteStorageManager.updateSharedOwnership(operation.table_name, operation.pKey, oc.getDsContext().thisThreadId, operation.numberToRead, (int) operation.biggestBid);
-                if (operation.localReads != null && !operation.localReads.isEmpty()) {
-                    for (Operation localRead : operation.localReads) {
-                        read(localRead, oc);
-                    }
+                this.remoteStorageManager.asyncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, operation.remoteObject);
+                if (operation.remoteObject.value != null) {
+                    stringDataBox.setString(operation.remoteObject.value);
+                    MeasureTools.WorkerRdmaRound(oc.getDsContext().thisThreadId, oc.tryTimes);
+                    oc.tryTimes = 0;
+                } else {
+                    oc.tryTimes ++;
+                    return;
                 }
             }
-            operation.operationType = MetaTypes.OperationStateType.EXECUTED;
-        } else {
-            if (operation.accessType == CommonMetaTypes.AccessType.READ) {
-                read(operation, oc);
+            dataBoxes.add(stringDataBox);
+            SchemaRecord readRecord = new SchemaRecord(dataBoxes);
+            operation.function.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
+            //UDF updates operation.udfResult, which is the value to be written to writeRecord
+            boolean udfSuccess = clientObj.transactionUDF(operation.function);
+            AppConfig.randomDelay();//To quantify the overhead of user-defined function
+            if (udfSuccess) {
+                if (operation.accessType == CommonMetaTypes.AccessType.WRITE
+                        || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
+                        || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
+                    //Update udf results to writeRecord
+                    Object udfResult = operation.function.udfResult; //value to be written
+                    oc.setTempValue(udfResult);
+                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                    tempo_record.getValues().get(0).setString((String) udfResult);
+                    //Assign updated schemaRecord back to stateAccess
+                    operation.function.setUpdatedStateObject(tempo_record);
+                    //Update State
+                    if (oc.isLocalState()) {
+                        oc.setTempValue(udfResult);
+                    } else {
+                        this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (String) udfResult);
+                    }
+                } else if (operation.accessType == CommonMetaTypes.AccessType.READ && !oc.isLocalState()) {
+                    this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, stringDataBox.getString());
+                }
+                operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             } else {
-                write(operation, oc);
+                operation.function.setAborted();
+                operation.operationType = MetaTypes.OperationStateType.ABORTED;
+                operation.notifyChildren();
             }
-        }
-    }
-    private void read(Operation operation, OperationChain oc) {
-        List<DataBox> dataBoxes = new ArrayList<>();
-        StringDataBox stringDataBox = new StringDataBox();
-        if (oc.isLocalState()) {
-            stringDataBox.setString(oc.getTempValue().toString());
-        } else {
-            this.remoteStorageManager.asyncReadRemoteCacheForSharedLock(this.rdmaWorkerManager, operation.table_name, operation.pKey, operation.remoteObject);
-            if (operation.remoteObject.value != null) {
-                stringDataBox.setString(operation.remoteObject.value);
-                MeasureTools.WorkerRdmaRound(oc.getDsContext().thisThreadId, oc.tryTimes);
-                oc.tryTimes = 0;
-            } else {
-                oc.tryTimes ++;
-                return;
-            }
-        }
-        dataBoxes.add(stringDataBox);
-        SchemaRecord readRecord = new SchemaRecord(dataBoxes);
-        operation.function.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
-        //UDF updates operation.udfResult, which is the value to be written to writeRecord
-        boolean udfSuccess = clientObj.transactionUDF(operation.function);
-        AppConfig.randomDelay();//To quantify the overhead of user-defined function
-        if (udfSuccess) {
-            if (!oc.isLocalState()) {
-                this.remoteStorageManager.asyncSharedLockRelease(this.rdmaWorkerManager, operation.table_name, operation.pKey);
-            }
-            operation.operationType = MetaTypes.OperationStateType.EXECUTED;
-        } else {
-            operation.function.setAborted();
-            operation.operationType = MetaTypes.OperationStateType.ABORTED;
-            operation.notifyChildren();
-        }
-    }
-    private void write(Operation operation, OperationChain oc) {
-        List<DataBox> dataBoxes = new ArrayList<>();
-        StringDataBox stringDataBox = new StringDataBox();
-        if (oc.isLocalState()) {
-            stringDataBox.setString(oc.getTempValue().toString());
-        } else {
-            this.remoteStorageManager.asyncReadRemoteCacheForExclusiveLock(this.rdmaWorkerManager, operation.table_name, operation.pKey, operation.remoteObject);
-            if (operation.remoteObject.value != null) {
-                stringDataBox.setString(operation.remoteObject.value);
-                MeasureTools.WorkerRdmaRound(oc.getDsContext().thisThreadId, oc.tryTimes);
-                oc.tryTimes = 0;
-            } else {
-                oc.tryTimes ++;
-                return;
-            }
-        }
-        dataBoxes.add(stringDataBox);
-        SchemaRecord readRecord = new SchemaRecord(dataBoxes);
-        operation.function.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
-        //UDF updates operation.udfResult, which is the value to be written to writeRecord
-        boolean udfSuccess = clientObj.transactionUDF(operation.function);
-        AppConfig.randomDelay();//To quantify the overhead of user-defined function
-        if (udfSuccess) {
-            //Update udf results to writeRecord
-            Object udfResult = operation.function.udfResult; //value to be written
-            //Update State
-            if (oc.isLocalState()) {
-                oc.setTempValue(udfResult);
-            } else {
-                this.remoteStorageManager.asyncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (String) udfResult);
-            }
-            operation.operationType = MetaTypes.OperationStateType.EXECUTED;
-        } else {
-            operation.function.setAborted();
-            operation.operationType = MetaTypes.OperationStateType.ABORTED;
-            operation.notifyChildren();
         }
     }
 
