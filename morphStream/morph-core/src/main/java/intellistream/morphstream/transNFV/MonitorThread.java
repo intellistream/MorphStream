@@ -1,6 +1,7 @@
-package intellistream.morphstream.api.input;
+package intellistream.morphstream.transNFV;
 
-import intellistream.morphstream.api.input.simVNF.VNFRunner;
+import intellistream.morphstream.transNFV.data.PatternData;
+import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -107,10 +108,15 @@ public class MonitorThread implements Runnable {
     private static void updatePatternData(PatternData metaDataByte) {
         int instanceID = metaDataByte.getInstanceID();
         int tupleID = metaDataByte.getTupleID();
-        boolean isWrite = metaDataByte.getIsWrite();
-
-        readCountMap.merge(tupleID, !isWrite ? 1 : 0, Integer::sum); //read
-        writeCountMap.merge(tupleID, isWrite ? 1 : 0, Integer::sum); //write
+        int type = metaDataByte.getType();
+        if (type == 0) { // Read
+            readCountMap.merge(tupleID, 1, Integer::sum);
+        } else if (type == 1) { // Write
+            writeCountMap.merge(tupleID, 1, Integer::sum);
+        } else { // Read and Write
+            readCountMap.merge(tupleID, 1, Integer::sum);
+            writeCountMap.merge(tupleID, 1, Integer::sum);
+        }
         Integer currentOwnership = ownershipMap.get(tupleID);
         if (currentOwnership != null && !currentOwnership.equals(instanceID)) {
             conflictCountMap.merge(tupleID, 1, Integer::sum);

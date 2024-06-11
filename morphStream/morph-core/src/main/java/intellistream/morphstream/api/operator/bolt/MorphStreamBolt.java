@@ -2,10 +2,10 @@ package intellistream.morphstream.api.operator.bolt;
 
 import commonStorage.RequestTemplates;
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.AdaptiveCCManager;
+import intellistream.morphstream.transNFV.AdaptiveCCManager;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.TransactionalVNFEvent;
-import intellistream.morphstream.api.input.simVNF.VNFRunner;
+import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;

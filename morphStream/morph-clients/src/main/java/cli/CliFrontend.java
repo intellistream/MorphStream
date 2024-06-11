@@ -3,7 +3,7 @@ package cli;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import commonStorage.RequestTemplates;
-import intellistream.morphstream.api.input.simVNF.VNFRunner;
+import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 

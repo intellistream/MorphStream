@@ -1,18 +1,16 @@
-package intellistream.morphstream.api.input;
+package intellistream.morphstream.transNFV;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.simVNF.VNFRunner;
+import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class CHCController implements Runnable {
     private static BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances

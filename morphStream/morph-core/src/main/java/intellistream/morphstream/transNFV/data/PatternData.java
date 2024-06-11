@@ -1,14 +1,14 @@
-package intellistream.morphstream.api.input;
+package intellistream.morphstream.transNFV.data;
 
 public class PatternData {
     private final int instanceID;
     private final int tupleID;
-    private final boolean isWrite;
+    private final int type;
 
-    public PatternData(int instanceID, int tupleID, boolean isWrite) {
+    public PatternData(int instanceID, int tupleID, int type) {
         this.instanceID = instanceID;
         this.tupleID = tupleID;
-        this.isWrite = isWrite;
+        this.type = type;
     }
 
     public int getInstanceID() {
@@ -17,7 +17,7 @@ public class PatternData {
     public int getTupleID() {
         return tupleID;
     }
-    public boolean getIsWrite() {
-        return isWrite;
+    public int getType() {
+        return type;
     }
 }

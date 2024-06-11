@@ -1,6 +1,12 @@
-package intellistream.morphstream.api.input;
+package intellistream.morphstream.transNFV;
 
+import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.input.TransactionalVNFEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.data.CacheData;
+import intellistream.morphstream.transNFV.data.OffloadData;
+import intellistream.morphstream.transNFV.data.PartitionData;
+import intellistream.morphstream.transNFV.data.PatternData;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -128,7 +134,7 @@ public class SocketListener implements Runnable { //A single thread that listens
                             PatternData patternData = byteToPatternData(instanceID, message);
                             monitorQueue.add(byteToPatternData(instanceID, message));
                             monitorCounter++;
-                            System.out.println("Received pattern data from " + instanceID + ": " + patternData.getTupleID() + ", " + patternData.getIsWrite() + ", total = " + monitorCounter);
+                            System.out.println("Received pattern data from " + instanceID + ": " + patternData.getTupleID() + ", " + patternData.getType() + ", total = " + monitorCounter);
                             break;
                         case 1:
                             PartitionData partitionData = byteToPartitionData(instanceID, message);
@@ -174,7 +180,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static PatternData byteToPatternData(int instanceID, byte[] messageBytes) {
         int tupleID = decodeInt(copySubarray(messageBytes, 1, 4), 0);
         boolean isWrite = decodeBoolean(copySubarray(messageBytes, 6, 6), 0);
-        return new PatternData(instanceID, tupleID, isWrite);
+        return new PatternData(instanceID, tupleID, -1);
     }
 
     private static PartitionData byteToPartitionData(int instanceID, byte[] messageBytes) {

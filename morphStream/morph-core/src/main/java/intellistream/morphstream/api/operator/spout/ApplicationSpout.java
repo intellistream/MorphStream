@@ -12,8 +12,6 @@ import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-
 import static intellistream.morphstream.configuration.Constants.*;
 import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
 

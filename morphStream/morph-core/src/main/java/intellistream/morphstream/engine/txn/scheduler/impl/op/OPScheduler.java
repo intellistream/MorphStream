@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.op;
 
 
-import intellistream.morphstream.api.input.AdaptiveCCManager;
+import intellistream.morphstream.transNFV.AdaptiveCCManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.LogRecord;

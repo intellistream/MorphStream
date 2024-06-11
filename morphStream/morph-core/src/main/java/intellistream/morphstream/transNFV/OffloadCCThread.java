@@ -1,14 +1,13 @@
-package intellistream.morphstream.api.input;
+package intellistream.morphstream.transNFV;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.simVNF.VNFRunner;
+import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -182,68 +181,6 @@ public class OffloadCCThread implements Runnable {
                 }
             }
         }
-    }
-
-
-    private void offloadWrite(OffloadData offloadData) {
-        long timeStamp = offloadData.getTimeStamp();
-        long txnReqId = offloadData.getTxnReqId();
-        int tupleID = offloadData.getTupleID();
-        int saIndex = offloadData.getSaIndex();
-        int instanceID = offloadData.getInstanceID();
-
-        try {
-            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-            int readValue = readRecord.getValues().get(1).getInt();
-            try {
-                synchronized (instanceLocks.get(instanceID)) {
-                    AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(readValue);
-            tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    private void offloadRead(OffloadData offloadData) {
-        long timeStamp = offloadData.getTimeStamp();
-        long txnReqId = offloadData.getTxnReqId();
-        int tupleID = offloadData.getTupleID();
-        int saIndex = offloadData.getSaIndex();
-        int instanceID = offloadData.getInstanceID();
-
-        try {
-            TableRecord tableRecord = storageManager.getTable(saTableNameMap.get(saIndex)).SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp); //TODO: Blocking until record is available, wait for a timeout?
-            int readValue = readRecord.getValues().get(1).getInt();
-            try {
-                synchronized (instanceLocks.get(instanceID)) {
-                    AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(txnReqId, saIndex, tupleID, readValue);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(readValue);
-            tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-            synchronized (instanceLocks.get(instanceID)) {
-                AdaptiveCCManager.vnfStubs.get(offloadData.getInstanceID()).txn_handle_done(txnReqId);
-            }
-
-        } catch (DatabaseException | IOException e) {
-            throw new RuntimeException(e);
-        }
-
     }
 
     private void simOffloadWrite(VNFRequest offloadData) {

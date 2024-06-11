@@ -1,7 +1,10 @@
 package message;
 
-import intellistream.morphstream.api.input.*;
+import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.input.TransactionalVNFEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.*;
+import intellistream.morphstream.transNFV.data.PatternData;
 import org.example.protobuf.*;
 
 import java.util.HashMap;
@@ -76,7 +79,7 @@ public class VNFCtlStubImpl {
 
     /** Monitor pattern report */
     static public void onMonitorReportMessage(int instanceID, MonitorReportMessage msg) {
-        MonitorThread.submitPatternData(new PatternData(instanceID, msg.getKey(), msg.getIsWrite()));
+        MonitorThread.submitPatternData(new PatternData(instanceID, msg.getKey(), -1));
 //        System.out.println("Server received MonitorReport from client: " + msg.getCcValue());
     }
 

@@ -1,8 +1,9 @@
-package intellistream.morphstream.api.input;
+package intellistream.morphstream.transNFV;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.simVNF.VNFInstance;
-import intellistream.morphstream.api.input.simVNF.VNFRunner;
+import intellistream.morphstream.transNFV.data.SyncData;
+import intellistream.morphstream.transNFV.simVNF.VNFInstance;
+import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.IOException;

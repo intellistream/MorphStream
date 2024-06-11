@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;

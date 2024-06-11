@@ -1,8 +1,11 @@
-package intellistream.morphstream.api.input.simVNF;
+package intellistream.morphstream.transNFV.simVNF;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.*;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.CHCController;
+import intellistream.morphstream.transNFV.OffloadCCThread;
+import intellistream.morphstream.transNFV.OpenNFController;
+import intellistream.morphstream.transNFV.PartitionCCThread;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 import java.io.File;

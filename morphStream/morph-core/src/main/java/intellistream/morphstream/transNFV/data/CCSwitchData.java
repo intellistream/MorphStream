@@ -1,4 +1,4 @@
-package intellistream.morphstream.api.input;
+package intellistream.morphstream.transNFV.data;
 
 public class CCSwitchData {
     private final int tupleID;

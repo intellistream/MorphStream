@@ -1,8 +1,12 @@
-package intellistream.morphstream.api.input.simVNF;
+package intellistream.morphstream.transNFV.simVNF;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.api.input.*;
+import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.input.TransactionalVNFEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.*;
+import intellistream.morphstream.transNFV.data.PatternData;
+import intellistream.morphstream.transNFV.data.SyncData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +135,7 @@ public class VNFInstance implements Runnable {
                 }
 
                 if (ccStrategy == 7) {
-                    MonitorThread.submitPatternData(new PatternData(instanceID, tupleID, (type == 1)));
+                    MonitorThread.submitPatternData(new PatternData(instanceID, tupleID, type));
                 }
                 if (ccStrategy == 7 && tupleUnderCCSwitch.containsKey(tupleID)) {
                     tupleBufferReqMap.computeIfAbsent(tupleID, k -> new ConcurrentLinkedQueue<>()).add(request); // Buffer affected tuples
@@ -194,7 +198,7 @@ public class VNFInstance implements Runnable {
                 System.out.println("All instances have finished, sending stop signals to StateManager...");
 
                 VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1);
-                MonitorThread.submitPatternData(new PatternData(-1, 0, false));
+                MonitorThread.submitPatternData(new PatternData(-1, 0, -1));
                 PartitionCCThread.submitPartitionRequest(stopSignal);
                 CacheCCThread.submitReplicationRequest(stopSignal);
                 OffloadCCThread.submitOffloadReq(stopSignal);

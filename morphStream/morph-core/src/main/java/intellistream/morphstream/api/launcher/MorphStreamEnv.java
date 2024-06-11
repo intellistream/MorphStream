@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.launcher;
 
-import intellistream.morphstream.api.input.AdaptiveCCManager;
+import intellistream.morphstream.transNFV.AdaptiveCCManager;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
@@ -21,7 +21,6 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
 public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();

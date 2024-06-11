@@ -1,6 +1,6 @@
 package message;
 
-import intellistream.morphstream.api.input.AdaptiveCCManager;
+import intellistream.morphstream.transNFV.AdaptiveCCManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.IOException;
