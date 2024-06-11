@@ -217,18 +217,18 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                 if (operation.accessType == CommonMetaTypes.AccessType.WRITE
                         || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
                         || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
-                    //Update udf results to writeRecord
-                    Object udfResult = operation.function.udfResult; //value to be written
-                    oc.setTempValue(udfResult);
-                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                    tempo_record.getValues().get(0).setString((String) udfResult);
-                    //Assign updated schemaRecord back to stateAccess
-                    operation.function.setUpdatedStateObject(tempo_record);
-                    //Update State
+//                      //Update udf results to writeRecord
+//                      Object udfResult = operation.function.udfResult; //value to be written
+////                    oc.setTempValue(udfResult);
+////                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
+////                    tempo_record.getValues().get(0).setString((String) udfResult);
+////                    //Assign updated schemaRecord back to stateAccess
+////                    operation.function.setUpdatedStateObject(tempo_record);
+                     //Update State
                     if (oc.isLocalState()) {
-                        oc.setTempValue(udfResult);
+                        oc.setTempValue(operation.function.udfResult);
                     } else {
-                        this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (String) udfResult);
+                        this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (String) operation.function.udfResult);
                     }
                 } else if (operation.accessType == CommonMetaTypes.AccessType.READ && !oc.isLocalState()) {
                     this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, stringDataBox.getString());
