@@ -6,7 +6,6 @@ import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.ds.OperationChain;
-import org.apache.log4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 

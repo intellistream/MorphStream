@@ -66,41 +66,6 @@ public class MeasureTools {
         Metrics.WorkerRuntime.prepareEndTime[threadId] = System.nanoTime();
         Metrics.WorkerRuntime.prepareTimeStatistics[threadId].addValue(Metrics.WorkerRuntime.prepareEndTime[threadId] - Metrics.WorkerRuntime.prepareStartTime[threadId]);
     }
-    public static void WorkerRdmaRecvOwnershipTableStartEventTime(int threadId) {
-        Metrics.WorkerRuntime.rdmaRecvStartOwnershipTableTime[threadId] = System.nanoTime();
-    }
-    public static void WorkerRdmaRecvOwnershipTableEndEventTime(int threadId) {
-        Metrics.WorkerRuntime.rdmaRecvEndOwnershipTableTime[threadId] = System.nanoTime();
-        Metrics.WorkerRuntime.rdmaRecvOwnershipTableTimeStatistics[threadId].addValue(Metrics.WorkerRuntime.rdmaRecvEndOwnershipTableTime[threadId] - Metrics.WorkerRuntime.rdmaRecvStartOwnershipTableTime[threadId]);
-    }
-    public static void WorkerPrepareCacheStartTime(int threadId) {
-        Metrics.WorkerRuntime.prepareCacheStartTime[threadId] = System.nanoTime();
-    }
-    public static void WorkerPrepareCacheEndTime(int threadId) {
-        Metrics.WorkerRuntime.prepareCacheEndTime[threadId] = System.nanoTime();
-        Metrics.WorkerRuntime.prepareCacheTimeStatistics[threadId].addValue(Metrics.WorkerRuntime.prepareCacheEndTime[threadId] - Metrics.WorkerRuntime.prepareCacheStartTime[threadId]);
-    }
-    public static void WorkerRdmaRemoteOperationStartEventTime(int threadId) {
-        Metrics.WorkerRuntime.rdmaStartRemoteOperationTime[threadId] = System.nanoTime();
-    }
-    public static void WorkerRdmaRemoteOperationEndEventTime(int threadId) {
-        Metrics.WorkerRuntime.rdmaEndRemoteOperationTime[threadId] = System.nanoTime();
-        Metrics.WorkerRuntime.rdmaRemoteOperationTimeStatistics[threadId].addValue(Metrics.WorkerRuntime.rdmaEndRemoteOperationTime[threadId] - Metrics.WorkerRuntime.rdmaStartRemoteOperationTime[threadId]);
-    }
-    public static void WorkerSetupDependenciesStartEventTime(int threadId) {
-        Metrics.WorkerRuntime.setupDependenciesStartTime[threadId] = System.nanoTime();
-    }
-    public static void WorkerSetupDependenciesEndEventTime(int threadId) {
-        Metrics.WorkerRuntime.setupDependenciesEndTime[threadId] = System.nanoTime();
-        Metrics.WorkerRuntime.setupDependenciesTimeStatistics[threadId].addValue(Metrics.WorkerRuntime.setupDependenciesEndTime[threadId] - Metrics.WorkerRuntime.setupDependenciesStartTime[threadId]);
-    }
-    public static void WorkerExecuteStartEventTime(int threadId) {
-        Metrics.WorkerRuntime.executeStartTime[threadId] = System.nanoTime();
-    }
-    public static void WorkerExecuteEndEventTime(int threadId) {
-        Metrics.WorkerRuntime.executeEndTime[threadId] = System.nanoTime();
-        Metrics.WorkerRuntime.executeTimeStatistics[threadId].addValue(Metrics.WorkerRuntime.executeEndTime[threadId] - Metrics.WorkerRuntime.executeStartTime[threadId]);
-    }
     public static void WorkerFinishStartTime(int threadId) {
         Metrics.WorkerRuntime.finishStartTime[threadId] = System.nanoTime();
     }
@@ -118,6 +83,146 @@ public class MeasureTools {
     public static void WorkerRdmaRound(int threadId, int round) {
         Metrics.WorkerRuntime.rdmaRounds[threadId].addValue(round);
     }
+
+    //DL Runtime
+    public static void DSRdmaRecvOwnershipTableStartEventTime(int threadId) {
+        Metrics.DSRuntime.rdmaRecvStartOwnershipTableTime[threadId] = System.nanoTime();
+    }
+    public static void DSRdmaRecvOwnershipTableEndEventTime(int threadId) {
+        Metrics.DSRuntime.rdmaRecvEndOwnershipTableTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.rdmaRecvOwnershipTableTimeStatistics[threadId].addValue(Metrics.DSRuntime.rdmaRecvEndOwnershipTableTime[threadId] - Metrics.DSRuntime.rdmaRecvStartOwnershipTableTime[threadId]);
+    }
+    public static void DSPrepareCacheStartTime(int threadId) {
+        Metrics.DSRuntime.prepareCacheStartTime[threadId] = System.nanoTime();
+    }
+    public static void DSPrepareCacheEndTime(int threadId) {
+        Metrics.DSRuntime.prepareCacheEndTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.prepareCacheTimeStatistics[threadId].addValue(Metrics.DSRuntime.prepareCacheEndTime[threadId] - Metrics.DSRuntime.prepareCacheStartTime[threadId]);
+    }
+    public static void DSRdmaRemoteOperationStartEventTime(int threadId) {
+        Metrics.DSRuntime.rdmaStartRemoteOperationTime[threadId] = System.nanoTime();
+    }
+    public static void DSRdmaRemoteOperationEndEventTime(int threadId) {
+        Metrics.DSRuntime.rdmaEndRemoteOperationTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.rdmaRemoteOperationTimeStatistics[threadId].addValue(Metrics.DSRuntime.rdmaEndRemoteOperationTime[threadId] - Metrics.DSRuntime.rdmaStartRemoteOperationTime[threadId]);
+    }
+    public static void DSSetupDependenciesStartEventTime(int threadId) {
+        Metrics.DSRuntime.setupDependenciesStartTime[threadId] = System.nanoTime();
+    }
+    public static void DSSetupDependenciesEndEventTime(int threadId) {
+        Metrics.DSRuntime.setupDependenciesEndTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.setupDependenciesTimeStatistics[threadId].addValue(Metrics.DSRuntime.setupDependenciesEndTime[threadId] - Metrics.DSRuntime.setupDependenciesStartTime[threadId]);
+    }
+    public static void DSExecuteStartEventTime(int threadId) {
+        Metrics.DSRuntime.executeStartTime[threadId] = System.nanoTime();
+    }
+    public static void DSExecuteEndEventTime(int threadId) {
+        Metrics.DSRuntime.executeEndTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.executeTimeStatistics[threadId].addValue(Metrics.DSRuntime.executeEndTime[threadId] - Metrics.DSRuntime.executeStartTime[threadId]);
+    }
+    public static void DSRemoteAccessStartEventTime(int threadId) {
+        Metrics.DSRuntime.rdmaAccessStartEventTime[threadId] = System.nanoTime();
+    }
+    public static void DSRemoteAccessEndEventTime(int threadId) {
+        Metrics.DSRuntime.rdmaAccessEndEventTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.rdmaAccessTimeStatistics[threadId].addValue(Metrics.DSRuntime.rdmaAccessEndEventTime[threadId] - Metrics.DSRuntime.rdmaAccessStartEventTime[threadId]);
+    }
+    public static void DSTotalExecutionTimeStartEventTime(int threadId) {
+        Metrics.DSRuntime.totalExecutionStartTime[threadId] = System.nanoTime();
+    }
+    public static void DSTotalExecutionTimeEndEventTime(int threadId) {
+        Metrics.DSRuntime.totalExecutionEndTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.totalExecutionTimeStatistics[threadId].addValue(Metrics.DSRuntime.totalExecutionEndTime[threadId] - Metrics.DSRuntime.totalExecutionStartTime[threadId]);
+    }
+    public static void DSCommitTimeStartEventTime(int threadId) {
+        Metrics.DSRuntime.commitStartTime[threadId] = System.nanoTime();
+    }
+    public static void DSCommitTimeEndEventTime(int threadId) {
+        Metrics.DSRuntime.commitEndTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.commitTimeStatistics[threadId].addValue(Metrics.DSRuntime.commitEndTime[threadId] - Metrics.DSRuntime.commitStartTime[threadId]);
+    }
+
+    //Remote Lock Runtime
+    public static void lockRLStartTime(int threadId) {
+        Metrics.RemoteLockRuntime.lockStartTime[threadId] = System.nanoTime();
+    }
+    public static void lockRLEndTime(int threadId) {
+        Metrics.RemoteLockRuntime.lockEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteLockRuntime.lockTimeStatistics[threadId].addValue(Metrics.RemoteLockRuntime.lockEndTime[threadId] - Metrics.RemoteLockRuntime.lockStartTime[threadId]);
+    }
+    public static void rmaAndExecutionStartTime(int threadId) {
+        Metrics.RemoteLockRuntime.rmaAndExecutionStartTime[threadId] = System.nanoTime();
+    }
+    public static void rmaAndExecutionEndTime(int threadId) {
+        Metrics.RemoteLockRuntime.rmaAndExecutionEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteLockRuntime.rmaAndExecutionTimeStatistics[threadId].addValue(Metrics.RemoteLockRuntime.rmaAndExecutionEndTime[threadId] - Metrics.RemoteLockRuntime.rmaAndExecutionStartTime[threadId]);
+        Metrics.RemoteLockRuntime.executeTimeStatistics[threadId].addValue(Metrics.RemoteLockRuntime.executeACCTime[threadId]);
+        Metrics.RemoteLockRuntime.executeACCTime[threadId] = 0;
+    }
+    public static void executeRLStartTime(int threadId) {
+        Metrics.RemoteLockRuntime.executeStartTime[threadId] = System.nanoTime();
+    }
+    public static void executeRLEndTime(int threadId) {
+        Metrics.RemoteLockRuntime.executeEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteLockRuntime.executeACCTime[threadId] = Metrics.RemoteLockRuntime.executeACCTime[threadId] + (Metrics.RemoteLockRuntime.executeEndTime[threadId] - Metrics.RemoteLockRuntime.executeStartTime[threadId]);
+    }
+    public static void commitRLStartTime(int threadId) {
+        Metrics.RemoteLockRuntime.commitStartTime[threadId] = System.nanoTime();
+    }
+    public static void commitRLEndTime(int threadId) {
+        Metrics.RemoteLockRuntime.commitEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteLockRuntime.commitTimeStatistics[threadId].addValue(Metrics.RemoteLockRuntime.commitEndTime[threadId] - Metrics.RemoteLockRuntime.commitStartTime[threadId]);
+    }
+    public static void unlockRLStartEventTime(int threadId) {
+        Metrics.RemoteLockRuntime.unlockStartTime[threadId] = System.nanoTime();
+    }
+    public static void unlockRLEndEventTime(int threadId) {
+        Metrics.RemoteLockRuntime.unlockEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteLockRuntime.unlockTimeStatistics[threadId].addValue(Metrics.RemoteLockRuntime.unlockEndTime[threadId] - Metrics.RemoteLockRuntime.unlockStartTime[threadId]);
+    }
+
+    //RemoteOCC Runtime
+    public static void rdmAndExecutionStartTime(int threadId) {
+        Metrics.RemoteOCCRuntime.rmaAndExecutionStartTime[threadId] = System.nanoTime();
+    }
+    public static void rdmAndExecutionEndTime(int threadId) {
+        Metrics.RemoteOCCRuntime.rmaAndExecutionEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteOCCRuntime.rmaAndExecutionTimeStatistics[threadId].addValue(Metrics.RemoteOCCRuntime.rmaAndExecutionEndTime[threadId] - Metrics.RemoteOCCRuntime.rmaAndExecutionStartTime[threadId]);
+        Metrics.RemoteOCCRuntime.executeTimeStatistics[threadId].addValue(Metrics.RemoteOCCRuntime.executionACCTime[threadId]);
+        Metrics.RemoteOCCRuntime.executionACCTime[threadId] = 0;
+    }
+    public static void executeOCCStartTime(int threadId) {
+        Metrics.RemoteOCCRuntime.executeStartTime[threadId] = System.nanoTime();
+    }
+    public static void executeOCCEndTime(int threadId) {
+        Metrics.RemoteOCCRuntime.executeEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteOCCRuntime.executionACCTime[threadId] = Metrics.RemoteOCCRuntime.executionACCTime[threadId] + (Metrics.RemoteOCCRuntime.executeEndTime[threadId] - Metrics.RemoteOCCRuntime.executeStartTime[threadId]);
+    }
+    public static void validateOCCStartTime(int threadId) {
+        Metrics.RemoteOCCRuntime.validateStartTime[threadId] = System.nanoTime();
+    }
+    public static void validateOCCEndTime(int threadId) {
+        Metrics.RemoteOCCRuntime.validateEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteOCCRuntime.validateTimeStatistics[threadId].addValue(Metrics.RemoteOCCRuntime.validateEndTime[threadId] - Metrics.RemoteOCCRuntime.validateStartTime[threadId]);
+    }
+
+    public static void commitOCCStartTime(int threadId) {
+        Metrics.RemoteOCCRuntime.commitStartTime[threadId] = System.nanoTime();
+    }
+    public static void commitOCCEndTime(int threadId) {
+        Metrics.RemoteOCCRuntime.commitEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteOCCRuntime.commitTimeStatistics[threadId].addValue(Metrics.RemoteOCCRuntime.commitEndTime[threadId] - Metrics.RemoteOCCRuntime.commitStartTime[threadId]);
+    }
+    public static void unlockOCCStartTime(int threadId) {
+        Metrics.RemoteOCCRuntime.unlockStartTime[threadId] = System.nanoTime();
+    }
+    public static void unlockOCCEndTime(int threadId) {
+        Metrics.RemoteOCCRuntime.unlockEndTime[threadId] = System.nanoTime();
+        Metrics.RemoteOCCRuntime.unlockTimeStatistics[threadId].addValue(Metrics.RemoteOCCRuntime.unlockEndTime[threadId] - Metrics.RemoteOCCRuntime.unlockStartTime[threadId]);
+    }
+
+
+
     private static void WriteThroughput(double throughput) {
         try {
             File file = new File(MetricsDirectory + "overall.txt");
@@ -187,9 +292,9 @@ public class MeasureTools {
             throw new RuntimeException(e);
         }
     }
-    public static void WriteWorkerMetrics(int tthread) {
+    public static void WriteWorkerDSMetrics(int tthread) {
         try {
-            File file = new File(MetricsDirectory + "driver.txt");
+            File file = new File(MetricsDirectory + "worker.txt");
             file.mkdirs();
             if (file.exists()) {
                 try {
@@ -201,13 +306,16 @@ public class MeasureTools {
             }
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("Worker Metrics: " + "\n");
-            fileWriter.write("thread_id\t rdmaRecvTime (s)\t prepareTime (s)\t prepareCacheTime (s)\t rdmaRemoteOperationTime (s)\t setupDependenciesTime (s)\t executeTime (s)\t finishTime (s)\t rdmaSendResultTime (s)\n");
+            fileWriter.write("thread_id\t rdmaRecvTime (s)\t prepareTime (s)\t prepareCacheTime (s)\t rdmaRemoteOperationTime (s)\t setupDependenciesTime (s)\t executeTime (s)\t rmaTime (s)\t exploreTime (s)\t commitTime (s)\t finishTime (s)\t rdmaSendResultTime (s)\n");
             double totalRdmaRecvTime = 0;
             double totalPrepareTime = 0;
             double totalPrepareCacheTime = 0;
             double totalRdmaRemoteOperationTime = 0;
             double totalSetupDependenciesTime = 0;
             double totalExecuteTime = 0;
+            double totalRmaTime = 0;
+            double totalExploreTime = 0;
+            double totalCommitTime = 0;
             double totalFinishTime = 0;
             double totalRdmaSendResultTime = 0;
             double totalRounds = 0;
@@ -215,27 +323,142 @@ public class MeasureTools {
             for (int i = 0; i < tthread; i++) {
                 totalRdmaRecvTime = totalRdmaRecvTime + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum();
                 totalPrepareTime = totalPrepareTime + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum();
-                totalPrepareCacheTime = totalPrepareCacheTime + Metrics.WorkerRuntime.prepareCacheTimeStatistics[i].getSum();
-                totalRdmaRemoteOperationTime = totalRdmaRemoteOperationTime + Metrics.WorkerRuntime.rdmaRemoteOperationTimeStatistics[i].getSum();
-                totalSetupDependenciesTime = totalSetupDependenciesTime + Metrics.WorkerRuntime.setupDependenciesTimeStatistics[i].getSum();
-                totalExecuteTime = totalExecuteTime + Metrics.WorkerRuntime.executeTimeStatistics[i].getSum();
+                totalPrepareCacheTime = totalPrepareCacheTime + Metrics.DSRuntime.prepareCacheTimeStatistics[i].getSum();
+                totalRdmaRemoteOperationTime = totalRdmaRemoteOperationTime + Metrics.DSRuntime.rdmaRemoteOperationTimeStatistics[i].getSum();
+                totalSetupDependenciesTime = totalSetupDependenciesTime + Metrics.DSRuntime.setupDependenciesTimeStatistics[i].getSum();
+                totalExecuteTime = totalExecuteTime + Metrics.DSRuntime.executeTimeStatistics[i].getSum();
+                totalRmaTime = totalRmaTime + Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum();
+                totalExploreTime = totalExploreTime + Metrics.DSRuntime.totalExecutionTimeStatistics[i].getSum() - Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum() - Metrics.DSRuntime.executeTimeStatistics[i].getSum();
+                totalCommitTime = totalCommitTime + Metrics.DSRuntime.commitTimeStatistics[i].getSum();
                 totalFinishTime = totalFinishTime + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum();
                 totalRdmaSendResultTime = totalRdmaSendResultTime + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum();
-                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareCacheTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaRemoteOperationTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.setupDependenciesTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum() / 1E9 + "\n");
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.prepareCacheTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.rdmaRemoteOperationTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.setupDependenciesTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum() / 1E9 + "\t" + (Metrics.DSRuntime.totalExecutionTimeStatistics[i].getSum() - Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum() - Metrics.DSRuntime.executeTimeStatistics[i].getSum()) / 1E9 + "\t" + Metrics.DSRuntime.commitTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum() / 1E9 + "\n");
             }
+            fileWriter.write("Avg Time: " + "\t" + totalRdmaRecvTime / tthread / 1E9 + "\t" + totalPrepareTime / tthread / 1E9 + "\t" + totalPrepareCacheTime / tthread / 1E9 + "\t" + totalRdmaRemoteOperationTime / tthread / 1E9 + "\t" + totalSetupDependenciesTime / tthread / 1E9 + "\t" + totalExecuteTime / tthread / 1E9 + "\t" + totalRmaTime / tthread / 1E9 + "\t" + totalExploreTime / tthread / 1E9 + "\t" + totalCommitTime / tthread / 1E9 + "\t" + totalFinishTime / tthread / 1E9 + "\t" + totalRdmaSendResultTime / tthread / 1E9 + "\n");
             double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalPrepareCacheTime + totalRdmaRemoteOperationTime + totalSetupDependenciesTime + totalExecuteTime + totalFinishTime + totalRdmaSendResultTime;
             fileWriter.write("Breakdown in percentage: " + "\n");
             fileWriter.write("RdmaRecv (%)\t Prepare (%)\t PrepareCache (%)\t RdmaRemoteOperation (%)\t SetupDependencies (%)\t Execute (%)\t Finish (%)\t RdmaSendResult (%)\n");
             fileWriter.write(totalRdmaRecvTime / totalWorkerTime + "\t" + totalPrepareTime / totalWorkerTime + "\t" + totalPrepareCacheTime / totalWorkerTime + "\t" + totalRdmaRemoteOperationTime / totalWorkerTime + "\t" + totalSetupDependenciesTime / totalWorkerTime + "\t" + totalExecuteTime / totalWorkerTime + "\t" + totalFinishTime / totalWorkerTime + "\t" + totalRdmaSendResultTime / totalWorkerTime + "\n");
             fileWriter.write("Communication Rounds: " + "\n");
-            fileWriter.write("thread_id\t Total Rounds\t Avg Rounds\n");
             for (int i = 0; i < tthread; i++) {
                 totalRounds = totalRounds + Metrics.WorkerRuntime.rdmaRounds[i].getSum();
-                avgRounds = avgRounds + Metrics.WorkerRuntime.rdmaRounds[i].getMean();
-                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRounds[i].getSum() + "\t" + Metrics.WorkerRuntime.rdmaRounds[i].getMean() + "\n");
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRounds[i].getSum() + "\n");
             }
             fileWriter.write("Total Rounds: " + totalRounds + "\n");
-            fileWriter.write("Avg Rounds: " + avgRounds / tthread + "\n");
+            fileWriter.write("Avg Rounds: " + totalRounds / tthread + "\n");
+            fileWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static void WriteWorkerRLMetrics(int tthread) {
+        try {
+            File file = new File(MetricsDirectory + "worker.txt");
+            file.mkdirs();
+            if (file.exists()) {
+                try {
+                    file.delete();
+                    file.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
+            fileWriter.write("Worker Metrics: " + "\n");
+            fileWriter.write("thread_id\t rdmaRecvTime (s)\t prepareTime (s)\t lockTime (s)\t rmaTime (s)\t executeTime (s)\t commitTime (s)\t unlockTime (s)\t finishTime (s)\t rdmaSendResultTime (s)\n");
+            double totalRdmaRecvTime = 0;
+            double totalPrepareTime = 0;
+            double totalPrepareCacheTime = 0;
+            double totalLockTime = 0;
+            double totalRmaTime = 0;
+            double totalExecuteTime = 0;
+            double totalCommitTime = 0;
+            double totalUnlockTime = 0;
+            double totalFinishTime = 0;
+            double totalRdmaSendResultTime = 0;
+            double totalRounds = 0;
+            double avgRounds = 0;
+            for (int i = 0; i < tthread; i++) {
+                totalRdmaRecvTime = totalRdmaRecvTime + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum();
+                totalPrepareTime = totalPrepareTime + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum();
+                totalPrepareCacheTime = totalPrepareCacheTime + Metrics.DSRuntime.prepareCacheTimeStatistics[i].getSum();
+                totalLockTime = totalLockTime + Metrics.RemoteLockRuntime.lockTimeStatistics[i].getSum();
+                totalRmaTime = totalRmaTime + Metrics.RemoteLockRuntime.rmaAndExecutionTimeStatistics[i].getSum() - Metrics.RemoteLockRuntime.executeTimeStatistics[i].getSum();
+                totalExecuteTime = totalExecuteTime + Metrics.RemoteLockRuntime.executeTimeStatistics[i].getSum();
+                totalCommitTime = totalCommitTime + Metrics.RemoteLockRuntime.commitTimeStatistics[i].getSum();
+                totalUnlockTime = totalUnlockTime + Metrics.RemoteLockRuntime.unlockTimeStatistics[i].getSum();
+                totalFinishTime = totalFinishTime + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum();
+                totalRdmaSendResultTime = totalRdmaSendResultTime + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum();
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.RemoteLockRuntime.lockTimeStatistics[i].getSum() / 1E9 + "\t" + (Metrics.RemoteLockRuntime.rmaAndExecutionTimeStatistics[i].getSum() - Metrics.RemoteLockRuntime.executeTimeStatistics[i].getSum()) / 1E9 + "\t" + Metrics.RemoteLockRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.RemoteLockRuntime.commitTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.RemoteLockRuntime.unlockTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum() / 1E9 + "\n");
+            }
+            fileWriter.write("Avg Time: " + "\t" + totalRdmaRecvTime / tthread / 1E9 + "\t" + totalPrepareTime / tthread / 1E9 + "\t" + totalLockTime / tthread / 1E9 + "\t" + totalRmaTime / tthread / 1E9 + "\t" + totalExecuteTime / tthread / 1E9 + "\t" + totalCommitTime / tthread / 1E9 + "\t" + totalUnlockTime / tthread / 1E9 + "\t" + totalFinishTime / tthread / 1E9 + "\t" + totalRdmaSendResultTime / tthread / 1E9 + "\n");
+            double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalLockTime + totalRmaTime + totalExecuteTime + totalCommitTime + totalUnlockTime + totalFinishTime + totalRdmaSendResultTime;
+            fileWriter.write("Breakdown in percentage: " + "\n");
+            fileWriter.write("RdmaRecv (%)\t Prepare (%)\t Lock (%)\t Rma (%)\t Execute (%)\t Commit (%)\t Unlock (%)\t Finish (%)\t RdmaSendResult (%)\n");
+            fileWriter.write(totalRdmaRecvTime / totalWorkerTime + "\t" + totalPrepareTime / totalWorkerTime + "\t" + totalLockTime / totalWorkerTime + "\t" + totalRmaTime / totalWorkerTime + "\t" + totalExecuteTime / totalWorkerTime + "\t" + totalCommitTime / totalWorkerTime + "\t" + totalUnlockTime / totalWorkerTime + "\t" + totalFinishTime / totalWorkerTime + "\t" + totalRdmaSendResultTime / totalWorkerTime + "\n");
+            fileWriter.write("Communication Rounds: " + "\n");
+            for (int i = 0; i < tthread; i++) {
+                totalRounds = totalRounds + Metrics.WorkerRuntime.rdmaRounds[i].getSum();
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRounds[i].getSum() + "\n");
+            }
+            fileWriter.write("Total Rounds: " + totalRounds + "\n");
+            fileWriter.write("Avg Rounds: " + totalRounds / tthread + "\n");
+            fileWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static void WriteWorkerOCCMetrics(int tthread) {
+        try {
+            File file = new File(MetricsDirectory + "worker.txt");
+            file.mkdirs();
+            if (file.exists()) {
+                try {
+                    file.delete();
+                    file.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
+            fileWriter.write("Worker Metrics: " + "\n");
+            fileWriter.write("thread_id\t rdmaRecvTime (s)\t prepareTime (s)\t rmaTime (s)\t executeTime (s)\t validateTime (s)\t commitTime (s)\t unlockTime (s)\t finishTime (s)\t rdmaSendResultTime (s)\n");
+            double totalRdmaRecvTime = 0;
+            double totalPrepareTime = 0;
+            double totalPrepareCacheTime = 0;
+            double totalRmaTime = 0;
+            double totalExecuteTime = 0;
+            double totalValidateTime = 0;
+            double totalCommitTime = 0;
+            double totalUnlockTime = 0;
+            double totalFinishTime = 0;
+            double totalRdmaSendResultTime = 0;
+            double totalRounds = 0;
+            double avgRounds = 0;
+            for (int i = 0; i < tthread; i++) {
+                totalRdmaRecvTime = totalRdmaRecvTime + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum();
+                totalPrepareTime = totalPrepareTime + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum();
+                totalPrepareCacheTime = totalPrepareCacheTime + Metrics.DSRuntime.prepareCacheTimeStatistics[i].getSum();
+                totalRmaTime = totalRmaTime + Metrics.RemoteOCCRuntime.rmaAndExecutionTimeStatistics[i].getSum() - Metrics.RemoteOCCRuntime.executeTimeStatistics[i].getSum();
+                totalExecuteTime = totalExecuteTime + Metrics.RemoteOCCRuntime.executeTimeStatistics[i].getSum();
+                totalValidateTime = totalValidateTime + Metrics.RemoteOCCRuntime.validateTimeStatistics[i].getSum();
+                totalCommitTime = totalCommitTime + Metrics.RemoteOCCRuntime.commitTimeStatistics[i].getSum();
+                totalUnlockTime = totalUnlockTime + Metrics.RemoteOCCRuntime.unlockTimeStatistics[i].getSum();
+                totalFinishTime = totalFinishTime + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum();
+                totalRdmaSendResultTime = totalRdmaSendResultTime + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum();
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.RemoteLockRuntime.lockTimeStatistics[i].getSum() / 1E9 + "\t" + (Metrics.RemoteLockRuntime.rmaAndExecutionTimeStatistics[i].getSum() - Metrics.RemoteLockRuntime.executeTimeStatistics[i].getSum()) / 1E9 + "\t" + Metrics.RemoteLockRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.RemoteLockRuntime.commitTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.RemoteLockRuntime.unlockTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum() / 1E9 + "\n");
+            }
+            fileWriter.write("Avg Time: " + "\t" + totalRdmaRecvTime / tthread / 1E9 + "\t" + totalPrepareTime / tthread / 1E9 + "\t" + totalRmaTime / tthread / 1E9 + "\t" + totalExecuteTime / tthread / 1E9 + "\t" + totalValidateTime / tthread / 1E9 + "\t" + totalCommitTime / tthread / 1E9 + "\t" + totalUnlockTime / tthread / 1E9 + "\t" + totalFinishTime / tthread / 1E9 + "\t" + totalRdmaSendResultTime / tthread / 1E9 + "\n");
+            double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalRmaTime + totalExecuteTime + totalValidateTime + totalCommitTime + totalUnlockTime + totalFinishTime + totalRdmaSendResultTime;
+            fileWriter.write("Breakdown in percentage: " + "\n");
+            fileWriter.write("RdmaRecv (%)\t Prepare (%)\t Rma (%)\t Execute (%)\t Validate (%)\t Commit (%)\t Unlock (%)\t Finish (%)\t RdmaSendResult (%)\n");
+            fileWriter.write("Communication Rounds: " + "\n");
+            for (int i = 0; i < tthread; i++) {
+                totalRounds = totalRounds + Metrics.WorkerRuntime.rdmaRounds[i].getSum();
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRounds[i].getSum() + "\n");
+            }
+            fileWriter.write("Total Rounds: " + totalRounds + "\n");
+            fileWriter.write("Avg Rounds: " + totalRounds / tthread + "\n");
             fileWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -246,7 +469,20 @@ public class MeasureTools {
         WriteLatency(latencyStatistics);
         WriteDriverMetrics(frontendNumber);
     }
-    public static void WORKER_METRICS_REPORT(int tthread) {
-        WriteWorkerMetrics(tthread);
+    public static void WORKER_METRICS_REPORT(int tthread, String scheduler) {
+        switch (scheduler) {
+            case "DScheduler":
+                WriteWorkerDSMetrics(tthread);
+                break;
+            case "RLScheduler":
+                WriteWorkerRLMetrics(tthread);
+                break;
+            case "OCCScheduler":
+                WriteWorkerOCCMetrics(tthread);
+                break;
+            default:
+                log.error("Please select correct scheduler!");
+                break;
+        }
     }
 }

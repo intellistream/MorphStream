@@ -81,7 +81,7 @@ public class MorphStreamWorker extends Thread {
             Thread.sleep(1000);
         }
         MorphStreamEnv.get().rdmaWorkerManager().close();
-        MeasureTools.WORKER_METRICS_REPORT(numTasks);
+        MeasureTools.WORKER_METRICS_REPORT(numTasks, MorphStreamEnv.get().configuration().getString("scheduler"));
         System.exit(0);
     }
 

@@ -196,7 +196,7 @@ public class RdmaWorkerManager implements Serializable {
                         rdmaBuffer.getByteBuffer().clear();
                         rdmaBufferManager.put(rdmaBuffer);
                         regionToken.setAddress(remoteAddress + byteBuffer.capacity());
-                        LOG.info("Worker " + managerId + " sends " + resultBatch.getAllResultCount() + " results" + " to driver.");
+                        //LOG.info("Worker " + managerId + " sends " + resultBatch.getAllResultCount() + " results" + " to driver.");
                         resultBatch.clear();
                         latch.countDown();
                     } catch (IOException e) {
@@ -244,7 +244,6 @@ public class RdmaWorkerManager implements Serializable {
                     rdmaBuffer.getByteBuffer().clear();
                     rdmaBufferManager.put(rdmaBuffer);
                     regionToken.setAddress(remoteAddress + byteBuffer.capacity());
-                    LOG.info(String.format("Worker (%d) sends (%d) remote operations to worker (%d)", managerId, remoteOperationBatch.getTotalMessagesSize(), senderId));
                     remoteOperationBatch.clear();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -347,6 +346,28 @@ public class RdmaWorkerManager implements Serializable {
             }
         }, readData.getAddress(), readData.getLkey(), new int[]{length}, new long[]{remoteAddress}, new int[]{rkey});
     }
+    public void asyncWriteRemoteDatabase(int keyIndex, int tableIndex, int length, String value) throws Exception {
+        RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
+
+        long remoteAddress = regionToken.getAddress() + keyIndex;
+        int rkey = regionToken.getLocalKey();
+
+        RdmaBuffer readData = rdmaBufferManager.get(length);
+        ByteBuffer dataBuffer = readData.getByteBuffer();
+        dataBuffer.put(value.getBytes(StandardCharsets.UTF_8));
+        dataBuffer.flip();
+
+        databaseRdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buffer, Integer imm) {
+                rdmaBufferManager.put(readData);
+            }
+            @Override
+            public void onFailure(Throwable exception) {
+                rdmaBufferManager.put(readData);
+            }
+        }, readData.getAddress(), readData.getLength(), readData.getLkey(), remoteAddress, rkey);
+    }
 
     public boolean exclusiveLockAcquisition(long bid, int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
         RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
@@ -367,7 +388,7 @@ public class RdmaWorkerManager implements Serializable {
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 int exclusiveLock = dataBuffer.getInt();
                 int sharedLock = dataBuffer.getInt();
-                if (exclusiveLock == 0 && sharedLock ==0) {
+                if (exclusiveLock == 0 && sharedLock == 0) {
                     remoteObject.setSuccessLocked(true);
                     isAbortLock.set(false);
                 } else if (sharedLock != 0) {
@@ -463,7 +484,7 @@ public class RdmaWorkerManager implements Serializable {
         }, resultBuffer.getAddress(), resultBuffer.getLength(), resultBuffer.getLkey(), remoteAddress, rkey, incrementValue);
         latch.await();
     }
-    public boolean syncReadRemoteDatabaseWithSharedLock(int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
+    public boolean asyncReadRemoteDatabaseWithSharedLock(int keyIndex, int tableIndex, int size, RLContext.RemoteObject remoteObject) throws Exception {
         RegionToken regionToken = dbwRegionTokenGroup.getRegionTokens().get(tableIndex);
 
         long remoteAddress = regionToken.getAddress() + keyIndex;
@@ -473,12 +494,11 @@ public class RdmaWorkerManager implements Serializable {
         ByteBuffer dataBuffer = readData.getByteBuffer();
         dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
         AtomicBoolean canRead = new AtomicBoolean();
-        CountDownLatch latch = new CountDownLatch(1);
         databaseRdmaChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
                 int exclusiveLock = dataBuffer.getInt();
-                dataBuffer.getInt();
+                int numberToRead = dataBuffer.getInt();
                 if (exclusiveLock == 0) {
                     ByteBuffer valueBuffer = dataBuffer.slice();
                     String value = StandardCharsets.UTF_8.decode(valueBuffer).toString();
@@ -488,16 +508,13 @@ public class RdmaWorkerManager implements Serializable {
                     canRead.set(false);
                 }
                 rdmaBufferManager.put(readData);
-                latch.countDown();
             }
             @Override
             public void onFailure(Throwable exception) {
                 rdmaBufferManager.put(readData);
                 canRead.set(false);
-                latch.countDown();
             }
         }, readData.getAddress(), readData.getLkey(), new int[]{size}, new long[]{remoteAddress}, new int[]{rkey});
-        latch.await();
         return canRead.get();
     }
     public void sharedLockRelease(int keyIndex, int tableIndex, int size) throws Exception {
@@ -513,6 +530,8 @@ public class RdmaWorkerManager implements Serializable {
         databaseRdmaChannel.rdmaFAAInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buffer, Integer imm) {
+                int lock = dataBuffer.getInt();
+                int num = dataBuffer.getInt();
                 rdmaBufferManager.put(resultBuffer);
             }
 

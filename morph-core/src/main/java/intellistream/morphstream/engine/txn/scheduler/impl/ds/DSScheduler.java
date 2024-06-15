@@ -87,10 +87,10 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
     public void INITIALIZE(Context context) {
         try {
             //Get ownership table from driver
-            MeasureTools.WorkerRdmaRecvOwnershipTableStartEventTime(context.thisThreadId);
+            MeasureTools.DSRdmaRecvOwnershipTableStartEventTime(context.thisThreadId);
             this.remoteStorageManager.getOwnershipTable(this.rdmaWorkerManager, context);
             //Send remote operations to remote workers
-            MeasureTools.WorkerRdmaRemoteOperationStartEventTime(context.thisThreadId);
+            MeasureTools.DSRdmaRemoteOperationStartEventTime(context.thisThreadId);
             for (OperationChain oc : this.tpg.getThreadToOCs().get(context.thisThreadId)) {
                 if (oc.operations.isEmpty()) {
                     continue;
@@ -113,14 +113,13 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             //Receive remote operations from remote workers
             tpg.setupRemoteOperations(context.receiveRemoteOperations(rdmaWorkerManager));
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-            MeasureTools.WorkerRdmaRemoteOperationEndEventTime(context.thisThreadId);
-            MeasureTools.WorkerSetupDependenciesStartEventTime(context.thisThreadId);
+            MeasureTools.DSRdmaRemoteOperationEndEventTime(context.thisThreadId);
+            MeasureTools.DSSetupDependenciesStartEventTime(context.thisThreadId);
             this.setLocalOCs(context);
             this.setRemoteOcs(context);
             context.setupDependencies();
-            LOG.info("Finish initialize: " + context.thisThreadId + " with local ops :" + context.allocatedLocalTasks.size() + " with remote ops: " + context.allocatedRemoteTasks.size());
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-            MeasureTools.WorkerSetupDependenciesEndEventTime(context.thisThreadId);
+            MeasureTools.DSSetupDependenciesEndEventTime(context.thisThreadId);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -128,14 +127,17 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
     @Override
     public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
         INITIALIZE(context);
-        MeasureTools.WorkerExecuteStartEventTime(context.thisThreadId);
+        MeasureTools.DSTotalExecutionTimeStartEventTime(context.thisThreadId);
         do {
             EXPLORE(context);
             PROCESS(context, mark_ID, batchID);
         } while (!FINISHED(context));
+        MeasureTools.DSTotalExecutionTimeEndEventTime(context.thisThreadId);
         RESET(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-        MeasureTools.WorkerExecuteEndEventTime(context.thisThreadId);
+        MeasureTools.DSCommitTimeStartEventTime(context.thisThreadId);
+        this.remoteStorageManager.commitCache(context, this.rdmaWorkerManager);
+        MeasureTools.DSCommitTimeEndEventTime(context.thisThreadId);
     }
     @Override
     public void EXPLORE(Context context) {
@@ -197,6 +199,7 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
             if (oc.isLocalState()) {
                 stringDataBox.setString(oc.getTempValue().toString());
             } else {
+                MeasureTools.DSRemoteAccessStartEventTime(oc.getDsContext().thisThreadId);
                 this.remoteStorageManager.asyncReadRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, operation.remoteObject);
                 if (operation.remoteObject.value != null) {
                     stringDataBox.setString(operation.remoteObject.value);
@@ -206,7 +209,9 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                     oc.tryTimes ++;
                     return;
                 }
+                MeasureTools.DSRemoteAccessEndEventTime(oc.getDsContext().thisThreadId);
             }
+            MeasureTools.DSExecuteStartEventTime(oc.getDsContext().thisThreadId);
             dataBoxes.add(stringDataBox);
             SchemaRecord readRecord = new SchemaRecord(dataBoxes);
             operation.function.getStateObject(operation.stateObjectName.get(0)).setSchemaRecord(readRecord);
@@ -239,6 +244,7 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                 operation.operationType = MetaTypes.OperationStateType.ABORTED;
                 operation.notifyChildren();
             }
+            MeasureTools.DSExecuteEndEventTime(oc.getDsContext().thisThreadId);
         }
     }
 

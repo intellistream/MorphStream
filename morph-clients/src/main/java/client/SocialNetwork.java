@@ -56,6 +56,48 @@ public class SocialNetwork extends Client {
                 }
                 break;
             }
+            case "postTweet3": {
+                function.udfResult = function.getPara("tweet3");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
+                break;
+            }
+            case "postTweet4": {
+                function.udfResult = function.getPara("tweet4");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
+                break;
+            }
+            case "postTweet5": {
+                function.udfResult = function.getPara("tweet5");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
+                break;
+            }
+            case "postTweet6": {
+                function.udfResult = function.getPara("tweet6");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
+                break;
+            }
+            case "postTweet7": {
+                function.udfResult = function.getPara("tweet7");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
+                break;
+            }
+            case "postTweet8": {
+                function.udfResult = function.getPara("tweet8");
+                if (function.udfResult == null) {
+                    throw new NullPointerException("Profile not found");
+                }
+                break;
+            }
         }
         return true;
     }
@@ -95,6 +137,30 @@ public class SocialNetwork extends Client {
         postTweet2.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 1);
         postTweet2.addParaName("tweet2");
         PostTweet.addFunctionDescription("postTweet2", postTweet2);
+//        FunctionDescription postTweet3 = new FunctionDescription("postTweet3", MetaTypes.AccessType.WRITE);
+//        postTweet3.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 2);
+//        postTweet3.addParaName("tweet3");
+//        PostTweet.addFunctionDescription("postTweet3", postTweet3);
+//        FunctionDescription postTweet4 = new FunctionDescription("postTweet4", MetaTypes.AccessType.WRITE);
+//        postTweet4.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 3);
+//        postTweet4.addParaName("tweet4");
+//        PostTweet.addFunctionDescription("postTweet4", postTweet4);
+//        FunctionDescription postTweet5 = new FunctionDescription("postTweet5", MetaTypes.AccessType.WRITE);
+//        postTweet5.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 4);
+//        postTweet5.addParaName("tweet5");
+//        PostTweet.addFunctionDescription("postTweet5", postTweet5);
+//        FunctionDescription postTweet6 = new FunctionDescription("postTweet6", MetaTypes.AccessType.WRITE);
+//        postTweet6.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 5);
+//        postTweet6.addParaName("tweet6");
+//        PostTweet.addFunctionDescription("postTweet6", postTweet6);
+//        FunctionDescription postTweet7 = new FunctionDescription("postTweet7", MetaTypes.AccessType.WRITE);
+//        postTweet7.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 6);
+//        postTweet7.addParaName("tweet7");
+//        PostTweet.addFunctionDescription("postTweet7", postTweet7);
+//        FunctionDescription postTweet8 = new FunctionDescription("postTweet8", MetaTypes.AccessType.WRITE);
+//        postTweet8.addStateObjectDescription("tweet", MetaTypes.AccessType.WRITE, "tweet", "tweet", 7);
+//        postTweet8.addParaName("tweet8");
+//        PostTweet.addFunctionDescription("postTweet8", postTweet8);
 
         this.txnDescriptions.put("userLogin", UserLogin);
         this.txnDescriptions.put("userProfile", userProfile);

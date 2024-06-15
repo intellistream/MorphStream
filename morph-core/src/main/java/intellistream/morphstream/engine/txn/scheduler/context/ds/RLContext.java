@@ -22,8 +22,7 @@ public class RLContext implements SchedulerContext {
 
     public void push(Request request) {
         requests.push(request);
-        Operation operation = new Operation(request.write_key, request.table_name, request.txn_context, request.txn_context.getBID(),
-                request.accessType, request.condition_records.keySet(), request.function);
+        Operation operation = new Operation(request.write_key, request.table_name, request.txn_context, request.txn_context.getBID(), request.accessType, request.condition_records.keySet(), request.function);
         tempOperations.add(operation);
         tempRemoteObjectMap.put(operation.pKey, getRemoteObject());
     }

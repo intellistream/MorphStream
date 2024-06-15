@@ -69,8 +69,8 @@ public class Utils {
         return Double.compare(minValue, maxValue) == 0;
     }
     public static int findHighestScoreKey(
-            HashMap<Integer, Double> totalEventsToScoreMap,
-            HashMap<Integer, Double> totalKeysToScoreMap,
+            HashMap<Integer, Double> totalEventsToScoreMap,//Id -> score
+            HashMap<Integer, Double> totalKeysToScoreMap,//Id -> score
             double weightTotalEvents,
             double weightTotalKeys) {
 

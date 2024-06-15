@@ -171,7 +171,7 @@ public class Statistic {
                 HashMap<Integer, Double> totalEventsToScoreMap = Utils.assignHighScoresToSmall(totalEventsToWorkerIdMap);//small get high score
                 HashMap<Integer, Double> totalKeysToScoreMap = Utils.assignLowScoresToSmall(totalKeysToWorkerIdMap);//big get high score
 
-                int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0.5, 0.5);
+                int targetWorkerId = Utils.findHighestScoreKey(totalEventsToScoreMap, totalKeysToScoreMap, 0, 0.5);
 
                 if (!this.tempKeys.get(tableName).contains(key)) {
                     this.tempKeys.get(tableName).add(key);

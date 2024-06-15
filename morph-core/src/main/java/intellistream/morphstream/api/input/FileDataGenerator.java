@@ -195,18 +195,18 @@ public class FileDataGenerator {
             List<String> keys = new ArrayList<>();
             int key = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
             keys.add(String.valueOf(key));
-            if (this.locaityMap.get(String.valueOf(key)) != null) {
-                keys.addAll(this.locaityMap.get(String.valueOf(key)));
-            } else {
+//            if (this.locaityMap.get(String.valueOf(key)) != null) {
+//                keys.addAll(this.locaityMap.get(String.valueOf(key)));
+//            } else {
                 for (int i = 1; i < entry.getValue(); i++) {
                     int anotherKey = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
-                    while (keys.contains(String.valueOf(anotherKey)) && this.locaityMap.get(String.valueOf(anotherKey)) == null) anotherKey = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
+                    while (keys.contains(String.valueOf(anotherKey))) anotherKey = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
                     keys.add(String.valueOf(anotherKey));
                 }
-                for (String key1 : keys) {
-                    this.locaityMap.put(key1, this.filterList(keys, key1));
-                }
-            }
+//                for (String key1 : keys) {
+//                    this.locaityMap.put(key1, this.filterList(keys, key1));
+//                }
+//            }
             keyMap.put(entry.getKey(), keys);
         }
         return keyMap;

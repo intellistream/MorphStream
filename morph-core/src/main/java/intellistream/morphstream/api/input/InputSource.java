@@ -114,9 +114,7 @@ public class InputSource {
         for (String pair : keyMapPairs) {
             String[] keyMapPair = pair.split(":");
             List<String> keys = new ArrayList<>(Arrays.asList(keyMapPair).subList(1, keyMapPair.length));
-            Set<String> duplicates = keys.stream()
-                    .filter(i -> Collections.frequency(keys, i) > 1)
-                    .collect(Collectors.toSet());
+            Set<String> duplicates = keys.stream().filter(i -> Collections.frequency(keys, i) > 1).collect(Collectors.toSet());
             if (!duplicates.isEmpty()) {
                 System.out.println("Duplicate elements found: " + duplicates);
             }
