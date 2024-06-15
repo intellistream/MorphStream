@@ -21,6 +21,9 @@ public class MeasureTools {
         MetricsDirectory = configuration.getString("rootPath") + OsUtils.OS_wrapper("metrics") + OsUtils.OS_wrapper(configuration.getString("clientClassName") + OsUtils.OS_wrapper(configuration.getString("scheduler")));
         Metrics.DriverRuntime.Initialize();
         Metrics.WorkerRuntime.Initialize();
+        Metrics.DSRuntime.Initialize();
+        Metrics.RemoteLockRuntime.Initialize();
+        Metrics.RemoteOCCRuntime.Initialize();
     }
     //Driver Metrics
     public static void DriverPrepareStartTime(int threadId) {
