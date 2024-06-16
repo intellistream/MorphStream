@@ -127,12 +127,12 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
     @Override
     public void start_evaluation(Context context, long mark_ID, int num_events, int batchID) {
         INITIALIZE(context);
-        MeasureTools.DSTotalExecutionTimeStartEventTime(context.thisThreadId);
         do {
+            MeasureTools.DSExploreStartTime(context.thisThreadId);
             EXPLORE(context);
+            MeasureTools.DSExploreEndTime(context.thisThreadId);
             PROCESS(context, mark_ID, batchID);
         } while (!FINISHED(context));
-        MeasureTools.DSTotalExecutionTimeEndEventTime(context.thisThreadId);
         RESET(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.DSCommitTimeStartEventTime(context.thisThreadId);
@@ -230,13 +230,18 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
 ////                    //Assign updated schemaRecord back to stateAccess
 ////                    operation.function.setUpdatedStateObject(tempo_record);
                      //Update State
+                    MeasureTools.DSExecuteEndEventTime(oc.getDsContext().thisThreadId);
                     if (oc.isLocalState()) {
                         oc.setTempValue(operation.function.udfResult);
                     } else {
+                        MeasureTools.DSRemoteAccessStartEventTime(oc.getDsContext().thisThreadId);
                         this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, (String) operation.function.udfResult);
+                        MeasureTools.DSRemoteAccessEndEventTime(oc.getDsContext().thisThreadId);
                     }
                 } else if (operation.accessType == CommonMetaTypes.AccessType.READ && !oc.isLocalState()) {
+                    MeasureTools.DSRemoteAccessStartEventTime(oc.getDsContext().thisThreadId);
                     this.remoteStorageManager.syncWriteRemoteCache(this.rdmaWorkerManager, operation.table_name, operation.pKey, stringDataBox.getString());
+                    MeasureTools.DSRemoteAccessEndEventTime(oc.getDsContext().thisThreadId);
                 }
                 operation.operationType = MetaTypes.OperationStateType.EXECUTED;
             } else {
@@ -244,7 +249,6 @@ public class DSScheduler<Context extends DSContext> implements IScheduler<Contex
                 operation.operationType = MetaTypes.OperationStateType.ABORTED;
                 operation.notifyChildren();
             }
-            MeasureTools.DSExecuteEndEventTime(oc.getDsContext().thisThreadId);
         }
     }
 

@@ -116,6 +116,13 @@ public class MeasureTools {
         Metrics.DSRuntime.setupDependenciesEndTime[threadId] = System.nanoTime();
         Metrics.DSRuntime.setupDependenciesTimeStatistics[threadId].addValue(Metrics.DSRuntime.setupDependenciesEndTime[threadId] - Metrics.DSRuntime.setupDependenciesStartTime[threadId]);
     }
+    public static void DSExploreStartTime(int threadId) {
+        Metrics.DSRuntime.exploreStartTime[threadId] = System.nanoTime();
+    }
+    public static void DSExploreEndTime(int threadId) {
+        Metrics.DSRuntime.exploreEndTime[threadId] = System.nanoTime();
+        Metrics.DSRuntime.exploreTimeStatistics[threadId].addValue(Metrics.DSRuntime.exploreEndTime[threadId] - Metrics.DSRuntime.exploreStartTime[threadId]);
+    }
     public static void DSExecuteStartEventTime(int threadId) {
         Metrics.DSRuntime.executeStartTime[threadId] = System.nanoTime();
     }
@@ -129,13 +136,6 @@ public class MeasureTools {
     public static void DSRemoteAccessEndEventTime(int threadId) {
         Metrics.DSRuntime.rdmaAccessEndEventTime[threadId] = System.nanoTime();
         Metrics.DSRuntime.rdmaAccessTimeStatistics[threadId].addValue(Metrics.DSRuntime.rdmaAccessEndEventTime[threadId] - Metrics.DSRuntime.rdmaAccessStartEventTime[threadId]);
-    }
-    public static void DSTotalExecutionTimeStartEventTime(int threadId) {
-        Metrics.DSRuntime.totalExecutionStartTime[threadId] = System.nanoTime();
-    }
-    public static void DSTotalExecutionTimeEndEventTime(int threadId) {
-        Metrics.DSRuntime.totalExecutionEndTime[threadId] = System.nanoTime();
-        Metrics.DSRuntime.totalExecutionTimeStatistics[threadId].addValue(Metrics.DSRuntime.totalExecutionEndTime[threadId] - Metrics.DSRuntime.totalExecutionStartTime[threadId]);
     }
     public static void DSCommitTimeStartEventTime(int threadId) {
         Metrics.DSRuntime.commitStartTime[threadId] = System.nanoTime();
@@ -331,11 +331,11 @@ public class MeasureTools {
                 totalSetupDependenciesTime = totalSetupDependenciesTime + Metrics.DSRuntime.setupDependenciesTimeStatistics[i].getSum();
                 totalExecuteTime = totalExecuteTime + Metrics.DSRuntime.executeTimeStatistics[i].getSum();
                 totalRmaTime = totalRmaTime + Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum();
-                totalExploreTime = totalExploreTime + Metrics.DSRuntime.totalExecutionTimeStatistics[i].getSum() - Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum() - Metrics.DSRuntime.executeTimeStatistics[i].getSum();
+                totalExploreTime = totalExploreTime + Metrics.DSRuntime.executeTimeStatistics[i].getSum();
                 totalCommitTime = totalCommitTime + Metrics.DSRuntime.commitTimeStatistics[i].getSum();
                 totalFinishTime = totalFinishTime + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum();
                 totalRdmaSendResultTime = totalRdmaSendResultTime + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum();
-                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.prepareCacheTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.rdmaRemoteOperationTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.setupDependenciesTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum() / 1E9 + "\t" + (Metrics.DSRuntime.totalExecutionTimeStatistics[i].getSum() - Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum() - Metrics.DSRuntime.executeTimeStatistics[i].getSum()) / 1E9 + "\t" + Metrics.DSRuntime.commitTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum() / 1E9 + "\n");
+                fileWriter.write(i + "\t" + Metrics.WorkerRuntime.rdmaRecvTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.prepareTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.prepareCacheTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.rdmaRemoteOperationTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.setupDependenciesTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.rdmaAccessTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.executeTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.DSRuntime.commitTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.finishTimeStatistics[i].getSum() / 1E9 + "\t" + Metrics.WorkerRuntime.rdmaSendResultTimeStatistics[i].getSum() / 1E9 + "\n");
             }
             fileWriter.write("Avg Time: " + "\t" + totalRdmaRecvTime / tthread / 1E9 + "\t" + totalPrepareTime / tthread / 1E9 + "\t" + totalPrepareCacheTime / tthread / 1E9 + "\t" + totalRdmaRemoteOperationTime / tthread / 1E9 + "\t" + totalSetupDependenciesTime / tthread / 1E9 + "\t" + totalExecuteTime / tthread / 1E9 + "\t" + totalRmaTime / tthread / 1E9 + "\t" + totalExploreTime / tthread / 1E9 + "\t" + totalCommitTime / tthread / 1E9 + "\t" + totalFinishTime / tthread / 1E9 + "\t" + totalRdmaSendResultTime / tthread / 1E9 + "\n");
             double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalPrepareCacheTime + totalRdmaRemoteOperationTime + totalSetupDependenciesTime + totalExecuteTime + totalFinishTime + totalRdmaSendResultTime;
