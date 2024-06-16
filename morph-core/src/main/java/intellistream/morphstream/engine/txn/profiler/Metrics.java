@@ -110,10 +110,16 @@ public class Metrics {
                 executeStartTime[i] = 0;
                 executeEndTime[i] = 0;
                 executeTimeStatistics[i] = new DescriptiveStatistics();
+                totalExecutionStartTime[i] = 0;
+                totalExecutionEndTime[i] = 0;
+                totalExecutionTimeStatistics[i] = new DescriptiveStatistics();
                 rdmaAccessStartEventTime[i] = 0;
                 rdmaAccessEndEventTime[i] = 0;
                 rdmaAccessTimeStatistics[i] = new DescriptiveStatistics();
                 rdmaRounds[i] = new DescriptiveStatistics();
+                commitStartTime[i] = 0;
+                commitEndTime[i] = 0;
+                commitTimeStatistics[i] = new DescriptiveStatistics();
             }
         }
     }

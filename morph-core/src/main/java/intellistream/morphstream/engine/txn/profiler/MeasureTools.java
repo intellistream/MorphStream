@@ -455,6 +455,7 @@ public class MeasureTools {
             double totalWorkerTime = totalRdmaRecvTime + totalPrepareTime + totalRmaTime + totalExecuteTime + totalValidateTime + totalCommitTime + totalUnlockTime + totalFinishTime + totalRdmaSendResultTime;
             fileWriter.write("Breakdown in percentage: " + "\n");
             fileWriter.write("RdmaRecv (%)\t Prepare (%)\t Rma (%)\t Execute (%)\t Validate (%)\t Commit (%)\t Unlock (%)\t Finish (%)\t RdmaSendResult (%)\n");
+            fileWriter.write(totalRdmaRecvTime / totalWorkerTime + "\t" + totalPrepareTime / totalWorkerTime + "\t" + totalRmaTime / totalWorkerTime + "\t" + totalExecuteTime / totalWorkerTime + "\t" + totalValidateTime / totalWorkerTime + "\t" + totalCommitTime / totalWorkerTime + "\t" + totalUnlockTime / totalWorkerTime + "\t" + totalFinishTime / totalWorkerTime + "\t" + totalRdmaSendResultTime / totalWorkerTime + "\n");
             fileWriter.write("Communication Rounds: " + "\n");
             for (int i = 0; i < tthread; i++) {
                 totalRounds = totalRounds + Metrics.WorkerRuntime.rdmaRounds[i].getSum();
