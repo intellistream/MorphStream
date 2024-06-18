@@ -321,16 +321,10 @@ public class JCommanderHandler {
     public int offloadCCThreadNum = 8;
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int offloadLockNum = 1;
-    @Parameter(names = {"--rRatioSharedReaders"}, description = "Read ratio for shared readers pattern")
-    public int rRatioSharedReaders = 80;
-    @Parameter(names = {"--wRatioSharedWriters"}, description = "Write ratio for shared writers pattern")
-    public int wRatioSharedWriters = 80;
-    @Parameter(names = {"--rwRatioMutualInteractive"}, description = "Read-write ratio for mutual interactive pattern")
-    public int rwRatioMutualInteractive = 80;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 0;
+    public int ccStrategy = 3;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 1;
+    public int workloadPattern = 0;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
     @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
@@ -339,6 +333,17 @@ public class JCommanderHandler {
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
     public String experimentID = "5.1";
+    @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
+//    public String vnfID = "1_firewall";
+//    public String vnfID = "2_nat";
+//    public String vnfID = "3_lb";
+//    public String vnfID = "4_trojan_detector";
+//    public String vnfID = "5_portscan_detector";
+//    public String vnfID = "6_prads";
+//    public String vnfID = "7_session_border_controller";
+//    public String vnfID = "8_ips";
+    public String vnfID = "9_squid";
+//    public String vnfID = "10_adaptive_traffic_shaper";
     @Parameter(names = {"--enableHardcodeCCSwitch"}, description = "If enabled, pattern_punc and cc_switch are performed at instance level. Otherwise monitor level.")
     public int enableHardcodeCCSwitch = 0;
     @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")
@@ -547,15 +552,13 @@ public class JCommanderHandler {
         config.put("vnfInstanceNum", vnfInstanceNum);
         config.put("offloadCCThreadNum", offloadCCThreadNum);
         config.put("offloadLockNum", offloadLockNum);
-        config.put("rRatioSharedReaders", rRatioSharedReaders);
-        config.put("wRatioSharedWriters", wRatioSharedWriters);
-        config.put("rwRatioMutualInteractive", rwRatioMutualInteractive);
         config.put("ccStrategy", ccStrategy);
         config.put("workloadPattern", workloadPattern);
         config.put("enableTimeBreakdown", enableTimeBreakdown);
         config.put("instancePatternPunctuation", instancePatternPunctuation);
         config.put("managerPatternPunctuation", managerPatternPunctuation);
         config.put("experimentID", experimentID);
+        config.put("vnfID", vnfID);
         config.put("enableHardcodeCCSwitch", enableHardcodeCCSwitch);
         config.put("conflictThreshold", conflictThreshold);
         config.put("typeThreshold", typeThreshold);

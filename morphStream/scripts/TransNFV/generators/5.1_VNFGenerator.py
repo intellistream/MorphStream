@@ -49,7 +49,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = random.randint(0, 2)
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 1, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_nat(self, pattern_dir):
@@ -63,7 +63,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 0 if random.random() < self.pattern_probability else 2
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 2, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_lb(self, pattern_dir):
@@ -77,7 +77,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 0 if random.random() < self.pattern_probability else 2
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 3, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_trojan_detector(self, pattern_dir):
@@ -91,7 +91,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 2
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 4, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_portscan_detector(self, pattern_dir):
@@ -105,7 +105,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 2
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 5, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_prads(self, pattern_dir):
@@ -119,7 +119,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 1 if random.random() < self.pattern_probability else 0
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 6, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_session_border_controller(self, pattern_dir):
@@ -133,7 +133,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 0 if random.random() < self.pattern_probability else 1
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 7, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_ips(self, pattern_dir):
@@ -147,7 +147,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 2 if random.random() < self.pattern_probability else 0
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 8, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_squid(self, pattern_dir):
@@ -161,7 +161,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
                     type_id = 2
-                    writer.writerow([request_id, tuple_id, type_id])
+                    writer.writerow([request_id, tuple_id, 9, type_id])
             print(f'Generated file: {file_name}')
 
     def generate_adaptive_traffic_shaper(self, pattern_dir):
@@ -174,8 +174,8 @@ class PatternGenerator:
                 writer = csv.writer(file)
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
-                    type_id = 0 if random.random() < self.pattern_probability else 1
-                    writer.writerow([request_id, tuple_id, type_id])
+                    type_id = 0 if random.random() < self.pattern_probability else 2
+                    writer.writerow([request_id, tuple_id, 10, type_id])
             print(f'Generated file: {file_name}')
 
 # Usage

@@ -50,9 +50,15 @@ public class VNFRunner implements Runnable {
         CyclicBarrier finishBarrier = new CyclicBarrier(vnfInstanceNum);
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String vnfID = MorphStreamEnv.get().configuration().getString("vnfID");
 
         for (int i = 0; i < vnfInstanceNum; i++) {
-            String csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
+            String csvFilePath;
+            if (experimentID == "5.1") {
+                csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, vnfID, i);
+            } else {
+                csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
+            }
             int stateGap = stateRange / vnfInstanceNum;
             int instanceExpRequestCount = totalRequests / vnfInstanceNum;
             VNFInstance sender = new VNFInstance(i,
