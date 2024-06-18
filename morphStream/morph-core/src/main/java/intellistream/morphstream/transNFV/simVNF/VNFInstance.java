@@ -26,7 +26,7 @@ public class VNFInstance implements Runnable {
     private final int statePartitionEnd;
     private final int stateRange; //entire state space
     private final CyclicBarrier finishBarrier;
-    private final ConcurrentHashMap<Integer, Integer> localStates = new ConcurrentHashMap<>();
+    private final HashMap<Integer, Integer> localStates = new HashMap<>();
     private final ConcurrentHashMap<Integer, Integer> tupleCCMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = AdaptiveCCManager.tpgQueues;
     private final BlockingQueue<SyncData> managerStateSyncQueue = new LinkedBlockingQueue<>();
@@ -126,7 +126,7 @@ public class VNFInstance implements Runnable {
                 int reqID = Integer.parseInt(parts[0]);
                 int tupleID = Integer.parseInt(parts[1]);
                 int type = Integer.parseInt(parts[2]);
-                int tupleCC = tupleCCMap.get(tupleID);
+
                 //TODO: Add transaction construction, create transaction based on pre-defined SA structures
                 VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, instancePuncID, 0, 0);
                 inputLineCounter++;
@@ -292,8 +292,10 @@ public class VNFInstance implements Runnable {
             request.setTxnACKQueue(responseQueue);
             OffloadCCThread.submitOffloadReq(request);
             long syncStartTime = System.nanoTime();
-            while (responseQueue.isEmpty()) {
-                //Wait for manager's ack
+            if (request.getType() != 1) {
+                while (responseQueue.isEmpty()) {
+                    //Wait for manager's ack
+                }
             }
             if (enableTimeBreakdown) {
                 AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
@@ -381,14 +383,16 @@ public class VNFInstance implements Runnable {
     private int executeUDF(int tupleID, int type, int value) {
         try {
             if (type == 0) {
-                return localStates.get(tupleID);
+                readLocalState(tupleID);
+                return 0;
             } else if (type == 1) {
-                localStates.put(tupleID, value);
+                writeLocalState(tupleID, value);
                 return 0;
             } else if (type == 2) {
-                int readValue = localStates.get(tupleID);
-                localStates.put(tupleID, readValue);
-                return readValue;
+                int readValue = readLocalState(tupleID);
+                int updatedValue = readValue + 1;
+                writeLocalState(tupleID, value);
+                return updatedValue;
             } else {
                 return -1;
             }
@@ -403,7 +407,7 @@ public class VNFInstance implements Runnable {
             SyncData data = managerStateSyncQueue.take();  // Block if necessary until an item is available
             int tupleID = data.getTupleID();
             int value = data.getValue();
-            localStates.put(tupleID, value);
+            writeLocalState(tupleID, value);
         }
     }
 
@@ -461,10 +465,14 @@ public class VNFInstance implements Runnable {
     }
     //TODO: Implement Lock for reading and writing states
     public int readLocalState(int tupleID) {
-        return localStates.get(tupleID);
+        synchronized (localStates.get(tupleID)) {
+            return localStates.get(tupleID);
+        }
     }
     public void writeLocalState(int tupleID, int value) {
-        localStates.put(tupleID, value);
+        synchronized (localStates.get(tupleID)) {
+            localStates.put(tupleID, value);
+        }
     }
 
     public static void writeIndicatorFile(String fileName) {

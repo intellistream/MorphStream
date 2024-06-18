@@ -5,6 +5,7 @@ import threading
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import csv
 
 def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path):
@@ -87,7 +88,7 @@ function baselinePattern() {{
   ResetParameters
   for workloadPattern in 0 1 2 3
   do
-    for ccStrategy in 0 1 2 3
+    for ccStrategy in 0 1 2
     do
       runTStream
     done
@@ -131,18 +132,22 @@ def execute_bash_script(script_path):
     else:
         print(f"Bash script completed successfully.")
 
+
 def plot_throughput_barchart(root_directory):
-    # Define the pattern names and CC strategy names
-    patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
-    cc_strategies = ["Partitioning", "Replication", "Offloading", "Preemptive"]
-    colors = ['blue', 'green', 'red', 'purple']
+    # Define the original and new pattern names and original CC strategy names
+    original_patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
+    new_patterns = ["Lone\nOperative", "Shared\nReaders", "Shared\nWriters", "Mutually\nInteractive"]
+    original_cc_strategies = ["Partitioning", "Replication", "Offloading"]
+    new_cc_strategies = ["Partitioning", "Replication", "Offloading"]
+    colors = ['#2874A9', '#82E0AA', '#F1C70F']
+    hatches = ['\\', '///', '\\\\']
 
     # Prepare the structure to hold data
-    data = {pattern: {} for pattern in patterns}
+    data = {pattern: {} for pattern in original_patterns}
 
     # Iterate over the patterns and ccStrategies
-    for pattern in patterns:
-        for strategy in cc_strategies:
+    for pattern in original_patterns:
+        for strategy in original_cc_strategies:
             file_path = f"{root_directory}/{pattern}/{strategy}.csv"
 
             # Read the CSV file
@@ -154,22 +159,31 @@ def plot_throughput_barchart(root_directory):
                 data[pattern][strategy] = None
 
     # Plotting the data
-    fig, axs = plt.subplots(1, 4, figsize=(20, 5), sharey=True)
+    fig, ax = plt.subplots(figsize=(8, 5))  # Adjust the figure size as needed
+
+    # Define the positions of the groups of bars
+    bar_width = 0.2
+    indices = list(range(len(original_patterns)))
+    positions = [[i + j*bar_width for i in indices] for j in range(len(new_cc_strategies))]
 
     for i, (pattern, strategies) in enumerate(data.items()):
-        strategies_names = list(strategies.keys())
-        throughputs = list(strategies.values())
+        throughputs = [strategies[orig_strat] for orig_strat in original_cc_strategies]
 
-        bars = axs[i].bar(strategies_names, throughputs, color=colors, width=0.5)
-        # axs[i].set_title(f'Throughput for {pattern}')
-        axs[i].set_xlabel(pattern, fontsize=16)
-        axs[i].set_ylabel('Throughput (requests/second)', fontsize=16)
-        axs[i].set_xticks([])  # Remove x-axis labels
+        for j, throughput in enumerate(throughputs):
+            ax.bar(positions[j][i], throughput, color=colors[j], hatch=hatches[j], edgecolor="black", width=bar_width, label=new_cc_strategies[j] if i == 0 else "")
 
-    # Create custom legend
-    handles = [plt.Rectangle((0,0),1,1, color=color) for color in colors]
-    labels = cc_strategies
-    fig.legend(handles, labels, loc='upper center', ncol=4, fontsize=16)
+    # Set x-axis labels
+    ax.set_xticks([r + bar_width for r in range(len(original_patterns))])
+    ax.set_xticklabels(new_patterns, fontsize=16)
+    ax.set_ylabel('Throughput (10^6 req/sec)', fontsize=18, labelpad=12)
+    ax.set_xlabel('VNF State Access Patterns', fontsize=18, labelpad=12)
+
+    # Adjust y-axis tick label font size
+    ax.tick_params(axis='y', labelsize=14)
+
+    # Create custom legend with hatches
+    handles = [Patch(facecolor=color, edgecolor='black', hatch=hatch, label=label) for color, hatch, label in zip(colors, hatches, new_cc_strategies)]
+    ax.legend(handles=handles, loc='upper right', ncol=1, fontsize=18)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
@@ -187,13 +201,13 @@ if __name__ == "__main__":
     scheduler = "OP_BFS_A"
     defaultScheduler = "OP_BFS_A"
     complexity = 0
-    NUM_ITEMS = 10000
+    NUM_ITEMS = 5000
     rootFilePath = "/home/shuhao/jjzhao/data"
     totalEvents = 400000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
-    offloadCCThreadNum = 16
+    offloadCCThreadNum = 4
     offloadLockNum = 10000
     rRatioSharedReaders = 80
     wRatioSharedWriters = 80
@@ -204,8 +218,8 @@ if __name__ == "__main__":
     experimentID = "5.1"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-    execute_bash_script(script_path)
+#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
+#     execute_bash_script(script_path)
 
     throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.1/throughput"
     plot_throughput_barchart(throughput_root_directory)

@@ -72,50 +72,15 @@ public class PartitionCCThread implements Runnable {
             }
 
         } else if (communicationChoice == 1) {
-            while (!Thread.currentThread().isInterrupted()) {
-                int srcInstanceID = -1;
-                int targetInstanceID = -1;
-                try {
-                    VNFRequest request = operationQueue.take();
-                    if (request.getCreateTime() == -1) {
-                        System.out.println("Partition CC thread received stop signal");
-                        break;
-                    }
-
-                    srcInstanceID = request.getInstanceID();
-                    targetInstanceID = partitionOwnership.get(request.getTupleID());
-                    int tupleID = request.getTupleID();
-
-                    synchronized (instanceLocks.get(targetInstanceID)) {
-                        AdaptiveCCManager.vnfStubs.get(targetInstanceID).fetch_value(tupleID); //TODO: This simulates lock to another partition
-//                        AdaptiveCCManager.vnfStubs.get(targetInstanceID).execute_sa_udf(partitionData.getTxnReqId(), partitionData.getSaIndex(), tupleID, 0);
-                    }
-
-                    // Wait until the value is fetched with a timeout
-                    while (!MorphStreamEnv.fetchedValues.containsKey(tupleID)) {
-//                        System.out.println("Partition CC waiting for cross-partition tuple: " + tupleID);
-                        Thread.sleep(100);
-                    }
-                    int cachedValue = MorphStreamEnv.fetchedValues.get(tupleID);
-                    System.out.println("Partition CC received cross-partition tuple: " + tupleID);
-                    MorphStreamEnv.fetchedValues.remove(tupleID);
-
-                    synchronized (instanceLocks.get(srcInstanceID)) {
-                        AdaptiveCCManager.vnfStubs.get(srcInstanceID).txn_handle_done(request.getReqID());
-                    }
-
-                } catch (Exception e) {
-                    System.out.println("Runtime exception for partition req from instance " + srcInstanceID + " to instance " + targetInstanceID);
-                    throw new RuntimeException(e);
-                }
-            }
+            throw new UnsupportedOperationException();
         }
     }
 
     private int simUDF(int tupleValue) {
 //        Thread.sleep(10);
+        int updatedValue = tupleValue + 1;
         //TODO: Simulate UDF better
-        return tupleValue;
+        return updatedValue;
     }
 
     public static long getManagerEventSyncTime() {
