@@ -75,7 +75,7 @@ public class CHCController implements Runnable {
                         SchemaRecord tempo_record = new SchemaRecord(readRecord);
 
                         long usefulStartTime = System.nanoTime();
-                        simUDF(tupleValue);
+                        VNFManagerUDF.executeUDF(request);
                         aggUsefulTime += System.nanoTime() - usefulStartTime;
 
                         tempo_record.getValues().get(1).setInt(tupleValue);
@@ -94,12 +94,6 @@ public class CHCController implements Runnable {
         } else {
             throw new RuntimeException("Invalid communication choice");
         }
-    }
-
-    private int simUDF(int tupleValue) {
-//        Thread.sleep(10);
-        //TODO: Simulate UDF better
-        return tupleValue;
     }
 
     public static long getAggUsefulTime() {

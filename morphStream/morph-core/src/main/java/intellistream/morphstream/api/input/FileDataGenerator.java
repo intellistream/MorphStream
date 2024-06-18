@@ -139,6 +139,7 @@ public class FileDataGenerator {
         transferEventBufferedWriter.close();
     }
     private void generateTuple(String eventType) {
+        int eventInt = Integer.parseInt(eventType);
         TransactionalEvent inputEvent;
         HashMap<String, List<String>> keys = generateKey(eventType);
         String[] values = generateValue(eventType);
@@ -149,9 +150,9 @@ public class FileDataGenerator {
             valueTypeMap.put(eventValueNamesMap.get(eventType).get(i), "int");
         }
         if (random.nextInt(1000) < eventRatioMap.get(eventType)) {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, true);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventInt, true);
         } else {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventInt, false);
         }
         inputEvents.add(inputEvent);
         eventID ++;

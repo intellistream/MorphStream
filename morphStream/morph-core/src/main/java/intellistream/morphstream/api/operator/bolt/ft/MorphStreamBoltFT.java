@@ -108,7 +108,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {
-        TxnDescription txnDescription = txnDescriptionMap.get(event.getFlag());
+        TxnDescription txnDescription = txnDescriptionMap.get(event.getSaID());
         //Initialize state access map for each event
         eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
@@ -119,7 +119,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
             StateAccessDescription stateAccessDesc = descEntry.getValue();
-            StateAccess stateAccess = new StateAccess(event.getBid() + "_" + stateAccessIndex, this.getOperatorID(), event.getFlag(), stateAccessDesc);
+            StateAccess stateAccess = new StateAccess(event.getBid() + "_" + stateAccessIndex, this.getOperatorID(), event.getSaID(), stateAccessDesc);
             stateAccessIndex += 1;
 
             //Each state access involves multiple state objects
@@ -148,39 +148,39 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Post_Process() {
-        for (TransactionalEvent event : eventQueue) {
-            Result udfResultReflect = null;
-            try {
-                //Invoke client defined post-processing UDF using Reflection
-                Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-                if (Client.class.isAssignableFrom(clientClass)) {
-                    Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
-                    HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                    udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
-                }
-                if (enable_latency_measurement) {
-                    latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
-                }
-                if (!isCombo) {
-                    assert udfResultReflect != null;
-                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
-                } else {
-                    if (enable_latency_measurement) {
-                        assert udfResultReflect != null;
-                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context,
-                                new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
-                    }
-                }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Client class instantiation failed");
-            } catch (NoSuchMethodException | InvocationTargetException e) {
-                throw new RuntimeException("Client post UDF invocation failed");
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Output emission interrupted");
-            } catch (BrokenBarrierException | IOException | DatabaseException e) {
-                throw new RuntimeException(e);
-            }
-        }
+//        for (TransactionalEvent event : eventQueue) {
+//            Result udfResultReflect = null;
+//            try {
+//                //Invoke client defined post-processing UDF using Reflection
+//                Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+//                if (Client.class.isAssignableFrom(clientClass)) {
+//                    Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+//                    HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
+//                    udfResultReflect = clientObj.postUDF(event.getSaID(), stateAccesses);
+//                }
+//                if (enable_latency_measurement) {
+//                    latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
+//                }
+//                if (!isCombo) {
+//                    assert udfResultReflect != null;
+//                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
+//                } else {
+//                    if (enable_latency_measurement) {
+//                        assert udfResultReflect != null;
+//                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context,
+//                                new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
+//                    }
+//                }
+//            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+//                throw new RuntimeException("Client class instantiation failed");
+//            } catch (NoSuchMethodException | InvocationTargetException e) {
+//                throw new RuntimeException("Client post UDF invocation failed");
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException("Output emission interrupted");
+//            } catch (BrokenBarrierException | IOException | DatabaseException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
     }
 
     @Override

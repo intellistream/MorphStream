@@ -9,20 +9,20 @@ package intellistream.morphstream.api.input;
 public class TransactionalVNFEvent extends TransactionalEvent {
     private String tupleID;
     private long txnRequestID; //Unique ID for each txn request, encoded by VNF instance
-    private int txnID; //E.g., "txn1", txnID
-    private String saID; //E.g., "Deposit" or "Transfer", txnFlag
+    private int vnfID; //E.g., "txn1", txnID
+    private int saID; //E.g., "Deposit" or "Transfer", txnFlag
     private int saType; // 0: Read, 1: Write, 2: RW
     private int instanceID;
     private int puncID;
 
-    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int txnID, int saID, int puncID) {
+    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int vnfID, int saID, int puncID) {
         super(timestamp);
         this.saType = saType;
         this.instanceID = instanceID;
         this.txnRequestID = txnRequestID;
         this.tupleID = String.valueOf(tupleID);
-        this.txnID = txnID;
-        this.saID = String.valueOf(saID);
+        this.vnfID = vnfID;
+        this.saID = saID;
         this.puncID = puncID;
     }
 
@@ -37,8 +37,8 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         this.bid = bid;
     }
 
-    public void setFlag(String flag) {
-        this.saID = flag;
+    public void setSaID(int saID) {
+        this.saID = saID;
     }
 
     public String getTupleID() {
@@ -53,8 +53,11 @@ public class TransactionalVNFEvent extends TransactionalEvent {
         return this.txnRequestID;
     }
 
-    public String getFlag() {
+    public int getSaID() {
         return this.saID;
+    }
+    public int getVnfID() {
+        return this.vnfID;
     }
 
     public void setSaType(int saType) {

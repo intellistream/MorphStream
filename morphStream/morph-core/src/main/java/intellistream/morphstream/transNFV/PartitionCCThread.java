@@ -57,7 +57,7 @@ public class PartitionCCThread implements Runnable {
                     managerEventSyncTime += System.nanoTime() - syncStartTime;
 
                     long usefulStartTime = System.nanoTime();
-                    simUDF(targetPartitionState); // Simulate UDF
+                    VNFManagerUDF.executeUDF(request);
                     managerEventUsefulTime += System.nanoTime() - usefulStartTime; //TODO: This is not accurate, the actual state access is performed at target instance
 
                     long syncStartTime2 = System.nanoTime();
@@ -74,13 +74,6 @@ public class PartitionCCThread implements Runnable {
         } else if (communicationChoice == 1) {
             throw new UnsupportedOperationException();
         }
-    }
-
-    private int simUDF(int tupleValue) {
-//        Thread.sleep(10);
-        int updatedValue = tupleValue + 1;
-        //TODO: Simulate UDF better
-        return updatedValue;
     }
 
     public static long getManagerEventSyncTime() {

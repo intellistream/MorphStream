@@ -61,7 +61,7 @@ public class OpenNFController implements Runnable {
                     int readValue = readRecord.getValues().get(1).getInt();
 
                     long usefulStartTime = System.nanoTime();
-                    simUDF(readValue);
+                    VNFManagerUDF.executeUDF(request);
                     aggUsefulTime += System.nanoTime() - usefulStartTime;
 
                     SchemaRecord tempo_record = new SchemaRecord(readRecord);
@@ -82,12 +82,6 @@ public class OpenNFController implements Runnable {
                 }
             }
         }
-    }
-
-    private int simUDF(int tupleValue) {
-//        Thread.sleep(10);
-        //TODO: Simulate UDF better
-        return tupleValue;
     }
 
     public static long getAggUsefulTime() {

@@ -61,30 +61,7 @@ public class CacheCCThread implements Runnable {
             }
 
         } else if (communicationChoice == 1) {
-            while (!Thread.currentThread().isInterrupted()) {
-                VNFRequest request;
-                try {
-                    request = operationQueue.take();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                if (request.getCreateTime() == -1) {
-                    System.out.println("Cache CC thread received stop signal");
-                    break;
-                }
-                int tupleID = request.getTupleID();
-                int value = request.getValue();
-
-                for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
-                    if (entry.getKey() != request.getInstanceID()) {
-                        try {
-                            AdaptiveCCManager.vnfStubs.get(request.getInstanceID()).update_value(tupleID, value);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            }
+            throw new RuntimeException("Not implemented");
         }
     }
 

@@ -15,20 +15,20 @@ public class TransactionalEvent extends TxnEvent {
     private HashMap<String, List<String>> keyMap; //<TableName, keys> assume key must be string, including sourceKey, targetKey, and conditionKey
     private HashMap<String, Object> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
-    private String flag; //E.g., "Deposit" or "Transfer"
+    private int saID; //E.g., "Deposit" or "Transfer"
     private boolean isAbort = false;
 
     public TransactionalEvent(long bid,
                               HashMap<String, List<String>> keyMap,
                               HashMap<String, Object> valueMap,
                               HashMap<String, String> valueTypeMap,
-                              String flag,
+                              int saID,
                               boolean isAbort) {
         super(bid);
         this.keyMap = keyMap;
         this.valueMap = valueMap;
         this.valueTypeMap = valueTypeMap;
-        this.flag = flag;
+        this.saID = saID;
         this.isAbort = isAbort;
     }
 
@@ -40,8 +40,8 @@ public class TransactionalEvent extends TxnEvent {
         this.bid = bid;
     }
 
-    public void setFlag(String flag) {
-        this.flag = flag;
+    public void setSaID(int saID) {
+        this.saID = saID;
     }
 
     public String getKey(String tableName, int keyIndex) {
@@ -54,8 +54,8 @@ public class TransactionalEvent extends TxnEvent {
         return -1;
     }
 
-    public String getFlag() {
-        return this.flag;
+    public int getSaID() {
+        return this.saID;
     }
 
     public boolean isAbort() {
@@ -85,7 +85,7 @@ public class TransactionalEvent extends TxnEvent {
         }
         stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
-        stringBuilder.append(flag);
+        stringBuilder.append(saID);
         stringBuilder.append(";");
         stringBuilder.append(isAbort);
         return stringBuilder.toString();

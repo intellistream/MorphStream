@@ -93,17 +93,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         String[] saData;
 
         if (communicationChoice == 1) {
-            //TODO: Note that here we bypass the transaction encapsulation, because the inputs are stateAccess UDF requests
-            saData = new String[5]; //saID, saType, tableName, tupleID, instanceID
-            String[] saTemplate = saTemplates.get(event.getFlag()); //saID, saType, tableName
-            saData[0] = saTemplate[0];
-            saData[1] = saTemplate[1];
-            saData[2] = saTemplate[2];
-            saData[3] = event.getTupleID();
-            saData[4] = String.valueOf(event.getInstanceID());
-
+            throw new UnsupportedOperationException("Communication choice 1 is not supported yet.");
         } else if (communicationChoice == 0) {
-            saData = new String[]{"0", String.valueOf(event.getSaType()), "testTable", event.getTupleID()}; //Hardcoded for preliminary study
+            saData = new String[]{String.valueOf(event.getVnfID()), String.valueOf(event.getSaID()), String.valueOf(event.getSaType()), "testTable", event.getTupleID(), String.valueOf(event.getInstanceID())}; //Hardcoded for preliminary study
         } else {
             throw new RuntimeException("Invalid communication choice");
         }
@@ -116,31 +108,12 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     protected void Transaction_Post_Process() {
 
         if (communicationChoice == 1) {
-            for (TransactionalVNFEvent event : eventQueue) {
-                try {
-                    int instanceID = event.getInstanceID();
-                    synchronized (instanceLocks.get(instanceID)) {
-                        AdaptiveCCManager.vnfStubs.get(instanceID).txn_handle_done(event.getTxnRequestID());
-//                        instanceFinishReqCounter.compute(instanceID, (key, value) -> value == null ? 1 : value + 1);
-//                        if (instanceFinishReqCounter.get(instanceID) % 100 == 0) {
-//                            System.out.println("TPG threads sent finished req to instance" + instanceID + ": " + instanceFinishReqCounter.get(instanceID));
-//                        }
-//                        if (totalFinishedReqCounter.incrementAndGet() == 40000) {
-//                            System.out.println("Total requests 10000, all finished");
-//                        }
-                    }
-
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (requestCounter == expRequestCount) {
-                System.out.println("TPG CC processed all " + requestCounter + " requests.");
-            }
+            throw new UnsupportedOperationException("Communication choice 1 is not supported yet.");
 
         } else if (communicationChoice == 0) {
             for (TransactionalVNFEvent event : eventQueue) {
-                VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(), Integer.parseInt(event.getTupleID()), event.getSaType(), event.getBid(), event.getPuncID(), 0, 0);
+                VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(),
+                        Integer.parseInt(event.getTupleID()), event.getSaType(), event.getBid(), event.getPuncID(), 0, event.getVnfID(), event.getSaID());
                 VNFRunner.getSender(event.getInstanceID()).submitFinishedRequest(request);
                 requestCounter++;
             }

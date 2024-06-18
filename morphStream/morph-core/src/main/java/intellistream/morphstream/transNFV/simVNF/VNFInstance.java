@@ -125,10 +125,12 @@ public class VNFInstance implements Runnable {
                 String[] parts = line.split(",");
                 int reqID = Integer.parseInt(parts[0]);
                 int tupleID = Integer.parseInt(parts[1]);
-                int type = Integer.parseInt(parts[2]);
+                int vnfID = Integer.parseInt(parts[2]);
+                int type = Integer.parseInt(parts[3]);
+                int saID = type; //TODO: Hardcoded saID = type
 
                 //TODO: Add transaction construction, create transaction based on pre-defined SA structures
-                VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, instancePuncID, 0, 0);
+                VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, instancePuncID, 0, vnfID, saID);
                 inputLineCounter++;
                 if (enableTimeBreakdown) {
                     aggParsingTime += System.nanoTime() - parsingStartTime;
@@ -197,7 +199,7 @@ public class VNFInstance implements Runnable {
             if (arrivedIndex == 0) {
                 System.out.println("All instances have finished, sending stop signals to StateManager...");
 
-                VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1);
+                VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1);
                 MonitorThread.submitPatternData(new PatternData(-1, 0, -1));
                 PartitionCCThread.submitPartitionRequest(stopSignal);
                 CacheCCThread.submitReplicationRequest(stopSignal);

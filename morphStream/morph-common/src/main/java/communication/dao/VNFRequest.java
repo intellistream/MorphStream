@@ -11,11 +11,12 @@ public class VNFRequest {
     private long finishTime; // Time when the finished request is received by the instance
     private int instancePuncID; // Punctuation ID of the request
     private int value;
+    private int vnfID;
     private int saID;
     private int logicalTS; // For offloading central locks
     private BlockingQueue<Integer> txnACKQueue;
 
-    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int saID) {
+    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int vnfID, int saID) {
         this.reqID = reqID;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
@@ -23,10 +24,11 @@ public class VNFRequest {
         this.createTime = createTime;
         this.instancePuncID = instancePuncID;
         this.value = value;
+        this.vnfID = vnfID;
         this.saID = saID;
     }
 
-    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int saID, BlockingQueue<Integer> txnACKQueue) {
+    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int vnfID, int saID, BlockingQueue<Integer> txnACKQueue) {
         this.reqID = reqID;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
@@ -34,6 +36,7 @@ public class VNFRequest {
         this.createTime = createTime;
         this.instancePuncID = instancePuncID;
         this.value = value;
+        this.vnfID = vnfID;
         this.saID = saID;
         this.txnACKQueue = txnACKQueue;
     }
@@ -68,6 +71,9 @@ public class VNFRequest {
     }
     public int getSaID() {
         return saID;
+    }
+    public int getVnfID() {
+        return vnfID;
     }
     public int getLogicalTS() {
         return logicalTS;

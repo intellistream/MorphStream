@@ -158,7 +158,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     @Override
     public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
-        String accessType = stateAccess[1];
+        String accessType = stateAccess[2];
         if (Objects.equals(accessType, "read") || accessType.equals("0")) {
             return Asy_ReadRecord(stateAccess, txnContext);
         } else if (accessType.equals("write") || accessType.equals("read-write") || accessType.equals("1") || accessType.equals("2")) {
@@ -179,9 +179,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     //If read only, set src key and table to read key, and add this single read access into readRecords.
     public boolean Asy_ReadRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        // saData: saID, saType, tableName, tupleID, instanceID
-        String tableName = saData[2];
-        String tupleID = saData[3];
+        // saData: vnfID, saID, saType, tableName, tupleID, instanceID
+        String tableName = saData[3];
+        String tupleID = saData[4];
 
         List<TableRecord> condition_records = new ArrayList<>();
         String[] condition_tables = {tableName};
@@ -209,9 +209,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public boolean Asy_WriteRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        // saData: saID, saType, tableName, tupleID, instanceID
-        String tableName = saData[2];
-        String tupleID = saData[3];
+        // saData: vnfID, saID, saType, tableName, tupleID, instanceID
+        String tableName = saData[3];
+        String tupleID = saData[4];
 
         List<TableRecord> condition_records = new ArrayList<>();
         String[] condition_tables = {tableName};

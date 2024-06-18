@@ -183,21 +183,22 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    private void simOffloadWrite(VNFRequest offloadData) {
-        long timeStamp = offloadData.getCreateTime();
-        int tupleID = offloadData.getTupleID();
+    private void simOffloadWrite(VNFRequest request) {
+        long timeStamp = request.getCreateTime();
+        int tupleID = request.getTupleID();
 
         try {
             TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
             int readValue = readRecord.getValues().get(1).getInt();
-            int udfResult = simUDF(readValue);
+            VNFManagerUDF.executeUDF(request);
+            readValue+=1;
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(udfResult);
+            tempo_record.getValues().get(1).setInt(readValue);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
-        } catch (DatabaseException | InterruptedException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
 
@@ -212,13 +213,14 @@ public class OffloadCCThread implements Runnable {
             TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
             SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
             int readValue = readRecord.getValues().get(1).getInt();
-            int udfResult = simUDF(readValue);
+            VNFManagerUDF.executeUDF(request);
+            readValue+=1;
 
             SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(udfResult);
+            tempo_record.getValues().get(1).setInt(readValue);
             tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
-        } catch (DatabaseException | InterruptedException e) {
+        } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
 
@@ -231,11 +233,6 @@ public class OffloadCCThread implements Runnable {
 
     }
 
-    private int simUDF(int tupleValue) throws InterruptedException {
-//        Thread.sleep(10);
-        //TODO: Simulate UDF better
-        return tupleValue;
-    }
 
     private static int decodeInt(byte[] bytes, int offset) {
         int value = 0;

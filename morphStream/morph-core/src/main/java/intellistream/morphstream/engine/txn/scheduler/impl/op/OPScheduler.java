@@ -1,6 +1,7 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.op;
 
 
+import communication.dao.VNFRequest;
 import intellistream.morphstream.transNFV.AdaptiveCCManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.state.StateAccess;
@@ -24,6 +25,7 @@ import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
+import intellistream.morphstream.transNFV.VNFManagerUDF;
 import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,33 +104,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         if (communicationChoice == 1) {
-            // Simplified saData: saID, saType, tableName, tupleID, instanceID
-            SchemaRecord simReadRecord = operation.d_record.content_.readPreValues(operation.bid);
-            int saID = Integer.parseInt(operation.stateAccess[0]);
-            int instanceID = Integer.parseInt(operation.stateAccess[4]);
-            int key = Integer.parseInt(simReadRecord.GetPrimaryKey());
-            int simReadValue = simReadRecord.getValues().get(1).getInt();
-
-            try {
-                synchronized (instanceLocks.get(instanceID)) {
-                    AdaptiveCCManager.vnfStubs.get(instanceID).execute_sa_udf(operation.txnReqID, saID, key, simReadValue);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            SchemaRecord simTempoRecord = new SchemaRecord(simReadRecord);
-            simTempoRecord.getValues().get(1).setInt(simReadValue);
-            operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, simTempoRecord);
+            throw new UnsupportedOperationException();
 
         } else if (communicationChoice == 0) {
-            // Simplified saData: saID, saType, tableName, tupleID
-            SchemaRecord simReadRecord = operation.d_record.content_.readPreValues(operation.bid);
-            int simReadValue = simReadRecord.getValues().get(1).getInt();
-
-            SchemaRecord simTempoRecord = new SchemaRecord(simReadRecord);
-            simTempoRecord.getValues().get(1).setInt(simReadValue);
-            operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, simTempoRecord);
+            // Simplified saData: vnfID, saID, saType, tableName, tupleID, instanceID
+            String[] saData = operation.stateAccess;
+            VNFManagerUDF.executeUDF(new VNFRequest((int) operation.txnReqID, 0, Integer.parseInt(saData[4]), Integer.parseInt(saData[2]), 0, 0, 0, Integer.parseInt(saData[0]), Integer.parseInt(saData[1])));
         }
 
         commitLog(operation);
