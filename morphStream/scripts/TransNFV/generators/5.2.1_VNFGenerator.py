@@ -8,7 +8,7 @@ class PatternGenerator:
         self.tuple_range = tuple_range
         self.instance_count = instance_count
         self.request_count = request_count
-        self.base_dir = os.path.join(os.getcwd(), 'scripts/TransNFV/pattern_files/5.1')
+        self.base_dir = os.path.join(os.getcwd(), 'scripts/TransNFV/pattern_files/5.2.1')
         self.pattern_probability = pattern_prob  # Probability for type 0 in sharedReaders pattern
 
     def generate_files(self):

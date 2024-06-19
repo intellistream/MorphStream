@@ -28,6 +28,19 @@ public class VNFManagerUDF {
         int saID = request.getSaID();
 
         try {
+            if (vnfID == 1) {
+                switch (saID) {
+                    case 0:
+                        FW_readAddress(request);
+                        break;
+                    case 1:
+                    case 2:
+                        FW_assignAddress(request);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("Unsupported saID value: " + saID);
+                }
+            }
             // Handle other vnfID values if necessary
             if (vnfID == 2) {
                 switch (saID) {
@@ -119,6 +132,33 @@ public class VNFManagerUDF {
             e.printStackTrace();
         }
 
+    }
+
+    /** Firewall vnfID_1 */
+    private static void FW_readAddress(VNFRequest request) throws DatabaseException { // saID = 0, read-only
+        assert request.getSaID() == 0;
+        int tupleID = request.getTupleID(); // target host ID
+        int instanceID = request.getInstanceID();
+        long timeStamp = request.getCreateTime();
+        TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+        SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+        int readValue = readRecord.getValues().get(1).getInt();
+    }
+
+    private static void FW_assignAddress(VNFRequest request) throws DatabaseException { // saID = 2, read-write
+        assert request.getSaID() == 2;
+        int tupleID = request.getTupleID(); // target host ID
+        int instanceID = request.getInstanceID();
+        long timeStamp = request.getCreateTime();
+        TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+        SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+        int readValue = readRecord.getValues().get(1).getInt();
+
+        int chosenAddress = readValue + 1; // TODO: Simulated address assignment
+
+        SchemaRecord tempo_record = new SchemaRecord(readRecord);
+        tempo_record.getValues().get(1).setInt(chosenAddress);
+        tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
     }
 
     /** NAT vnfID_2 */

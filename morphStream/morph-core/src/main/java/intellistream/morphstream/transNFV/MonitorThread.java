@@ -130,35 +130,39 @@ public class MonitorThread implements Runnable {
         for (Map.Entry<Integer, Integer> entry : readCountMap.entrySet()) {
             int state = entry.getKey();
             int readCount = entry.getValue();
-            int writeCount = writeCountMap.get(state);
-            int readRatio = (readCount / (readCount + writeCount)) * 100;
-            int writeRatio = (writeCount / (readCount + writeCount)) * 100;
-            int conflictCount = conflictCountMap.get(state);
-            int oldPattern = stateCurrentPatterns.getOrDefault(state, -1);
-            int newPattern;
+            try {
+                int writeCount = writeCountMap.get(state);
+                int readRatio = (readCount / (readCount + writeCount)) * 100;
+                int writeRatio = (writeCount / (readCount + writeCount)) * 100;
+                int conflictCount = conflictCountMap.get(state);
+                int oldPattern = stateCurrentPatterns.getOrDefault(state, -1);
+                int newPattern;
 
-            if (conflictCount < conflictThreshold) { // Low_conflict
-                newPattern = 0;
-            } else if (readRatio > typeThreshold) { // Read_heavy
-                newPattern = 1;
-            } else if (writeRatio > typeThreshold) { // Write_heavy
-                newPattern = 2;
-            } else { // High_conflict
-                newPattern = 3;
-            }
-
-            if (newPattern != oldPattern) {
-                if (oldPattern == 0 && (newPattern == 2 || newPattern == 3)) {
-                    statesPattern_0_to_23.put(state, newPattern);
-                } else if (oldPattern == 1 && (newPattern == 2 || newPattern == 3)) {
-                    statesPattern_1_to_23.put(state, newPattern);
-                } else if ((oldPattern == 2 || oldPattern == 3) && newPattern == 0) {
-                    statesPattern_23_to_0.put(state, newPattern);
-                } else if ((oldPattern == 2 || oldPattern == 3) && newPattern == 1) {
-                    statesPattern_23_to_1.put(state, newPattern);
+                if (conflictCount < conflictThreshold) { // Low_conflict
+                    newPattern = 0;
+                } else if (readRatio > typeThreshold) { // Read_heavy
+                    newPattern = 1;
+                } else if (writeRatio > typeThreshold) { // Write_heavy
+                    newPattern = 2;
+                } else { // High_conflict
+                    newPattern = 3;
                 }
-                stateCurrentPatterns.put(state, newPattern);
-                statesPatternChanges.put(state, newPattern); // Only stores states whose pattern changed
+
+                if (newPattern != oldPattern) {
+                    if (oldPattern == 0 && (newPattern == 2 || newPattern == 3)) {
+                        statesPattern_0_to_23.put(state, newPattern);
+                    } else if (oldPattern == 1 && (newPattern == 2 || newPattern == 3)) {
+                        statesPattern_1_to_23.put(state, newPattern);
+                    } else if ((oldPattern == 2 || oldPattern == 3) && newPattern == 0) {
+                        statesPattern_23_to_0.put(state, newPattern);
+                    } else if ((oldPattern == 2 || oldPattern == 3) && newPattern == 1) {
+                        statesPattern_23_to_1.put(state, newPattern);
+                    }
+                    stateCurrentPatterns.put(state, newPattern);
+                    statesPatternChanges.put(state, newPattern); // Only stores states whose pattern changed
+                }
+            } catch (NullPointerException e) {
+                System.out.println(e.getMessage());
             }
         }
     }

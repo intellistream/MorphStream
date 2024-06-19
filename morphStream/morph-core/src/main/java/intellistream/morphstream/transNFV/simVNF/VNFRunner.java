@@ -54,7 +54,7 @@ public class VNFRunner implements Runnable {
 
         for (int i = 0; i < vnfInstanceNum; i++) {
             String csvFilePath;
-            if (experimentID == "5.1") {
+            if (experimentID == "5.2.1") {
                 csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, vnfID, i);
             } else {
                 csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
@@ -99,6 +99,7 @@ public class VNFRunner implements Runnable {
             case "5.2.2": // Dynamic throughput
                 computeDynamicThroughput();
                 writeCSVDynamicThroughput(patternString, ccStrategyString);
+                writeCSVLatency(patternString, ccStrategyString);
                 break;
             case "5.2.2_dynamic": // Dynamic throughput
                 computeDynamicThroughput();

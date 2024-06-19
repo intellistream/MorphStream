@@ -320,19 +320,19 @@ public class JCommanderHandler {
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int offloadCCThreadNum = 8;
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadLockNum = 1;
+    public int offloadLockNum = 5000;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 3;
+    public int ccStrategy = 7;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 0;
+    public int workloadPattern = 4;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
-    public int enableTimeBreakdown = 0;
+    public int enableTimeBreakdown = 1;
     @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
-    public int instancePatternPunctuation = 2500;
+    public int instancePatternPunctuation = 25000;
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.1";
+    public String experimentID = "5.3.1";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
 //    public String vnfID = "1_firewall";
 //    public String vnfID = "2_nat";

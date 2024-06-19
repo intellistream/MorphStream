@@ -9,7 +9,7 @@ import csv
 
 def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath,
                          totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum,
-                         rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern,
+                         ccStrategy, workloadPattern,
                          enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
                          instancePatternPunctuation, managerPatternPunctuation):
     script_content = f"""#!/bin/bash
@@ -30,9 +30,6 @@ function ResetParameters() {{
   vnfInstanceNum={vnfInstanceNum}
   offloadCCThreadNum={offloadCCThreadNum}
   offloadLockNum={offloadLockNum}
-  rRatioSharedReaders={rRatioSharedReaders}
-  wRatioSharedWriters={wRatioSharedWriters}
-  rwRatioMutualInteractive={rwRatioMutualInteractive}
   ccStrategy={ccStrategy}
   workloadPattern={workloadPattern}
   enableTimeBreakdown={enableTimeBreakdown}
@@ -58,9 +55,6 @@ function runTStream() {{
           --vnfInstanceNum $vnfInstanceNum \\
           --offloadCCThreadNum $offloadCCThreadNum \\
           --offloadLockNum $offloadLockNum \\
-          --rRatioSharedReaders $rRatioSharedReaders \\
-          --wRatioSharedWriters $wRatioSharedWriters \\
-          --rwRatioMutualInteractive $rwRatioMutualInteractive \\
           --ccStrategy $ccStrategy \\
           --workloadPattern $workloadPattern \\
           --enableTimeBreakdown $enableTimeBreakdown \\
@@ -84,9 +78,6 @@ function runTStream() {{
     --vnfInstanceNum $vnfInstanceNum \\
     --offloadCCThreadNum $offloadCCThreadNum \\
     --offloadLockNum $offloadLockNum \\
-    --rRatioSharedReaders $rRatioSharedReaders \\
-    --wRatioSharedWriters $wRatioSharedWriters \\
-    --rwRatioMutualInteractive $rwRatioMutualInteractive \\
     --ccStrategy $ccStrategy \\
     --workloadPattern $workloadPattern \\
     --enableTimeBreakdown $enableTimeBreakdown \\
@@ -204,9 +195,6 @@ if __name__ == "__main__":
     vnfInstanceNum = 4
     offloadCCThreadNum = 16
     offloadLockNum = 10000
-    rRatioSharedReaders = 80
-    wRatioSharedWriters = 80
-    rwRatioMutualInteractive = 80
     ccStrategy = 0
     workloadPattern = 0
     enableTimeBreakdown = 1
@@ -216,7 +204,7 @@ if __name__ == "__main__":
     managerPatternPunctuation = 100000
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch, instancePatternPunctuation, managerPatternPunctuation)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch, instancePatternPunctuation, managerPatternPunctuation)
     execute_bash_script(script_path)
 
     plot_time_breakdown_barchart()
