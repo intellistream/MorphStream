@@ -209,13 +209,13 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 5000;//number of records in each table
+    public int NUM_ITEMS = 10000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "testTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "5000"; // 10000,10000
+    public String numberItemsForTables = "10000"; // 10000,10000
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
