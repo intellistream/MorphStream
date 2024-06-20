@@ -13,8 +13,7 @@
   exclusive.
 - The code is still under active development and more features will be introduced. We are also actively maintaining the
   project [wiki](https://github.com/intellistream/MorphStream/wiki). Please checkout it for more detailed desciptions.
-- We welcome your contributions, if you are interested to contribute to the project, please fork and submit a PR. If you
-  have questions, feel free to log an issue or write an email to me: shuhao_zhang AT sutd.edu.sg
+- We welcome your contributions, if you are interested to contribute to the project, please fork and submit a PR. 
 
 ## How to Cite MorphStream
 
