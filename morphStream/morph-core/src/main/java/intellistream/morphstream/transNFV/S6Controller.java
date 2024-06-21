@@ -1,38 +1,33 @@
 package intellistream.morphstream.transNFV;
 
 import communication.dao.VNFRequest;
-import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.data.SyncData;
+import intellistream.morphstream.transNFV.simVNF.VNFInstance;
+import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class PartitionCCThread implements Runnable {
+public class S6Controller implements Runnable {
     private static BlockingQueue<VNFRequest> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
-    private static HashMap<Integer, Integer> partitionOwnership; //Maps each state partition to its current owner VNF instance.
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
-    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
-    private static long managerEventSyncTime = 0;
-    private static long managerEventUsefulTime = 0;
     private static long initEndTime = -1;
     private static long processEndTime = -1;
 
-    public PartitionCCThread(BlockingQueue<VNFRequest> operationQueue, HashMap<Integer, Integer> partitionOwnership) {
-        PartitionCCThread.operationQueue = operationQueue;
-        PartitionCCThread.partitionOwnership = partitionOwnership;
-        instanceSocketMap = MorphStreamEnv.ourInstance.instanceSocketMap();
+    public S6Controller(BlockingQueue<VNFRequest> operationQueue) {
+        S6Controller.operationQueue = operationQueue;
+        this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     }
 
-    public static void submitPartitionRequest(VNFRequest vnfRequest) {
+    public static void submitS6Request(VNFRequest request) {
         try {
-            operationQueue.put(vnfRequest);
+            operationQueue.put(request);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -42,7 +37,7 @@ public class PartitionCCThread implements Runnable {
     public void run() {
         initEndTime = System.nanoTime();
 
-        if (communicationChoice == 0) {
+        if (communicationChoice == 0) { // Java sim VNF
             while (!Thread.currentThread().isInterrupted()) {
                 VNFRequest request;
                 try {
@@ -52,44 +47,36 @@ public class PartitionCCThread implements Runnable {
                 }
                 if (request.getCreateTime() == -1) {
                     processEndTime = System.nanoTime();
-                    System.out.println("Partition CC thread received stop signal");
                     writeCSVTimestamps();
+                    System.out.println("Cache CC thread received stop signal");
                     break;
                 }
 
-                int targetInstanceID = partitionOwnership.get(request.getTupleID());
+                // Simulating state update synchronization to other instances
+                for (Map.Entry<Integer, VNFInstance> entry : VNFRunner.getSenderMap().entrySet()) {
+                    if (entry.getKey() != request.getInstanceID()) {
+                        SyncData syncData = new SyncData(request.getCreateTime(), request.getTupleID(), request.getValue());
+                        entry.getValue().submitSyncData(syncData);
+                    }
+                }
 
-                // Simulating cross-partition state access
                 try {
-                    long syncStartTime = System.nanoTime();
-                    int targetPartitionState = VNFRunner.getSender(targetInstanceID).readLocalState(request.getTupleID());
-                    managerEventSyncTime += System.nanoTime() - syncStartTime;
-
-                    long usefulStartTime = System.nanoTime();
-                    VNFManagerUDF.executeUDF(request);
-                    managerEventUsefulTime += System.nanoTime() - usefulStartTime; //TODO: This is not accurate, the actual state access is performed at target instance
-
-                    long syncStartTime2 = System.nanoTime();
-                    VNFRunner.getSender(targetInstanceID).writeLocalState(request.getTupleID(), targetPartitionState);
-                    managerEventSyncTime += System.nanoTime() - syncStartTime2;
-
                     VNFRunner.getSender(request.getInstanceID()).submitFinishedRequest(request);
-
                 } catch (NullPointerException e) {
                     throw new RuntimeException(e);
                 }
+
             }
 
         } else if (communicationChoice == 1) {
-            throw new UnsupportedOperationException();
+            throw new RuntimeException("Not implemented");
         }
     }
-
     private static void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
-        String filePath = String.format("%s/%s.csv", baseDirectory, "Partitioning");
+        String filePath = String.format("%s/%s.csv", baseDirectory, "S6");
         System.out.println("Writing to " + filePath);
         File dir = new File(baseDirectory);
         if (!dir.exists()) {
@@ -115,10 +102,4 @@ public class PartitionCCThread implements Runnable {
         }
     }
 
-    public static long getManagerEventSyncTime() {
-        return managerEventSyncTime;
-    }
-    public static long getManagerEventUsefulTime() {
-        return managerEventUsefulTime;
-    }
 }

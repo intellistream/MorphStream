@@ -202,10 +202,11 @@ public class VNFInstance implements Runnable {
                 VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1);
                 MonitorThread.submitPatternData(new PatternData(-1, 0, -1));
                 PartitionCCThread.submitPartitionRequest(stopSignal);
-                CacheCCThread.submitReplicationRequest(stopSignal);
+                ReplicationCCThread.submitReplicationRequest(stopSignal);
                 OffloadCCThread.submitOffloadReq(stopSignal);
                 OpenNFController.submitOpenNFReq(stopSignal);
                 CHCController.submitCHCReq(stopSignal);
+                S6Controller.submitS6Request(stopSignal);
                 for (int tpgQueueIndex = 0; tpgQueueIndex < tpgInputQueues.size(); tpgQueueIndex++) {
                     tpgInputQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, instanceID, -1, 0, 0, 0, 0, -1));
                 }
@@ -277,7 +278,7 @@ public class VNFInstance implements Runnable {
                     AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
                 }
                 long instanceSyncStartTime = System.nanoTime();
-                CacheCCThread.submitReplicationRequest(request);
+                ReplicationCCThread.submitReplicationRequest(request);
                 while (true) {
                     VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                     if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -365,7 +366,7 @@ public class VNFInstance implements Runnable {
                     AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
                 }
                 long instanceSyncStartTime = System.nanoTime();
-                CacheCCThread.submitReplicationRequest(request);
+                S6Controller.submitS6Request(request);
                 while (true) {
                     VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                     if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -465,7 +466,6 @@ public class VNFInstance implements Runnable {
     public long getAggCCSwitchTime() {
         return aggCCSwitchTime;
     }
-    //TODO: Implement Lock for reading and writing states
     public int readLocalState(int tupleID) {
         synchronized (localStates.get(tupleID)) {
             return localStates.get(tupleID);

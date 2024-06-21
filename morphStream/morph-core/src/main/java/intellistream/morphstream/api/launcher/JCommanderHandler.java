@@ -346,6 +346,10 @@ public class JCommanderHandler {
 //    public String vnfID = "10_adaptive_traffic_shaper";
     @Parameter(names = {"--enableHardcodeCCSwitch"}, description = "If enabled, pattern_punc and cc_switch are performed at instance level. Otherwise monitor level.")
     public int enableHardcodeCCSwitch = 0;
+    @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
+    public int enableMemoryFootprint = 0;
+    @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
+    public int memoryIntervalMS = 10;
     @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")
     public int conflictThreshold = 20;
     @Parameter(names = {"--typeThreshold"}, description = "Threshold for monitor to judge the ratio of read/write operations")
@@ -560,6 +564,8 @@ public class JCommanderHandler {
         config.put("experimentID", experimentID);
         config.put("vnfID", vnfID);
         config.put("enableHardcodeCCSwitch", enableHardcodeCCSwitch);
+        config.put("enableMemoryFootprint", enableMemoryFootprint);
+        config.put("memoryIntervalMS", memoryIntervalMS);
         config.put("conflictThreshold", conflictThreshold);
         config.put("typeThreshold", typeThreshold);
 

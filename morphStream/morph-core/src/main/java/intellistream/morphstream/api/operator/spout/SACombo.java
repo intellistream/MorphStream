@@ -15,9 +15,12 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
+import intellistream.morphstream.transNFV.AdaptiveCCManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
@@ -30,6 +33,9 @@ public class SACombo extends AbstractSpoutCombo {
     private String operatorID;
     private HashMap<String, TxnDescription> TxnDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
+    private long initEndTime = -1;
+    private long processEndTime = -1;
+
     public SACombo(String operatorID) throws Exception {
         super(operatorID, LOG, 0);
         this.operatorID = operatorID;
@@ -57,6 +63,7 @@ public class SACombo extends AbstractSpoutCombo {
 
     @Override
     public void nextTuple() throws InterruptedException {
+        initEndTime = System.nanoTime();
         try {
             if (!inputQueue.isEmpty()) {
                 TransactionalEvent event = inputQueue.take(); //this should be txnEvent already
@@ -79,17 +86,52 @@ public class SACombo extends AbstractSpoutCombo {
                             bolt.execute(marker);
                         }
                     }
+
                 } else { //stop signal arrives, stop the current spout thread
+                    processEndTime = System.nanoTime();
+                    writeCSVTimestamps();
                     System.out.println("TPG thread " + this.taskId + " received stop signal.");
                     SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                     SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                     getContext().stop_running(); //stop itself
                 }
             }
+
         } catch (DatabaseException | BrokenBarrierException e) {
             e.printStackTrace();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+    private void writeCSVTimestamps() {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
+        String filePath = String.format("%s/%s/bolt_%d.csv", baseDirectory, "Preemptive", this.taskId);
+        System.out.println("Writing to " + filePath);
+        File dir = new File(baseDirectory);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String lineToWrite = initEndTime + "," + processEndTime + "\n";
+            fileWriter.write(lineToWrite);
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
+    }
+
 }

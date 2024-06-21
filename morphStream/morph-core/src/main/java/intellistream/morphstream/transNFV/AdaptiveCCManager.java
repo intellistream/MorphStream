@@ -15,16 +15,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class AdaptiveCCManager {
     private Thread monitorThread;
     private Thread partitionCCThread;
-    private Thread cacheCCThread;
+    private Thread replicationCCThread;
     private Thread offloadCCThread;
-    private Thread openNFCCThread;
+    private Thread openNFThread;
     private Thread chcThread;
+    private Thread s6Thread;
     private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> partitionQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<VNFRequest> cacheQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> replicationQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> offloadQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> openNFQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> chcQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> s6Queue = new LinkedBlockingQueue<>();
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
     public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();
@@ -36,14 +38,18 @@ public class AdaptiveCCManager {
     private final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
     private final int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
+    private static HashMap<Integer, Long> tpgThreadInitEndTimes = new HashMap<>(); // bolt thread id -> end time of bolt initialization
+    private static HashMap<Integer, Long> tpgThreadProcessEndTimes = new HashMap<>();
 
     public AdaptiveCCManager() {
         monitorThread = new Thread(new MonitorThread(monitorQueue));
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
-        cacheCCThread = new Thread(new CacheCCThread(cacheQueue));
+        replicationCCThread = new Thread(new ReplicationCCThread(replicationQueue));
         offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize));
-        openNFCCThread = new Thread(new OpenNFController(openNFQueue));
+        openNFThread = new Thread(new OpenNFController(openNFQueue));
         chcThread = new Thread(new CHCController(chcQueue));
+        s6Thread = new Thread(new S6Controller(s6Queue));
+
         int tpgThreadNum = MorphStreamEnv.get().configuration().getInt("tthread"); //Number of thread for TPG_CC
         for (int i = 0; i < tpgThreadNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
@@ -58,7 +64,7 @@ public class AdaptiveCCManager {
     public void startAdaptiveCC() {
         monitorThread.start();
         partitionCCThread.start();
-        cacheCCThread.start();
+        replicationCCThread.start();
         offloadCCThread.start();
         System.out.println("CC123 and Monitor started");
     }
@@ -69,7 +75,7 @@ public class AdaptiveCCManager {
     }
 
     public void startCacheCC() {
-        cacheCCThread.start();
+        replicationCCThread.start();
         System.out.println("Cache controller started");
     }
 
@@ -78,16 +84,15 @@ public class AdaptiveCCManager {
         System.out.println("Offload controller started");
     }
 
-    public void startPreemptiveCC() {
-        //TODO: Isolate execution of TPG from other CCs
-    }
-
     public void startOpenNF() {
-        openNFCCThread.start();
+        openNFThread.start();
     }
 
     public void startCHC() {
         chcThread.start();
+    }
+    public void startS6() {
+        s6Thread.start();
     }
 
     public BlockingQueue<TransactionalEvent> getTPGInputQueue(int spoutId) {

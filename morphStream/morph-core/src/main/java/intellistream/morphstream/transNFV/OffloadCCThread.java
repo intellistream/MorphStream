@@ -8,6 +8,9 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +45,8 @@ public class OffloadCCThread implements Runnable {
     private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private static final AtomicLong aggSyncTime = new AtomicLong(0); //TODO: This can be optimized by creating separate aggregator for each worker thread
     private static final AtomicLong aggUsefulTime = new AtomicLong(0);
+    private static long initEndTime = -1;
+    private static long processEndTime = -1;
 
 
     public OffloadCCThread(BlockingQueue<VNFRequest> operationQueue, int writeThreadPoolSize) {
@@ -67,6 +72,7 @@ public class OffloadCCThread implements Runnable {
 
     @Override
     public void run() {
+        initEndTime = System.nanoTime();
 
         if (communicationChoice == 1) {
             throw new UnsupportedOperationException();
@@ -80,6 +86,8 @@ public class OffloadCCThread implements Runnable {
                     throw new RuntimeException(e);
                 }
                 if (request.getCreateTime() == -1) {
+                    processEndTime = System.nanoTime();
+                    writeCSVTimestamps();
                     System.out.println("Offload CC received stop signal. Total requests: " + requestCounter);
                     offloadExecutor.shutdownNow();
                     break;
@@ -233,6 +241,35 @@ public class OffloadCCThread implements Runnable {
 
     }
 
+    private static void writeCSVTimestamps() {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
+        String filePath = String.format("%s/%s.csv", baseDirectory, "Partitioning");
+        System.out.println("Writing to " + filePath);
+        File dir = new File(baseDirectory);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String lineToWrite = initEndTime + "," + processEndTime + "\n";
+            fileWriter.write(lineToWrite);
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
+    }
 
     private static int decodeInt(byte[] bytes, int offset) {
         int value = 0;
@@ -248,5 +285,11 @@ public class OffloadCCThread implements Runnable {
 
     public static AtomicLong getAggUsefulTime() {
         return aggUsefulTime;
+    }
+    public static long getInitEndTime() {
+        return initEndTime;
+    }
+    public static long getProcessEndTime() {
+        return processEndTime;
     }
 }

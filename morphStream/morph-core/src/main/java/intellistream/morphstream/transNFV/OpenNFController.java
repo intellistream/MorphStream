@@ -8,6 +8,9 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
@@ -20,6 +23,8 @@ public class OpenNFController implements Runnable {
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private static long aggUsefulTime = 0;
+    private static long initEndTime = -1;
+    private static long processEndTime = -1;
 
     public OpenNFController(BlockingQueue<VNFRequest> requestQueue) {
         OpenNFController.requestQueue = requestQueue;
@@ -35,6 +40,8 @@ public class OpenNFController implements Runnable {
 
     @Override
     public void run() {
+        initEndTime = System.nanoTime();
+
         if (communicationChoice == 1) {
             throw new RuntimeException("Remote communication not supported");
 
@@ -46,6 +53,8 @@ public class OpenNFController implements Runnable {
                 try {
                     request = requestQueue.take();
                     if (request.getCreateTime() == -1) {
+                        processEndTime = System.nanoTime();
+                        writeCSVTimestamps();
                         System.out.println("Broadcasting Controller received stop signal");
                         break;
                     }
@@ -81,6 +90,36 @@ public class OpenNFController implements Runnable {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private static void writeCSVTimestamps() {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
+        String filePath = String.format("%s/%s.csv", baseDirectory, "OpenNF");
+        System.out.println("Writing to " + filePath);
+        File dir = new File(baseDirectory);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String lineToWrite = initEndTime + "," + processEndTime + "\n";
+            fileWriter.write(lineToWrite);
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
         }
     }
 

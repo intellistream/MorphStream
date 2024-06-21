@@ -112,7 +112,7 @@ public class CliFrontend {
             env.getAdaptiveCCManager().startCHC();
             startVNF();
         } else if (ccStrategy == 6) {
-            env.getAdaptiveCCManager().startCacheCC();
+            env.getAdaptiveCCManager().startS6();
             startVNF();
         } else if (ccStrategy == 7) {
             env.getAdaptiveCCManager().startAdaptiveCC();

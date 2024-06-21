@@ -8,7 +8,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class StateManagerRunner extends Client {
@@ -23,6 +35,11 @@ public class StateManagerRunner extends Client {
      * ...
      */
     public static void main(String[] args) throws Exception {
+        prepareFilePath();
+        boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
+        if (enableMemoryFootprint) {
+            startMemoryMonitoring();
+        }
 
         CliFrontend vnfMain = new CliFrontend("VNF_Main");
         vnfMain.loadConfigStreaming(args); // Load configuration, initialize DB
@@ -32,7 +49,7 @@ public class StateManagerRunner extends Client {
         if (communicationChoice == 0) { // Java VNF instances
             int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
             vnfMain.registerOperator("sim_vnf", numTPGThreads);
-            vnfMain.start(); //This will continuously run until TPG threads receive stop signals
+            vnfMain.start();
 
         } else if (communicationChoice == 1) {
 
@@ -88,6 +105,78 @@ public class StateManagerRunner extends Client {
         }
     }
 
+    public static void startMemoryMonitoring() {
+        int memoryIntervalMS = MorphStreamEnv.get().configuration().getInt("memoryIntervalMS");
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(new MemoryMonitorTask(), 0, memoryIntervalMS, TimeUnit.MILLISECONDS);
+    }
+
+    static class MemoryMonitorTask implements Runnable {
+        private final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+        private final List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
+        private static final String CSV_FILE_PATH = "memory_usage.csv";
+
+        @Override
+        public void run() {
+            // Memory Usage
+            MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+            MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
+
+            long heapUsed = heapMemoryUsage.getUsed();
+            long nonHeapUsed = nonHeapMemoryUsage.getUsed();
+            long totalUsed = heapUsed + nonHeapUsed;
+
+            // Garbage Collection
+            long totalGcCount = 0;
+            long totalGcTime = 0;
+            for (GarbageCollectorMXBean gcBean : gcBeans) {
+                totalGcCount += gcBean.getCollectionCount();
+                totalGcTime += gcBean.getCollectionTime();
+            }
+
+            // Write to CSV
+            writeToCsv(totalUsed, totalGcTime);
+
+            // Output
+            System.out.println("Heap Memory: Used = " + heapUsed + " bytes");
+            System.out.println("Non-Heap Memory: Used = " + nonHeapUsed + " bytes");
+            System.out.println("Total Memory: Used = " + totalUsed + " bytes");
+            System.out.println("Total GC Count: " + totalGcCount);
+            System.out.println("Total GC Time: " + totalGcTime + " ms");
+
+        }
+
+        private void writeToCsv(long totalMemoryUsed, long totalGcTime) {
+            try (FileWriter fw = new FileWriter(CSV_FILE_PATH, true);
+                 PrintWriter pw = new PrintWriter(fw)) {
+                pw.println(totalMemoryUsed + "," + totalGcTime);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void prepareFilePath() {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "memory_footprint");
+        String filePath = String.format("%s/%s.csv", baseDirectory, toStringStrategy(ccStrategy));
+        System.out.println("Writing to " + filePath);
+        File dir = new File(baseDirectory);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                throw new RuntimeException("Failed to create the directory.");
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                throw new RuntimeException("Failed to delete existing file.");
+            }
+        }
+    }
 
     public static String cleanupJson(String messyJson) {
         // Step 1: Remove all newline characters and excessive spaces.
@@ -109,5 +198,27 @@ public class StateManagerRunner extends Client {
         cleaned = cleaned.replace(" }", "}");
 
         return cleaned;
+    }
+
+    private static String toStringStrategy(int ccStrategy) {
+        if (ccStrategy == 0) {
+            return "Partitioning";
+        } else if (ccStrategy == 1) {
+            return "Replication";
+        } else if (ccStrategy == 2) {
+            return "Offloading";
+        } else if (ccStrategy == 3) {
+            return "Preemptive";
+        } else if (ccStrategy == 4) {
+            return "OpenNF";
+        } else if (ccStrategy == 5) {
+            return "CHC";
+        } else if (ccStrategy == 6) {
+            return "S6";
+        } else if (ccStrategy == 7) {
+            return "TransNFV";
+        } else {
+            return "Invalid";
+        }
     }
 }
