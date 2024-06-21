@@ -164,20 +164,18 @@ public class VNFInstance implements Runnable {
                     instancePuncID++; // Start from 1
 
                     if (ccStrategy == 7) {
+                        long ccSwitchStartTime = System.nanoTime();
+                        int nextPuncID = monitorMsgQueue.take(); // Wait for pattern monitor's signal to begin next punctuation
+                        assert nextPuncID == instancePuncID;
+                        if (enableTimeBreakdown) {
+                            aggCCSwitchTime += System.nanoTime() - ccSwitchStartTime;
+                        }
+                        LOG.info("Instance " + instanceID + " starts punctuation " + instancePuncID);
                         if (enableHardcodeCCSwitch) {
-                            if (inputLineCounter % 10000 == 0) {
-                                // TODO: Hardcode pattern phase & CC switch, for exp 5.2.2 only
-                                tupleCCMap.replaceAll((k, v) -> v + 1);
+                            if (inputLineCounter == 100000) {
+                                tupleCCMap.replaceAll((k, v) -> 1);
                                 System.out.println("Instance " + instanceID + " switches to cc " + tupleCCMap.get(1));
                             }
-                        } else {
-                            long ccSwitchStartTime = System.nanoTime();
-                            int nextPuncID = monitorMsgQueue.take(); // Wait for pattern monitor's signal to begin next punctuation
-                            assert nextPuncID == instancePuncID;
-                            if (enableTimeBreakdown) {
-                                aggCCSwitchTime += System.nanoTime() - ccSwitchStartTime;
-                            }
-                            LOG.info("Instance " + instanceID + " starts punctuation " + instancePuncID);
                         }
                     }
                 }
@@ -242,7 +240,8 @@ public class VNFInstance implements Runnable {
                 submitFinishedRequest(request);
 
             } else { // cross-partition state access
-                long instanceSyncStartTime = System.nanoTime();
+                //TODO: Partition sync time is measured at manager side, but missing queuing delay
+//                long instanceSyncStartTime = System.nanoTime();
                 PartitionCCThread.submitPartitionRequest(request);
                 while (true) {
                     VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
@@ -250,9 +249,9 @@ public class VNFInstance implements Runnable {
                         break;
                     }
                 }
-                if (enableTimeBreakdown) {
-                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
-                }
+//                if (enableTimeBreakdown) {
+//                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
+//                }
             }
 
         } else if (tupleCC == 1) { // Replication

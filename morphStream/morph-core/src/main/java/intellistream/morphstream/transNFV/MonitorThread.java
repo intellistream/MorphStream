@@ -83,7 +83,7 @@ public class MonitorThread implements Runnable {
             if (txnCounter % patternPunctuation == 0) {
                 nextPunctuationID++;
                 LOG.info("Pattern monitor judge pattern changes...");
-                judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
+//                judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
 
                 if (!statesPattern_0_to_23.isEmpty() || !statesPattern_1_to_23.isEmpty() || !statesPattern_23_to_0.isEmpty() || !statesPattern_23_to_1.isEmpty()) {
                     notifyCCSwitch();

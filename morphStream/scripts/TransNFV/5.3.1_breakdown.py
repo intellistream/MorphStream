@@ -137,11 +137,10 @@ def execute_bash_script(script_path):
 
 
 def plot_time_breakdown_barchart():
-    # Define file paths for each system
     base_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.1/breakdown/numInstance_4/dynamic/"
     systems = ["OpenNF", "CHC", "S6", "TransNFV"]
     categories = ['Parsing', 'Sync', 'Useful', 'CC Switch']
-#     categories = ['Parsing', 'Sync', 'Useful', 'CC Switch', 'Total']
+    hatches = ['\\', '//', '\\\\', '///']
 
     # Read data from CSV files
     sub_bar_values = {}
@@ -155,20 +154,22 @@ def plot_time_breakdown_barchart():
     values = np.array(list(sub_bar_values.values()))
 
     # Generate the figure
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7, 5))  # Adjusted size
 
     # Calculate the bottom values for stacking
     cumulative_values = np.zeros(len(systems))
     bar_height = 0.4  # Reduced bar width
+
     for i in range(values.shape[1]):
-        ax.barh(systems, values[:, i], left=cumulative_values, height=bar_height, label=categories[i])
+        bars = ax.barh(systems, values[:, i], left=cumulative_values, height=bar_height, label=categories[i], hatch=hatches[i % len(hatches)])
         cumulative_values += values[:, i]
 
     # Add labels and title
-    ax.set_xlabel('Execution Time (ms)')
-    ax.set_ylabel('System')
-    ax.set_title('Execution Time Breakdown for Different Systems')
-    ax.legend(title='Categories')
+    ax.set_xlabel('Execution Time (ms)', fontsize=18)
+#     ax.set_ylabel('System', fontsize=18)
+    ax.legend(title='Categories', loc='upper right', fontsize=18)
+    plt.xticks(fontsize=16)  # Set y-axis number sizes to 14
+    plt.yticks(fontsize=16)  # Set y-axis number sizes to 14
 
     # Show the plot
     plt.tight_layout()
@@ -199,13 +200,13 @@ if __name__ == "__main__":
     workloadPattern = 0
     enableTimeBreakdown = 1
     experimentID = "5.3.1"
-    enableHardcodeCCSwitch = 0
+    enableHardcodeCCSwitch = 1
     instancePatternPunctuation = 25000
     managerPatternPunctuation = 100000
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch, instancePatternPunctuation, managerPatternPunctuation)
-    execute_bash_script(script_path)
+#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch, instancePatternPunctuation, managerPatternPunctuation)
+#     execute_bash_script(script_path)
 
     plot_time_breakdown_barchart()
 
