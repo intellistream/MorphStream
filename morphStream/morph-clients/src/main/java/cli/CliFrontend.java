@@ -36,13 +36,16 @@ public class CliFrontend {
         env = MorphStreamEnv.get();
     }
 
-    public void loadConfigStreaming(String[] args) throws IOException {
+    public void loadConfigStreaming(String[] args) {
         try {
             LoadConfiguration(null, args);
-            env.DatabaseInitialize();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void initializeDB() {
+        env.DatabaseInitialize();
     }
 
     public void prepareAdaptiveCC() {
@@ -92,32 +95,40 @@ public class CliFrontend {
     }
 
 
-    public void start() throws InterruptedException {
+    public void runStateManager() throws InterruptedException {
         int ccStrategy = env.configuration().getInt("ccStrategy");
         if (ccStrategy == 0) {
             env.getAdaptiveCCManager().startPartitionCC();
             startVNF();
+            env.getAdaptiveCCManager().joinPartitionCC();
         } else if (ccStrategy == 1) {
-            env.getAdaptiveCCManager().startCacheCC();
+            env.getAdaptiveCCManager().startReplicationCC();
             startVNF();
+            env.getAdaptiveCCManager().joinReplicationCC();
         } else if (ccStrategy == 2) {
             env.getAdaptiveCCManager().startOffloadCC();
             startVNF();
+            env.getAdaptiveCCManager().joinOffloadCC();
         } else if (ccStrategy == 3) {
             runTopologyLocally();
         } else if (ccStrategy == 4) {
             env.getAdaptiveCCManager().startOpenNF();
             startVNF();
+            env.getAdaptiveCCManager().joinOpenNF();
         } else if (ccStrategy == 5) {
             env.getAdaptiveCCManager().startCHC();
             startVNF();
+            env.getAdaptiveCCManager().joinCHC();
         } else if (ccStrategy == 6) {
             env.getAdaptiveCCManager().startS6();
             startVNF();
+            env.getAdaptiveCCManager().joinS6();
         } else if (ccStrategy == 7) {
             env.getAdaptiveCCManager().startAdaptiveCC();
             runTopologyLocally();
+            env.getAdaptiveCCManager().joinAdaptiveCC();
         }
+        StateManagerRunner.stopMemoryMonitoring();
     }
 
     public void setSpoutCombo(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks) throws Exception {

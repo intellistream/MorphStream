@@ -16,8 +16,8 @@ import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +25,11 @@ import java.util.concurrent.TimeUnit;
 
 public class StateManagerRunner extends Client {
     private static final Logger log = LoggerFactory.getLogger(StateManagerRunner.class);
+    private static ScheduledExecutorService memoryFootprintExecutor = Executors.newScheduledThreadPool(1);
+    private static List<Long> memoryFootprint = new ArrayList<>();
+    private static List<Long> gcFootprint = new ArrayList<>();
+    private static List<Long> footprintTimestamps = new ArrayList<>();
+    private static long managerStartTime = -1;
 
     /**
      * saData contains:
@@ -35,21 +40,22 @@ public class StateManagerRunner extends Client {
      * ...
      */
     public static void main(String[] args) throws Exception {
-        prepareFilePath();
+        CliFrontend vnfMain = new CliFrontend("VNF_Main");
+        vnfMain.loadConfigStreaming(args); // Load configuration, initialize DB
+
         boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
         if (enableMemoryFootprint) {
             startMemoryMonitoring();
         }
 
-        CliFrontend vnfMain = new CliFrontend("VNF_Main");
-        vnfMain.loadConfigStreaming(args); // Load configuration, initialize DB
+        vnfMain.initializeDB();
         vnfMain.prepareAdaptiveCC(); // Create AdaptiveCCManager, which initializes TPG queues
 
         int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
         if (communicationChoice == 0) { // Java VNF instances
             int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
             vnfMain.registerOperator("sim_vnf", numTPGThreads);
-            vnfMain.start();
+            vnfMain.runStateManager(); // Start CC threads, and wait for them to finish
 
         } else if (communicationChoice == 1) {
 
@@ -101,20 +107,24 @@ public class StateManagerRunner extends Client {
                 }
             }
             System.out.println("Deserialized SFC Json data: " + vnfJsonClass.getApps().get(0).getName());
-            vnfMain.start(); // Start TPG_CC threads, at this stage all manager threads are ready to process requests
+            vnfMain.runStateManager(); // Start TPG_CC threads, at this stage all manager threads are ready to process requests
         }
     }
 
     public static void startMemoryMonitoring() {
         int memoryIntervalMS = MorphStreamEnv.get().configuration().getInt("memoryIntervalMS");
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(new MemoryMonitorTask(), 0, memoryIntervalMS, TimeUnit.MILLISECONDS);
+        memoryFootprintExecutor.scheduleAtFixedRate(new MemoryMonitorTask(), 0, memoryIntervalMS, TimeUnit.MILLISECONDS);
+    }
+
+    public static void stopMemoryMonitoring() {
+        memoryFootprintExecutor.shutdownNow();
+        writeFootprintToCsv();
+        writeStartTimeCSV();
     }
 
     static class MemoryMonitorTask implements Runnable {
         private final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         private final List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
-        private static final String CSV_FILE_PATH = "memory_usage.csv";
 
         @Override
         public void run() {
@@ -133,36 +143,21 @@ public class StateManagerRunner extends Client {
                 totalGcCount += gcBean.getCollectionCount();
                 totalGcTime += gcBean.getCollectionTime();
             }
-
-            // Write to CSV
-            writeToCsv(totalUsed, totalGcTime);
-
-            // Output
-            System.out.println("Heap Memory: Used = " + heapUsed + " bytes");
-            System.out.println("Non-Heap Memory: Used = " + nonHeapUsed + " bytes");
-            System.out.println("Total Memory: Used = " + totalUsed + " bytes");
-            System.out.println("Total GC Count: " + totalGcCount);
-            System.out.println("Total GC Time: " + totalGcTime + " ms");
-
-        }
-
-        private void writeToCsv(long totalMemoryUsed, long totalGcTime) {
-            try (FileWriter fw = new FileWriter(CSV_FILE_PATH, true);
-                 PrintWriter pw = new PrintWriter(fw)) {
-                pw.println(totalMemoryUsed + "," + totalGcTime);
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (memoryFootprint.size() == 0) {
+                managerStartTime = System.nanoTime();
             }
+            memoryFootprint.add(totalUsed);
+            gcFootprint.add(totalGcTime);
+            footprintTimestamps.add(System.nanoTime());
         }
     }
 
-    private static void prepareFilePath() {
+    private static void writeFootprintToCsv() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "memory_footprint");
         String filePath = String.format("%s/%s.csv", baseDirectory, toStringStrategy(ccStrategy));
-        System.out.println("Writing to " + filePath);
         File dir = new File(baseDirectory);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -175,6 +170,43 @@ public class StateManagerRunner extends Client {
             if (!isDeleted) {
                 throw new RuntimeException("Failed to delete existing file.");
             }
+        }
+        try (FileWriter fw = new FileWriter(filePath, true);
+             PrintWriter pw = new PrintWriter(fw)) {
+            for (int i=0; i<memoryFootprint.size(); i++) {
+                pw.println(footprintTimestamps.get(i) + "," + memoryFootprint.get(i) + "," + gcFootprint.get(i));
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeStartTimeCSV() {
+        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
+        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "start_times");
+        String filePath = String.format("%s/%s.csv", baseDirectory, toStringStrategy(ccStrategy));
+        File dir = new File(baseDirectory);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                throw new RuntimeException("Failed to create the directory.");
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                throw new RuntimeException("Failed to delete existing file.");
+            }
+        }
+        try (FileWriter fw = new FileWriter(filePath, true);
+             PrintWriter pw = new PrintWriter(fw)) {
+            pw.println(managerStartTime);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

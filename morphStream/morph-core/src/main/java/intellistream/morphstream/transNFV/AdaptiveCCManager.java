@@ -69,14 +69,41 @@ public class AdaptiveCCManager {
         System.out.println("CC123 and Monitor started");
     }
 
+    public void joinAdaptiveCC() {
+        try {
+            monitorThread.join();
+            partitionCCThread.join();
+            replicationCCThread.join();
+            offloadCCThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void startPartitionCC() {
         partitionCCThread.start();
         System.out.println("Partition controller started");
     }
 
-    public void startCacheCC() {
+    public void joinPartitionCC() {
+        try {
+            partitionCCThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void startReplicationCC() {
         replicationCCThread.start();
         System.out.println("Cache controller started");
+    }
+
+    public void joinReplicationCC() {
+        try {
+            replicationCCThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void startOffloadCC() {
@@ -84,15 +111,43 @@ public class AdaptiveCCManager {
         System.out.println("Offload controller started");
     }
 
+    public void joinOffloadCC() {
+        try {
+            offloadCCThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void startOpenNF() {
         openNFThread.start();
     }
-
+    public void joinOpenNF() {
+        try {
+            openNFThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void startCHC() {
         chcThread.start();
     }
+    public void joinCHC() {
+        try {
+            chcThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void startS6() {
         s6Thread.start();
+    }
+    public void joinS6() {
+        try {
+            s6Thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public BlockingQueue<TransactionalEvent> getTPGInputQueue(int spoutId) {

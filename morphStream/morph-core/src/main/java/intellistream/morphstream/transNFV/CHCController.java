@@ -109,7 +109,7 @@ public class CHCController implements Runnable {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
-        String filePath = String.format("%s/%s.csv", baseDirectory, "Partitioning");
+        String filePath = String.format("%s/%s.csv", baseDirectory, "CHC");
         System.out.println("Writing to " + filePath);
         File dir = new File(baseDirectory);
         if (!dir.exists()) {

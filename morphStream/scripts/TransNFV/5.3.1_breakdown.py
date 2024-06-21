@@ -166,10 +166,10 @@ def plot_time_breakdown_barchart():
 
     # Add labels and title
     ax.set_xlabel('Execution Time (ms)', fontsize=18)
-#     ax.set_ylabel('System', fontsize=18)
-    ax.legend(title='Categories', loc='upper right', fontsize=18)
+    ax.legend(loc='upper right', fontsize=18)
     plt.xticks(fontsize=16)  # Set y-axis number sizes to 14
     plt.yticks(fontsize=16)  # Set y-axis number sizes to 14
+    ax.set_yticklabels(systems, rotation=45, fontsize=18)
 
     # Show the plot
     plt.tight_layout()
