@@ -7,7 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
-def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path):
+def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, experimentID, script_path):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -15,20 +17,13 @@ function ResetParameters() {{
   checkpointInterval={checkpointInterval}
   tthread={tthread}
   scheduler="{scheduler}"
-  defaultScheduler="{defaultScheduler}"
-  complexity={complexity}
   NUM_ITEMS={NUM_ITEMS}
-  rootFilePath="{rootFilePath}"
   totalEvents={totalEvents}
-
   nfvWorkloadPath="{nfvWorkloadPath}"
   communicationChoice={communicationChoice}
   vnfInstanceNum={vnfInstanceNum}
   offloadCCThreadNum={offloadCCThreadNum}
   offloadLockNum={offloadLockNum}
-  rRatioSharedReaders={rRatioSharedReaders}
-  wRatioSharedWriters={wRatioSharedWriters}
-  rwRatioMutualInteractive={rwRatioMutualInteractive}
   ccStrategy={ccStrategy}
   workloadPattern={workloadPattern}
   enableTimeBreakdown={enableTimeBreakdown}
@@ -51,9 +46,6 @@ function runTStream() {{
           --vnfInstanceNum $vnfInstanceNum \\
           --offloadCCThreadNum $offloadCCThreadNum \\
           --offloadLockNum $offloadLockNum \\
-          --rRatioSharedReaders $rRatioSharedReaders \\
-          --wRatioSharedWriters $wRatioSharedWriters \\
-          --rwRatioMutualInteractive $rwRatioMutualInteractive \\
           --ccStrategy $ccStrategy \\
           --workloadPattern $workloadPattern \\
           --enableTimeBreakdown $enableTimeBreakdown \\
@@ -74,9 +66,6 @@ function runTStream() {{
     --vnfInstanceNum $vnfInstanceNum \\
     --offloadCCThreadNum $offloadCCThreadNum \\
     --offloadLockNum $offloadLockNum \\
-    --rRatioSharedReaders $rRatioSharedReaders \\
-    --wRatioSharedWriters $wRatioSharedWriters \\
-    --rwRatioMutualInteractive $rwRatioMutualInteractive \\
     --ccStrategy $ccStrategy \\
     --workloadPattern $workloadPattern \\
     --enableTimeBreakdown $enableTimeBreakdown \\
@@ -186,8 +175,10 @@ def plot_scalability_comparison(root_dir):
     # Adjust layout
     plt.tight_layout()
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.2_Scalability.png'))
-    plt.savefig(os.path.join(script_dir, '5.2.2_Scalability.pdf'))
+    figure_dir = os.path.join(script_dir, "figures")
+    plt.savefig(os.path.join(figure_dir, '5.2.2_Scalability.png'))
+    plt.savefig(os.path.join(figure_dir, '5.2.2_Scalability.pdf'))
+    print("VNF scalability figure generated.")
 
 
 if __name__ == "__main__":
@@ -195,29 +186,24 @@ if __name__ == "__main__":
     app = "nfv_test"
     checkpointInterval = 100
     tthread = 4
-    scheduler = "OP_BFS_A"
-    defaultScheduler = "OP_BFS_A"
-    complexity = 0
+    scheduler = "OP_BFS"
     NUM_ITEMS = 10000
-    rootFilePath = "/home/shuhao/jjzhao/data"
     totalEvents = 4000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
     offloadCCThreadNum = 4
     offloadLockNum = 1000
-    rRatioSharedReaders = 80
-    wRatioSharedWriters = 80
-    rwRatioMutualInteractive = 80
     ccStrategy = 0
     workloadPattern = 0
     enableTimeBreakdown = 0
-    experimentID = "5.2.2"
+    experimentID = "6"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    # generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-    # execute_bash_script(script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, experimentID, script_path)
+    execute_bash_script(script_path)
 
-    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.2/throughput"
+    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/6/throughput"
     plot_scalability_comparison(throughput_root_directory)
-    print("5.2.2 scalability figure generated.")

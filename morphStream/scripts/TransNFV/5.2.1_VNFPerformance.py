@@ -1,13 +1,14 @@
 import subprocess
 import os
-import time
 import threading
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
-def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path):
+def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, experimentID, script_path):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -15,20 +16,13 @@ function ResetParameters() {{
   checkpointInterval={checkpointInterval}
   tthread={tthread}
   scheduler="{scheduler}"
-  defaultScheduler="{defaultScheduler}"
-  complexity={complexity}
   NUM_ITEMS={NUM_ITEMS}
-  rootFilePath="{rootFilePath}"
   totalEvents={totalEvents}
-
   nfvWorkloadPath="{nfvWorkloadPath}"
   communicationChoice={communicationChoice}
   vnfInstanceNum={vnfInstanceNum}
   offloadCCThreadNum={offloadCCThreadNum}
   offloadLockNum={offloadLockNum}
-  rRatioSharedReaders={rRatioSharedReaders}
-  wRatioSharedWriters={wRatioSharedWriters}
-  rwRatioMutualInteractive={rwRatioMutualInteractive}
   ccStrategy={ccStrategy}
   workloadPattern={workloadPattern}
   enableTimeBreakdown={enableTimeBreakdown}
@@ -41,19 +35,13 @@ function runTStream() {{
           --NUM_ITEMS $NUM_ITEMS \\
           --tthread $tthread \\
           --scheduler $scheduler \\
-          --defaultScheduler $defaultScheduler \\
           --checkpoint_interval $checkpointInterval \\
-          --complexity $complexity \\
-          --rootFilePath $rootFilePath \\
           --totalEvents $totalEvents \\
           --nfvWorkloadPath $nfvWorkloadPath \\
           --communicationChoice $communicationChoice \\
           --vnfInstanceNum $vnfInstanceNum \\
           --offloadCCThreadNum $offloadCCThreadNum \\
           --offloadLockNum $offloadLockNum \\
-          --rRatioSharedReaders $rRatioSharedReaders \\
-          --wRatioSharedWriters $wRatioSharedWriters \\
-          --rwRatioMutualInteractive $rwRatioMutualInteractive \\
           --ccStrategy $ccStrategy \\
           --workloadPattern $workloadPattern \\
           --enableTimeBreakdown $enableTimeBreakdown \\
@@ -64,19 +52,13 @@ function runTStream() {{
     --NUM_ITEMS $NUM_ITEMS \\
     --tthread $tthread \\
     --scheduler $scheduler \\
-    --defaultScheduler $defaultScheduler \\
     --checkpoint_interval $checkpointInterval \\
-    --complexity $complexity \\
-    --rootFilePath $rootFilePath \\
     --totalEvents $totalEvents \\
     --nfvWorkloadPath $nfvWorkloadPath \\
     --communicationChoice $communicationChoice \\
     --vnfInstanceNum $vnfInstanceNum \\
     --offloadCCThreadNum $offloadCCThreadNum \\
     --offloadLockNum $offloadLockNum \\
-    --rRatioSharedReaders $rRatioSharedReaders \\
-    --wRatioSharedWriters $wRatioSharedWriters \\
-    --rwRatioMutualInteractive $rwRatioMutualInteractive \\
     --ccStrategy $ccStrategy \\
     --workloadPattern $workloadPattern \\
     --enableTimeBreakdown $enableTimeBreakdown \\
@@ -186,8 +168,9 @@ def plot_throughput_barchart(root_directory):
 
     # Save the figure in the same directory as the script
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.1_Throughput.pdf'))  # Save the figure
-    plt.savefig(os.path.join(script_dir, '5.2.1_Throughput.png'))  # Save the figure
+    figure_dir = os.path.join(script_dir, 'figures')
+    plt.savefig(os.path.join(figure_dir, '5.2.1_Throughput.pdf'))  # Save the figure
+    plt.savefig(os.path.join(figure_dir, '5.2.1_Throughput.png'))  # Save the figure
 
 
 
@@ -262,8 +245,9 @@ def plot_latency_CDF(root_directory):
 
     plt.tight_layout()
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.1_Latency.pdf'))
-    plt.savefig(os.path.join(script_dir, '5.2.1_Latency.png'))
+    figure_dir = os.path.join(script_dir, 'figures')
+    plt.savefig(os.path.join(figure_dir, '5.2.1_Latency.pdf'))
+    plt.savefig(os.path.join(figure_dir, '5.2.1_Latency.png'))
 
 
 if __name__ == "__main__":
@@ -271,27 +255,23 @@ if __name__ == "__main__":
     app = "nfv_test"
     checkpointInterval = 100
     tthread = 8
-    scheduler = "OP_BFS_A"
-    defaultScheduler = "OP_BFS_A"
-    complexity = 0
+    scheduler = "OP_BFS"
     NUM_ITEMS = 10000
-    rootFilePath = "/home/shuhao/jjzhao/data"
     totalEvents = 400000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
     offloadCCThreadNum = 16
     offloadLockNum = 10000
-    rRatioSharedReaders = 80
-    wRatioSharedWriters = 80
-    rwRatioMutualInteractive = 80
     ccStrategy = 0
     workloadPattern = 0
     enableTimeBreakdown = 0
     experimentID = "5.2.1"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, rRatioSharedReaders, wRatioSharedWriters, rwRatioMutualInteractive, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, experimentID, script_path)
     execute_bash_script(script_path)
 
     throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"

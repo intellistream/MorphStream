@@ -39,6 +39,9 @@ public class VNFRunner implements Runnable {
     private static final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
     private static final int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
     private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private static final String nfvExpPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+    private static final String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
+    private static final String vnfID = MorphStreamEnv.get().configuration().getString("vnfID");
     private static double totalParseTimeMS = 0;
     private static double totalSyncTimeMS = 0;
     private static double totalUsefulTimeMS = 0;
@@ -48,16 +51,13 @@ public class VNFRunner implements Runnable {
     public VNFRunner() {
         this.patternString = toPatternString(pattern);
         CyclicBarrier finishBarrier = new CyclicBarrier(vnfInstanceNum);
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String vnfID = MorphStreamEnv.get().configuration().getString("vnfID");
 
         for (int i = 0; i < vnfInstanceNum; i++) {
             String csvFilePath;
             if (experimentID == "5.2.1") {
-                csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, vnfID, i);
+                csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, vnfID, i);
             } else {
-                csvFilePath = String.format(rootPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
+                csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
             }
             int stateGap = stateRange / vnfInstanceNum;
             int instanceExpRequestCount = totalRequests / vnfInstanceNum;
@@ -92,20 +92,16 @@ public class VNFRunner implements Runnable {
             case "5.1": // Preliminary study
                 writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
                 break;
-            case "5.2.1": // Static throughput and latency
+            case "5.2.1": // Static VNF throughput and latency
                 writeCSVThroughput(patternString, ccStrategyString, overallThroughput);
                 writeCSVLatency(patternString, ccStrategyString);
                 break;
-            case "5.2.2": // Dynamic throughput
+            case "5.2.2": // Dynamic VNF throughput and latency
                 computeDynamicThroughput();
                 writeCSVDynamicThroughput(patternString, ccStrategyString);
                 writeCSVLatency(patternString, ccStrategyString);
                 break;
-            case "5.2.2_dynamic": // Dynamic throughput
-                computeDynamicThroughput();
-                writeCSVDynamicThroughput(patternString, ccStrategyString);
-                break;
-            case "5.3.1":
+            case "5.3.1": // Dynamic VNF time breakdown
                 computeTimeBreakdown();
                 writeCSVBreakdown();
                 break;

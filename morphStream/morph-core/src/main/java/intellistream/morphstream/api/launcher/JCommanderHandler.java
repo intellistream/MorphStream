@@ -70,7 +70,7 @@ public class JCommanderHandler {
      * Scheduling configurations
      */
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "OP_BFS_A";
+//    public String scheduler = "OP_BFS_A";
     //    public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
 //    public String scheduler = "OG_DFS_A";
@@ -78,7 +78,7 @@ public class JCommanderHandler {
 //    public String scheduler = "OG_NS_A";
 //    public String scheduler = "OP_NS";
 //    public String scheduler = "OP_NS_A";
-//    public String scheduler = "OP_BFS";
+    public String scheduler = "OP_BFS";
 //    public String scheduler = "OP_BFS_A";
 //    public String scheduler = "OP_DFS";
 //    public String scheduler = "OP_DFS_A";
@@ -119,15 +119,8 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
     public String application = "SimVNF";
-    //    public String application = "StreamLedger";
-//    public String application = "SHJ";
-//    public String application = "GrepSum";
-//    public String application = "WindowedGrepSum";
-//    public String application = "OnlineBiding";
-//    public String application = "TollProcessing";
     @Parameter(names = {"--operatorIDs"}, description = "Unique identifiers for operators")
     public String operatorIDs = "sim_vnf";
-    //    public String operatorIDs = "sl";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
@@ -228,14 +221,10 @@ public class JCommanderHandler {
     /**
      * Input configurations
      */
-    @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
-    public String configStr; //TODO: if config string specified, load configs from the file using loadProperties()
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
     public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
     @Parameter(names = {"--inputFileType"}, description = "input file type, [txt, csv, json]")
     public int inputFileType = 0;
-    @Parameter(names = {"--inputFilePath"}, description = "relative path of input file to the root")
-    public String inputFilePath;
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
@@ -271,10 +260,6 @@ public class JCommanderHandler {
     //System configure
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 8;// default total execution threads
-    @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
-    public int spoutNum = 8;// number of spout threads
-    @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
-    public String operatorThreadNum = "8";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 100;//checkpoint per thread.
 
@@ -384,11 +369,6 @@ public class JCommanderHandler {
             config.put("batch", batch);
         }
         config.put("tthread", tthread);
-        config.put("spoutNum", spoutNum);
-        String[] operatorThreadNumArray = operatorThreadNum.split(";");
-        for (int i = 0; i < operatorThreadNumArray.length; i ++) {
-            config.put("threadNumOf_" + i, Integer.valueOf(operatorThreadNumArray[i]));
-        }
         config.put("checkpoint", checkpoint_interval);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);

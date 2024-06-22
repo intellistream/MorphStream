@@ -17,12 +17,8 @@ function ResetParameters() {{
   checkpointInterval={checkpointInterval}
   tthread={tthread}
   scheduler="{scheduler}"
-  defaultScheduler="{defaultScheduler}"
-  complexity={complexity}
   NUM_ITEMS={NUM_ITEMS}
-  rootFilePath="{rootFilePath}"
   totalEvents={totalEvents}
-
   nfvWorkloadPath="{nfvWorkloadPath}"
   communicationChoice={communicationChoice}
   vnfInstanceNum={vnfInstanceNum}
@@ -42,10 +38,7 @@ function runTStream() {{
           --NUM_ITEMS $NUM_ITEMS \\
           --tthread $tthread \\
           --scheduler $scheduler \\
-          --defaultScheduler $defaultScheduler \\
           --checkpoint_interval $checkpointInterval \\
-          --complexity $complexity \\
-          --rootFilePath $rootFilePath \\
           --totalEvents $totalEvents \\
           --nfvWorkloadPath $nfvWorkloadPath \\
           --communicationChoice $communicationChoice \\
@@ -64,10 +57,7 @@ function runTStream() {{
     --NUM_ITEMS $NUM_ITEMS \\
     --tthread $tthread \\
     --scheduler $scheduler \\
-    --defaultScheduler $defaultScheduler \\
     --checkpoint_interval $checkpointInterval \\
-    --complexity $complexity \\
-    --rootFilePath $rootFilePath \\
     --totalEvents $totalEvents \\
     --nfvWorkloadPath $nfvWorkloadPath \\
     --communicationChoice $communicationChoice \\
@@ -210,8 +200,9 @@ def plot_dynamic_throughput_linechart():
     plt.grid(True)
     plt.tight_layout()
     script_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/"
-    plt.savefig(os.path.join(script_dir, '5.2.2_Throughput.pdf'))
-    plt.savefig(os.path.join(script_dir, '5.2.2_Throughput.png'))
+    figure_dir = os.path.join(script_dir, 'figures')
+    plt.savefig(os.path.join(figure_dir, '5.2.2_Throughput.pdf'))
+    plt.savefig(os.path.join(figure_dir, '5.2.2_Throughput.png'))
     print("5.2.2 throughput figure generated.")
 
 def plot_latency_CDF():
@@ -290,8 +281,9 @@ def plot_latency_CDF():
 
     plt.tight_layout()
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-    plt.savefig(os.path.join(script_dir, '5.2.2_Latency.pdf'))
-    plt.savefig(os.path.join(script_dir, '5.2.2_Latency.png'))
+    figure_dir = os.path.join(script_dir, 'figures')
+    plt.savefig(os.path.join(figure_dir, '5.2.2_Latency.pdf'))
+    plt.savefig(os.path.join(figure_dir, '5.2.2_Latency.png'))
     print("5.2.2 latency figure generated.")
 
 
@@ -301,11 +293,8 @@ if __name__ == "__main__":
     app = "nfv_test"
     checkpointInterval = 100
     tthread = 8
-    scheduler = "OP_BFS_A"
-    defaultScheduler = "OP_BFS_A"
-    complexity = 0
+    scheduler = "OP_BFS"
     NUM_ITEMS = 10000
-    rootFilePath = "/home/shuhao/jjzhao/data"
     totalEvents = 400000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
@@ -320,9 +309,12 @@ if __name__ == "__main__":
     enableHardcodeCCSwitch = 1
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy, workloadPattern, enableTimeBreakdown, instancePatternPunctuation, experimentID, script_path, enableHardcodeCCSwitch)
-#     execute_bash_script(script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, instancePatternPunctuation, experimentID, script_path,
+                         enableHardcodeCCSwitch)
+    execute_bash_script(script_path)
 
-#     plot_dynamic_throughput_linechart()
+    plot_dynamic_throughput_linechart()
     plot_latency_CDF()
 

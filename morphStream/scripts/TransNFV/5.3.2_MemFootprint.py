@@ -7,10 +7,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
-def generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath,
-                         totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum,
-                         ccStrategy, workloadPattern, enableTimeBreakdown,
-                         experimentID, script_path, enableHardcodeCCSwitch, enableMemoryFootprint, memoryIntervalMS,
+def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum,
+                         ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path,
+                         enableHardcodeCCSwitch, enableMemoryFootprint, memoryIntervalMS,
                          instancePatternPunctuation, managerPatternPunctuation):
     script_content = f"""#!/bin/bash
 
@@ -19,12 +19,8 @@ function ResetParameters() {{
   checkpointInterval={checkpointInterval}
   tthread={tthread}
   scheduler="{scheduler}"
-  defaultScheduler="{defaultScheduler}"
-  complexity={complexity}
   NUM_ITEMS={NUM_ITEMS}
-  rootFilePath="{rootFilePath}"
   totalEvents={totalEvents}
-
   nfvWorkloadPath="{nfvWorkloadPath}"
   communicationChoice={communicationChoice}
   vnfInstanceNum={vnfInstanceNum}
@@ -47,10 +43,7 @@ function runTStream() {{
           --NUM_ITEMS $NUM_ITEMS \\
           --tthread $tthread \\
           --scheduler $scheduler \\
-          --defaultScheduler $defaultScheduler \\
           --checkpoint_interval $checkpointInterval \\
-          --complexity $complexity \\
-          --rootFilePath $rootFilePath \\
           --totalEvents $totalEvents \\
           --nfvWorkloadPath $nfvWorkloadPath \\
           --communicationChoice $communicationChoice \\
@@ -72,10 +65,7 @@ function runTStream() {{
     --NUM_ITEMS $NUM_ITEMS \\
     --tthread $tthread \\
     --scheduler $scheduler \\
-    --defaultScheduler $defaultScheduler \\
     --checkpoint_interval $checkpointInterval \\
-    --complexity $complexity \\
-    --rootFilePath $rootFilePath \\
     --totalEvents $totalEvents \\
     --nfvWorkloadPath $nfvWorkloadPath \\
     --communicationChoice $communicationChoice \\
@@ -273,7 +263,8 @@ def draw_footprint_plot():
     top_legend = plt.legend(custom_handles, legend_labels, loc='upper right', fontsize=16, markerscale=1.5, handletextpad=0.1)
     plt.gca().add_artist(top_legend)
 #     bottom = plt.legend(custom_handles, legend_labels, loc='lower center', bbox_to_anchor=(0.45, 1.2), ncol=4, fontsize=18, markerscale=1.5, handletextpad=0.5, columnspacing=0.5)
-    plt.legend(handles=init_legend_handles + process_legend_handles, labels=['Initialization finish', 'Processing finish'], loc='lower right', fontsize=16)
+    plt.legend(handles=init_legend_handles + process_legend_handles,
+               labels=['Initialization finish', 'Processing finish'], loc='lower right', fontsize=16)
 
     plt.xticks(fontsize=18)
     plt.yticks(fontsize=18)
@@ -282,8 +273,9 @@ def draw_footprint_plot():
 
     plt.tight_layout()
     script_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/"
-    plt.savefig(os.path.join(script_dir, '5.3.2_Footprint.pdf'))
-    plt.savefig(os.path.join(script_dir, '5.3.2_Footprint.png'))
+    figure_dir = os.path.join(script_dir, "figures")
+    plt.savefig(os.path.join(figure_dir, '5.3.2_Footprint.pdf'))
+    plt.savefig(os.path.join(figure_dir, '5.3.2_Footprint.png'))
     print("Figure generated.")
 
 
@@ -292,11 +284,8 @@ if __name__ == "__main__":
     app = "nfv_test"
     checkpointInterval = 100
     tthread = 8
-    scheduler = "OP_BFS_A"
-    defaultScheduler = "OP_BFS_A"
-    complexity = 0
+    scheduler = "OP_BFS"
     NUM_ITEMS = 10000
-    rootFilePath = "/home/shuhao/jjzhao/data"
     totalEvents = 1200000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
@@ -304,9 +293,9 @@ if __name__ == "__main__":
     offloadCCThreadNum = 16
     offloadLockNum = 10000
     ccStrategy = 0
-    workloadPattern = 0
-    enableTimeBreakdown = 1
-    experimentID = "5.3.1"
+    workloadPattern = 4 # Dynamic workload
+    enableTimeBreakdown = 0
+    experimentID = "5.3.2"
     enableHardcodeCCSwitch = 1
     enableMemoryFootprint = 1
     memoryIntervalMS = 10
@@ -314,8 +303,11 @@ if __name__ == "__main__":
     managerPatternPunctuation = 100000
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-#     generate_bash_script(app, checkpointInterval, tthread, scheduler, defaultScheduler, complexity, NUM_ITEMS, rootFilePath, totalEvents, nfvWorkloadPath, communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch, enableMemoryFootprint, memoryIntervalMS, instancePatternPunctuation, managerPatternPunctuation)
-#     execute_bash_script(script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
+                         enableMemoryFootprint, memoryIntervalMS, instancePatternPunctuation, managerPatternPunctuation)
+    execute_bash_script(script_path)
 
     draw_footprint_plot()
 
