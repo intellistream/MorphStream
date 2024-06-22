@@ -97,6 +97,7 @@ public class CliFrontend {
 
     public void runStateManager() throws InterruptedException {
         int ccStrategy = env.configuration().getInt("ccStrategy");
+        boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
         if (ccStrategy == 0) {
             env.getAdaptiveCCManager().startPartitionCC();
             startVNF();
@@ -128,7 +129,9 @@ public class CliFrontend {
             runTopologyLocally();
             env.getAdaptiveCCManager().joinAdaptiveCC();
         }
-        StateManagerRunner.stopMemoryMonitoring();
+        if (enableMemoryFootprint) {
+            StateManagerRunner.stopMemoryMonitoring();
+        }
     }
 
     public void setSpoutCombo(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks) throws Exception {

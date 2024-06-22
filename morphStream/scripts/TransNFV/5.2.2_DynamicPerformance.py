@@ -201,6 +201,7 @@ def plot_dynamic_throughput_linechart():
     plt.tight_layout()
     script_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/"
     figure_dir = os.path.join(script_dir, 'figures')
+    os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, '5.2.2_Throughput.pdf'))
     plt.savefig(os.path.join(figure_dir, '5.2.2_Throughput.png'))
     print("5.2.2 throughput figure generated.")
@@ -282,6 +283,7 @@ def plot_latency_CDF():
     plt.tight_layout()
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
     figure_dir = os.path.join(script_dir, 'figures')
+    os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, '5.2.2_Latency.pdf'))
     plt.savefig(os.path.join(figure_dir, '5.2.2_Latency.png'))
     print("5.2.2 latency figure generated.")
@@ -307,7 +309,7 @@ if __name__ == "__main__":
     instancePatternPunctuation = 25000
     experimentID = "5.2.2"
     enableHardcodeCCSwitch = 1
-    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
+    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
 
     generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,

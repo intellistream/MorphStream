@@ -169,6 +169,7 @@ def plot_throughput_barchart(root_directory):
     # Save the figure in the same directory as the script
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
     figure_dir = os.path.join(script_dir, 'figures')
+    os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, '5.2.1_Throughput.pdf'))  # Save the figure
     plt.savefig(os.path.join(figure_dir, '5.2.1_Throughput.png'))  # Save the figure
 
@@ -246,6 +247,7 @@ def plot_latency_CDF(root_directory):
     plt.tight_layout()
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
     figure_dir = os.path.join(script_dir, 'figures')
+    os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, '5.2.1_Latency.pdf'))
     plt.savefig(os.path.join(figure_dir, '5.2.1_Latency.png'))
 
@@ -267,7 +269,7 @@ if __name__ == "__main__":
     workloadPattern = 0
     enableTimeBreakdown = 0
     experimentID = "5.2.1"
-    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
+    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
 
     generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,

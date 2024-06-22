@@ -132,7 +132,7 @@ def execute_bash_script(script_path):
         print(f"Bash script completed successfully.")
 
 def read_time(path, system, index):
-    directory = os.path.join("/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.1/", f"{path}/")
+    directory = os.path.join("/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.2/", f"{path}/")
     file_path = os.path.join(directory, f"{system}.csv")
     time = -1
     try:
@@ -174,12 +174,12 @@ def compute_intervals_transNFV():
         if process_time > transNFV_process_time:
             transNFV_process_time = process_time
 
-    print(transNFV_init_time)
-    print(transNFV_process_time)
+#     print(transNFV_init_time)
+#     print(transNFV_process_time)
 
     init_times = []
     process_times = []
-    tpg_timestamp_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.1/timestamps/Preemptive"
+    tpg_timestamp_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.2/timestamps/Preemptive"
     for filename in os.listdir(tpg_timestamp_directory):
         if filename.endswith(".csv"):
             file_path = os.path.join(tpg_timestamp_directory, filename)
@@ -200,22 +200,22 @@ def compute_intervals_transNFV():
         transNFV_init_time = max_init_time
     if max_process_time > transNFV_process_time:
         transNFV_process_time = max_process_time
-    print(transNFV_init_time)
-    print(transNFV_process_time)
+#     print(transNFV_init_time)
+#     print(transNFV_process_time)
 
     transNFV_init_interval = int((transNFV_init_time - transNFV_start_time) / 10000000) + 1
     transNFV_process_interval = int((transNFV_process_time - transNFV_start_time) / 10000000) + 1
-    print(transNFV_init_interval)
-    print(transNFV_process_interval)
+#     print(transNFV_init_interval)
+#     print(transNFV_process_interval)
     return (transNFV_init_interval, transNFV_process_interval)
 
 def draw_footprint_plot():
-    footprint_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.1/memory_footprint/"
+    footprint_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.3.2/memory_footprint/"
     chc_init_interval, chc_process_interval = compute_intervals("CHC")
     s6_init_interval, s6_process_interval = compute_intervals("S6")
     openNF_init_interval, openNF_process_interval = compute_intervals("OpenNF")
-    transNFV_init_interval = 100
-    transNFV_process_interval = 279
+    transNFV_init_interval = 102
+    transNFV_process_interval = 285
 
     init_intervals = [openNF_init_interval, s6_init_interval, chc_init_interval, transNFV_init_interval]
     process_intervals = [openNF_process_interval, s6_process_interval, chc_process_interval, transNFV_process_interval]
@@ -274,6 +274,7 @@ def draw_footprint_plot():
     plt.tight_layout()
     script_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/"
     figure_dir = os.path.join(script_dir, "figures")
+    os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, '5.3.2_Footprint.pdf'))
     plt.savefig(os.path.join(figure_dir, '5.3.2_Footprint.png'))
     print("Figure generated.")
@@ -301,7 +302,7 @@ if __name__ == "__main__":
     memoryIntervalMS = 10
     instancePatternPunctuation = 25000
     managerPatternPunctuation = 100000
-    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
+    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
 
     generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,

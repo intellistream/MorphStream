@@ -164,6 +164,7 @@ def plot_time_breakdown_barchart():
     plt.tight_layout()
     script_dir = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/"
     figure_dir = os.path.join(script_dir, "figures")
+    os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, '5.3.1_Overhead.pdf'))
     plt.savefig(os.path.join(figure_dir, '5.3.1_Overhead.png'))
     print("Figure generated.")
@@ -190,13 +191,13 @@ if __name__ == "__main__":
     enableHardcodeCCSwitch = 1
     instancePatternPunctuation = 25000
     managerPatternPunctuation = 100000
-    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
+    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
-                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
-                         workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
-                         instancePatternPunctuation, managerPatternPunctuation)
-    execute_bash_script(script_path)
+#     generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+#                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+#                          workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
+#                          instancePatternPunctuation, managerPatternPunctuation)
+#     execute_bash_script(script_path)
 
     plot_time_breakdown_barchart()
 
