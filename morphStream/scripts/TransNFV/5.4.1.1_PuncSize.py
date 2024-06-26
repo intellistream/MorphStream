@@ -10,8 +10,7 @@ import csv
 def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum,
                          ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path,
-                         enableHardcodeCCSwitch, enableMemoryFootprint, memoryIntervalMS,
-                         instancePatternPunctuation):
+                         enableHardcodeCCSwitch, enableMemoryFootprint, memoryIntervalMS):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -31,7 +30,6 @@ function ResetParameters() {{
   enableTimeBreakdown={enableTimeBreakdown}
   experimentID="{experimentID}"
   enableHardcodeCCSwitch="{enableHardcodeCCSwitch}"
-  instancePatternPunctuation={instancePatternPunctuation}
   enableMemoryFootprint={enableMemoryFootprint}
   memoryIntervalMS={memoryIntervalMS}
 }}
@@ -54,7 +52,6 @@ function runTStream() {{
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID \\
           --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
-          --instancePatternPunctuation $instancePatternPunctuation \\
           --enableMemoryFootprint $enableMemoryFootprint \\
           --memoryIntervalMS $memoryIntervalMS
           "
@@ -75,16 +72,15 @@ function runTStream() {{
     --enableTimeBreakdown $enableTimeBreakdown \\
     --experimentID $experimentID \\
     --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
-    --instancePatternPunctuation $instancePatternPunctuation \\
     --enableMemoryFootprint $enableMemoryFootprint \\
     --memoryIntervalMS $memoryIntervalMS
 }}
 
 function baselinePattern() {{
   ResetParameters
-  for workloadPattern in 4
+  for workloadPattern in 541120 541140 541160
   do
-    for ccStrategy in 4 5 6 7
+    for instancePatternPunctuation in 2500 5000 10000
     do
       runTStream
     done
@@ -284,7 +280,7 @@ if __name__ == "__main__":
     tthread = 8
     scheduler = "OP_BFS"
     NUM_ITEMS = 10000
-    totalEvents = 1200000
+    totalEvents = 400000
     nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
@@ -293,19 +289,18 @@ if __name__ == "__main__":
     ccStrategy = 0
     workloadPattern = 4 # Dynamic workload
     enableTimeBreakdown = 0
-    experimentID = "5.3.2"
+    experimentID = "5.4.1.1"
     enableHardcodeCCSwitch = 1
     enableMemoryFootprint = 1
     memoryIntervalMS = 10
-    instancePatternPunctuation = 25000
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
 
     generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
                          workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
-                         enableMemoryFootprint, memoryIntervalMS, instancePatternPunctuation)
+                         enableMemoryFootprint, memoryIntervalMS)
     execute_bash_script(script_path)
 
-    draw_footprint_plot()
+    # draw_footprint_plot()
 
 

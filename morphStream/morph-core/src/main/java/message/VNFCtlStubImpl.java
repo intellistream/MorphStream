@@ -79,7 +79,7 @@ public class VNFCtlStubImpl {
 
     /** Monitor pattern report */
     static public void onMonitorReportMessage(int instanceID, MonitorReportMessage msg) {
-        MonitorThread.submitPatternData(new PatternData(instanceID, msg.getKey(), -1));
+        BatchMonitorThread.submitPatternData(new PatternData(instanceID, msg.getKey(), -1));
 //        System.out.println("Server received MonitorReport from client: " + msg.getCcValue());
     }
 

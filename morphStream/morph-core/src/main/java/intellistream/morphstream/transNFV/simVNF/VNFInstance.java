@@ -137,7 +137,7 @@ public class VNFInstance implements Runnable {
                 }
 
                 if (ccStrategy == 7) {
-                    MonitorThread.submitPatternData(new PatternData(instanceID, tupleID, type));
+                    BatchMonitorThread.submitPatternData(new PatternData(instanceID, tupleID, type));
                 }
                 if (ccStrategy == 7 && tupleUnderCCSwitch.containsKey(tupleID)) {
                     tupleBufferReqMap.computeIfAbsent(tupleID, k -> new ConcurrentLinkedQueue<>()).add(request); // Buffer affected tuples
@@ -198,7 +198,7 @@ public class VNFInstance implements Runnable {
                 System.out.println("All instances have finished, sending stop signals to StateManager...");
 
                 VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1);
-                MonitorThread.submitPatternData(new PatternData(-1, 0, -1));
+                BatchMonitorThread.submitPatternData(new PatternData(-1, 0, -1));
                 PartitionCCThread.submitPartitionRequest(stopSignal);
                 ReplicationCCThread.submitReplicationRequest(stopSignal);
                 OffloadCCThread.submitOffloadReq(stopSignal);

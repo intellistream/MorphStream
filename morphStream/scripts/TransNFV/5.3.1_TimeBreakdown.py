@@ -10,7 +10,7 @@ import csv
 def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum,
                          ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path,
-                         enableHardcodeCCSwitch, instancePatternPunctuation, managerPatternPunctuation):
+                         enableHardcodeCCSwitch, instancePatternPunctuation):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -31,7 +31,6 @@ function ResetParameters() {{
   experimentID="{experimentID}"
   enableHardcodeCCSwitch="{enableHardcodeCCSwitch}"
   instancePatternPunctuation={instancePatternPunctuation}
-  managerPatternPunctuation={managerPatternPunctuation}
 }}
 
 function runTStream() {{
@@ -52,8 +51,7 @@ function runTStream() {{
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID \\
           --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
-          --instancePatternPunctuation $instancePatternPunctuation \\
-          --managerPatternPunctuation $managerPatternPunctuation
+          --instancePatternPunctuation $instancePatternPunctuation
           "
   java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
@@ -72,8 +70,7 @@ function runTStream() {{
     --enableTimeBreakdown $enableTimeBreakdown \\
     --experimentID $experimentID \\
     --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
-    --instancePatternPunctuation $instancePatternPunctuation \\
-    --managerPatternPunctuation $managerPatternPunctuation
+    --instancePatternPunctuation $instancePatternPunctuation
 }}
 
 function baselinePattern() {{
@@ -190,14 +187,13 @@ if __name__ == "__main__":
     experimentID = "5.3.1"
     enableHardcodeCCSwitch = 1
     instancePatternPunctuation = 25000
-    managerPatternPunctuation = 100000
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
 
-#     generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
-#                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
-#                          workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
-#                          instancePatternPunctuation, managerPatternPunctuation)
-#     execute_bash_script(script_path)
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, experimentID, script_path, enableHardcodeCCSwitch,
+                         instancePatternPunctuation)
+    execute_bash_script(script_path)
 
     plot_time_breakdown_barchart()
 

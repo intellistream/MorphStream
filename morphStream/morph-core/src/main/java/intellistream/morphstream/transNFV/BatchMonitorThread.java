@@ -14,47 +14,38 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
-public class MonitorThread implements Runnable {
-    private static final Logger LOG = LoggerFactory.getLogger(MonitorThread.class);
+public class BatchMonitorThread implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(BatchMonitorThread.class);
     private static int txnCounter = 0;
     private static int nextPunctuationID = 1; // The next punctuation ID that instances can begin, start from 1
     private static BlockingQueue<PatternData> patternDataQueue;
+    private static final ConcurrentSkipListSet<Integer> currentBatchTuples = new ConcurrentSkipListSet<>();
     private static final ConcurrentHashMap<Integer, Integer> readCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> writeCountMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> ownershipMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Integer> conflictCountMap = new ConcurrentHashMap<>();
-    private static final HashMap<Integer, Integer> stateCurrentPatterns = new HashMap<>(); //0: Low_conflict, 1: Read_heavy, 2: Write_heavy, 3: High_conflict
-    private static final HashMap<Integer, Integer> statesPattern_0_to_23 = new HashMap<>(); //state tuples whose pattern changed from 1 to 3/4
-    private static final HashMap<Integer, Integer> statesPattern_1_to_23 = new HashMap<>();
-    private static final HashMap<Integer, Integer> statesPattern_23_to_0 = new HashMap<>();
-    private static final HashMap<Integer, Integer> statesPattern_23_to_1 = new HashMap<>();
+    private static final HashMap<Integer, Integer> tupleCurrentPatterns = new HashMap<>(); //0: Low_conflict, 1: Read_heavy, 2: Write_heavy, 3: High_conflict
+    private static final HashMap<Integer, Integer> tuplePattern_0_to_23 = new HashMap<>(); //state tuples whose pattern changed from 1 to 3/4
+    private static final HashMap<Integer, Integer> tuplePattern_1_to_23 = new HashMap<>();
+    private static final HashMap<Integer, Integer> tuplePattern_23_to_0 = new HashMap<>();
+    private static final HashMap<Integer, Integer> tuplePattern_23_to_1 = new HashMap<>();
     private static final HashMap<Integer, Integer> statesPatternChanges = new HashMap<>(); //Tuples under pattern changes -> new pattern
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    private static final int instancePuncSize = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
+    private static final int patternPunctuation = vnfInstanceNum * instancePuncSize;
     private static final int conflictThreshold = MorphStreamEnv.get().configuration().getInt("conflictThreshold");
     private static final int typeThreshold = MorphStreamEnv.get().configuration().getInt("typeThreshold");
     private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
-    private static final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("managerPatternPunctuation");
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
-    private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
-
-//    private static Map<Integer, Socket> instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
-//    private static final Map<Integer, InputStream> instanceInputStreams = new HashMap<>();
-//    private static final Map<Integer, OutputStream> instanceOutputStreams = new HashMap<>();
-//    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
 
 
-    public MonitorThread(BlockingQueue<PatternData> patternDataQueue) {
-        MonitorThread.patternDataQueue = patternDataQueue;
-//        instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
-//        for (Map.Entry<Integer, Socket> entry : instanceSocketMap.entrySet()) {
-//            try {
-//                instanceInputStreams.put(entry.getKey(), entry.getValue().getInputStream());
-//                instanceOutputStreams.put(entry.getKey(), entry.getValue().getOutputStream());
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
+
+
+    public BatchMonitorThread(BlockingQueue<PatternData> patternDataQueue) {
+        BatchMonitorThread.patternDataQueue = patternDataQueue;
     }
 
     public static void submitPatternData(PatternData patternData) {
@@ -80,27 +71,31 @@ public class MonitorThread implements Runnable {
             }
             updatePatternData(patternData);
             txnCounter++;
-            if (txnCounter % patternPunctuation == 0) {
-                nextPunctuationID++;
-                LOG.info("Pattern monitor judge pattern changes...");
-//                judgePattern(); //Determine pattern change for each state tuple that is R/W in the window
 
-                if (!statesPattern_0_to_23.isEmpty() || !statesPattern_1_to_23.isEmpty() || !statesPattern_23_to_0.isEmpty() || !statesPattern_23_to_1.isEmpty()) {
+            if (txnCounter % patternPunctuation == 0) {
+                LOG.info("Pattern judge pattern for window " + nextPunctuationID);
+                nextPunctuationID++;
+
+                judgePatternForWindow();
+
+                if (!statesPatternChanges.isEmpty()) {
                     notifyCCSwitch();
-                    notifyStartNextPunctuation();
-//                    ccSwitch();
+                    notifyStartNextPunctuation(); //TODO: This is used in a instance-barrier setup, where instances wait for CC switch signals before continuing
+                    ccSwitch();
                 } else {
                     notifyStartNextPunctuation();
                     LOG.info("No pattern change detected");
                 }
+
                 readCountMap.clear();
                 writeCountMap.clear();
                 conflictCountMap.clear();
-                statesPattern_0_to_23.clear();
-                statesPattern_1_to_23.clear();
-                statesPattern_23_to_0.clear();
-                statesPattern_23_to_1.clear();
+                tuplePattern_0_to_23.clear();
+                tuplePattern_1_to_23.clear();
+                tuplePattern_23_to_0.clear();
+                tuplePattern_23_to_1.clear();
                 statesPatternChanges.clear();
+                currentBatchTuples.clear();
             }
         }
     }
@@ -109,11 +104,13 @@ public class MonitorThread implements Runnable {
         int instanceID = metaDataByte.getInstanceID();
         int tupleID = metaDataByte.getTupleID();
         int type = metaDataByte.getType();
+
+        currentBatchTuples.add(tupleID);
         if (type == 0) { // Read
             readCountMap.merge(tupleID, 1, Integer::sum);
         } else if (type == 1) { // Write
             writeCountMap.merge(tupleID, 1, Integer::sum);
-        } else { // Read and Write
+        } else { // Read and Write TODO: For read-write operation, update read-write dependency count (refer to paper)
             readCountMap.merge(tupleID, 1, Integer::sum);
             writeCountMap.merge(tupleID, 1, Integer::sum);
         }
@@ -126,17 +123,23 @@ public class MonitorThread implements Runnable {
         ownershipMap.put(tupleID, instanceID);
     }
 
-    private static void judgePattern() {
-        for (Map.Entry<Integer, Integer> entry : readCountMap.entrySet()) {
-            int state = entry.getKey();
-            int readCount = entry.getValue();
-            try {
-                int writeCount = writeCountMap.get(state);
-                int readRatio = (readCount / (readCount + writeCount)) * 100;
-                int writeRatio = (writeCount / (readCount + writeCount)) * 100;
-                int conflictCount = conflictCountMap.get(state);
-                int oldPattern = stateCurrentPatterns.getOrDefault(state, -1);
-                int newPattern;
+    private static void judgePatternForWindow() {
+        for (Integer tupleID : currentBatchTuples) {
+            // Fetch all needed values once
+            int readCount = readCountMap.getOrDefault(tupleID, -1);
+            int writeCount = writeCountMap.getOrDefault(tupleID, -1);
+            int conflictCount = conflictCountMap.getOrDefault(tupleID, 0);
+            int oldPattern = tupleCurrentPatterns.getOrDefault(tupleID, -1);
+
+            int newPattern;
+            if (readCount == -1) { // No read operation, write-heavy
+                newPattern = 2;
+            } else if (writeCount == -1) { // No write operation, read-heavy
+                newPattern = 1;
+            } else {
+                double totalOps = readCount + writeCount;
+                double readRatio = (readCount / totalOps) * 100;
+                double writeRatio = (writeCount / totalOps) * 100;
 
                 if (conflictCount < conflictThreshold) { // Low_conflict
                     newPattern = 0;
@@ -145,24 +148,35 @@ public class MonitorThread implements Runnable {
                 } else if (writeRatio > typeThreshold) { // Write_heavy
                     newPattern = 2;
                 } else { // High_conflict
-                    newPattern = 3;
+                    newPattern = 3; // TODO: Determine this by read-write dependency count (refer to paper)
                 }
+            }
 
-                if (newPattern != oldPattern) {
-                    if (oldPattern == 0 && (newPattern == 2 || newPattern == 3)) {
-                        statesPattern_0_to_23.put(state, newPattern);
-                    } else if (oldPattern == 1 && (newPattern == 2 || newPattern == 3)) {
-                        statesPattern_1_to_23.put(state, newPattern);
-                    } else if ((oldPattern == 2 || oldPattern == 3) && newPattern == 0) {
-                        statesPattern_23_to_0.put(state, newPattern);
-                    } else if ((oldPattern == 2 || oldPattern == 3) && newPattern == 1) {
-                        statesPattern_23_to_1.put(state, newPattern);
-                    }
-                    stateCurrentPatterns.put(state, newPattern);
-                    statesPatternChanges.put(state, newPattern); // Only stores states whose pattern changed
+            if (newPattern != oldPattern) {
+                switch (oldPattern) {
+                    case 0:
+                        if (newPattern == 2 || newPattern == 3) {
+                            tuplePattern_0_to_23.put(tupleID, newPattern);
+                        }
+                        break;
+                    case 1:
+                        if (newPattern == 2 || newPattern == 3) {
+                            tuplePattern_1_to_23.put(tupleID, newPattern);
+                        }
+                        break;
+                    case 2:
+                    case 3:
+                        if (newPattern == 0) {
+                            tuplePattern_23_to_0.put(tupleID, newPattern);
+                        } else if (newPattern == 1) {
+                            tuplePattern_23_to_1.put(tupleID, newPattern);
+                        }
+                        break;
+                    default:
+                        break;
                 }
-            } catch (NullPointerException e) {
-                System.out.println(e.getMessage());
+                tupleCurrentPatterns.put(tupleID, newPattern);
+                statesPatternChanges.put(tupleID, newPattern);
             }
         }
     }
@@ -230,27 +244,27 @@ public class MonitorThread implements Runnable {
     }
 
     private static void ccSwitch() {
-        LOG.info("Monitor starts CC switch");
+        LOG.info("Monitor starts CC switch"); //TODO: Measure CC switch time here or at instance?
 
         //From dedicated local cache partition to global store
-        for (Map.Entry<Integer, Integer> entry : statesPattern_0_to_23.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : tuplePattern_0_to_23.entrySet()) {
             int tupleID = entry.getKey();
             syncTupleToGlobal(statePartitionMap.get(tupleID), tupleID);
         }
 
         //From ANY local cache to global store
-        for (Map.Entry<Integer, Integer> entry : statesPattern_1_to_23.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : tuplePattern_1_to_23.entrySet()) {
             syncTupleToGlobal(0, entry.getKey());
         }
 
         //From global store to dedicated local state partition
-        for (Map.Entry<Integer, Integer> entry : statesPattern_23_to_0.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : tuplePattern_23_to_0.entrySet()) {
             int tupleID = entry.getKey();
             syncTupleToLocal(statePartitionMap.get(tupleID), tupleID);
         }
 
         //From global store to ALL local caches
-        for (Map.Entry<Integer, Integer> entry : statesPattern_23_to_1.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : tuplePattern_23_to_1.entrySet()) {
             int tupleID = entry.getKey();
             for (int instanceID = 0; instanceID < vnfInstanceNum; instanceID++) {
                 syncTupleToLocal(instanceID, tupleID);

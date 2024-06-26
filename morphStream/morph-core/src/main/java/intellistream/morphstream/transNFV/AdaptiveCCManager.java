@@ -42,7 +42,7 @@ public class AdaptiveCCManager {
     private static HashMap<Integer, Long> tpgThreadProcessEndTimes = new HashMap<>();
 
     public AdaptiveCCManager() {
-        monitorThread = new Thread(new MonitorThread(monitorQueue));
+        monitorThread = new Thread(new BatchMonitorThread(monitorQueue));
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         replicationCCThread = new Thread(new ReplicationCCThread(replicationQueue));
         offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize));
