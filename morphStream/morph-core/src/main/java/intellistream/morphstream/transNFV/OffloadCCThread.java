@@ -107,7 +107,7 @@ public class OffloadCCThread implements Runnable {
                 if (doStatePartitioning) {
                     offloadExecutor.submit(() -> simProcessPartitionLock(request));
                 } else {
-                    offloadExecutor.submit(() -> simProcessGlobalLock(request));
+                    throw new UnsupportedOperationException();
                 }
             }
         }
@@ -140,53 +140,6 @@ public class OffloadCCThread implements Runnable {
             lock.unlock();
             if (enableTimeBreakdown) {
                 aggSyncTime.addAndGet(System.nanoTime() - syncStartTime2);
-            }
-        }
-    }
-
-    public void simProcessGlobalLock(VNFRequest offloadData) {
-        boolean processed = false;
-        while (!processed) {
-            // Check if this event is the next to be processed
-            if (offloadData.getLogicalTS() == watermark + 1) {
-                long syncStartTime = System.nanoTime();
-                globalLock.lock();
-                aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
-
-                try {
-                    if (offloadData.getLogicalTS() == watermark + 1) {
-                        long usefulStartTime = System.nanoTime();
-                        int saType = offloadData.getType();
-                        if (saType == 1) {
-                            simOffloadWrite(offloadData);
-                        } else if (saType == 0 || saType == 2) {
-                            simOffloadRead(offloadData);
-                        }
-                        aggUsefulTime.addAndGet(System.nanoTime() - usefulStartTime);
-                        watermark++;
-                        nextEventCondition.signalAll();  // Notify other waiting threads
-                        processed = true;  // Mark as processed to break the loop
-                    }
-                } finally {
-                    globalLock.unlock();  // Always release the lock
-                }
-            } else {
-                long syncStartTime = System.nanoTime(); //TODO: Separate Lock and Sync (awaiting watermark) into two categories?
-                globalLock.lock();
-                aggSyncTime.addAndGet(System.nanoTime() - syncStartTime);
-
-                try {
-                    long syncStartTime2 = System.nanoTime();
-                    while (offloadData.getLogicalTS() != watermark + 1) {
-                        nextEventCondition.await();
-                    }
-                    aggSyncTime.addAndGet(System.nanoTime() - syncStartTime2);
-
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    globalLock.unlock();
-                }
             }
         }
     }
