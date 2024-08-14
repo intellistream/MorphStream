@@ -201,7 +201,7 @@ public class VNFInstance implements Runnable {
                 BatchMonitorThread.submitPatternData(new PatternData(-1, 0, -1));
                 PartitionCCThread.submitPartitionRequest(stopSignal);
                 ReplicationCCThread.submitReplicationRequest(stopSignal);
-                OffloadCCThread.submitOffloadReq(stopSignal);
+                OffloadCCExecutorService.submitOffloadReq(stopSignal);
                 OpenNFController.submitOpenNFReq(stopSignal);
                 CHCController.submitCHCReq(stopSignal);
                 S6Controller.submitS6Request(stopSignal);
@@ -292,7 +292,7 @@ public class VNFInstance implements Runnable {
         } else if (tupleCC == 2) { // Offload
             BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
             request.setTxnACKQueue(responseQueue);
-            OffloadCCThread.submitOffloadReq(request);
+            OffloadCCExecutorService.submitOffloadReq(request);
             long syncStartTime = System.nanoTime();
             if (request.getType() != 1) {
                 while (responseQueue.isEmpty()) {

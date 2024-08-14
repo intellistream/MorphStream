@@ -45,7 +45,7 @@ public class AdaptiveCCManager {
         monitorThread = new Thread(new BatchMonitorThread(monitorQueue));
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         replicationCCThread = new Thread(new ReplicationCCThread(replicationQueue));
-        offloadCCThread = new Thread(new OffloadCCThread(offloadQueue, writeThreadPoolSize));
+        offloadCCThread = new Thread(new OffloadCCExecutorService(offloadQueue, writeThreadPoolSize));
         openNFThread = new Thread(new OpenNFController(openNFQueue));
         chcThread = new Thread(new CHCController(chcQueue));
         s6Thread = new Thread(new S6Controller(s6Queue));

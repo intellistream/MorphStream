@@ -11,7 +11,6 @@ import intellistream.morphstream.engine.txn.storage.TableRecord;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -19,15 +18,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class OffloadCCThread implements Runnable {
+public class OffloadCCExecutorService implements Runnable {
     private static BlockingQueue<VNFRequest> operationQueue;
     private final ExecutorService offloadExecutor;
-    private final Map<Integer, Socket> instanceSocketMap;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, Integer> saTypeMap = MorphStreamEnv.get().getSaTypeMap();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
@@ -38,9 +35,6 @@ public class OffloadCCThread implements Runnable {
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each tuple to its lock partition
     private static int requestCounter = 0;
-    private final ReentrantLock globalLock = new ReentrantLock();
-    private final Condition nextEventCondition = globalLock.newCondition();
-    private int watermark = 0;
     private boolean doStatePartitioning = true;
     private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private static final AtomicLong aggSyncTime = new AtomicLong(0); //TODO: This can be optimized by creating separate aggregator for each worker thread
@@ -49,10 +43,9 @@ public class OffloadCCThread implements Runnable {
     private static long processEndTime = -1;
 
 
-    public OffloadCCThread(BlockingQueue<VNFRequest> operationQueue, int writeThreadPoolSize) {
-        OffloadCCThread.operationQueue = operationQueue;
+    public OffloadCCExecutorService(BlockingQueue<VNFRequest> operationQueue, int writeThreadPoolSize) {
+        OffloadCCExecutorService.operationQueue = operationQueue;
         this.offloadExecutor = Executors.newFixedThreadPool(writeThreadPoolSize);
-        this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
         for (int i = 0; i < numPartitions; i++) {
             partitionLocks.put(i, new ReentrantLock(true));  // Create a fair lock for each partition
         }
@@ -95,6 +88,7 @@ public class OffloadCCThread implements Runnable {
                 requestCounter++;
                 request.setLogicalTS(requestCounter);
                 int saType = request.getType();
+
                 if (saType == 1) {
                     try {
                         request.getTxnACKQueue().put(1);
@@ -224,18 +218,9 @@ public class OffloadCCThread implements Runnable {
         }
     }
 
-    private static int decodeInt(byte[] bytes, int offset) {
-        int value = 0;
-        for (int i = 0; i < 4; i++) {
-            value |= (bytes[offset + i] & 0xFF) << (i * 8);
-        }
-        return value;
-    }
-
     public static AtomicLong getAggSyncTime() {
         return aggSyncTime;
     }
-
     public static AtomicLong getAggUsefulTime() {
         return aggUsefulTime;
     }

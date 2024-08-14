@@ -3,7 +3,7 @@ package intellistream.morphstream.transNFV.simVNF;
 import communication.dao.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.CHCController;
-import intellistream.morphstream.transNFV.OffloadCCThread;
+import intellistream.morphstream.transNFV.OffloadCCExecutorService;
 import intellistream.morphstream.transNFV.OpenNFController;
 import intellistream.morphstream.transNFV.PartitionCCThread;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
@@ -198,7 +198,7 @@ public class VNFRunner implements Runnable {
             aggManagerUsefulTime = PartitionCCThread.getManagerEventUsefulTime() / 1E6;
             // Caching time breakdown is done at instance level
         } else if (ccStrategy == 2) { // Offloading
-            aggManagerUsefulTime = OffloadCCThread.getAggUsefulTime().get() / 1E6;
+            aggManagerUsefulTime = OffloadCCExecutorService.getAggUsefulTime().get() / 1E6;
             aggInstanceSyncTime -= aggManagerUsefulTime;
         } else if (ccStrategy == 3) {
             //TODO: Get time breakdown from TPG threads
@@ -210,10 +210,10 @@ public class VNFRunner implements Runnable {
             aggInstanceSyncTime -= aggManagerUsefulTime;
         } else if (ccStrategy == 7) {
             aggManagerSyncTime += PartitionCCThread.getManagerEventSyncTime() / 1E6;
-            aggManagerSyncTime += OffloadCCThread.getAggSyncTime().get() / 1E6;
+            aggManagerSyncTime += OffloadCCExecutorService.getAggSyncTime().get() / 1E6;
             //TODO: Get time breakdown from TPG threads
             aggManagerUsefulTime += PartitionCCThread.getManagerEventUsefulTime() / 1E6;
-            aggManagerUsefulTime += OffloadCCThread.getAggUsefulTime().get() / 1E6;
+            aggManagerUsefulTime += OffloadCCExecutorService.getAggUsefulTime().get() / 1E6;
             //TODO: Get time breakdown from TPG threads
         }
 
