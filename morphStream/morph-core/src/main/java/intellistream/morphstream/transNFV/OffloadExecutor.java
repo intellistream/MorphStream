@@ -13,9 +13,9 @@ public class OffloadExecutor implements Runnable {
     private int requestCounter;
     private final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
 
-    public OffloadExecutor(int offloadExecutorID) {
+    public OffloadExecutor(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue) {
         this.offloadExecutorID = offloadExecutorID;
-        this.inputQueue = MorphStreamEnv.get().getAdaptiveCCManager().getOffloadingInputQueue(offloadExecutorID);
+        this.inputQueue = inputQueue;
     }
 
     private void sendACK(VNFRequest request) {

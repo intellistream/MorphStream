@@ -63,9 +63,7 @@ public class AdaptiveCCManager {
         for (int i = 0; i < offloadCCThreadNum; i++) {
             BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
             offloadingQueues.put(i, inputQueue);
-        }
-        for (int i = 0; i < offloadCCThreadNum; i++) {
-            Thread offloadExecutorThread = new Thread(new OffloadExecutor(i));
+            Thread offloadExecutorThread = new Thread(new OffloadExecutor(i, inputQueue));
             offloadExecutorThreads.put(i, offloadExecutorThread);
         }
 

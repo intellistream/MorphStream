@@ -51,6 +51,7 @@ public class MorphStreamEnv {
     }
 
     public AdaptiveCCManager getAdaptiveCCManager() {
+        System.out.println("AdaptiveCCManager: " + adaptiveCCManager);
         return adaptiveCCManager;
     }
     public static MorphStreamEnv get() {

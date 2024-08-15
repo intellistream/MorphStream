@@ -126,6 +126,18 @@ public class VNFManagerUDF {
                     default:
                         throw new UnsupportedOperationException("Unsupported saID value: " + saID);
                 }
+            } else if (vnfID == 11) {
+                switch (saID) {
+                    case 0:
+                        ATS_read(request);
+                        break;
+                    case 1:
+                    case 2:
+                        ATS_write(request);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("Unsupported saID value: " + saID);
+                }
             }
 
         } catch (DatabaseException e) {

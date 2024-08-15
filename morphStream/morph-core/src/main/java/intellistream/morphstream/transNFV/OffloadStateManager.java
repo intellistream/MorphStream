@@ -9,6 +9,7 @@ import intellistream.morphstream.engine.txn.storage.TableRecord;
 
 import java.util.HashMap;
 import java.util.PriorityQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -16,9 +17,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * */
 
 public class OffloadStateManager implements Runnable {
-    private static final HashMap<Integer, Long> lwmMap = new HashMap<>();
-    private static final HashMap<Integer, PriorityQueue<Long>> mvccWriteLockQueues = new HashMap<>();
-    private static final HashMap<Integer, PriorityQueue<Long>> svccLockQueues = new HashMap<>();
+    private static final ConcurrentHashMap<Integer, Long> lwmMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, PriorityQueue<Long>> mvccWriteLockQueues = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, PriorityQueue<Long>> svccLockQueues = new ConcurrentHashMap<>();
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
 
     // For time breakdown analysis
@@ -27,6 +28,14 @@ public class OffloadStateManager implements Runnable {
     private static final AtomicLong aggUsefulTime = new AtomicLong(0);
     private static long initEndTime = -1;
     private static long processEndTime = -1;
+
+    public OffloadStateManager() {
+        for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("NUM_ITEMS"); i++) {
+            lwmMap.put(i, 0L);
+            mvccWriteLockQueues.put(i, new PriorityQueue<>());
+            svccLockQueues.put(i, new PriorityQueue<>());
+        }
+    }
 
     public static int readStateMVCC(VNFRequest request) {
         long timeStamp = request.getCreateTime();
@@ -84,7 +93,9 @@ public class OffloadStateManager implements Runnable {
     // Update lwm upon the arrival of each new write request and after the completion of each write request
     private static void maintainLWM(int tupleID) {
         //Thread.sleep(1); //Sleep for 1 millisecond
-        lwmMap.put(tupleID, mvccWriteLockQueues.get(tupleID).peek());
+        PriorityQueue<Long> writeLockQueue = mvccWriteLockQueues.get(tupleID);
+        long lwm = writeLockQueue.peek();
+        lwmMap.put(tupleID, lwm);
     }
 
     public static int readStateSVCC(VNFRequest request) {
