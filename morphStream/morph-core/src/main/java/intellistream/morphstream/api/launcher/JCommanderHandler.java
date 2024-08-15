@@ -307,7 +307,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int offloadLockNum = 5000;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 7;
+    public int ccStrategy = 10;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
     public int workloadPattern = 4;
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -333,6 +333,8 @@ public class JCommanderHandler {
     public int enableHardcodeCCSwitch = 0;
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 1;
+    @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
+    public int doMVCC = 1;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
     @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")
@@ -545,6 +547,7 @@ public class JCommanderHandler {
         config.put("vnfID", vnfID);
         config.put("enableHardcodeCCSwitch", enableHardcodeCCSwitch);
         config.put("enableMemoryFootprint", enableMemoryFootprint);
+        config.put("doMVCC", doMVCC);
         config.put("memoryIntervalMS", memoryIntervalMS);
         config.put("conflictThreshold", conflictThreshold);
         config.put("typeThreshold", typeThreshold);

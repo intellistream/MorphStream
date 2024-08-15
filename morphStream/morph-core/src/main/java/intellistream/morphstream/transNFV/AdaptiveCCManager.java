@@ -16,7 +16,9 @@ public class AdaptiveCCManager {
     private Thread monitorThread;
     private Thread partitionCCThread;
     private Thread replicationCCThread;
-    private Thread offloadCCThread;
+    private Thread offloadCCExecutorService;
+    private Thread offloadStateManagerThread;
+    private HashMap<Integer, Thread> offloadExecutorThreads = new HashMap<>();
     private Thread openNFThread;
     private Thread chcThread;
     private Thread s6Thread;
@@ -27,12 +29,13 @@ public class AdaptiveCCManager {
     private final LinkedBlockingQueue<VNFRequest> openNFQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> chcQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> s6Queue = new LinkedBlockingQueue<>();
+    public static final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
     public static HashMap<Integer, VNFCtlStub> vnfStubs = new HashMap<>();
     private VNFRunner vnfManager;
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
-    private final int writeThreadPoolSize = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    private final int offloadCCThreadNum = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
     private final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
@@ -45,7 +48,8 @@ public class AdaptiveCCManager {
         monitorThread = new Thread(new BatchMonitorThread(monitorQueue));
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         replicationCCThread = new Thread(new ReplicationCCThread(replicationQueue));
-        offloadCCThread = new Thread(new OffloadCCExecutorService(offloadQueue, writeThreadPoolSize));
+        offloadCCExecutorService = new Thread(new OffloadCCExecutorService(offloadQueue, offloadCCThreadNum));
+        offloadStateManagerThread = new Thread(new OffloadStateManager());
         openNFThread = new Thread(new OpenNFController(openNFQueue));
         chcThread = new Thread(new CHCController(chcQueue));
         s6Thread = new Thread(new S6Controller(s6Queue));
@@ -55,6 +59,16 @@ public class AdaptiveCCManager {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
             tpgQueues.put(i, inputQueue);
         }
+
+        for (int i = 0; i < offloadCCThreadNum; i++) {
+            BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
+            offloadingQueues.put(i, inputQueue);
+        }
+        for (int i = 0; i < offloadCCThreadNum; i++) {
+            Thread offloadExecutorThread = new Thread(new OffloadExecutor(i));
+            offloadExecutorThreads.put(i, offloadExecutorThread);
+        }
+
         int partitionGap = tableSize / vnfInstanceNum;
         for (int i = 0; i < tableSize; i++) {
             partitionOwnership.put(i, i / partitionGap); //TODO: Refine this
@@ -65,7 +79,7 @@ public class AdaptiveCCManager {
         monitorThread.start();
         partitionCCThread.start();
         replicationCCThread.start();
-        offloadCCThread.start();
+        offloadCCExecutorService.start();
         System.out.println("CC123 and Monitor started");
     }
 
@@ -74,7 +88,7 @@ public class AdaptiveCCManager {
             monitorThread.join();
             partitionCCThread.join();
             replicationCCThread.join();
-            offloadCCThread.join();
+            offloadCCExecutorService.join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -106,14 +120,33 @@ public class AdaptiveCCManager {
         }
     }
 
-    public void startOffloadCC() {
-        offloadCCThread.start();
-        System.out.println("Offload controller started");
+    public void startOffloadCCExecutorService() {
+        offloadCCExecutorService.start();
+        System.out.println("Offload executor service started");
     }
 
-    public void joinOffloadCC() {
+    public void joinOffloadCCExecutorService() {
         try {
-            offloadCCThread.join();
+            offloadCCExecutorService.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void startOffloadExecutorThreads() {
+        offloadStateManagerThread.start();
+        for (int i = 0; i < offloadCCThreadNum; i++) {
+            offloadExecutorThreads.get(i).start();
+        }
+        System.out.println("Offload executors started");
+    }
+
+    public void joinOffloadExecutorThreads() {
+        try {
+            offloadStateManagerThread.join();
+            for (int i = 0; i < offloadCCThreadNum; i++) {
+                offloadExecutorThreads.get(i).join();
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -152,6 +185,10 @@ public class AdaptiveCCManager {
 
     public BlockingQueue<TransactionalEvent> getTPGInputQueue(int spoutId) {
         return tpgQueues.get(spoutId);
+    }
+
+    public BlockingQueue<VNFRequest> getOffloadingInputQueue(int offloadingId) {
+        return offloadingQueues.get(offloadingId);
     }
 
     public String getPattern() {

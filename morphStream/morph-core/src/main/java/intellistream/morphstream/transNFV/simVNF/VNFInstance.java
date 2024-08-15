@@ -29,6 +29,7 @@ public class VNFInstance implements Runnable {
     private final HashMap<Integer, Integer> localStates = new HashMap<>();
     private final ConcurrentHashMap<Integer, Integer> tupleCCMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = AdaptiveCCManager.tpgQueues;
+    private ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = AdaptiveCCManager.offloadingQueues;
     private final BlockingQueue<SyncData> managerStateSyncQueue = new LinkedBlockingQueue<>();
     private final ConcurrentHashMap<Integer, Integer> tupleUnderCCSwitch = new ConcurrentHashMap<>(); // Affected tupleID -> new CC
     private final ConcurrentHashMap<Integer, ConcurrentLinkedQueue<VNFRequest>> tupleBufferReqMap = new ConcurrentHashMap<>();
@@ -38,7 +39,9 @@ public class VNFInstance implements Runnable {
     private final BlockingQueue<Integer> monitorMsgQueue = new LinkedBlockingQueue<>();
     private int instancePuncID = 1; //Start from 1
     private final int numTPGThreads;
+    private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
     private int tpgRequestCount = 0;
+    private int offloadRequestCount = 0;
     private int inputLineCounter = 0;
     private long overallStartTime;
     private long overallEndTime;
@@ -377,7 +380,23 @@ public class VNFInstance implements Runnable {
                 }
             }
 
-        } else {
+        } else if (tupleCC == 10) { //TODO: Testing offload CC with SVCC vs. MVCC
+            BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
+            request.setTxnACKQueue(responseQueue);
+            offloadingQueues.get(tpgRequestCount % numOffloadThreads).offer(request);
+            tpgRequestCount++;
+//            long syncStartTime = System.nanoTime();
+            if (request.getType() != 1) {
+                while (responseQueue.isEmpty()) {
+                    //Wait for manager's ack
+                }
+            }
+//            if (enableTimeBreakdown) {
+//                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
+//            }
+        }
+
+        else {
             System.err.println("Unsupported CC strategy");
         }
     }

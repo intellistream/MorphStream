@@ -107,9 +107,9 @@ public class CliFrontend {
             startVNF();
             env.getAdaptiveCCManager().joinReplicationCC();
         } else if (ccStrategy == 2) {
-            env.getAdaptiveCCManager().startOffloadCC();
+            env.getAdaptiveCCManager().startOffloadCCExecutorService();
             startVNF();
-            env.getAdaptiveCCManager().joinOffloadCC();
+            env.getAdaptiveCCManager().joinOffloadCCExecutorService();
         } else if (ccStrategy == 3) {
             runTopologyLocally();
         } else if (ccStrategy == 4) {
@@ -128,6 +128,10 @@ public class CliFrontend {
             env.getAdaptiveCCManager().startAdaptiveCC();
             runTopologyLocally();
             env.getAdaptiveCCManager().joinAdaptiveCC();
+        } else if (ccStrategy == 10) { //TODO: Testing offload CC executor threads with SVCC vs. MVCC
+            env.getAdaptiveCCManager().startOffloadExecutorThreads();
+            startVNF();
+            env.getAdaptiveCCManager().joinOffloadExecutorThreads();
         }
         if (enableMemoryFootprint) {
             StateManagerRunner.stopMemoryMonitoring();

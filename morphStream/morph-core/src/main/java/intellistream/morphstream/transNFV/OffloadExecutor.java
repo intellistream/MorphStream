@@ -1,6 +1,7 @@
 package intellistream.morphstream.transNFV;
 
 import communication.dao.VNFRequest;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.simVNF.VNFRunner;
 
 import java.util.concurrent.BlockingQueue;
@@ -8,23 +9,22 @@ import java.util.concurrent.BlockingQueue;
 public class OffloadExecutor implements Runnable {
 
     private final int offloadExecutorID;
-    //TODO: Get input queue from VNF instances, similar to morph bolts
-    BlockingQueue<VNFRequest> operationQueue;
+    BlockingQueue<VNFRequest> inputQueue;
     private int requestCounter;
-    private final int doMVCC = 1; //TODO: hardcoded
+    private final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
 
-    public OffloadExecutor(int offloadExecutorID, BlockingQueue<VNFRequest> operationQueue) {
+    public OffloadExecutor(int offloadExecutorID) {
         this.offloadExecutorID = offloadExecutorID;
-        this.operationQueue = operationQueue;
+        this.inputQueue = MorphStreamEnv.get().getAdaptiveCCManager().getOffloadingInputQueue(offloadExecutorID);
     }
 
     private void sendACK(VNFRequest request) {
         try {
-            request.getTxnACKQueue().put(1);
+            request.getTxnACKQueue().put(1); // ACK to instance, notify it to proceed with the next request
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        VNFRunner.getSender(request.getInstanceID()).submitFinishedRequest(request); //Early ACK
+        VNFRunner.getSender(request.getInstanceID()).submitFinishedRequest(request); // register finished req to instance
     }
 
     @Override
@@ -34,7 +34,7 @@ public class OffloadExecutor implements Runnable {
         while (!Thread.currentThread().isInterrupted()) {
             VNFRequest request;
             try {
-                request = operationQueue.take();
+                request = inputQueue.take();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
