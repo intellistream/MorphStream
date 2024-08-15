@@ -32,7 +32,6 @@ public class OffloadCCExecutorService implements Runnable {
     private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final int numPartitions = MorphStreamEnv.get().configuration().getInt("offloadLockNum");
     private static final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
-    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each tuple to its lock partition
     private static int requestCounter = 0;
     private boolean doStatePartitioning = true;
