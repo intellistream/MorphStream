@@ -9,7 +9,9 @@ import intellistream.morphstream.engine.txn.storage.TableRecord;
 
 import java.util.HashMap;
 import java.util.PriorityQueue;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -18,8 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class OffloadStateManager implements Runnable {
     private static final ConcurrentHashMap<Integer, Long> lwmMap = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Integer, PriorityQueue<Long>> mvccWriteLockQueues = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Integer, PriorityQueue<Long>> svccLockQueues = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Long>> mvccWriteLockQueues = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Long>> svccLockQueues = new ConcurrentHashMap<>();
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
 
     // For time breakdown analysis
@@ -29,11 +31,14 @@ public class OffloadStateManager implements Runnable {
     private static long initEndTime = -1;
     private static long processEndTime = -1;
 
+    // Runtime control signals from VNF
+    private static boolean stopSignal = false;
+
     public OffloadStateManager() {
         for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("NUM_ITEMS"); i++) {
             lwmMap.put(i, 0L);
-            mvccWriteLockQueues.put(i, new PriorityQueue<>());
-            svccLockQueues.put(i, new PriorityQueue<>());
+            mvccWriteLockQueues.put(i, new ConcurrentSkipListSet<>());
+            svccLockQueues.put(i, new ConcurrentSkipListSet<>());
         }
     }
 
@@ -62,7 +67,11 @@ public class OffloadStateManager implements Runnable {
     public static void writeStateMVCC(VNFRequest request) {
         long timeStamp = request.getCreateTime();
         int tupleID = request.getTupleID();
-        mvccWriteLockQueues.get(tupleID).add(timeStamp);
+        ConcurrentSkipListSet<Long> lockQueue = mvccWriteLockQueues.get(tupleID);
+        if (lockQueue == null) {
+            throw new RuntimeException("Lock queue is null");
+        }
+        lockQueue.add(timeStamp);
         maintainLWM(tupleID);
 
         while (timeStamp != lwmMap.get(tupleID)) {
@@ -84,18 +93,24 @@ public class OffloadStateManager implements Runnable {
             throw new RuntimeException(e);
         }
 
-        mvccWriteLockQueues.get(tupleID).poll(); //TODO: make sure to remove the ts of the operation that has just been processed.
-        //TODO: GPT suggests using combination of treemap and hashmap to locate the min item and remove it accurately.
-        //TODO: What if a smaller timestamp arrives late? Then we can getting the wrong min value.
+        long lwm = lwmMap.get(tupleID);
+        mvccWriteLockQueues.get(tupleID).remove(lwm);
+        //TODO: What if a smaller timestamp arrives late? Then we can getting the wrong min value. Need to buffer and sort for a batch of operations
         maintainLWM(tupleID);
     }
+
 
     // Update lwm upon the arrival of each new write request and after the completion of each write request
     private static void maintainLWM(int tupleID) {
         //Thread.sleep(1); //Sleep for 1 millisecond
-        PriorityQueue<Long> writeLockQueue = mvccWriteLockQueues.get(tupleID);
-        long lwm = writeLockQueue.peek();
-        lwmMap.put(tupleID, lwm);
+        ConcurrentSkipListSet<Long> lockQueue = mvccWriteLockQueues.get(tupleID);
+        if (lockQueue == null) {
+            throw new RuntimeException("Lock queue is null");
+        }
+        if (lockQueue.isEmpty()) { //no more write request waiting in the queue
+            return;
+        }
+        lwmMap.put(tupleID, lockQueue.first());
     }
 
     public static int readStateSVCC(VNFRequest request) {
@@ -104,7 +119,7 @@ public class OffloadStateManager implements Runnable {
         int readValue = -1;
         svccLockQueues.get(tupleID).add(timeStamp);
 
-        while (timeStamp != svccLockQueues.get(tupleID).peek()) {
+        while (timeStamp != svccLockQueues.get(tupleID).first()) {
             // blocking wait
         }
 
@@ -126,7 +141,7 @@ public class OffloadStateManager implements Runnable {
         int tupleID = request.getTupleID();
         svccLockQueues.get(tupleID).add(timeStamp);
 
-        while (timeStamp != svccLockQueues.get(tupleID).peek()) {
+        while (timeStamp != svccLockQueues.get(tupleID).first()) {
             // blocking wait
         }
 
@@ -146,12 +161,18 @@ public class OffloadStateManager implements Runnable {
         }
     }
 
+    public static void stop() {
+        stopSignal = true;
+    }
+
     @Override
     public void run() {
         //TODO: GC for state versions, need to block on-going state access?
         // Time-based or counter-based?
         while (!Thread.currentThread().isInterrupted()) {
-
+            if (stopSignal) {
+                break;
+            }
         }
     }
 }

@@ -229,8 +229,7 @@ public class JCommanderHandler {
     public String inputFileName = "events.txt";
     @Parameter(names = {"--dataDirectory"}, description = "input file name")
     public String dataDirectory = "morphStream/data/jobs";
-    @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 400000;
+
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
@@ -256,12 +255,6 @@ public class JCommanderHandler {
     public String stateAccessSkewnessForEvents = "0,0";
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
     public String abortRatioForEvents = "0,0";
-
-    //System configure
-    @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 8;// default total execution threads
-    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 100;//checkpoint per thread.
 
     /**
      * Benchmarking and evaluation parameters
@@ -296,6 +289,12 @@ public class JCommanderHandler {
     /**
      * TransNFV Specific configurations
      */
+    @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
+    public int totalEvents = 400;
+    @Parameter(names = {"--tthread"}, description = "total execution threads")
+    public int tthread = 8;// default total execution threads
+    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
+    public int checkpoint_interval = 100;//checkpoint per thread.
     @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
     public String nfvWorkloadPath = "/home/yangzhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
     @Parameter(names = {"--communicationChoice"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
@@ -334,7 +333,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 1;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-    public int doMVCC = 1;
+    public int doMVCC = 0;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
     @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")

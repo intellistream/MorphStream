@@ -205,6 +205,10 @@ public class VNFInstance implements Runnable {
                 PartitionCCThread.submitPartitionRequest(stopSignal);
                 ReplicationCCThread.submitReplicationRequest(stopSignal);
                 OffloadCCExecutorService.submitOffloadReq(stopSignal);
+                OffloadStateManager.stop();
+                for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
+                    offloadingQueues.get(offloadQueueIndex).offer(new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1));
+                }
                 OpenNFController.submitOpenNFReq(stopSignal);
                 CHCController.submitCHCReq(stopSignal);
                 S6Controller.submitS6Request(stopSignal);
