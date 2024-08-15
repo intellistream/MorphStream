@@ -137,7 +137,7 @@ public class OffloadStateManager implements Runnable {
 
     @Override
     public void run() {
-        //TODO: GC for state versions, might block on-going state access
+        //TODO: GC for state versions, need to block on-going state access?
         // Time-based or counter-based?
         while (!Thread.currentThread().isInterrupted()) {
 
