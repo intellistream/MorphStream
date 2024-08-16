@@ -202,7 +202,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 10000;//number of records in each table
+    public int NUM_ITEMS = 5000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
@@ -290,7 +290,7 @@ public class JCommanderHandler {
      * TransNFV Specific configurations
      */
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 400;
+    public int totalEvents = 400000;
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 8;// default total execution threads
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
@@ -333,7 +333,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 1;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-    public int doMVCC = 0;
+    public int doMVCC = 1;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
     @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")

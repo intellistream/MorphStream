@@ -4,7 +4,7 @@ import os
 import shutil
 
 class PatternGenerator:
-    def __init__(self, tuple_range=5000, instance_count=4, request_count=100, pattern_1_prob=0.8, pattern_2_prob=1, pattern_3_prob=0.8):
+    def __init__(self, tuple_range=5000, instance_count=4, request_count=100000, pattern_1_prob=0.8, pattern_2_prob=0.5, pattern_3_prob=0.8):
         self.tuple_range = tuple_range
         self.instance_count = instance_count
         self.request_count = request_count
@@ -68,7 +68,7 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(0, self.tuple_range - 1)
                     # Generate type based on the class variable probability for type 1 (W)
-                    type_id = 1 if random.random() < self.type_one_probability else random.choice([0, 2])
+                    type_id = 0 if random.random() < self.type_one_probability else random.choice([1, 2])
                     writer.writerow([request_id, tuple_id, 11, type_id])
             print(f'Generated file: {file_name}')
 

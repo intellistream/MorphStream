@@ -7,6 +7,8 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Collections;
@@ -33,12 +35,14 @@ public class OffloadStateManager implements Runnable {
 
     // Runtime control signals from VNF
     private static boolean stopSignal = false;
+    private static ArrayList<Integer> tupleLocks = new ArrayList<>();
 
     public OffloadStateManager() {
         for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("NUM_ITEMS"); i++) {
             lwmMap.put(i, 0L);
             mvccWriteLockQueues.put(i, new ConcurrentSkipListSet<>());
             svccLockQueues.put(i, new ConcurrentSkipListSet<>());
+            tupleLocks.add(i);
         }
     }
 
@@ -47,8 +51,15 @@ public class OffloadStateManager implements Runnable {
         int tupleID = request.getTupleID();
         int readValue = -1;
 
-        while (request.getCreateTime() >= lwmMap.get(tupleID)) {
+        while (timeStamp > lwmMap.get(tupleID) && !mvccWriteLockQueues.get(tupleID).isEmpty()) {
             // blocking wait
+//            try {
+//                Thread.sleep(100);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//            System.out.println("Thread " + Thread.currentThread().getName() + " waiting for timestamp: " + timeStamp + ", current timestamp: " + lwmMap.get(tupleID));
+//            System.out.println("Thread " + Thread.currentThread().getName() + " waiting for remaining locks: " + mvccWriteLockQueues.get(tupleID).size());
         }
 
         try {
@@ -67,47 +78,49 @@ public class OffloadStateManager implements Runnable {
     public static void writeStateMVCC(VNFRequest request) {
         long timeStamp = request.getCreateTime();
         int tupleID = request.getTupleID();
-        ConcurrentSkipListSet<Long> lockQueue = mvccWriteLockQueues.get(tupleID);
-        if (lockQueue == null) {
-            throw new RuntimeException("Lock queue is null");
+
+        synchronized (tupleLocks.get(tupleID)) {
+            mvccWriteLockQueues.get(tupleID).add(timeStamp);
+            maintainLWM(tupleID);
+
+            while (timeStamp != lwmMap.get(tupleID)) {
+                // blocking wait
+//                try {
+//                    Thread.sleep(100);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e); //TODO: for debugging
+//                }
+//                System.out.println("Thread " + Thread.currentThread().getName() + " waiting for timestamp: " + timeStamp + ", current timestamp: " + lwmMap.get(tupleID));
+            }
+
+            try {
+                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                int readValue = readRecord.getValues().get(1).getInt();
+                VNFManagerUDF.executeUDF(request);
+                readValue += 1;
+
+                SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                tempo_record.getValues().get(1).setInt(readValue);
+                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+
+            } catch (DatabaseException e) {
+                throw new RuntimeException(e);
+            }
+
+            long lwm = lwmMap.get(tupleID);
+            mvccWriteLockQueues.get(tupleID).remove(lwm);
+            maintainLWM(tupleID);
         }
-        lockQueue.add(timeStamp);
-        maintainLWM(tupleID);
 
-        while (timeStamp != lwmMap.get(tupleID)) {
-            // blocking wait
-        }
-
-        try {
-            TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-            int readValue = readRecord.getValues().get(1).getInt();
-            VNFManagerUDF.executeUDF(request);
-            readValue += 1;
-
-            SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(readValue);
-            tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
-        }
-
-        long lwm = lwmMap.get(tupleID);
-        mvccWriteLockQueues.get(tupleID).remove(lwm);
         //TODO: What if a smaller timestamp arrives late? Then we can getting the wrong min value. Need to buffer and sort for a batch of operations
-        maintainLWM(tupleID);
     }
 
 
     // Update lwm upon the arrival of each new write request and after the completion of each write request
     private static void maintainLWM(int tupleID) {
-        //Thread.sleep(1); //Sleep for 1 millisecond
         ConcurrentSkipListSet<Long> lockQueue = mvccWriteLockQueues.get(tupleID);
-        if (lockQueue == null) {
-            throw new RuntimeException("Lock queue is null");
-        }
-        if (lockQueue.isEmpty()) { //no more write request waiting in the queue
+        if (lockQueue.isEmpty()) { //do not update lwm if no lock is present
             return;
         }
         lwmMap.put(tupleID, lockQueue.first());
@@ -133,6 +146,7 @@ public class OffloadStateManager implements Runnable {
             throw new RuntimeException(e);
         }
 
+        svccLockQueues.get(tupleID).remove(timeStamp);
         return readValue;
     }
 
@@ -143,6 +157,12 @@ public class OffloadStateManager implements Runnable {
 
         while (timeStamp != svccLockQueues.get(tupleID).first()) {
             // blocking wait
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//            System.out.println("Thread " + Thread.currentThread().getName() + " waiting for timestamp: " + timeStamp + ", current timestamp: " + svccLockQueues.get(tupleID).first());
         }
 
         try {
@@ -159,6 +179,8 @@ public class OffloadStateManager implements Runnable {
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
+
+        svccLockQueues.get(tupleID).remove(timeStamp);
     }
 
     public static void stop() {

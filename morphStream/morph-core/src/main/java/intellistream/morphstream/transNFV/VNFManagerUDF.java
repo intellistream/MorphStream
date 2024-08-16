@@ -23,9 +23,19 @@ public class VNFManagerUDF {
         return null;
     }
 
+    public static void simulateTask(int microseconds) {
+        long startTime = System.nanoTime();
+        long waitTime = microseconds * 1000L; // Convert microseconds to nanoseconds
+        while (System.nanoTime() - startTime < waitTime) {
+            // Busy-wait loop
+        }
+    }
+
     public static void executeUDF(VNFRequest request) {
         int vnfID = request.getVnfID();
         int saID = request.getSaID();
+
+        simulateTask(10);
 
         try {
             if (vnfID == 1) {

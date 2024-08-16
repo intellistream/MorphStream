@@ -49,18 +49,7 @@ public class OffloadExecutor implements Runnable {
             request.setLogicalTS(requestCounter);
             int saType = request.getType();
 
-            if (saType == 1) {
-                sendACK(request); // Early ACK for write operations
-
-                if (doMVCC == 0) {
-                    OffloadStateManager.writeStateSVCC(request);
-                } else if (doMVCC == 1) {
-                    OffloadStateManager.writeStateMVCC(request);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-            } else {
+            if (saType == 0) {
                 if (doMVCC == 0) {
                     OffloadStateManager.readStateSVCC(request);
                 } else if (doMVCC == 1) {
@@ -69,6 +58,16 @@ public class OffloadExecutor implements Runnable {
                     throw new UnsupportedOperationException();
                 }
                 sendACK(request); // Normal ACK for read operations
+
+            } else {
+                if (doMVCC == 0) {
+                    OffloadStateManager.writeStateSVCC(request);
+                } else if (doMVCC == 1) {
+                    OffloadStateManager.writeStateMVCC(request);
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+                sendACK(request); // Normal ACK for write operations
             }
 
         }
