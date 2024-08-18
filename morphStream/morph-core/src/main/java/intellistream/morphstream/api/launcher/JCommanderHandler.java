@@ -296,7 +296,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 100;//checkpoint per thread.
     @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
-    public String nfvWorkloadPath = "/home/yangzhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
+    public String nfvWorkloadPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
     @Parameter(names = {"--communicationChoice"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
     public int communicationChoice = 0;
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")

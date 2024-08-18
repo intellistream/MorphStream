@@ -53,13 +53,6 @@ public class OffloadStateManager implements Runnable {
 
         while (timeStamp > lwmMap.get(tupleID) && !mvccWriteLockQueues.get(tupleID).isEmpty()) {
             // blocking wait
-//            try {
-//                Thread.sleep(100);
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-//            System.out.println("Thread " + Thread.currentThread().getName() + " waiting for timestamp: " + timeStamp + ", current timestamp: " + lwmMap.get(tupleID));
-//            System.out.println("Thread " + Thread.currentThread().getName() + " waiting for remaining locks: " + mvccWriteLockQueues.get(tupleID).size());
         }
 
         try {
@@ -85,12 +78,6 @@ public class OffloadStateManager implements Runnable {
 
             while (timeStamp != lwmMap.get(tupleID)) {
                 // blocking wait
-//                try {
-//                    Thread.sleep(100);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e); //TODO: for debugging
-//                }
-//                System.out.println("Thread " + Thread.currentThread().getName() + " waiting for timestamp: " + timeStamp + ", current timestamp: " + lwmMap.get(tupleID));
             }
 
             try {
@@ -157,12 +144,6 @@ public class OffloadStateManager implements Runnable {
 
         while (timeStamp != svccLockQueues.get(tupleID).first()) {
             // blocking wait
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-//            System.out.println("Thread " + Thread.currentThread().getName() + " waiting for timestamp: " + timeStamp + ", current timestamp: " + svccLockQueues.get(tupleID).first());
         }
 
         try {
