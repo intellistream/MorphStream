@@ -60,6 +60,8 @@ public interface Content {
 
     void clean_map();
 
+    void garbageCollect(long ts);
+
     void updateValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record);
 
     void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record);

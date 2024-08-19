@@ -169,6 +169,12 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
+    public void garbageCollect(long ts) {
+        versions.headMap(ts, false).clear();
+        record.updateValues(versions.firstEntry().getValue().getValues());
+    }
+
+    @Override
     public void updateValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
         this.record = record;
     }
