@@ -55,6 +55,11 @@ public abstract class LockContent implements Content {
     }
 
     @Override
+    public void garbageCollect(long ts) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean AcquireCertifyLock() {
         throw new UnsupportedOperationException();
     }

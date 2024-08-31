@@ -12,12 +12,14 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     private int vnfID; //E.g., "txn1", txnID
     private int saID; //E.g., "Deposit" or "Transfer", txnFlag
     private int saType; // 0: Read, 1: Write, 2: RW
+    private int scope; // 0: per-flow, 1: cross-flow
     private int instanceID;
     private int puncID;
 
-    public TransactionalVNFEvent(int saType, int instanceID, long timestamp, long txnRequestID, int tupleID, int vnfID, int saID, int puncID) {
+    public TransactionalVNFEvent(int saType, int scope, int instanceID, long timestamp, long txnRequestID, int tupleID, int vnfID, int saID, int puncID) {
         super(timestamp);
         this.saType = saType;
+        this.scope = scope;
         this.instanceID = instanceID;
         this.txnRequestID = txnRequestID;
         this.tupleID = String.valueOf(tupleID);
@@ -68,6 +70,9 @@ public class TransactionalVNFEvent extends TransactionalEvent {
     }
     public int getPuncID() {
         return this.puncID;
+    }
+    public int getScope() {
+        return this.scope;
     }
 
     @Override

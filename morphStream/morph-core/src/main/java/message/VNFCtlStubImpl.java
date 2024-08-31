@@ -47,7 +47,7 @@ public class VNFCtlStubImpl {
 
         } else if (msg.getCc().getNumber() == 3) { // TPG
             tpgQueues.get(tpgReqCountPerInstance[instanceID] % numSpouts).offer(
-                    new TransactionalVNFEvent(-1, instanceID, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), -1));
+                    new TransactionalVNFEvent(-1, instanceID, -1, System.nanoTime(), msg.getId(), msg.getKey(), 0, msg.getSaIdx(), -1));
             tpgReqCountPerInstance[instanceID]++;
             tpgReqCountPerQueue[tpgReqCountPerInstance[instanceID] % numSpouts]++;
 

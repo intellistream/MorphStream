@@ -120,6 +120,11 @@ public abstract class LWMContent implements Content {
     }
 
     @Override
+    public void garbageCollect(long ts) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int[] getReadLVs() {
         throw new UnsupportedOperationException();
     }

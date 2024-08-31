@@ -129,11 +129,12 @@ public class VNFInstance implements Runnable {
                 int reqID = Integer.parseInt(parts[0]);
                 int tupleID = Integer.parseInt(parts[1]);
                 int vnfID = Integer.parseInt(parts[2]);
-                int type = Integer.parseInt(parts[3]);
+                int type = parseType(parts[3]); // 0: read, 1: write, 2: read-write
+                int scope = parseScope(parts[4]); // 0: per-flow, 1: cross-flow
                 int saID = type; //TODO: Hardcoded saID = type
 
                 //TODO: Add transaction construction, create transaction based on pre-defined SA structures
-                VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, packetStartTime, instancePuncID, 0, vnfID, saID);
+                VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, scope, packetStartTime, instancePuncID, 0, vnfID, saID);
                 inputLineCounter++;
                 if (enableTimeBreakdown) {
                     aggParsingTime += System.nanoTime() - parsingStartTime;
@@ -200,20 +201,20 @@ public class VNFInstance implements Runnable {
             if (arrivedIndex == 0) {
                 System.out.println("All instances have finished, sending stop signals to StateManager...");
 
-                VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1);
+                VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
                 BatchMonitorThread.submitPatternData(new PatternData(-1, 0, -1));
                 PartitionCCThread.submitPartitionRequest(stopSignal);
                 ReplicationCCThread.submitReplicationRequest(stopSignal);
                 OffloadCCExecutorService.submitOffloadReq(stopSignal);
                 OffloadStateManager.stop();
                 for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
-                    offloadingQueues.get(offloadQueueIndex).offer(new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1));
+                    offloadingQueues.get(offloadQueueIndex).offer(new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
                 }
                 OpenNFController.submitOpenNFReq(stopSignal);
                 CHCController.submitCHCReq(stopSignal);
                 S6Controller.submitS6Request(stopSignal);
                 for (int tpgQueueIndex = 0; tpgQueueIndex < tpgInputQueues.size(); tpgQueueIndex++) {
-                    tpgInputQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, instanceID, -1, 0, 0, 0, 0, -1));
+                    tpgInputQueues.get(tpgQueueIndex).offer(new TransactionalVNFEvent(0, -1, instanceID,  -1,0, 0, 0, 0, -1));
                 }
             }
 
@@ -235,7 +236,9 @@ public class VNFInstance implements Runnable {
         int reqID = request.getReqID();
         int tupleID = request.getTupleID();
         int type = request.getType();
+        int scope = request.getScope();
         int tupleCC = tupleCCMap.get(tupleID);
+
 
         if (tupleCC == 0) { // local state access
             if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
@@ -319,7 +322,7 @@ public class VNFInstance implements Runnable {
             // For Offload CC, leave both Sync and Useful time measurement to manager
 
         } else if (tupleCC == 3) { // Preemptive
-            tpgInputQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, instanceID, request.getCreateTime(), reqID, tupleID, 0, 0, instancePuncID));
+            tpgInputQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, scope, instanceID, request.getCreateTime(), reqID, tupleID, 0, 0, instancePuncID));
             tpgRequestCount++;
             // For Preemptive CC, leave both Sync and Useful time measurement to manager
 
@@ -523,6 +526,30 @@ public class VNFInstance implements Runnable {
         } catch (IOException e) {
             System.out.println("An error occurred while creating the file.");
             e.printStackTrace();
+        }
+    }
+
+    private int parseType(String type) {
+        switch (type) {
+            case "read":
+                return 0;
+            case "write":
+                return 1;
+            case "read-write":
+                return 2;
+            default:
+                return -1;
+        }
+    }
+
+    private int parseScope(String scope) {
+        switch (scope) {
+            case "per-flow":
+                return 0;
+            case "cross-flow":
+                return 1;
+            default:
+                return -1;
         }
     }
 }

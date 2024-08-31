@@ -35,7 +35,7 @@ public class VNFManagerUDF {
         int vnfID = request.getVnfID();
         int saID = request.getSaID();
 
-        simulateTask(10);
+        simulateTask(20);
 
         try {
             if (vnfID == 1) {

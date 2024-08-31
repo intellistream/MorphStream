@@ -134,6 +134,11 @@ public class LWMContentImpl extends LWMContent {
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
     }
 
+    @Override
+    public void garbageCollect(long ts) {
+        throw new UnsupportedOperationException();
+    }
+
     //However, once T is ready to commit, it must obtain a certify lock_ratio on all items that it currently holds write locks on before it can commit.
     @Override
     public boolean AcquireCertifyLock() {

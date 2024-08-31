@@ -109,7 +109,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } else if (communicationChoice == 0) {
             // Simplified saData: vnfID, saID, saType, tableName, tupleID, instanceID
             String[] saData = operation.stateAccess;
-            VNFManagerUDF.executeUDF(new VNFRequest((int) operation.txnReqID, 0, Integer.parseInt(saData[4]), Integer.parseInt(saData[2]), 0, 0, 0, Integer.parseInt(saData[0]), Integer.parseInt(saData[1])));
+            VNFManagerUDF.executeUDF(new VNFRequest((int) operation.txnReqID, 0, Integer.parseInt(saData[4]), Integer.parseInt(saData[2]), 0, 0, 0, 0, Integer.parseInt(saData[0]), Integer.parseInt(saData[1])));
         }
 
         commitLog(operation);

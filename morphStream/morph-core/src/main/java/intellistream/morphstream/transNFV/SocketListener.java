@@ -211,7 +211,7 @@ public class SocketListener implements Runnable { //A single thread that listens
         int tupleID = decodeInt(copySubarray(messageBytes, 0, 3), 0);
         int txnIndex = decodeInt(copySubarray(messageBytes, 4, 7), 0);
         int saIndex = decodeInt(copySubarray(messageBytes, 8, 11), 0);
-        return new TransactionalVNFEvent(-1, instanceID, timestamp, txnReqID, tupleID, txnIndex, saIndex, -1);
+        return new TransactionalVNFEvent(-1, instanceID, -1, timestamp, txnReqID, tupleID, txnIndex, saIndex, -1);
     }
 
     public static byte[] copySubarray(byte[] inputArray, int startIndex, int endIndex) {

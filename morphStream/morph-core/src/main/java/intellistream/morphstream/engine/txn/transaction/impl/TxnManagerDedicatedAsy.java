@@ -218,7 +218,14 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         String[] condition_keys = {tupleID};
         int[] condition_fieldIndexes = {1};
 
-        TableRecord tupleRecord = storageManager_.getTable(tableName).SelectKeyRecord(tupleID);
+        TableRecord tupleRecord;
+        try {
+            tupleRecord = storageManager_.getTable(tableName).SelectKeyRecord(tupleID);
+        } catch (NullPointerException e) {
+            if (enable_log) log.info("No record is found for table: " + tableName + ", key: " + tupleID);
+            return false;
+        }
+
         if (tupleRecord != null) {
 
             //TODO: Optimize data passing, no need to pass saData again.

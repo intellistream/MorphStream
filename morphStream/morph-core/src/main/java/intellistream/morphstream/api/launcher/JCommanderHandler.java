@@ -202,7 +202,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 5000;//number of records in each table
+    public int NUM_ITEMS = 10000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
@@ -294,7 +294,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 8;// default total execution threads
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 100;//checkpoint per thread.
+    public int checkpoint_interval = 1000;//checkpoint per thread.
     @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
     public String nfvWorkloadPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
     @Parameter(names = {"--communicationChoice"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
@@ -302,13 +302,13 @@ public class JCommanderHandler {
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
     public int vnfInstanceNum = 4;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadCCThreadNum = 4;
+    public int offloadCCThreadNum = 8;
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadLockNum = 5000;
+    public int offloadLockNum = 1000;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 10;
+    public int ccStrategy = 2;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 2;
+    public int workloadPattern = 4; // 4: dynamic workload
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
     @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
@@ -316,7 +316,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.1";
+    public String experimentID = "5.4.1";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
 //    public String vnfID = "1_firewall";
 //    public String vnfID = "2_nat";
@@ -331,9 +331,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--enableHardcodeCCSwitch"}, description = "If enabled, pattern_punc and cc_switch are performed at instance level. Otherwise monitor level.")
     public int enableHardcodeCCSwitch = 0;
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
-    public int enableMemoryFootprint = 1;
+    public int enableMemoryFootprint = 0;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-    public int doMVCC = 1;
+    public int doMVCC = 0;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
     @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")

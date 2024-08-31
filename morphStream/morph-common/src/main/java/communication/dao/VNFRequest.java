@@ -7,6 +7,7 @@ public class VNFRequest {
     private int instanceID;
     private int tupleID;
     private int type; // 0: read, 1: write, 2: read-write
+    private int scope; // 0: per-flow, 1: cross-flow
     private long createTime; // Time when the request is created by the instance
     private long finishTime; // Time when the finished request is received by the instance
     private int instancePuncID; // Punctuation ID of the request
@@ -16,11 +17,12 @@ public class VNFRequest {
     private int logicalTS; // For offloading central locks
     private BlockingQueue<Integer> txnACKQueue;
 
-    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int vnfID, int saID) {
+    public VNFRequest(int reqID, int instanceID, int tupleID, int type, int scope, long createTime, int instancePuncID, int value, int vnfID, int saID) {
         this.reqID = reqID;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.type = type;
+        this.scope = scope;
         this.createTime = createTime;
         this.instancePuncID = instancePuncID;
         this.value = value;
@@ -28,11 +30,12 @@ public class VNFRequest {
         this.saID = saID;
     }
 
-    public VNFRequest(int reqID, int instanceID, int tupleID, int type, long createTime, int instancePuncID, int value, int vnfID, int saID, BlockingQueue<Integer> txnACKQueue) {
+    public VNFRequest(int reqID, int instanceID, int tupleID, int type, int scope, long createTime, int instancePuncID, int value, int vnfID, int saID, BlockingQueue<Integer> txnACKQueue) {
         this.reqID = reqID;
         this.instanceID = instanceID;
         this.tupleID = tupleID;
         this.type = type;
+        this.scope = scope;
         this.createTime = createTime;
         this.instancePuncID = instancePuncID;
         this.value = value;
@@ -77,6 +80,9 @@ public class VNFRequest {
     }
     public int getLogicalTS() {
         return logicalTS;
+    }
+    public int getScope() {
+        return scope;
     }
 
     public void setLogicalTS(int logicalTS) {

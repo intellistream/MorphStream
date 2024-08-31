@@ -8,9 +8,7 @@ import intellistream.morphstream.transNFV.OpenNFController;
 import intellistream.morphstream.transNFV.PartitionCCThread;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CyclicBarrier;
@@ -60,7 +58,7 @@ public class VNFRunner implements Runnable {
                 csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
             }
             int stateGap = stateRange / vnfInstanceNum;
-            int instanceExpRequestCount = totalRequests / vnfInstanceNum;
+            int instanceExpRequestCount = countLinesInCSV(csvFilePath);
             VNFInstance sender = new VNFInstance(i,
                     stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange,
                     ccStrategy, numTPGThreads, csvFilePath, finishBarrier, instanceExpRequestCount);
@@ -470,6 +468,18 @@ public class VNFRunner implements Runnable {
         } else {
             return "Invalid";
         }
+    }
+
+    public static int countLinesInCSV(String filePath) {
+        int lineCount = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            while (br.readLine() != null) {
+                lineCount++;
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading the file: " + e.getMessage());
+        }
+        return lineCount;
     }
 
 }

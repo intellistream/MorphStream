@@ -113,7 +113,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         } else if (communicationChoice == 0) {
             for (TransactionalVNFEvent event : eventQueue) {
                 VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(),
-                        Integer.parseInt(event.getTupleID()), event.getSaType(), event.getBid(), event.getPuncID(), 0, event.getVnfID(), event.getSaID());
+                        Integer.parseInt(event.getTupleID()), event.getSaType(), event.getScope(), event.getBid(), event.getPuncID(), 0, event.getVnfID(), event.getSaID());
                 VNFRunner.getSender(event.getInstanceID()).submitFinishedRequest(request);
                 requestCounter++;
             }

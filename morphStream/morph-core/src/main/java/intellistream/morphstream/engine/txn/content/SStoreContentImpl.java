@@ -56,6 +56,11 @@ public class SStoreContentImpl extends SStoreContent {
     }
 
     @Override
+    public void garbageCollect(long ts) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
     }
 

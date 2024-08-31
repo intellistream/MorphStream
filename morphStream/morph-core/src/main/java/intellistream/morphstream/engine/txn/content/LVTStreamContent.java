@@ -154,6 +154,11 @@ public abstract class LVTStreamContent implements Content {
     }
 
     @Override
+    public void garbageCollect(long ts) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean TryReadLock() {
         throw new UnsupportedOperationException();
     }

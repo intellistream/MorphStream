@@ -7,11 +7,7 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.PriorityQueue;
-import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -25,6 +21,7 @@ public class OffloadStateManager implements Runnable {
     private static final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Long>> mvccWriteLockQueues = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Long>> svccLockQueues = new ConcurrentHashMap<>();
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private static final int offloadCCThreadNum = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
 
     // For time breakdown analysis
     private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
@@ -53,6 +50,7 @@ public class OffloadStateManager implements Runnable {
 
         while (timeStamp > lwmMap.get(tupleID) && !mvccWriteLockQueues.get(tupleID).isEmpty()) {
             // blocking wait
+            timeout(500);
         }
 
         try {
@@ -78,6 +76,7 @@ public class OffloadStateManager implements Runnable {
 
             while (timeStamp != lwmMap.get(tupleID)) {
                 // blocking wait
+                timeout(500);
             }
 
             try {
@@ -113,55 +112,69 @@ public class OffloadStateManager implements Runnable {
         lwmMap.put(tupleID, lockQueue.first());
     }
 
-    public static int readStateSVCC(VNFRequest request) {
-        long timeStamp = request.getCreateTime();
-        int tupleID = request.getTupleID();
-        int readValue = -1;
-        svccLockQueues.get(tupleID).add(timeStamp);
+    public static void readStateSVCC(VNFRequest request) {
+        synchronized (tupleLocks.get(request.getTupleID())) {
+            long timeStamp = request.getCreateTime();
+            int tupleID = request.getTupleID();
+            int readValue = -1;
+            svccLockQueues.get(tupleID).add(timeStamp);
 
-        while (timeStamp != svccLockQueues.get(tupleID).first()) {
-            // blocking wait
+            while (timeStamp != svccLockQueues.get(tupleID).first() || svccLockQueues.size() < offloadCCThreadNum) {
+                // blocking wait
+                timeout(500);
+            }
+
+            try {
+                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                readValue = readRecord.getValues().get(1).getInt();
+                VNFManagerUDF.executeUDF(request);
+
+            } catch (DatabaseException e) {
+                throw new RuntimeException(e);
+            }
+
+            svccLockQueues.get(tupleID).remove(timeStamp);
         }
 
-        try {
-            TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-            readValue = readRecord.getValues().get(1).getInt();
-            VNFManagerUDF.executeUDF(request);
-
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
-        }
-
-        svccLockQueues.get(tupleID).remove(timeStamp);
-        return readValue;
     }
 
     public static void writeStateSVCC(VNFRequest request) {
-        long timeStamp = request.getCreateTime();
-        int tupleID = request.getTupleID();
-        svccLockQueues.get(tupleID).add(timeStamp);
+        synchronized (tupleLocks.get(request.getTupleID())) {
+            long timeStamp = request.getCreateTime();
+            int tupleID = request.getTupleID();
+            svccLockQueues.get(tupleID).add(timeStamp);
+            while (timeStamp != svccLockQueues.get(tupleID).first() || svccLockQueues.size() < offloadCCThreadNum) {
+                // blocking wait
+                timeout(500);
+            }
 
-        while (timeStamp != svccLockQueues.get(tupleID).first()) {
-            // blocking wait
+            try {
+                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                int readValue = readRecord.getValues().get(1).getInt();
+                VNFManagerUDF.executeUDF(request);
+                readValue += 1;
+
+                SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                tempo_record.getValues().get(1).setInt(readValue);
+                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+
+            } catch (DatabaseException e) {
+                throw new RuntimeException(e);
+            }
+
+            svccLockQueues.get(tupleID).remove(timeStamp);
         }
 
-        try {
-            TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-            int readValue = readRecord.getValues().get(1).getInt();
-            VNFManagerUDF.executeUDF(request);
-            readValue += 1;
+    }
 
-            SchemaRecord tempo_record = new SchemaRecord(readRecord);
-            tempo_record.getValues().get(1).setInt(readValue);
-            tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
+    private static void timeout(int microseconds) {
+        long startTime = System.nanoTime();
+        long waitTime = microseconds * 1000L; // Convert microseconds to nanoseconds
+        while (System.nanoTime() - startTime < waitTime) {
+            // Busy-wait loop
         }
-
-        svccLockQueues.get(tupleID).remove(timeStamp);
     }
 
     public static void stop() {
