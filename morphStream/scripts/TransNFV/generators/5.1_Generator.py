@@ -4,15 +4,15 @@ import os
 import shutil
 
 class PatternGenerator:
-    def __init__(self, tuple_range=5000, instance_count=4, request_count=100000, pattern_1_prob=0.8, pattern_2_prob=0.5, pattern_3_prob=0.8):
+    def __init__(self, tuple_range=10000, instance_count=4, request_count=100000, pattern_1_prob=0.8, pattern_2_prob=0.5, pattern_3_prob=0.8):
         self.tuple_range = tuple_range
         self.instance_count = instance_count
         self.request_count = request_count
-        self.base_dir = os.path.join(os.getcwd(), 'scripts/TransNFV/pattern_files/5.1')
+        self.base_dir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/pattern_files/5.1'
         self.type_zero_probability = pattern_1_prob  # Probability for type 0 in sharedReaders pattern
         self.type_one_probability = pattern_2_prob    # Probability for type 1 in sharedWriters pattern
         self.type_two_probability = pattern_3_prob    # Probability for type 2 in mutualInteractive pattern
-
+# lines.append([i + 1, keys[i], vnfID, types[i], scopes[i]])
     def generate_files(self):
         # Remove existing files and directories before creating new ones
         if os.path.exists(self.base_dir):
@@ -44,8 +44,10 @@ class PatternGenerator:
                 writer = csv.writer(file)
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(min_range, max_range)
-                    type_id = random.randint(0, 2)
-                    writer.writerow([request_id, tuple_id, 11, type_id])
+                    # type_id = random.randint(0, 2)
+                    type_id = "read" if random.random() <= 0.5 else "write"
+                    scope = "cross-flow"
+                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
             print(f'Generated file: {file_name}')
 
     def generate_shared_readers(self, pattern_dir):
@@ -56,8 +58,9 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(0, self.tuple_range - 1)
                     # Generate type based on the class variable probability for type 0 (R)
-                    type_id = 0 if random.random() < self.type_zero_probability else random.randint(1, 2)
-                    writer.writerow([request_id, tuple_id, 11, type_id])
+                    type_id = "read" if random.random() < self.type_zero_probability else "write"
+                    scope = "cross-flow"
+                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
             print(f'Generated file: {file_name}')
 
     def generate_shared_writers(self, pattern_dir):
@@ -68,8 +71,9 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(0, self.tuple_range - 1)
                     # Generate type based on the class variable probability for type 1 (W)
-                    type_id = 0 if random.random() < self.type_one_probability else random.choice([1, 2])
-                    writer.writerow([request_id, tuple_id, 11, type_id])
+                    type_id = "read" if random.random() < self.type_one_probability else "write"
+                    scope = "cross-flow"
+                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
             print(f'Generated file: {file_name}')
 
     def generate_mutual_interactive(self, pattern_dir):
@@ -80,8 +84,9 @@ class PatternGenerator:
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(0, self.tuple_range - 1)
                     # Generate type based on the class variable probability for type 2 (R&W)
-                    type_id = 2 if random.random() < self.type_two_probability else random.choice([0, 1])
-                    writer.writerow([request_id, tuple_id, 11, type_id])
+                    type_id = "read-write" if random.random() < self.type_two_probability else "write"
+                    scope = "cross-flow"
+                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
             print(f'Generated file: {file_name}')
 
     def generate_random(self, pattern_dir):
@@ -91,8 +96,9 @@ class PatternGenerator:
                 writer = csv.writer(file)
                 for request_id in range(self.request_count):
                     tuple_id = random.randint(0, self.tuple_range - 1)
-                    type_id = random.randint(0, 2)
-                    writer.writerow([request_id, tuple_id, type_id])
+                    scope = "cross-flow"
+                    type_id = "read" if random.random() <= 0.5 else "write"
+                    writer.writerow([request_id, tuple_id, type_id, 11, scope])
             print(f'Generated file: {file_name}')
 
 # Usage

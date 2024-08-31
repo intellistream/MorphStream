@@ -48,7 +48,7 @@ public class OffloadCCExecutorService implements Runnable {
         for (int i = 0; i < numPartitions; i++) {
             partitionLocks.put(i, new ReentrantLock(true));  // Create a fair lock for each partition
         }
-        int partitionGap = tableSize / numPartitions; // 10000/1000 = 10
+        int partitionGap = tableSize / numPartitions;
         for (int i = 0; i < tableSize; i++) {
             partitionOwnership.put(i, i / partitionGap);
         }

@@ -306,7 +306,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int offloadLockNum = 1000;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 2;
+    public int ccStrategy = 0;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
     public int workloadPattern = 4; // 4: dynamic workload
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -316,7 +316,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.4.1";
+    public String experimentID = "5.4.3";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
 //    public String vnfID = "1_firewall";
 //    public String vnfID = "2_nat";

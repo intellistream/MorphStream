@@ -94,7 +94,7 @@ def distribute_lines_among_instances(lines, instance_workloads, output_dir):
 
 # Example usage
 num_instances = 4
-output_dir = f'/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/pattern_files/5.4.1/instanceNum_{num_instances}/dynamic'
+output_dir = f'/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/pattern_files/5.4.2/instanceNum_{num_instances}/dynamic'
 num_keys = 1000
 total_requests = 10000
 key_skewness = 0.5  # Adjust this value from 0 (uniform) to 1 (highly skewed)

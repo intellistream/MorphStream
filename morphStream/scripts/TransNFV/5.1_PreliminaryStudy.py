@@ -32,7 +32,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --NUM_ITEMS $NUM_ITEMS \\
           --tthread $tthread \\
@@ -49,7 +49,7 @@ function runTStream() {{
           --enableTimeBreakdown $enableTimeBreakdown \\
           --experimentID $experimentID
           "
-  java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --NUM_ITEMS $NUM_ITEMS \\
     --tthread $tthread \\
@@ -119,10 +119,10 @@ def execute_bash_script(script_path):
 def plot_throughput_barchart(root_directory):
     # Define the original and new pattern names and original CC strategy names
     original_patterns = ["loneOperative", "sharedReaders", "sharedWriters", "mutualInteractive"]
-    new_patterns = ["Lone\nOperative", "Shared\nReaders", "Shared\nWriters", "Mutually\nInteractive"]
+    new_patterns = ["Phase 1", "Phase 2", "Phase 3", "Phase 4"]
     original_cc_strategies = ["Partitioning", "Replication", "Offloading"]
-    new_cc_strategies = ["Partitioning", "Replication", "Offloading"]
-    colors = ['#2874A9', '#82E0AA', '#F1C70F']
+    new_cc_strategies = ["State Partitioning", "State Replication", "Operation Offloading"]
+    colors = ['white', 'white', 'white']
     hatches = ['\\', '///', '\\\\']
 
     # Prepare the structure to hold data
@@ -142,7 +142,7 @@ def plot_throughput_barchart(root_directory):
                 data[pattern][strategy] = None
 
     # Plotting the data
-    fig, ax = plt.subplots(figsize=(8, 5))  # Adjust the figure size as needed
+    fig, ax = plt.subplots(figsize=(8, 4))  # Adjust the figure size as needed
 
     # Define the positions of the groups of bars
     bar_width = 0.2
@@ -158,15 +158,15 @@ def plot_throughput_barchart(root_directory):
     # Set x-axis labels
     ax.set_xticks([r + bar_width for r in range(len(original_patterns))])
     ax.set_xticklabels(new_patterns, fontsize=16)
-    ax.set_ylabel('Throughput (10^6 req/sec)', fontsize=18, labelpad=12)
-    ax.set_xlabel('VNF State Access Patterns', fontsize=18, labelpad=12)
+    ax.set_ylabel('Throughput (M req/sec)', fontsize=18, labelpad=12)
+    ax.set_xlabel('Trojan Detector Workload Variations', fontsize=18, labelpad=12)
 
     # Adjust y-axis tick label font size
     ax.tick_params(axis='y', labelsize=14)
 
     # Create custom legend with hatches
     handles = [Patch(facecolor=color, edgecolor='black', hatch=hatch, label=label) for color, hatch, label in zip(colors, hatches, new_cc_strategies)]
-    ax.legend(handles=handles, loc='upper right', ncol=1, fontsize=18)
+    ax.legend(handles=handles, loc='upper right', ncol=1, fontsize=16)
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
@@ -186,21 +186,21 @@ if __name__ == "__main__":
     scheduler = "OP_BFS"
     NUM_ITEMS = 5000
     totalEvents = 400000
-    nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
+    nfvWorkloadPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
-    offloadCCThreadNum = 4
-    offloadLockNum = 10000
+    offloadCCThreadNum = 8
+    offloadLockNum = 1000
     ccStrategy = 0
     workloadPattern = 0
     enableTimeBreakdown = 0
     experimentID = "5.1"
-    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
+    script_path = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath, communicationChoice,
-                         vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
-    execute_bash_script(script_path)
+    # generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath, communicationChoice,
+                        #  vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy, workloadPattern, enableTimeBreakdown, experimentID, script_path)
+    # execute_bash_script(script_path)
 
-    throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.1/throughput"
+    throughput_root_directory = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/results/5.1/throughput"
     plot_throughput_barchart(throughput_root_directory)
     print("5.1 throughput figure generated.")
