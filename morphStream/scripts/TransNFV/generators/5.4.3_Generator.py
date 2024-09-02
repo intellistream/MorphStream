@@ -50,9 +50,9 @@ workload_skewness = 0  # Adjust this value from 0 (uniform) to 1 (highly skewed)
 vnfID = 11
 punc_interval = 1000
 
-prob_locality = 1
+prob_locality = 0
 prob_read_write = 0.5  # read / (read + write)
-prob_scope = 1  # per-flow / (per-flow + cross-flow)
+prob_scope = 0  # per-flow / (per-flow + cross-flow)
 
 # Generate all CSV lines
 generate_instance_workloads(output_dir, num_instances, num_keys, total_requests, prob_locality, prob_read_write, prob_scope, vnfID)

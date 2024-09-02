@@ -206,7 +206,6 @@ public class VNFInstance implements Runnable {
                 PartitionCCThread.submitPartitionRequest(stopSignal);
                 ReplicationCCThread.submitReplicationRequest(stopSignal);
                 OffloadCCExecutorService.submitOffloadReq(stopSignal);
-                OffloadStateManager.stop();
                 for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
                     offloadingQueues.get(offloadQueueIndex).offer(new VNFRequest(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
                 }
@@ -239,79 +238,83 @@ public class VNFInstance implements Runnable {
         int scope = request.getScope();
         int tupleCC = tupleCCMap.get(tupleID);
 
+        if (scope == 0) {
+            executeUDF(tupleID, type, 0);
+            submitFinishedRequest(request);
 
-        if (tupleCC == 0) { // local state access
-            if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
-                long usefulStartTime = System.nanoTime();
-                executeUDF(tupleID, type, 0);
-                if (enableTimeBreakdown) {
-                    AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
-                }
-                submitFinishedRequest(request);
-
-            } else { // cross-partition state access
-                //TODO: Partition sync time is measured at manager side, but missing queuing delay
-//                long instanceSyncStartTime = System.nanoTime();
-                PartitionCCThread.submitPartitionRequest(request);
-                while (true) {
-                    VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
-                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                        break;
+        } else if (scope == 1) {
+            if (tupleCC == 0) { // local state access
+                if (tupleID >= statePartitionStart && tupleID <= statePartitionEnd) {
+                    long usefulStartTime = System.nanoTime();
+                    executeUDF(tupleID, type, 0);
+                    if (enableTimeBreakdown) {
+                        AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
                     }
-                }
+                    submitFinishedRequest(request);
+
+                } else { // cross-partition state access
+                    //TODO: Partition sync time is measured at manager side, but missing queuing delay
+//                long instanceSyncStartTime = System.nanoTime();
+                    PartitionCCThread.submitPartitionRequest(request);
+                    while (true) {
+                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
+                        if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                            break;
+                        }
+                    }
 //                if (enableTimeBreakdown) {
 //                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
 //                }
-            }
+                }
 
-        } else if (tupleCC == 1) { // Replication
-            if (type == 0) { // read
-                long instanceSyncStartTime = System.nanoTime();
-                if (!managerStateSyncQueue.isEmpty()) {
-                    processSyncQueue();
-                }
-                if (enableTimeBreakdown) {
-                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
-                }
-                long instanceUsefulStartTime = System.nanoTime();
-                executeUDF(tupleID, type, 0);
-                if (enableTimeBreakdown) {
-                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
-                }
-                submitFinishedRequest(request);
+            } else if (tupleCC == 1) { // Replication
+                if (type == 0) { // read
+                    long instanceSyncStartTime = System.nanoTime();
+                    if (!managerStateSyncQueue.isEmpty()) {
+                        processSyncQueue();
+                    }
+                    if (enableTimeBreakdown) {
+                        AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
+                    }
+                    long instanceUsefulStartTime = System.nanoTime();
+                    executeUDF(tupleID, type, 0);
+                    if (enableTimeBreakdown) {
+                        AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
+                    }
+                    submitFinishedRequest(request);
 
-            } else if (type == 1 || type == 2) { // write
-                long instanceUsefulStartTime = System.nanoTime();
-                executeUDF(tupleID, type, 0);
-                if (enableTimeBreakdown) {
-                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
+                } else if (type == 1 || type == 2) { // write
+                    long instanceUsefulStartTime = System.nanoTime();
+                    executeUDF(tupleID, type, 0);
+                    if (enableTimeBreakdown) {
+                        AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
+                    }
+                    long instanceSyncStartTime = System.nanoTime();
+                    ReplicationCCThread.submitReplicationRequest(request);
+                    while (true) {
+                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
+                        if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                            break;
+                        }
+                    }
+                    if (enableTimeBreakdown) {
+                        AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
+                    }
                 }
-                long instanceSyncStartTime = System.nanoTime();
-                ReplicationCCThread.submitReplicationRequest(request);
-                while (true) {
-                    VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
-                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                        break;
+
+            } else if (tupleCC == 2) { // Offload
+                BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
+                request.setTxnACKQueue(responseQueue);
+                OffloadCCExecutorService.submitOffloadReq(request);
+                long syncStartTime = System.nanoTime();
+                if (request.getType() != 1) {
+                    while (responseQueue.isEmpty()) {
+                        //Wait for manager's ack
                     }
                 }
                 if (enableTimeBreakdown) {
-                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
+                    AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
                 }
-            }
-
-        } else if (tupleCC == 2) { // Offload
-            BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
-            request.setTxnACKQueue(responseQueue);
-            OffloadCCExecutorService.submitOffloadReq(request);
-            long syncStartTime = System.nanoTime();
-            if (request.getType() != 1) {
-                while (responseQueue.isEmpty()) {
-                    //Wait for manager's ack
-                }
-            }
-            if (enableTimeBreakdown) {
-                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
-            }
 //                    System.out.println("Offload response:" + responseQueue.take());
 //                    while (true) {
 //                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
@@ -319,63 +322,16 @@ public class VNFInstance implements Runnable {
 //                            break;
 //                        }
 //                    }
-            // For Offload CC, leave both Sync and Useful time measurement to manager
+                // For Offload CC, leave both Sync and Useful time measurement to manager
 
-        } else if (tupleCC == 3) { // Preemptive
-            tpgInputQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, scope, instanceID, request.getCreateTime(), reqID, tupleID, 0, 0, instancePuncID));
-            tpgRequestCount++;
-            // For Preemptive CC, leave both Sync and Useful time measurement to manager
+            } else if (tupleCC == 3) { // Preemptive
+                tpgInputQueues.get(tpgRequestCount % numTPGThreads).offer(new TransactionalVNFEvent(type, scope, instanceID, request.getCreateTime(), reqID, tupleID, 0, 0, instancePuncID));
+                tpgRequestCount++;
+                // For Preemptive CC, leave both Sync and Useful time measurement to manager
 
-        } else if (tupleCC == 4) { // OpenNF
-            OpenNFController.submitOpenNFReq(request);
-            long syncStartTime = System.nanoTime();
-            while (true) {
-                VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
-                if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                    break;
-                }
-            }
-            if (enableTimeBreakdown) {
-                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
-            }
-
-        } else if (tupleCC == 5) { // CHC
-            CHCController.submitCHCReq(request);
-            long syncStartTime = System.nanoTime();
-            while (true) {
-                VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
-                if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                    break;
-                }
-            }
-            if (enableTimeBreakdown) {
-                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
-            }
-
-        } else if (tupleCC == 6) { // S6
-            if (type == 0) { // read
-                long instanceSyncStartTime = System.nanoTime();
-                if (!managerStateSyncQueue.isEmpty()) {
-                    processSyncQueue();
-                }
-                if (enableTimeBreakdown) {
-                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
-                }
-                long instanceUsefulStartTime = System.nanoTime();
-                executeUDF(tupleID, type, 0);
-                if (enableTimeBreakdown) {
-                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
-                }
-                submitFinishedRequest(request);
-
-            } else if (type == 1 || type == 2) { // write
-                long instanceUsefulStartTime = System.nanoTime();
-                executeUDF(tupleID, type, 0);
-                if (enableTimeBreakdown) {
-                    AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
-                }
-                long instanceSyncStartTime = System.nanoTime();
-                S6Controller.submitS6Request(request);
+            } else if (tupleCC == 4) { // OpenNF
+                OpenNFController.submitOpenNFReq(request);
+                long syncStartTime = System.nanoTime();
                 while (true) {
                     VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
                     if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -383,24 +339,72 @@ public class VNFInstance implements Runnable {
                     }
                 }
                 if (enableTimeBreakdown) {
-                    AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
+                    AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
                 }
-            }
 
-        } else if (tupleCC == 10) { //TODO: Testing offload CC with SVCC vs. MVCC
-            BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
-            request.setTxnACKQueue(responseQueue);
-            offloadingQueues.get(tpgRequestCount % numOffloadThreads).offer(request);
-            tpgRequestCount++;
-//            long syncStartTime = System.nanoTime();
-            if (request.getType() != 1) {
-                while (responseQueue.isEmpty()) {
-                    //Wait for manager's ack
+            } else if (tupleCC == 5) { // CHC
+                CHCController.submitCHCReq(request);
+                long syncStartTime = System.nanoTime();
+                while (true) {
+                    VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
+                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                        break;
+                    }
                 }
-            }
+                if (enableTimeBreakdown) {
+                    AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
+                }
+
+            } else if (tupleCC == 6) { // S6
+                if (type == 0) { // read
+                    long instanceSyncStartTime = System.nanoTime();
+                    if (!managerStateSyncQueue.isEmpty()) {
+                        processSyncQueue();
+                    }
+                    if (enableTimeBreakdown) {
+                        AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
+                    }
+                    long instanceUsefulStartTime = System.nanoTime();
+                    executeUDF(tupleID, type, 0);
+                    if (enableTimeBreakdown) {
+                        AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
+                    }
+                    submitFinishedRequest(request);
+
+                } else if (type == 1 || type == 2) { // write
+                    long instanceUsefulStartTime = System.nanoTime();
+                    executeUDF(tupleID, type, 0);
+                    if (enableTimeBreakdown) {
+                        AGG_USEFUL_TIME += System.nanoTime() - instanceUsefulStartTime;
+                    }
+                    long instanceSyncStartTime = System.nanoTime();
+                    S6Controller.submitS6Request(request);
+                    while (true) {
+                        VNFRequest lastFinishedReq = tempFinishedReqQueue.take();
+                        if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                            break;
+                        }
+                    }
+                    if (enableTimeBreakdown) {
+                        AGG_SYNC_TIME += System.nanoTime() - instanceSyncStartTime;
+                    }
+                }
+
+            } else if (tupleCC == 10) { //TODO: Testing offload CC with SVCC vs. MVCC
+                BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
+                request.setTxnACKQueue(responseQueue);
+                offloadingQueues.get(tpgRequestCount % numOffloadThreads).offer(request);
+                tpgRequestCount++;
+//            long syncStartTime = System.nanoTime();
+                if (request.getType() != 1) {
+                    while (responseQueue.isEmpty()) {
+                        //Wait for manager's ack
+                    }
+                }
 //            if (enableTimeBreakdown) {
 //                AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
 //            }
+            }
         }
 
         else {

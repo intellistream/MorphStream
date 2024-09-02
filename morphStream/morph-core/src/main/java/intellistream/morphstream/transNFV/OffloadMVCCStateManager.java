@@ -16,29 +16,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * A global state manager that control concurrent access from Offload Executors to states under Offload-CC
  * */
 
-public class OffloadStateManager implements Runnable {
+public class OffloadMVCCStateManager {
     private static final ConcurrentHashMap<Integer, Long> lwmMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Long>> mvccWriteLockQueues = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Long>> svccLockQueues = new ConcurrentHashMap<>();
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private static final int offloadCCThreadNum = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
-
-    // For time breakdown analysis
-    private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
-    private static final AtomicLong aggSyncTime = new AtomicLong(0); //TODO: This can be optimized by creating separate aggregator for each worker thread
-    private static final AtomicLong aggUsefulTime = new AtomicLong(0);
-    private static long initEndTime = -1;
-    private static long processEndTime = -1;
 
     // Runtime control signals from VNF
     private static boolean stopSignal = false;
     private static ArrayList<Integer> tupleLocks = new ArrayList<>();
 
-    public OffloadStateManager() {
+    public OffloadMVCCStateManager() {
         for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("NUM_ITEMS"); i++) {
             lwmMap.put(i, 0L);
             mvccWriteLockQueues.put(i, new ConcurrentSkipListSet<>());
-            svccLockQueues.put(i, new ConcurrentSkipListSet<>());
             tupleLocks.add(i);
         }
     }
@@ -112,63 +103,6 @@ public class OffloadStateManager implements Runnable {
         lwmMap.put(tupleID, lockQueue.first());
     }
 
-    public static void readStateSVCC(VNFRequest request) {
-        synchronized (tupleLocks.get(request.getTupleID())) {
-            long timeStamp = request.getCreateTime();
-            int tupleID = request.getTupleID();
-            int readValue = -1;
-            svccLockQueues.get(tupleID).add(timeStamp);
-
-            while (timeStamp != svccLockQueues.get(tupleID).first() || svccLockQueues.size() < offloadCCThreadNum) {
-                // blocking wait
-                timeout(500);
-            }
-
-            try {
-                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                readValue = readRecord.getValues().get(1).getInt();
-                VNFManagerUDF.executeUDF(request);
-
-            } catch (DatabaseException e) {
-                throw new RuntimeException(e);
-            }
-
-            svccLockQueues.get(tupleID).remove(timeStamp);
-        }
-
-    }
-
-    public static void writeStateSVCC(VNFRequest request) {
-        synchronized (tupleLocks.get(request.getTupleID())) {
-            long timeStamp = request.getCreateTime();
-            int tupleID = request.getTupleID();
-            svccLockQueues.get(tupleID).add(timeStamp);
-            while (timeStamp != svccLockQueues.get(tupleID).first() || svccLockQueues.size() < offloadCCThreadNum) {
-                // blocking wait
-                timeout(500);
-            }
-
-            try {
-                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                int readValue = readRecord.getValues().get(1).getInt();
-                VNFManagerUDF.executeUDF(request);
-                readValue += 1;
-
-                SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                tempo_record.getValues().get(1).setInt(readValue);
-                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-
-            } catch (DatabaseException e) {
-                throw new RuntimeException(e);
-            }
-
-            svccLockQueues.get(tupleID).remove(timeStamp);
-        }
-
-    }
-
     private static void timeout(int microseconds) {
         long startTime = System.nanoTime();
         long waitTime = microseconds * 1000L; // Convert microseconds to nanoseconds
@@ -181,14 +115,14 @@ public class OffloadStateManager implements Runnable {
         stopSignal = true;
     }
 
-    @Override
-    public void run() {
-        //TODO: GC for state versions, need to block on-going state access?
-        // Time-based or counter-based?
-        while (!Thread.currentThread().isInterrupted()) {
-            if (stopSignal) {
-                break;
-            }
-        }
-    }
+//    @Override
+//    public void run() {
+//        //TODO: GC for state versions, need to block on-going state access?
+//        // Time-based or counter-based?
+//        while (!Thread.currentThread().isInterrupted()) {
+//            if (stopSignal) {
+//                break;
+//            }
+//        }
+//    }
 }

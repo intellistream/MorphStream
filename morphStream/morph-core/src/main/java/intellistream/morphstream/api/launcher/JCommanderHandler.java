@@ -70,18 +70,9 @@ public class JCommanderHandler {
      * Scheduling configurations
      */
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-//    public String scheduler = "OP_BFS_A";
-    //    public String scheduler = "OG_BFS_A";
-//    public String scheduler = "OG_DFS";
-//    public String scheduler = "OG_DFS_A";
-//    public String scheduler = "OG_NS";
-//    public String scheduler = "OG_NS_A";
-//    public String scheduler = "OP_NS";
-//    public String scheduler = "OP_NS_A";
-    public String scheduler = "OP_BFS";
-//    public String scheduler = "OP_BFS_A";
+    public String scheduler = "OP_NS";
+//    public String scheduler = "OP_BFS";
 //    public String scheduler = "OP_DFS";
-//    public String scheduler = "OP_DFS_A";
 //    public String scheduler = "TStream";
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
@@ -306,7 +297,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int offloadLockNum = 1000;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public int ccStrategy = 0;
+    public int ccStrategy = 10;
     @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
     public int workloadPattern = 4; // 4: dynamic workload
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -316,7 +307,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.4.3";
+    public String experimentID = "5.4.1";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
 //    public String vnfID = "1_firewall";
 //    public String vnfID = "2_nat";

@@ -10,19 +10,19 @@ import csv
 
 # Simulated data
 key_skewness_values = [0, 0.25, 0.5, 0.75, 1]
-strategies = ["SVCC", "MVCC"]
-colors = ['white', 'white']
-hatches = ['\\\\\\', '///']
-hatch_colors = ['#ed8e11', '#11abed']
+strategies = ["Partitioned", "Replicated", "Global"]
+colors = ['white', 'white', 'white']
+hatches = ['\\\\', '///', 'xxx']
+hatch_colors = ['#ed8e11', '#11abed', '#8c0b0b']
 
 # Simulated throughput data (in millions of requests per second)
 # Each row corresponds to a different key skewness value.
 throughput_data = np.array([
-    [349026, 344634],  # Throughput for key skewness 0.1
-    [313628, 308436],  # Throughput for key skewness 0.25
-    [236124, 236491],  # Throughput for key skewness 0.5
-    [184794, 185013],  # Throughput for key skewness 0.75
-    [151973, 153291]   # Throughput for key skewness 1
+    [60330, 663539, 338096],  # Throughput for key skewness 0.1
+    [60394, 621811, 336060],  # Throughput for key skewness 0.25
+    [60416, 626270, 338762],  # Throughput for key skewness 0.5
+    [60428, 624581, 341409],  # Throughput for key skewness 0.75
+    [60630, 616172, 335440]   # Throughput for key skewness 1
 ])
 
 # Normalize the throughput by 10^6 (convert to millions of requests per second)
@@ -42,19 +42,14 @@ for i, strategy in enumerate(strategies):
 ax.set_xticks([r + bar_width for r in range(len(key_skewness_values))])
 ax.set_xticklabels(key_skewness_values, fontsize=16)
 ax.set_ylabel('Throughput (M req/sec)', fontsize=18, labelpad=12)
-ax.set_xlabel('Trojan Detector Workload Variations', fontsize=18, labelpad=12)
+ax.set_xlabel('Per-flow State Access Ratio', fontsize=18, labelpad=12)
 
 ax.tick_params(axis='y', labelsize=14)
-
-# Set labels and title
-ax.set_xlabel('Read Operation Ratio', fontsize=18)
-ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
-# ax.set_title('Throughput Comparison of Strategies under Different Key Skewness Values', fontsize=16)
 
 
 # Create custom legend with hatches
 handles = [Patch(facecolor=color, edgecolor=hatchcolor, hatch=hatch, label=label) for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, strategies)]
-ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=16)
+ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=3, fontsize=16)
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
@@ -64,10 +59,10 @@ plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
 figure_dir = os.path.join(script_dir, 'figures')
 os.makedirs(figure_dir, exist_ok=True)
-plt.savefig(os.path.join(figure_dir, '5.4.2_RWRatio_Throughput.pdf'))  # Save the figure
-plt.savefig(os.path.join(figure_dir, '5.4.2_RWRatio_Throughput.png'))  # Save the figure
+plt.savefig(os.path.join(figure_dir, '5.4.3_Scope_Ratio_Throughput.pdf'))  # Save the figure
+plt.savefig(os.path.join(figure_dir, '5.4.3_Scope_Ratio_Throughput.png'))  # Save the figure
 
 local_script_dir = "/home/zhonghao/图片"
 local_figure_dir = os.path.join(local_script_dir, 'Figures')
 os.makedirs(local_figure_dir, exist_ok=True)
-plt.savefig(os.path.join(local_figure_dir, '5.4.2_RWRatio_Throughput.pdf'))  # Save the figure
+plt.savefig(os.path.join(local_figure_dir, '5.4.3_Scope_Ratio_Throughput.pdf'))  # Save the figure

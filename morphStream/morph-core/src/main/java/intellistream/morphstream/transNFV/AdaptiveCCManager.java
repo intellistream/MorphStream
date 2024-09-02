@@ -17,7 +17,6 @@ public class AdaptiveCCManager {
     private Thread partitionCCThread;
     private Thread replicationCCThread;
     private Thread offloadCCExecutorService;
-    private Thread offloadStateManagerThread;
     private HashMap<Integer, Thread> offloadExecutorThreads = new HashMap<>();
     private Thread openNFThread;
     private Thread chcThread;
@@ -49,7 +48,6 @@ public class AdaptiveCCManager {
         partitionCCThread = new Thread(new PartitionCCThread(partitionQueue, partitionOwnership));
         replicationCCThread = new Thread(new ReplicationCCThread(replicationQueue));
         offloadCCExecutorService = new Thread(new OffloadCCExecutorService(offloadQueue, offloadCCThreadNum));
-        offloadStateManagerThread = new Thread(new OffloadStateManager());
         openNFThread = new Thread(new OpenNFController(openNFQueue));
         chcThread = new Thread(new CHCController(chcQueue));
         s6Thread = new Thread(new S6Controller(s6Queue));
@@ -63,7 +61,7 @@ public class AdaptiveCCManager {
         for (int i = 0; i < offloadCCThreadNum; i++) {
             BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
             offloadingQueues.put(i, inputQueue);
-            Thread offloadExecutorThread = new Thread(new OffloadExecutor(i, inputQueue));
+            Thread offloadExecutorThread = new Thread(new OffloadExecutorThread(i, inputQueue));
             offloadExecutorThreads.put(i, offloadExecutorThread);
         }
 
@@ -132,7 +130,6 @@ public class AdaptiveCCManager {
     }
 
     public void startOffloadExecutorThreads() {
-        offloadStateManagerThread.start();
         for (int i = 0; i < offloadCCThreadNum; i++) {
             offloadExecutorThreads.get(i).start();
         }
@@ -141,7 +138,6 @@ public class AdaptiveCCManager {
 
     public void joinOffloadExecutorThreads() {
         try {
-            offloadStateManagerThread.join();
             for (int i = 0; i < offloadCCThreadNum; i++) {
                 offloadExecutorThreads.get(i).join();
             }

@@ -102,12 +102,13 @@ num_instances = 4
 output_dir = f'/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/pattern_files/5.4.1/instanceNum_{num_instances}/dynamic'
 num_keys = 10000
 total_requests = 400000
-key_skewness = 0  # Adjust this value from 0 (uniform) to 1 (highly skewed)
+
+key_skewness = 0.75  # Adjust this value from 0 (uniform) to 1 (highly skewed)
 workload_skewness = 0  # Adjust this value from 0 (uniform) to 1 (highly skewed)
 
-prob_read_write = 0.125  # read / (read + write)
+prob_read_write = 0.5  # read / (read + write)
 
-prob_scope = 1  # per-flow / (per-flow + cross-flow)
+prob_scope = 0  # per-flow / (per-flow + cross-flow)
 vnfID = 11
 punc_interval = 1000
 
