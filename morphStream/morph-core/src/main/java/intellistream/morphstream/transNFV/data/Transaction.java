@@ -7,22 +7,22 @@ import java.util.Set;
 
 public class Transaction {
     private final List<Operation> operations = new ArrayList<>();
-    private final Set<String> acquiredLocks = new HashSet<>();
+    private final Set<Integer> acquiredLocks = new HashSet<>();
     private final long timestamp;
 
     public Transaction(long timestamp) {
         this.timestamp = timestamp;
     }
 
-    public void addOperation(String key, boolean isWrite) {
-        operations.add(new Operation(key, isWrite));
+    public void addOperation(int key, int value, long timestamp, boolean isWrite) {
+        operations.add(new Operation(key, value, timestamp, isWrite));
     }
 
     public List<Operation> getOperations() {
         return operations;
     }
 
-    public Set<String> getAcquiredLocks() {
+    public Set<Integer> getAcquiredLocks() {
         return acquiredLocks;
     }
 

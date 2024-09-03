@@ -133,7 +133,6 @@ public class VNFInstance implements Runnable {
                 int scope = parseScope(parts[4]); // 0: per-flow, 1: cross-flow
                 int saID = type; //TODO: Hardcoded saID = type
 
-                //TODO: Add transaction construction, create transaction based on pre-defined SA structures
                 VNFRequest request = new VNFRequest(reqID, instanceID, tupleID, type, scope, packetStartTime, instancePuncID, 0, vnfID, saID);
                 inputLineCounter++;
                 if (enableTimeBreakdown) {

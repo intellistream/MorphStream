@@ -14,6 +14,7 @@ public class OffloadExecutorThread implements Runnable {
     private int requestCounter;
     private final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
     private final OffloadSVCCStateManager svccStateManager = new OffloadSVCCStateManager();
+    private final OffloadMVCCStateManager mvccStateManager = new OffloadMVCCStateManager();
 
     public OffloadExecutorThread(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue) {
         this.offloadExecutorID = offloadExecutorID;
@@ -33,32 +34,34 @@ public class OffloadExecutorThread implements Runnable {
                 System.out.println("Offload executor " + offloadExecutorID + " received stop signal. Total requests: " + requestCounter);
                 break;
             }
-
             requestCounter++;
-//            request.setLogicalTS(requestCounter); //TODO: We should inherit timestamp from request
-            
-            if (doMVCC == 0) {
-                try {
+
+            try {
+                if (doMVCC == 0) {
                     executeSVCCTransaction(request);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } else if (doMVCC == 1) {
+                    executeMVCCTransaction(request);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
-            } else {
-                throw new UnsupportedOperationException();
+
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            
+
             sendACK(request);
-            
         }
     }
+
     
     private void executeSVCCTransaction(VNFRequest request) throws InterruptedException {
         int tupleID = request.getTupleID();
         int type = request.getType();
         long timestamp = request.getCreateTime();
 
-        Transaction transaction = constructTransaction(request, type, tupleID);
+        Transaction transaction = constructTransaction(request, type, tupleID, timestamp);
 
+        // Phase 1: Acquire all locks
         for (Operation operation : transaction.getOperations()) {
             svccStateManager.acquireLock(operation.getKey(), timestamp, operation.isWrite());
             transaction.getAcquiredLocks().add(operation.getKey());
@@ -68,27 +71,52 @@ public class OffloadExecutorThread implements Runnable {
         svccStateManager.executeTransaction(request);
 
         // Phase 2: Release all locks
-        for (String key : transaction.getAcquiredLocks()) {
+        for (int key : transaction.getAcquiredLocks()) {
             svccStateManager.releaseLock(key, timestamp);
         }
 
-        System.out.println("Transaction completed, locks released.");
+//        System.out.println("Transaction completed, locks released.");
     }
 
-    private static Transaction constructTransaction(VNFRequest request, int type, int tupleID) {
+
+    private void executeMVCCTransaction(VNFRequest request) throws InterruptedException {
+        int tupleID = request.getTupleID();
+        int type = request.getType();
+        long timestamp = request.getCreateTime();
+
+        Transaction transaction = constructTransaction(request, type, tupleID, timestamp);
+
+        // Sequentially execute operations inside transaction
+        for (Operation operation : transaction.getOperations()) {
+            if (operation.isWrite()) {
+                mvccStateManager.write(tupleID, -1, timestamp);
+            } else {
+                mvccStateManager.read(tupleID, timestamp);
+            }
+        }
+
+        VNFManagerUDF.executeUDF(request); // Simulated UDF execution
+
+//        System.out.println("Transaction completed.");
+
+    }
+
+
+    private static Transaction constructTransaction(VNFRequest request, int type, int tupleID, long timestamp) {
         Transaction transaction = new Transaction(request.getCreateTime());
         if (type == 0) {
-            transaction.addOperation(String.valueOf(tupleID), false);
+            transaction.addOperation(tupleID, -1, timestamp,false);
         } else if (type == 1) {
-            transaction.addOperation(String.valueOf(tupleID), true);
+            transaction.addOperation(tupleID, -1, timestamp, true);
         } else if (type == 2) {
-            transaction.addOperation(String.valueOf(tupleID), false);
-            transaction.addOperation(String.valueOf(tupleID), true);
+            transaction.addOperation(tupleID, -1, timestamp, false);
+            transaction.addOperation(tupleID, -1, timestamp, true);
         } else {
             throw new UnsupportedOperationException();
         }
         return transaction;
     }
+
 
     private void sendACK(VNFRequest request) {
         try {

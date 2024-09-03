@@ -1,128 +1,72 @@
 package intellistream.morphstream.transNFV;
 
-import communication.dao.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.transNFV.data.VersionControl;
 
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A global state manager that control concurrent access from Offload Executors to states under Offload-CC
  * */
 
 public class OffloadMVCCStateManager {
-    private static final ConcurrentHashMap<Integer, Long> lwmMap = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Long>> mvccWriteLockQueues = new ConcurrentHashMap<>();
-    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-    private static final int offloadCCThreadNum = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    // Map to store versions of each key's value and their locks
+    private final Map<Integer, VersionControl> versionedStateTable = new ConcurrentHashMap<>();
 
-    // Runtime control signals from VNF
-    private static boolean stopSignal = false;
-    private static ArrayList<Integer> tupleLocks = new ArrayList<>();
+    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private static final int numExecutors = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    private static final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
 
     public OffloadMVCCStateManager() {
-        for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("NUM_ITEMS"); i++) {
-            lwmMap.put(i, 0L);
-            mvccWriteLockQueues.put(i, new ConcurrentSkipListSet<>());
-            tupleLocks.add(i);
-        }
-    }
-
-    public static int readStateMVCC(VNFRequest request) {
-        long timeStamp = request.getCreateTime();
-        int tupleID = request.getTupleID();
-        int readValue = -1;
-
-        while (timeStamp > lwmMap.get(tupleID) && !mvccWriteLockQueues.get(tupleID).isEmpty()) {
-            // blocking wait
-            timeout(500);
-        }
-
-        try {
-            TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-            SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-            readValue = readRecord.getValues().get(1).getInt();
-            VNFManagerUDF.executeUDF(request);
-
-        } catch (DatabaseException e) {
-            throw new RuntimeException(e);
-        }
-
-        return readValue;
-    }
-
-    public static void writeStateMVCC(VNFRequest request) {
-        long timeStamp = request.getCreateTime();
-        int tupleID = request.getTupleID();
-
-        synchronized (tupleLocks.get(tupleID)) {
-            mvccWriteLockQueues.get(tupleID).add(timeStamp);
-            maintainLWM(tupleID);
-
-            while (timeStamp != lwmMap.get(tupleID)) {
-                // blocking wait
-                timeout(500);
-            }
-
+        for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
             try {
                 TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                int readValue = readRecord.getValues().get(1).getInt();
-                VNFManagerUDF.executeUDF(request);
-                readValue += 1;
-
-                SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                tempo_record.getValues().get(1).setInt(readValue);
-                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-
+                versionedStateTable.put(tupleID, new VersionControl(tableRecord));
             } catch (DatabaseException e) {
                 throw new RuntimeException(e);
             }
-
-            long lwm = lwmMap.get(tupleID);
-            mvccWriteLockQueues.get(tupleID).remove(lwm);
-            maintainLWM(tupleID);
-        }
-
-        //TODO: What if a smaller timestamp arrives late? Then we can getting the wrong min value. Need to buffer and sort for a batch of operations
-    }
-
-
-    // Update lwm upon the arrival of each new write request and after the completion of each write request
-    private static void maintainLWM(int tupleID) {
-        ConcurrentSkipListSet<Long> lockQueue = mvccWriteLockQueues.get(tupleID);
-        if (lockQueue.isEmpty()) { //do not update lwm if no lock is present
-            return;
-        }
-        lwmMap.put(tupleID, lockQueue.first());
-    }
-
-    private static void timeout(int microseconds) {
-        long startTime = System.nanoTime();
-        long waitTime = microseconds * 1000L; // Convert microseconds to nanoseconds
-        while (System.nanoTime() - startTime < waitTime) {
-            // Busy-wait loop
         }
     }
 
-    public static void stop() {
-        stopSignal = true;
+    public void write(int key, int value, long timestamp) throws InterruptedException {
+        VersionControl versionedValue = versionedStateTable.get(key);
+
+        versionedValue.lock();
+        try {
+            versionedValue.enqueueWriteRequest(key, value, timestamp, true);
+
+            // Only allow the write with the smallest timestamp
+            while (!versionedValue.canGrantWrite(timestamp)) {
+                versionedValue.awaitWrite();
+            }
+
+            versionedValue.commitWrite(timestamp, value);
+            versionedValue.signalAll();
+        } finally {
+            versionedValue.unlock();
+        }
     }
 
-//    @Override
-//    public void run() {
-//        //TODO: GC for state versions, need to block on-going state access?
-//        // Time-based or counter-based?
-//        while (!Thread.currentThread().isInterrupted()) {
-//            if (stopSignal) {
-//                break;
-//            }
-//        }
-//    }
+    public int read(int key, long timestamp) throws InterruptedException {
+        VersionControl versionedValue = versionedStateTable.get(key);
+        if (versionedValue == null) {
+            throw new RuntimeException("Key does not exist");
+        }
+
+        versionedValue.lock();
+        try {
+            // Only allow reads if the timestamp is smaller than the LWM
+            while (versionedValue.isWriting() && !versionedValue.canGrantRead(timestamp)) {
+                versionedValue.awaitWrite();
+            }
+
+            return versionedValue.getVersion(timestamp);
+        } finally {
+            versionedValue.unlock();
+        }
+    }
 }
