@@ -1,8 +1,7 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.op;
 
 
-import communication.dao.VNFRequest;
-import intellistream.morphstream.transNFV.AdaptiveCCManager;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.LogRecord;
@@ -22,10 +21,9 @@ import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.TaskPrecedenceGraph;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
-import intellistream.morphstream.transNFV.VNFManagerUDF;
+import intellistream.morphstream.transNFV.vnf.UDF;
 import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,8 +106,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         } else if (communicationChoice == 0) {
             // Simplified saData: vnfID, saID, saType, tableName, tupleID, instanceID
-            String[] saData = operation.stateAccess;
-            VNFManagerUDF.executeUDF(new VNFRequest((int) operation.txnReqID, 0, Integer.parseInt(saData[4]), Integer.parseInt(saData[2]), 0, 0, 0, 0, Integer.parseInt(saData[0]), Integer.parseInt(saData[1])));
+            UDF.executeUDF(operation.vnfRequest);
         }
 
         commitLog(operation);
@@ -160,7 +157,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             switch (request.accessType) {
                 case WRITE_ONLY:
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ:
                 case WRITE:
@@ -169,24 +166,24 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, request.condition_records, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE_READ:
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case NON_DETER_READ:
                 case NON_DETER_WRITE:
                 case NON_READ_WRITE_COND_READN:
                     set_op = new Operation(true, request.tables, request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, request.condition_records, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case WINDOW_READ:
                 case WINDOW_WRITE:
                 case WINDOWED_READ_ONLY:
                     WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, windowContext, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, request.condition_records, windowContext, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 default:
                     throw new UnsupportedOperationException();

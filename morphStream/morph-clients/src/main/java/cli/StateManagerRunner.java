@@ -3,11 +3,10 @@ package cli;
 import intellistream.morphstream.api.Client;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import message.VNFCtrlServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.transaction.NotSupportedException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -58,56 +57,7 @@ public class StateManagerRunner extends Client {
             vnfMain.runStateManager(); // Start CC threads, and wait for them to finish
 
         } else if (communicationChoice == 1) {
-
-            // Build connection with LibVNF VNF instances
-            VNFCtrlServer vnfCtrlServer = new VNFCtrlServer();
-            int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
-            vnfCtrlServer.listenForInstances(8080, vnfInstanceNum);
-
-            // Wait for VNF instances to send JSON
-            while (MorphStreamEnv.get().vnfJSON == null) {
-                Thread.sleep(1000);
-            }
-            String cleanedJson = cleanupJson(MorphStreamEnv.get().vnfJSON);
-            System.out.println(cleanedJson);
-            VNFJsonClass vnfJsonClass;
-
-            ObjectMapper mapper = new ObjectMapper();
-            vnfJsonClass = mapper.readValue(cleanedJson, VNFJsonClass.class);
-
-            // Manually assign txnID and saID
-            for (App app : vnfJsonClass.getApps()) {
-                int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
-                vnfMain.registerOperator(app.getName(), numTPGThreads);
-
-                int txnIndex = 0;
-                for (Transaction txn : app.getTransactions()) {
-                    txn.setTxnID(txnIndex);
-                    int saIndex = 0;
-                    for (StateAccess sa : txn.getStateAccesses()) {
-                        String saType = "read-write"; // TODO: Hardcoded as read-write, need JSON to specify
-                        vnfMain.registerStateAccess(String.valueOf(saIndex), saType, sa.getTableName());
-
-                        sa.setSaID(saIndex);
-                        switch (saType) {
-                            case "read":
-                                MorphStreamEnv.get().updateSATypeMap(saIndex, 0);
-                                break;
-                            case "write":
-                                MorphStreamEnv.get().updateSATypeMap(saIndex, 1);
-                                break;
-                            case "read-write":
-                                MorphStreamEnv.get().updateSATypeMap(saIndex, 2);
-                                break;
-                        }
-                        MorphStreamEnv.get().updateSATableNameMap(saIndex, sa.getTableName());
-                        saIndex++;
-                    }
-                    txnIndex++;
-                }
-            }
-            System.out.println("Deserialized SFC Json data: " + vnfJsonClass.getApps().get(0).getName());
-            vnfMain.runStateManager(); // Start TPG_CC threads, at this stage all manager threads are ready to process requests
+            throw new NotSupportedException("Remote communication not supported");
         }
     }
 

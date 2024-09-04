@@ -61,8 +61,8 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
     # plt.title('Zipfian Distribution of Key Accesses')
     # plt.show()
 
-    types = np.random.choice(['read', 'write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
-    scopes = np.random.choice(['per-flow', 'cross-flow'], total_requests, p=[prob_scope, 1 - prob_scope])
+    types = np.random.choice(['Read', 'Read-Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
+    scopes = np.random.choice(['Per-flow', 'Cross-flow'], total_requests, p=[prob_scope, 1 - prob_scope])
     
     lines = []
     for i in range(total_requests):
@@ -100,13 +100,13 @@ def distribute_lines_among_instances(lines, instance_workloads, output_dir):
 # Example usage
 num_instances = 4
 output_dir = f'/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/pattern_files/5.4.1/instanceNum_{num_instances}/dynamic'
-num_keys = 10000
+num_keys = 5000
 total_requests = 400000
 
 key_skewness = 0.75  # Adjust this value from 0 (uniform) to 1 (highly skewed)
 workload_skewness = 0  # Adjust this value from 0 (uniform) to 1 (highly skewed)
 
-prob_read_write = 0.5  # read / (read + write)
+prob_read_write = 0.5  # read / (read + read-write)
 
 prob_scope = 0  # per-flow / (per-flow + cross-flow)
 vnfID = 11

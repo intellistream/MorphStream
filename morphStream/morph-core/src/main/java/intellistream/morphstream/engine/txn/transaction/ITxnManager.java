@@ -10,6 +10,7 @@ import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 
 import java.util.LinkedList;
 import java.util.concurrent.BrokenBarrierException;
@@ -24,7 +25,7 @@ public interface ITxnManager {
     PartitionedOrderLock.LOCK getOrderLock(int p_id);//partitioned. Global ordering can not be partitioned.
     boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException;
 
-    boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException;
+    boolean submitStateAccess(VNFRequest vnfRequest, TxnContext txnContext) throws DatabaseException;
 
     //used by speculative T-Stream.
 //    boolean Specu_ReadRecord(TxnContext txn_context, String microTable, String key, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws DatabaseException;

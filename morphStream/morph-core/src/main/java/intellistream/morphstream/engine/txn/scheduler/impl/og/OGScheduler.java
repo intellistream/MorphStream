@@ -301,30 +301,30 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         switch (request.accessType) {
             case WRITE_ONLY:
                 set_op = new Operation(false, null, request.d_key, request.d_table, null,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
                 set_op = new Operation(false, null, request.d_key, request.d_table, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case READ_WRITE_COND_READ:
             case READ_WRITE_COND_READN:
                 set_op = new Operation(false, null, request.d_key, request.d_table, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case NON_READ_WRITE_COND_READN:
                 set_op = new Operation(true, request.tables, request.d_key, request.d_table, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case READ_WRITE_READ:
                 set_op = new Operation(false, null, request.d_key, request.d_table, null,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             case WINDOWED_READ_ONLY:
                 WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                 set_op = new Operation(false, null, request.d_key, request.d_table, request.condition_records,
-                        request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");

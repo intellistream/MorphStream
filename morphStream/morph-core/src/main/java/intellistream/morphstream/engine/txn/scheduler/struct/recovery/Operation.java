@@ -6,6 +6,7 @@ import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,8 +25,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends RSContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            List<TableRecord> read_records, String[] stateAccess, int d_fieldIndex, int[] condition_fieldIndexes) {
-        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey, d_fieldIndex, condition_fieldIndexes);
+            List<TableRecord> read_records, VNFRequest vnfRequest, int d_fieldIndex, int[] condition_fieldIndexes) {
+        super(table_name, vnfRequest, read_records, txn_context, accessType, record, bid, null, pKey, d_fieldIndex, condition_fieldIndexes);
         this.context = context;
         this.pKey = pKey;
     }

@@ -18,11 +18,11 @@ hatch_colors = ['#ed8e11', '#11abed']
 # Simulated throughput data (in millions of requests per second)
 # Each row corresponds to a different key skewness value.
 throughput_data = np.array([
-    [273645, 282695],  # Throughput for key skewness 0.1
-    [189120, 281416],  # Throughput for key skewness 0.25
-    [123501, 262850],  # Throughput for key skewness 0.5
-    [80392, 159812],  # Throughput for key skewness 0.75
-    [57408, 42213]   # Throughput for key skewness 1
+    [849510, 166737],  # Throughput for key skewness 0.1
+    [831575, 166869],  # Throughput for key skewness 0.25
+    [800942, 166223],  # Throughput for key skewness 0.5
+    [619228, 166966],  # Throughput for key skewness 0.75
+    [596883, 168595]   # Throughput for key skewness 1
 ])
 
 # Normalize the throughput by 10^6 (convert to millions of requests per second)

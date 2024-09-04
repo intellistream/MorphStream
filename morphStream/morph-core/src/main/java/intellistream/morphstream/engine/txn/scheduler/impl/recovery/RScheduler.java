@@ -84,21 +84,21 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             switch (request.accessType) {
                 case WRITE_ONLY:
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, request.condition_records, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, request.condition_records, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, request.condition_records, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 case READ_WRITE_READ:
                     set_op = new Operation(request.d_key, getTargetContext(request.d_key), request.d_table, request.txn_context, bid, request.accessType,
-                            request.d_record, null, request.stateAccess, request.d_fieldIndex, request.condition_fieldIndexes);
+                            request.d_record, null, request.vnfRequest, request.d_fieldIndex, request.condition_fieldIndexes);
                     break;
                 default:
                     throw new UnsupportedOperationException();

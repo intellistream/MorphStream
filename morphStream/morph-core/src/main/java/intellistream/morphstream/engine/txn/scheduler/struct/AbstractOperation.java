@@ -9,6 +9,7 @@ import intellistream.morphstream.engine.txn.durability.struct.Logging.NativeComm
 import intellistream.morphstream.engine.txn.scheduler.struct.op.WindowDescriptor;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public abstract class AbstractOperation {
     public long txnReqID; //Used under NFV context, created by VNF instance to track txn request
     //required by READ_WRITE_and Condition.
     public final String pKey;
-    public volatile String[] stateAccess; //simplified stateAccess: saID, saType, tableName, tupleID, instanceID
+    public volatile VNFRequest vnfRequest; //simplified stateAccess: saID, saType, tableName, tupleID, instanceID
     public volatile int[] condition_fieldIndexes; //state objects' desired field indexes in tables
     public volatile List<TableRecord> condition_records;//client-defined record name -> TableRecord
     public boolean isCommit = true;//It means that this operation has been added to LoggingManager.
@@ -38,11 +39,11 @@ public abstract class AbstractOperation {
     public LoggingEntry logRecord;
     public WindowDescriptor windowContext;
 
-    public AbstractOperation(String table_name, String[] stateAccess, List<TableRecord> condition_records,
+    public AbstractOperation(String table_name, VNFRequest vnfRequest, List<TableRecord> condition_records,
                              TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record,
                              long bid, WindowDescriptor windowContext, String pKey, int d_fieldIndex, int[] condition_fieldIndexes) {
         this.table_name = table_name;
-        this.stateAccess = stateAccess;
+        this.vnfRequest = vnfRequest;
         this.condition_records = condition_records;
         this.condition_fieldIndexes = condition_fieldIndexes;
         this.txn_context = txn_context;

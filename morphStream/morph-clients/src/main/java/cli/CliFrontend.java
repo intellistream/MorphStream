@@ -3,7 +3,7 @@ package cli;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import commonStorage.RequestTemplates;
-import intellistream.morphstream.transNFV.simVNF.VNFRunner;
+import intellistream.morphstream.transNFV.vnf.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
@@ -96,42 +96,40 @@ public class CliFrontend {
 
 
     public void runStateManager() throws InterruptedException {
-        int ccStrategy = env.configuration().getInt("ccStrategy");
+        String ccStrategy = env.configuration().getString("ccStrategy");
         boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
-        if (ccStrategy == 0) {
+        if (ccStrategy == "Partitioning") {
             env.getAdaptiveCCManager().startPartitionCC();
             startVNF();
             env.getAdaptiveCCManager().joinPartitionCC();
-        } else if (ccStrategy == 1) {
+        } else if (ccStrategy == "Replication") {
             env.getAdaptiveCCManager().startReplicationCC();
             startVNF();
             env.getAdaptiveCCManager().joinReplicationCC();
-        } else if (ccStrategy == 2) {
-            env.getAdaptiveCCManager().startOffloadCCExecutorService();
-            startVNF();
-            env.getAdaptiveCCManager().joinOffloadCCExecutorService();
-        } else if (ccStrategy == 3) {
-            runTopologyLocally();
-        } else if (ccStrategy == 4) {
-            env.getAdaptiveCCManager().startOpenNF();
-            startVNF();
-            env.getAdaptiveCCManager().joinOpenNF();
-        } else if (ccStrategy == 5) {
-            env.getAdaptiveCCManager().startCHC();
-            startVNF();
-            env.getAdaptiveCCManager().joinCHC();
-        } else if (ccStrategy == 6) {
-            env.getAdaptiveCCManager().startS6();
-            startVNF();
-            env.getAdaptiveCCManager().joinS6();
-        } else if (ccStrategy == 7) {
-            env.getAdaptiveCCManager().startAdaptiveCC();
-            runTopologyLocally();
-            env.getAdaptiveCCManager().joinAdaptiveCC();
-        } else if (ccStrategy == 10) { //TODO: Testing offload CC executor threads with SVCC vs. MVCC
+        } else if (ccStrategy == "Offloading") {
             env.getAdaptiveCCManager().startOffloadExecutorThreads();
             startVNF();
             env.getAdaptiveCCManager().joinOffloadExecutorThreads();
+        } else if (ccStrategy == "Proactive") {
+            runTopologyLocally();
+        } else if (ccStrategy == "OpenNF") {
+            env.getAdaptiveCCManager().startOpenNF();
+            startVNF();
+            env.getAdaptiveCCManager().joinOpenNF();
+        } else if (ccStrategy == "CHC") {
+            env.getAdaptiveCCManager().startCHC();
+            startVNF();
+            env.getAdaptiveCCManager().joinCHC();
+        } else if (ccStrategy == "S6") {
+            env.getAdaptiveCCManager().startS6();
+            startVNF();
+            env.getAdaptiveCCManager().joinS6();
+        } else if (ccStrategy == "Adaptive") {
+            env.getAdaptiveCCManager().startAdaptiveCC();
+            runTopologyLocally();
+            env.getAdaptiveCCManager().joinAdaptiveCC();
+        } else {
+            if (enable_log) LOG.error("Unknown CC strategy: " + ccStrategy);
         }
         if (enableMemoryFootprint) {
             StateManagerRunner.stopMemoryMonitoring();
@@ -187,7 +185,7 @@ public class CliFrontend {
 
     private static void startVNF() {
         writeIndicatorFile("manager_ready");
-        Thread vnfThread = new Thread(new VNFRunner());
+        Thread vnfThread = new Thread(new VNFManager());
         vnfThread.start();
         LOG.info("VNF instances have started.");
     }

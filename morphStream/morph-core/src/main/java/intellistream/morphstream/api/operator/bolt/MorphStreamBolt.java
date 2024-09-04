@@ -1,11 +1,10 @@
 package intellistream.morphstream.api.operator.bolt;
 
 import commonStorage.RequestTemplates;
-import communication.dao.VNFRequest;
-import intellistream.morphstream.transNFV.AdaptiveCCManager;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.input.TransactionalEvent;
-import intellistream.morphstream.api.input.TransactionalVNFEvent;
-import intellistream.morphstream.transNFV.simVNF.VNFRunner;
+import intellistream.morphstream.api.input.ProactiveVNFRequest;
+import intellistream.morphstream.transNFV.vnf.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
@@ -29,7 +28,7 @@ import static intellistream.morphstream.configuration.CONTROL.*;
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
     private final HashMap<String, String[]> saTemplates; //State access ID -> state objects.
-    private final ArrayDeque<TransactionalVNFEvent> eventQueue; //Transactional events deque
+    private final ArrayDeque<ProactiveVNFRequest> eventQueue; //Transactional events deque
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
     private final Map<Integer, Socket> instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
@@ -75,12 +74,11 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             operatorTimestamp = 0L;
         _bid = in.getBID();
         input_event = in.getValue(0);
-//        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid, ((TransactionalEvent) input_event).getTxnRequestID());
     }
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
-        TransactionalVNFEvent event = (TransactionalVNFEvent) input_event;
+        ProactiveVNFRequest event = (ProactiveVNFRequest) input_event;
         TxnContext txnContext = new TxnContext(thread_Id, this.fid, _bid, ((TransactionalEvent) input_event).getTxnRequestID());
         if (enable_latency_measurement) {
             event.setOperationTimestamp(operatorTimestamp);
@@ -88,19 +86,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         Transaction_Request_Construct(event, txnContext);
     }
 
-    protected void Transaction_Request_Construct(TransactionalVNFEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void Transaction_Request_Construct(ProactiveVNFRequest event, TxnContext txnContext) throws DatabaseException {
         transactionManager.BeginTransaction(txnContext);
-        String[] saData;
-
-        if (communicationChoice == 1) {
-            throw new UnsupportedOperationException("Communication choice 1 is not supported yet.");
-        } else if (communicationChoice == 0) {
-            saData = new String[]{String.valueOf(event.getVnfID()), String.valueOf(event.getSaID()), String.valueOf(event.getSaType()), "testTable", event.getTupleID(), String.valueOf(event.getInstanceID())}; //Hardcoded for preliminary study
-        } else {
-            throw new RuntimeException("Invalid communication choice");
-        }
-
-        transactionManager.submitStateAccess(saData, txnContext);
+        transactionManager.submitStateAccess(event.getVnfRequest(), txnContext);
         transactionManager.CommitTransaction(txnContext);
         eventQueue.add(event);
     }
@@ -111,10 +99,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             throw new UnsupportedOperationException("Communication choice 1 is not supported yet.");
 
         } else if (communicationChoice == 0) {
-            for (TransactionalVNFEvent event : eventQueue) {
-                VNFRequest request = new VNFRequest((int) event.getTxnRequestID(), event.getInstanceID(),
-                        Integer.parseInt(event.getTupleID()), event.getSaType(), event.getScope(), event.getBid(), event.getPuncID(), 0, event.getVnfID(), event.getSaID());
-                VNFRunner.getSender(event.getInstanceID()).submitFinishedRequest(request);
+            for (ProactiveVNFRequest event : eventQueue) {
+                VNFManager.getSender(event.getVnfRequest().getInstanceID()).submitFinishedRequest(event.getVnfRequest());
                 requestCounter++;
             }
             if (requestCounter == expRequestCount) {

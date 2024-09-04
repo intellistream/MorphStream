@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.launcher;
 
-import intellistream.morphstream.transNFV.AdaptiveCCManager;
+import intellistream.morphstream.transNFV.state_managers.UniversalStateManager;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
@@ -26,7 +26,7 @@ public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
-    private AdaptiveCCManager adaptiveCCManager;
+    private UniversalStateManager universalStateManager;
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
@@ -43,16 +43,16 @@ public class MorphStreamEnv {
     public static final ConcurrentHashMap<Integer, Integer> fetchedValues = new ConcurrentHashMap<>(); // tupleID -> value
 
     public void initializeAdaptiveCCManager() {
-        if (adaptiveCCManager == null) {
-            adaptiveCCManager = new AdaptiveCCManager();
+        if (universalStateManager == null) {
+            universalStateManager = new UniversalStateManager();
         } else {
             throw new RuntimeException("AdaptiveCCManager already initialized");
         }
     }
 
-    public AdaptiveCCManager getAdaptiveCCManager() {
-        System.out.println("AdaptiveCCManager: " + adaptiveCCManager);
-        return adaptiveCCManager;
+    public UniversalStateManager getAdaptiveCCManager() {
+        System.out.println("AdaptiveCCManager: " + universalStateManager);
+        return universalStateManager;
     }
     public static MorphStreamEnv get() {
         return ourInstance;

@@ -25,9 +25,9 @@ import intellistream.morphstream.engine.txn.transaction.TxnManager;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Int;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
@@ -157,31 +157,22 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
-        String accessType = stateAccess[2];
-        if (Objects.equals(accessType, "read") || accessType.equals("0")) {
-            return Asy_ReadRecord(stateAccess, txnContext);
-        } else if (accessType.equals("write") || accessType.equals("read-write") || accessType.equals("1") || accessType.equals("2")) {
-            return Asy_WriteRecord(stateAccess, txnContext);
-        } else if (accessType.equals("WINDOW_READ")) {
-            return Asy_WindowReadRecord(stateAccess, txnContext);
-        } else if (accessType.equals("WINDOW_WRITE")) {
-            return Asy_WindowWriteRecord(stateAccess, txnContext);
-        } else if (accessType.equals("NON_DETER_READ")) {
-            return Asy_NonDeterReadRecord(stateAccess, txnContext);
-        } else if (accessType.equals("NON_DETER_WRITE")) {
-            return Asy_NonDeterWriteRecord(stateAccess, txnContext);
+    public boolean submitStateAccess(VNFRequest vnfRequest, TxnContext txnContext) throws DatabaseException {
+        String accessType = vnfRequest.getType();
+        if (Objects.equals(accessType, "Read")) {
+            return Asy_ReadRecord(vnfRequest, txnContext);
+        } else if (accessType.equals("Write") || accessType.equals("Read-Write")) {
+            return Asy_WriteRecord(vnfRequest, txnContext);
         } else {
             throw new UnsupportedOperationException("Unsupported access type: " + accessType);
         }
     }
 
     //If read only, set src key and table to read key, and add this single read access into readRecords.
-    public boolean Asy_ReadRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_ReadRecord(VNFRequest vnfRequest, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        // saData: vnfID, saID, saType, tableName, tupleID, instanceID
-        String tableName = saData[3];
-        String tupleID = saData[4];
+        String tableName = "testTable"; //vnfRequest.getTableName();
+        String tupleID = String.valueOf(vnfRequest.getTupleID());
 
         List<TableRecord> condition_records = new ArrayList<>();
         String[] condition_tables = {tableName};
@@ -190,16 +181,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         TableRecord tupleRecord = storageManager_.getTable(tableName).SelectKeyRecord(tupleID);
         if (tupleRecord != null) {
-
-            //TODO: Optimize data passing, no need to pass saData again.
             condition_records.add(tupleRecord);
-
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, tableName,
-                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, saData));
+                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, vnfRequest));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txnContext, accessType, tableName,
-                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, saData));
+                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, vnfRequest));
             }
         } else {
             if (enable_log) log.info("No record is found for table: " + tableName + ", key: " + tupleID);
@@ -207,11 +195,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public boolean Asy_WriteRecord(String[] saData, TxnContext txnContext) throws DatabaseException {
+    public boolean Asy_WriteRecord(VNFRequest vnfRequest, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
-        // saData: vnfID, saID, saType, tableName, tupleID, instanceID
-        String tableName = saData[3];
-        String tupleID = saData[4];
+        String tableName = "testTable"; //vnfRequest.getTableName();
+        String tupleID = String.valueOf(vnfRequest.getTupleID());
 
         List<TableRecord> condition_records = new ArrayList<>();
         String[] condition_tables = {tableName};
@@ -227,168 +214,19 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
 
         if (tupleRecord != null) {
-
-            //TODO: Optimize data passing, no need to pass saData again.
             condition_records.add(tupleRecord);
-
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, tableName,
-                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, saData));
+                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, vnfRequest));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txnContext, accessType, tableName,
-                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, saData));
+                        tupleID, 1, tupleRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, vnfRequest));
             }
         } else {
             if (enable_log) log.info("No record is found for table: " + tableName + ", key: " + tupleID);
             return false;
         }
     }
-
-    public boolean Asy_WindowReadRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
-//        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_READ;
-//        List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
-//        if (stateObjects.size() != 1) {
-//            throw new UnsupportedOperationException("Read only supports single read access.");
-//        }
-//        StateObject stateObj = stateObjects.get(0);
-//        String srcTable = stateObj.getTable();
-//        String srcKey = stateObj.getKey();
-//        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
-//
-//        String[] condition_sourceTables = {srcTable};
-//        String[] condition_sourceKeys = {srcKey};
-//        HashMap<String, TableRecord> condition_records = new HashMap<>();
-//        condition_records.put(stateObj.getName(), readRecord);
-//
-//        if (readRecord != null) {
-//            if (enableGroup) {
-//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-//                //TODO: Replace with the following code to get scheduler by stage
-////                return stage.getScheduler().SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-//            } else {
-//                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-//                        srcKey, readRecord, condition_sourceTables, condition_sourceKeys, condition_records, stateAccess));
-//            }
-//        } else {
-//            if (enable_log) log.info("No record is found:" + srcKey);
-//            return false;
-//        }
-        return false;
-    }
-
-    public boolean Asy_WindowWriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_WRITE;
-        // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
-        int recordNum = (stateAccess.length - 3) / 4;
-        int writeStateIndex = Integer.parseInt(stateAccess[2]);
-        List<TableRecord> condition_records = new ArrayList<>();
-        String[] condition_tables = new String[recordNum];
-        String[] condition_keys = new String[recordNum];
-        int[] condition_fieldIndexes = new int[recordNum];
-
-        for (int i = 3; i < stateAccess.length; i += 4) {
-            String table = stateAccess[i];
-            String key = stateAccess[i + 1];
-            int fieldIndex = Integer.parseInt(stateAccess[i + 2]);
-            condition_tables[(i-3)/4] = table;
-            condition_keys[(i-3)/4] = key;
-            condition_fieldIndexes[(i-3)/4] = fieldIndex;
-
-            key = String.valueOf(Integer.parseInt(key));
-            TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
-            if (condition_record != null) {
-                condition_records.add(condition_record);
-            } else {
-                if (enable_log) log.info("No record is found:" + key);
-                return false;
-            }
-        }
-
-        String writeTable = stateAccess[writeStateIndex];
-        String writeKey = String.valueOf(Integer.parseInt(stateAccess[writeStateIndex + 1]));
-        int writeFieldIndex = Integer.parseInt(stateAccess[writeStateIndex + 2]);
-        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
-
-        if (enableGroup) {
-            return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                    writeKey, writeFieldIndex, writeRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
-        } else {
-            return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
-                    writeKey, writeFieldIndex, writeRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
-        }
-    }
-
-    public boolean Asy_NonDeterReadRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
-//        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_READ;
-//        // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
-//        int recordNum = (stateAccess.length - 3) / 4;
-//        int writeStateIndex = Integer.parseInt(stateAccess[2]);
-//        List<TableRecord> condition_records = new ArrayList<>();
-//        String[] condition_tables = new String[recordNum];
-//        String[] condition_keys = new String[recordNum];
-//        int[] condition_fieldIndexes = new int[recordNum];
-//        BaseTable[] baseTables = new BaseTable[recordNum];
-//
-//        for (int i = 3; i < stateAccess.length; i += 4) {
-//            String table = stateAccess[i];
-//            String key = stateAccess[i + 1];
-//            int fieldIndex = Integer.parseInt(stateAccess[i + 2]);
-//            condition_tables[(i-3)/4] = table;
-//            condition_keys[(i-3)/4] = key;
-//            condition_fieldIndexes[(i-3)/4] = fieldIndex;
-//            baseTables[i] = storageManager_.getTable(table);
-//
-//            key = String.valueOf(Integer.parseInt(key));
-//            TableRecord condition_record = storageManager_.getTable(table).SelectKeyRecord(key);
-//            if (condition_record != null) {
-//                condition_records.add(condition_record);
-//            } else {
-//                if (enable_log) log.info("No record is found:" + key);
-//                return false;
-//            }
-//        }
-
-//        if (enableGroup) {
-//            return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
-//                    writeKey, writeFieldIndex, writeRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
-//        } else {
-//            return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
-//                    writeKey, writeFieldIndex, writeRecord, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
-//        }
-        return false;
-    }
-
-    public boolean Asy_NonDeterWriteRecord(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_WRITE;
-        // stateAccess: saID, type, writeObjIndex, [table name, key's value (updated with event data), field index in table, access type] * N
-        ShareTable table = (ShareTable) storageManager_.getTable(stateAccess[3]); //TODO: Hard coded to only one state object, representing the entire table
-        int recordNum = table.getNumRecords();
-        List<TableRecord> condition_records = new ArrayList<>();
-        String[] condition_tables = new String[recordNum];
-        String[] condition_keys = new String[recordNum];
-        int[] condition_fieldIndexes = new int[recordNum];
-        BaseTable[] baseTables = {table};
-
-        int recordIndex = 0;
-        while (table.iterator().hasNext()) {
-            condition_tables[recordIndex] = stateAccess[3];
-            TableRecord record = table.iterator().next();
-            condition_keys[recordIndex] = String.valueOf(record.getID());
-            condition_fieldIndexes[recordIndex] = Integer.parseInt(stateAccess[5]);
-            condition_records.add(record);
-            recordIndex++;
-        }
-
-        if (enableGroup) {
-            return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, stateAccess[3],
-                    null, Integer.parseInt(stateAccess[5]), null, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
-        } else {
-            return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, stateAccess[3],
-                    null, Integer.parseInt(stateAccess[5]), null, condition_tables, condition_keys, condition_fieldIndexes, condition_records, stateAccess));
-        }
-    }
-
 
     public void BeginTransaction(TxnContext txn_context) {
         if (enableGroup) {

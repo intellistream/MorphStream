@@ -32,7 +32,7 @@ def generate_instance_workloads(root_path, num_instances, num_keys, total_reques
                 else:
                     key_index = random.randint(0, len(cross_partition_keyset) - 1)
                     key = cross_partition_keyset[key_index]
-                access_type = 'read' if random.random() < read_prob else 'write'
+                access_type = '0' if random.random() < read_prob else '1'
                 scope = 'per-flow' if random.random() < per_flow_prob else 'cross-flow'
                 writer.writerow([request_id, key, vnfID, access_type, scope])
             print("intra_partition_keyset: ", intra_partition_keyset[0], ", ", intra_partition_keyset[-1])
@@ -51,7 +51,7 @@ vnfID = 11
 punc_interval = 1000
 
 prob_locality = 0
-prob_read_write = 0.5  # read / (read + write)
+prob_read_write = 0  # read / (read + write)
 prob_scope = 0  # per-flow / (per-flow + cross-flow)
 
 # Generate all CSV lines

@@ -15,7 +15,6 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
-import intellistream.morphstream.transNFV.AdaptiveCCManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

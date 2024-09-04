@@ -9,6 +9,7 @@ import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean submitStateAccess(String[] stateAccess, TxnContext txnContext) throws DatabaseException {
+    public boolean submitStateAccess(VNFRequest vnfRequest, TxnContext txnContext) throws DatabaseException {
         return false;
     }
 
