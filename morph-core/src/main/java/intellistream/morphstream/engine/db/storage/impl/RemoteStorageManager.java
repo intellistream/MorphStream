@@ -31,11 +31,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RemoteStorageManager extends StorageManager {
     private static final Logger LOG = LoggerFactory.getLogger(RemoteStorageManager.class);
     private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
-    private final String[] tableNames;
-    private final ConcurrentHashMap<String, Integer> tableNameToLength;
+    protected final String[] tableNames;
+    protected final ConcurrentHashMap<String, Integer> tableNameToLength;
     public ConcurrentHashMap<String, Integer> tableNameToItemNumber = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, String> tableNameToValueName = new ConcurrentHashMap<>();
     public CacheBuffer cacheBuffer;
-    public ConcurrentHashMap<String, String> tempValueForTables = new ConcurrentHashMap<>();
     public int totalWorker;
     public int totalThread;
     public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
@@ -47,10 +47,9 @@ public class RemoteStorageManager extends StorageManager {
         this.totalThread = totalThread;
         this.tableNameToLength = this.cacheBuffer.getTableNameToLength();
         for (String tableName: tableNames) {
-            int length = this.cacheBuffer.getTableNameToLength().get(tableName);
-            this.tempValueForTables.put(tableName, padStringToLength(tableName, length));
             workerSideOwnershipTables.put(tableName, new WorkerSideOwnershipTable(totalWorker));
             tableNameToItemNumber.put(tableName, MorphStreamEnv.get().configuration().getInt(tableName + "_num_items"));
+            tableNameToValueName.put(tableName, MorphStreamEnv.get().configuration().getString(tableName + "_value_names"));
         }
     }
 
@@ -294,7 +293,7 @@ public class RemoteStorageManager extends StorageManager {
         }
         rdmaWorkerManager.asyncReadRemoteWithExclusiveLock(keyIndex, tableIndex, size, remoteObject);
     }
-    public boolean asyncReadRemoteDatabaseWithSharedLock(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
+    public void asyncReadRemoteDatabaseWithSharedLock(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, RLContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;
         int keyIndex = 0;
         int size = 0;
@@ -306,7 +305,7 @@ public class RemoteStorageManager extends StorageManager {
                 break;
             }
         }
-        return rdmaWorkerManager.asyncReadRemoteDatabaseWithSharedLock(keyIndex, tableIndex, size, remoteObject);
+        rdmaWorkerManager.asyncReadRemoteDatabaseWithSharedLock(keyIndex, tableIndex, size, remoteObject);
     }
     public void asyncReadRemoteDatabaseWithVersion(String tableName, String key, RdmaWorkerManager rdmaWorkerManager, OCCContext.RemoteObject remoteObject) throws Exception {
         int tableIndex = 0;

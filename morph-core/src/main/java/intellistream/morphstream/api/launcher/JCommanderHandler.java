@@ -155,6 +155,8 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"--isRemoteDB"}, description = "isRemoteDB.")
     public int isRemoteDB = 0;// 0: local, 1: remote
+    @Parameter(names = {"--isDynamoDB"}, description = "isDynamoDB.")
+    public int isDynamoDB = 0;// 0: local, 1: remote
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 8000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
@@ -474,6 +476,11 @@ public class JCommanderHandler {
             config.put("isRemoteDB", false);
         } else {
             config.put("isRemoteDB", true);
+        }
+        if (isDynamoDB == 0) {
+            config.put("isDynamoDB", false);
+        } else {
+            config.put("isDynamoDB", true);
         }
         config.put("NUM_ITEMS", NUM_ITEMS);
         config.put("loadDBThreadNum", tthread);

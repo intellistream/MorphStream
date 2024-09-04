@@ -102,5 +102,6 @@
                 </executions>
             </plugin>
         </plugins>
+        <finalName>rtfaas</finalName>
     </build>
 </project>

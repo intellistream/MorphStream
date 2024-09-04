@@ -4,6 +4,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.db.Database;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
+import intellistream.morphstream.engine.db.storage.impl.DynamoDBStorageManager;
 import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
@@ -15,7 +16,11 @@ import java.util.concurrent.ExecutionException;
 
 public class RemoteDatabase extends Database {
     public RemoteDatabase(Configuration configuration) {
-        this.storageManager = new RemoteStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
+        if (configuration.getBoolean("isDynamoDB")) {
+            this.storageManager = new DynamoDBStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
+        } else {
+            this.storageManager = new RemoteStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
+        }
     }
 
     @Override
