@@ -14,7 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class UniversalStateManager {
     private Thread monitorThread;
-    private Thread partitionCCThread;
     private Thread replicationCCThread;
     private HashMap<Integer, Thread> offloadExecutorThreads = new HashMap<>();
     private Thread openNFThread;
@@ -38,7 +37,6 @@ public class UniversalStateManager {
 
     public UniversalStateManager() {
         monitorThread = new Thread(new BatchMonitorThread(monitorQueue));
-        partitionCCThread = new Thread(new PartitionStateManager(partitionQueue, partitionOwnership));
         replicationCCThread = new Thread(new ReplicationStateManager(replicationQueue));
         openNFThread = new Thread(new OpenNFStateManager(openNFQueue));
         chcThread = new Thread(new CHCStateManager(chcQueue));
@@ -65,7 +63,6 @@ public class UniversalStateManager {
 
     public void startAdaptiveCC() {
         monitorThread.start();
-        partitionCCThread.start();
         replicationCCThread.start();
         for (int i = 0; i < offloadCCThreadNum; i++) {
             offloadExecutorThreads.get(i).start();
@@ -76,24 +73,10 @@ public class UniversalStateManager {
     public void joinAdaptiveCC() {
         try {
             monitorThread.join();
-            partitionCCThread.join();
             replicationCCThread.join();
             for (int i = 0; i < offloadCCThreadNum; i++) {
                 offloadExecutorThreads.get(i).join();
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void startPartitionCC() {
-        partitionCCThread.start();
-        System.out.println("Partition controller started");
-    }
-
-    public void joinPartitionCC() {
-        try {
-            partitionCCThread.join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

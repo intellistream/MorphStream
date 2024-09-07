@@ -44,15 +44,15 @@ public class OffloadSVCCStateManager {
         String type = request.getType();
 
         try {
-            if (type == "Read") {
+            if (Objects.equals(type, "Read")) {
                 storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.readPreValues(timeStamp).getValues().get(1).getInt();
-            } else if (type == "Write") {
+            } else if (Objects.equals(type, "Write")) {
                 TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                 SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                 SchemaRecord tempo_record = new SchemaRecord(readRecord);
                 tempo_record.getValues().get(1).setInt(-1);
                 tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-            } else if (type == "Read-Write") {
+            } else if (Objects.equals(type, "Read-Write")) {
                 TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                 SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
                 int readValue = readRecord.getValues().get(1).getInt();

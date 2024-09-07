@@ -12,8 +12,8 @@ import csv
 key_skewness_values = [0, 0.25, 0.5, 0.75, 1]
 strategies = ["SVCC", "MVCC"]
 colors = ['white', 'white']
-hatches = ['\\\\\\', '///']
-hatch_colors = ['#ed8e11', '#11abed']
+hatches = ['\\\\\\', '////']
+hatch_colors = ['#d97400', '#0060bf']
 
 # Simulated throughput data (in millions of requests per second)
 # Each row corresponds to a different key skewness value.

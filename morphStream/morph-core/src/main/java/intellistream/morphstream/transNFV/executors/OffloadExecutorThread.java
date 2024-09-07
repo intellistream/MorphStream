@@ -145,7 +145,7 @@ public class OffloadExecutorThread implements Runnable {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        VNFManager.getSender(request.getInstanceID()).submitFinishedRequest(request); // register finished req to instance
+        VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request); // register finished req to instance
     }
     
     

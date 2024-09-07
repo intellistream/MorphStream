@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Objects;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.*;
@@ -98,33 +99,31 @@ public class CliFrontend {
     public void runStateManager() throws InterruptedException {
         String ccStrategy = env.configuration().getString("ccStrategy");
         boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
-        if (ccStrategy == "Partitioning") {
-            env.getAdaptiveCCManager().startPartitionCC();
+        if (Objects.equals(ccStrategy, "Partitioning")) {
             startVNF();
-            env.getAdaptiveCCManager().joinPartitionCC();
-        } else if (ccStrategy == "Replication") {
+        } else if (Objects.equals(ccStrategy, "Replication")) {
             env.getAdaptiveCCManager().startReplicationCC();
             startVNF();
             env.getAdaptiveCCManager().joinReplicationCC();
-        } else if (ccStrategy == "Offloading") {
+        } else if (Objects.equals(ccStrategy, "Offloading")) {
             env.getAdaptiveCCManager().startOffloadExecutorThreads();
             startVNF();
             env.getAdaptiveCCManager().joinOffloadExecutorThreads();
-        } else if (ccStrategy == "Proactive") {
+        } else if (Objects.equals(ccStrategy, "Proactive")) {
             runTopologyLocally();
-        } else if (ccStrategy == "OpenNF") {
+        } else if (Objects.equals(ccStrategy, "OpenNF")) {
             env.getAdaptiveCCManager().startOpenNF();
             startVNF();
             env.getAdaptiveCCManager().joinOpenNF();
-        } else if (ccStrategy == "CHC") {
+        } else if (Objects.equals(ccStrategy, "CHC")) {
             env.getAdaptiveCCManager().startCHC();
             startVNF();
             env.getAdaptiveCCManager().joinCHC();
-        } else if (ccStrategy == "S6") {
+        } else if (Objects.equals(ccStrategy, "S6")) {
             env.getAdaptiveCCManager().startS6();
             startVNF();
             env.getAdaptiveCCManager().joinS6();
-        } else if (ccStrategy == "Adaptive") {
+        } else if (Objects.equals(ccStrategy, "Adaptive")) {
             env.getAdaptiveCCManager().startAdaptiveCC();
             runTopologyLocally();
             env.getAdaptiveCCManager().joinAdaptiveCC();

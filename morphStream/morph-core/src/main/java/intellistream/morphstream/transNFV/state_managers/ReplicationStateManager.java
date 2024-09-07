@@ -53,15 +53,15 @@ public class ReplicationStateManager implements Runnable {
                 }
 
                 // Simulating state update synchronization to other instances
-                for (Map.Entry<Integer, VNFInstance> entry : VNFManager.getSenderMap().entrySet()) {
+                for (Map.Entry<Integer, VNFInstance> entry : VNFManager.getAllInstances().entrySet()) {
                     if (entry.getKey() != request.getInstanceID()) {
-                        SyncData syncData = new SyncData(request.getCreateTime(), request.getTupleID(), request.getValue());
-                        entry.getValue().submitSyncData(syncData);
+                        SyncData syncData = new SyncData(request.getTupleID(), request.getValue());
+                        entry.getValue().addStateSync(syncData);
                     }
                 }
 
                 try {
-                    VNFManager.getSender(request.getInstanceID()).submitFinishedRequest(request);
+                    VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
                 } catch (NullPointerException e) {
                     throw new RuntimeException(e);
                 }

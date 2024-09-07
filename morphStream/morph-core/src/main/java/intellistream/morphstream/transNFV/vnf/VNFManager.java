@@ -1,22 +1,22 @@
 package intellistream.morphstream.transNFV.vnf;
 
+import intellistream.morphstream.transNFV.common.SyncData;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.transNFV.state_managers.CHCStateManager;
-import intellistream.morphstream.transNFV.state_managers.OpenNFStateManager;
-import intellistream.morphstream.transNFV.state_managers.PartitionStateManager;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CyclicBarrier;
 
 public class VNFManager implements Runnable {
     private int stateStartID = 0;
     private String patternString;
-    private static HashMap<Integer, VNFInstance> senderMap = new HashMap<>();
-    private static HashMap<Integer, Thread> senderThreadMap = new HashMap<>();
+    private static HashMap<Integer, VNFInstance> instanceMap = new HashMap<>();
+    private static HashMap<Integer, Thread> instanceThreadMap = new HashMap<>();
+    private static HashMap<Integer, LocalSVCCStateManager> instanceStateManagerMap = new HashMap<>();
     private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
     private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
     private static HashMap<Integer, Double> puncThroughputMap = new HashMap<>(); //punctuationID -> punctuation overall throughput
@@ -47,31 +47,48 @@ public class VNFManager implements Runnable {
 
     public VNFManager() {
         this.patternString = toPatternString(pattern);
-        CyclicBarrier finishBarrier = new CyclicBarrier(vnfInstanceNum);
+        initInstances();
+    }
 
+    private void initInstances() {
+        CyclicBarrier finishBarrier = new CyclicBarrier(vnfInstanceNum);
         for (int i = 0; i < vnfInstanceNum; i++) {
             String csvFilePath;
-            if (experimentID == "5.2.1") {
+            if (Objects.equals(experimentID, "5.2.1")) {
                 csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, vnfID, i);
             } else {
                 csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
             }
             int stateGap = stateRange / vnfInstanceNum;
             int instanceExpRequestCount = countLinesInCSV(csvFilePath);
-            VNFInstance sender = new VNFInstance(i,
+            LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
+            instanceStateManagerMap.put(i, localSVCCStateManager);
+            VNFInstance instance = new VNFInstance(i,
                     stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange,
-                    ccStrategy, numTPGThreads, csvFilePath, finishBarrier, instanceExpRequestCount);
-            Thread senderThread = new Thread(sender);
-            senderMap.put(i, sender);
-            senderThreadMap.put(i, senderThread);
+                    ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
+            Thread senderThread = new Thread(instance);
+            instanceMap.put(i, instance);
+            instanceThreadMap.put(i, senderThread);
         }
     }
 
-    public static VNFInstance getSender(int id) {
-        return senderMap.get(id);
+    public static VNFInstance getInstance(int id) {
+        return instanceMap.get(id);
     }
-    public static HashMap<Integer, VNFInstance> getSenderMap() {
-        return senderMap;
+    public static HashMap<Integer, VNFInstance> getAllInstances() {
+        return instanceMap;
+    }
+    public static LocalSVCCStateManager getInstanceStateManager(int id) {
+        return instanceStateManagerMap.get(id);
+    }
+
+    /** General entry for instances to sync local state update to others */
+    public static void broadcastUpdate(int originInstanceID, int tupleID, int value) {
+        for (int i = 0; i < vnfInstanceNum; i++) {
+            if (i != originInstanceID) {
+                instanceMap.get(i).addStateSync(new SyncData(tupleID, value));
+            }
+        }
     }
 
     @Override
@@ -109,18 +126,18 @@ public class VNFManager implements Runnable {
 
     public void startVNFInstances() {
         for (int i = 0; i < vnfInstanceNum; i++) {
-            senderThreadMap.get(i).start();
+            instanceThreadMap.get(i).start();
         }
     }
 
     public double joinVNFInstances() {
         for (int i = 0; i < vnfInstanceNum; i++) {
             try {
-                senderThreadMap.get(i).join();
-                totalRequestCounter += senderMap.get(i).getFinishedRequestCount();
-                overallStartTime = Math.min(overallStartTime, senderMap.get(i).getOverallStartTime());
-                overallEndTime = Math.max(overallEndTime, senderMap.get(i).getOverallEndTime());
-                latencyMap.put(i, senderMap.get(i).getFinishedReqStorage());
+                instanceThreadMap.get(i).join();
+                totalRequestCounter += instanceMap.get(i).getFinishedRequestCount();
+                overallStartTime = Math.min(overallStartTime, instanceMap.get(i).getOverallStartTime());
+                overallEndTime = Math.max(overallEndTime, instanceMap.get(i).getOverallEndTime());
+                latencyMap.put(i, instanceMap.get(i).getFinishedReqStorage());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -157,7 +174,7 @@ public class VNFManager implements Runnable {
             long puncStartTime = Long.MAX_VALUE;
             long puncEndTime = Long.MIN_VALUE;
             for (int i = 0; i < vnfInstanceNum; i++) {
-                long[] instancePuncTimes = senderMap.get(i).getPuncStartEndTimes(puncID);
+                long[] instancePuncTimes = instanceMap.get(i).getPuncStartEndTimes(puncID);
                 puncStartTime = Math.min(puncStartTime, instancePuncTimes[0]);
                 puncEndTime = Math.max(puncEndTime, instancePuncTimes[1]);
             }

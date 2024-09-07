@@ -1,7 +1,6 @@
 package intellistream.morphstream.api.operator.bolt;
 
 import commonStorage.RequestTemplates;
-import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.ProactiveVNFRequest;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
@@ -100,7 +99,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         } else if (communicationChoice == 0) {
             for (ProactiveVNFRequest event : eventQueue) {
-                VNFManager.getSender(event.getVnfRequest().getInstanceID()).submitFinishedRequest(event.getVnfRequest());
+                VNFManager.getInstance(event.getVnfRequest().getInstanceID()).submitFinishedRequest(event.getVnfRequest());
                 requestCounter++;
             }
             if (requestCounter == expRequestCount) {

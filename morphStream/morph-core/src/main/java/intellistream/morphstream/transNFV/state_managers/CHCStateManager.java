@@ -70,7 +70,7 @@ public class CHCStateManager implements Runnable {
                         tupleOwnership.put(tupleID, instanceID);
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                         SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                        VNFManager.getSender(instanceID).writeLocalState(tupleID, readRecord.getValues().get(1).getInt());
+                        VNFManager.getInstanceStateManager(instanceID).nullSafeStateUpdate(tupleID, readRecord.getValues().get(1).getInt());
 
                     } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
                         //TODO: Simulate permission for instance to do local state access
@@ -78,7 +78,7 @@ public class CHCStateManager implements Runnable {
 
                     } else { // State ownership has changed, fetch state from the current owner and perform RW centrally
                         int currentOwner = tupleOwnership.get(tupleID);
-                        int tupleValue = VNFManager.getSender(currentOwner).readLocalState(tupleID);
+                        int tupleValue = VNFManager.getInstanceStateManager(instanceID).nullSafeStateRead(tupleID);
 
                         TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                         SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
@@ -93,7 +93,7 @@ public class CHCStateManager implements Runnable {
 
                     }
 
-                    VNFManager.getSender(instanceID).submitFinishedRequest(request);
+                    VNFManager.getInstance(instanceID).submitFinishedRequest(request);
 
                 } catch (InterruptedException | DatabaseException | RuntimeException e) {
                     System.out.println("CHC Interrupted exception: " + e.getMessage());

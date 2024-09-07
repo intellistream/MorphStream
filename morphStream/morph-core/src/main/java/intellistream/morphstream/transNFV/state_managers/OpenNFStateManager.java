@@ -79,11 +79,11 @@ public class OpenNFStateManager implements Runnable {
                     tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
                     for (int i = 0; i < vnfInstanceNum; i++) {
-                        VNFManager.getSender(i).writeLocalState(tupleID, readValue);
+                        VNFManager.getInstanceStateManager(i).nullSafeStateUpdate(tupleID, readValue);
                     }
 
                     //TODO: Here we should add lock to all instance, but since OpenNF only has a single controller thread, it is fine
-                    VNFManager.getSender(instanceID).submitFinishedRequest(request);
+                    VNFManager.getInstance(instanceID).submitFinishedRequest(request);
 
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
