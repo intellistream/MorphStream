@@ -13,7 +13,6 @@ import java.util.concurrent.CyclicBarrier;
 
 public class VNFManager implements Runnable {
     private int stateStartID = 0;
-    private String patternString;
     private static HashMap<Integer, VNFInstance> instanceMap = new HashMap<>();
     private static HashMap<Integer, Thread> instanceThreadMap = new HashMap<>();
     private static HashMap<Integer, LocalSVCCStateManager> instanceStateManagerMap = new HashMap<>();
@@ -25,8 +24,8 @@ public class VNFManager implements Runnable {
     private static final String ccStrategy = MorphStreamEnv.get().configuration().getString("ccStrategy");
     private static final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
     private static final int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
+    private static final String inputWorkloadPath = MorphStreamEnv.get().configuration().getString("inputWorkloadPath");
     private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
-    private static final String nfvExpPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
     private static final String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
     private static final String vnfID = MorphStreamEnv.get().configuration().getString("vnfID");
     private static int partitionGap = stateRange / vnfInstanceNum;
@@ -49,7 +48,6 @@ public class VNFManager implements Runnable {
     private static HashMap<Integer, Double> percentile95Map = new HashMap<>(); //instanceID -> instance's 95th percentile latency
 
     public VNFManager() {
-        this.patternString = toPatternString(pattern);
         initInstances();
     }
 
@@ -57,11 +55,7 @@ public class VNFManager implements Runnable {
         CyclicBarrier finishBarrier = new CyclicBarrier(vnfInstanceNum);
         for (int i = 0; i < vnfInstanceNum; i++) {
             String csvFilePath;
-            if (Objects.equals(experimentID, "5.2.1")) {
-                csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, vnfID, i);
-            } else {
-                csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
-            }
+            csvFilePath = String.format(inputWorkloadPath + "/instance_%d.csv", i);
             int instanceExpRequestCount = countLinesInCSV(csvFilePath);
             LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
             instanceStateManagerMap.put(i, localSVCCStateManager);
@@ -244,7 +238,7 @@ public class VNFManager implements Runnable {
 
     private static void writeCSVDynamicThroughput(String pattern, String ccStrategy) {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
         String directoryPath = String.format("%s/%s", baseDirectory, pattern);
 
@@ -291,7 +285,7 @@ public class VNFManager implements Runnable {
 
     private static void writeCSVLatency(String pattern, String ccStrategy) {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "latency");
         String directoryPath = String.format("%s/%s", baseDirectory, pattern);
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
@@ -328,7 +322,7 @@ public class VNFManager implements Runnable {
 
     private static void writeCSVThroughput(String pattern, String ccStrategy, double throughput) {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
         String directoryPath = String.format("%s/%s", baseDirectory, pattern);
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
@@ -361,7 +355,7 @@ public class VNFManager implements Runnable {
 
     private static void writeCSVScalability(String pattern, String ccStrategy, double throughput) {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
         String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, vnfInstanceNum, pattern);
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
@@ -393,7 +387,7 @@ public class VNFManager implements Runnable {
 
     private static void writeCSVBreakdown() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "breakdown");
         String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, vnfInstanceNum, toPatternString(pattern));
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
@@ -425,7 +419,7 @@ public class VNFManager implements Runnable {
     }
 
     private static void writeIndicatorFile(String fileName) {
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String directoryPath = rootPath + "/indicators";
         String filePath = String.format("%s/%s.csv", directoryPath, fileName);
         System.out.println("Writing indicator: " + fileName);

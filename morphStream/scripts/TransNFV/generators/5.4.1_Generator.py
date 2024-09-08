@@ -96,25 +96,39 @@ def distribute_lines_among_instances(lines, instance_workloads, output_dir):
             writer = csv.writer(csvfile)
             writer.writerows(instance_lines)
 
+def update_workload_file_path(indicator_path, workload_path):
+    with open(indicator_path, 'w') as file:
+        file.write(workload_path)
 
 # Example usage
-num_instances = 4
-output_dir = f'/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/pattern_files/5.4.1/instanceNum_{num_instances}/dynamic'
-num_keys = 5000
-total_requests = 400000
-
-key_skewness = 0.75  # Adjust this value from 0 (uniform) to 1 (highly skewed)
-workload_skewness = 0  # Adjust this value from 0 (uniform) to 1 (highly skewed)
-
-prob_read_write = 0.5  # read / (read + read-write)
-
-prob_scope = 0  # per-flow / (per-flow + cross-flow)
+expID = '5.4.1'
 vnfID = 11
-punc_interval = 1000
+numPackets = 400000
+numInstances = 4
+numItems = 5000
+keySkewness = 0.75
+workloadSkewness = 0
+ratioRead = 0.5
+ratioPerflow = 0
+locality = 0
+punc_interval = 1000 # Used to normalize workload distribution among instances 
+
+keySkewStr = int(keySkewness * 100)
+workloadSkewStr = int(workloadSkewness * 100)
+ratioReadStr = int(ratioRead * 100)
+ratioPerflowStr = int(ratioPerflow * 100)
+localityStr = int(locality * 100)
+rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkewStr}/workloadSkew={workloadSkewStr}/readRatio={ratioReadStr}/locality={localityStr}/scopeRatio={ratioPerflowStr}'
+workloadDir = f'{rootDir}/{workloadConfig}'
 
 # Generate all CSV lines
-lines = generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, prob_scope, vnfID)
+lines = generate_csv_lines(numPackets, numItems, keySkewness, ratioRead, ratioPerflow, vnfID)
 
 # Distribute lines based on workload skewness
-instance_workloads = generate_workload_distribution(num_instances, total_requests, workload_skewness, punc_interval)
-distribute_lines_among_instances(lines, instance_workloads, output_dir)
+instance_workloads = generate_workload_distribution(numInstances, numPackets, workloadSkewness, punc_interval)
+distribute_lines_among_instances(lines, instance_workloads, workloadDir)
+
+# Update the workload file path indicator
+indicatorPath = f'/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/indicators/{expID}'
+update_workload_file_path(indicatorPath, workloadDir)

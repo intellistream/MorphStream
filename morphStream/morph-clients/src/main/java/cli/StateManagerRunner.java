@@ -99,7 +99,7 @@ public class StateManagerRunner extends Client {
 
     private static void writeFootprintToCsv() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "memory_footprint");
         String filePath = String.format("%s/%s.csv", baseDirectory, toStringStrategy(ccStrategy));
@@ -129,7 +129,7 @@ public class StateManagerRunner extends Client {
 
     private static void writeStartTimeCSV() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "start_times");
         String filePath = String.format("%s/%s.csv", baseDirectory, toStringStrategy(ccStrategy));

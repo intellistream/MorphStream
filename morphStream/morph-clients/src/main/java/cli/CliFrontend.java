@@ -190,7 +190,7 @@ public class CliFrontend {
     }
 
     private static void writeIndicatorFile(String fileName) {
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String directoryPath = rootPath + "/indicators";
         String filePath = String.format("%s/%s.csv", directoryPath, fileName);
         LOG.info("Writing indicator: " + fileName);

@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
-def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvExperimentPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
                          workloadPattern, enableTimeBreakdown, experimentID, script_path):
     script_content = f"""#!/bin/bash
@@ -19,7 +19,7 @@ function ResetParameters() {{
   scheduler="{scheduler}"
   NUM_ITEMS={NUM_ITEMS}
   totalEvents={totalEvents}
-  nfvWorkloadPath="{nfvWorkloadPath}"
+  nfvExperimentPath="{nfvExperimentPath}"
   communicationChoice={communicationChoice}
   vnfInstanceNum={vnfInstanceNum}
   offloadCCThreadNum={offloadCCThreadNum}
@@ -41,7 +41,7 @@ function runTStream() {{
           --complexity $complexity \\
           --rootFilePath $rootFilePath \\
           --totalEvents $totalEvents \\
-          --nfvWorkloadPath $nfvWorkloadPath \\
+          --nfvExperimentPath $nfvExperimentPath \\
           --communicationChoice $communicationChoice \\
           --vnfInstanceNum $vnfInstanceNum \\
           --offloadCCThreadNum $offloadCCThreadNum \\
@@ -61,7 +61,7 @@ function runTStream() {{
     --complexity $complexity \\
     --rootFilePath $rootFilePath \\
     --totalEvents $totalEvents \\
-    --nfvWorkloadPath $nfvWorkloadPath \\
+    --nfvExperimentPath $nfvExperimentPath \\
     --communicationChoice $communicationChoice \\
     --vnfInstanceNum $vnfInstanceNum \\
     --offloadCCThreadNum $offloadCCThreadNum \\
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     scheduler = "OP_BFS"
     NUM_ITEMS = 10000
     totalEvents = 4000
-    nfvWorkloadPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
+    nfvExperimentPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
     vnfInstanceNum = 4
     offloadCCThreadNum = 4
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     experimentID = "6"
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/%s.sh" % experimentID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvWorkloadPath,
+    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvExperimentPath,
                          communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
                          workloadPattern, enableTimeBreakdown, experimentID, script_path)
     execute_bash_script(script_path)

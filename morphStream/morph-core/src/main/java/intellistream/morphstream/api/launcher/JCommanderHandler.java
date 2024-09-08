@@ -281,13 +281,13 @@ public class JCommanderHandler {
      * TransNFV Specific configurations
      */
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 400000;
+    public int numPackets = 400000;
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 1000;//checkpoint per thread.
-    @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
-    public String nfvWorkloadPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
+    @Parameter(names = {"--nfvExperimentPath"}, description = "The simulated input data path")
+    public String nfvExperimentPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
     public int vnfInstanceNum = 4;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
@@ -309,16 +309,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
     public String experimentID = "5.4.1";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
-//    public String vnfID = "1_firewall";
-//    public String vnfID = "2_nat";
-//    public String vnfID = "3_lb";
-//    public String vnfID = "4_trojan_detector";
-//    public String vnfID = "5_portscan_detector";
-//    public String vnfID = "6_prads";
-//    public String vnfID = "7_session_border_controller";
-//    public String vnfID = "8_ips";
-    public String vnfID = "9_squid";
-//    public String vnfID = "10_adaptive_traffic_shaper";
+    public String vnfID = "11";
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 0;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
@@ -328,6 +319,25 @@ public class JCommanderHandler {
     public int udfComplexity = 0;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
+
+    /** Parameters controls which csv file to read */
+    @Parameter(names = {"--keySkew"})
+    public int keySkew = 75;
+    @Parameter(names = {"--workloadSkew"})
+    public int workloadSkew = 0;
+    @Parameter(names = {"--readRatio"})
+    public int readRatio = 50;
+    @Parameter(names = {"--locality"})
+    public int locality = 0;
+    @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
+    public int scopeRatio = 0;
+
+
+    // Input path = "expID / workloadConfig", agreed by Generator scripts and TransNFV input
+    // 5.4 workloadConfig = "vnfID / numPackets / numInstances / numItems / keySkew / workloadSkew / readRatio / locality / scopeRatio"
+
+    // Output path = "expID / workloadConfig / systemConfig", agreed by both TransNFV output and Plot scripts
+    // System config = "ccStrategy / doMVCC / udfComplexity / puncInterval / numTPGThread / numOffloadThread"
 
     public JCommanderHandler() {}
 
@@ -487,7 +497,7 @@ public class JCommanderHandler {
         config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt"));
         config.put("inputFileName", inputFileName);
         config.put("dataDirectory", dataDirectory);
-        config.put("totalEvents", totalEvents);
+        config.put("totalEvents", numPackets);
         config.put("workloadType", workloadType);
         config.put("eventTypes", eventTypes);
         String[] eventTypeString = eventTypes.split(";");
@@ -520,7 +530,7 @@ public class JCommanderHandler {
         }
 
         /* TransNFV workload configurations */
-        config.put("nfvWorkloadPath", nfvWorkloadPath);
+        config.put("nfvExperimentPath", nfvExperimentPath);
         config.put("vnfInstanceNum", vnfInstanceNum);
         config.put("offloadCCThreadNum", offloadCCThreadNum);
         config.put("ccStrategy", ccStrategy);
@@ -534,7 +544,14 @@ public class JCommanderHandler {
         config.put("doMVCC", doMVCC);
         config.put("udfComplexity", udfComplexity);
         config.put("memoryIntervalMS", memoryIntervalMS);
-
+        config.put("keySkew", keySkew);
+        config.put("workloadSkew", workloadSkew);
+        config.put("readRatio", readRatio);
+        config.put("locality", locality);
+        config.put("scopeRatio", scopeRatio);
+        String inputWorkloadPath = String.format(nfvExperimentPath + "/workload/%s/vnfID=%s/numPackets=%d/numInstances=%d/numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d",
+                experimentID, vnfID, numPackets, vnfInstanceNum, NUM_ITEMS, keySkew, workloadSkew, readRatio, locality, scopeRatio);
+        config.put("inputWorkloadPath", inputWorkloadPath);
         configSystem(config);
     }
 

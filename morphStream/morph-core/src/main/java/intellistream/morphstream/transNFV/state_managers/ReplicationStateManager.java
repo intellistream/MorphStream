@@ -66,7 +66,7 @@ public class ReplicationStateManager implements Runnable {
     }
     private static void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
+        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
         String filePath = String.format("%s/%s.csv", baseDirectory, "Replication");
         System.out.println("Writing to " + filePath);
