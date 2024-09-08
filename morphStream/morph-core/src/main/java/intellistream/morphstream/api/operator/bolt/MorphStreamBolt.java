@@ -34,7 +34,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final int boltThreadCount = MorphStreamEnv.get().configuration().getInt("tthread");
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int expRequestCount = totalRequests / boltThreadCount;
-    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private int requestCounter;
     private static final int numInstance = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
@@ -93,18 +92,12 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void Transaction_Post_Process() {
-
-        if (communicationChoice == 1) {
-            throw new UnsupportedOperationException("Communication choice 1 is not supported yet.");
-
-        } else if (communicationChoice == 0) {
-            for (ProactiveVNFRequest event : eventQueue) {
-                VNFManager.getInstance(event.getVnfRequest().getInstanceID()).submitFinishedRequest(event.getVnfRequest());
-                requestCounter++;
-            }
-            if (requestCounter == expRequestCount) {
-                System.out.println("TPG CC processed all " + requestCounter + " requests.");
-            }
+        for (ProactiveVNFRequest event : eventQueue) {
+            VNFManager.getInstance(event.getVnfRequest().getInstanceID()).submitFinishedRequest(event.getVnfRequest());
+            requestCounter++;
+        }
+        if (requestCounter == expRequestCount) {
+            System.out.println("TPG CC processed all " + requestCounter + " requests.");
         }
     }
 

@@ -41,7 +41,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public int isLogging;// Used by fault tolerance
     private native boolean nativeTxnUDF(String operatorID, StateAccess stateAccess);
     private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
-    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
@@ -101,13 +100,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             return;
         }
 
-        if (communicationChoice == 1) {
-            throw new UnsupportedOperationException();
-
-        } else if (communicationChoice == 0) {
-            // Simplified saData: vnfID, saID, saType, tableName, tupleID, instanceID
-            UDF.executeUDF(operation.vnfRequest);
-        }
+        UDF.executeUDF(operation.vnfRequest);
 
         commitLog(operation);
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;

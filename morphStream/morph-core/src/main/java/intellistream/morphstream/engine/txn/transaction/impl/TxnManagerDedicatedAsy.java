@@ -158,14 +158,20 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     @Override
     public boolean submitStateAccess(VNFRequest vnfRequest, TxnContext txnContext) throws DatabaseException {
-        String accessType = vnfRequest.getType();
-        if (Objects.equals(accessType, "Read")) {
-            return Asy_ReadRecord(vnfRequest, txnContext);
-        } else if (accessType.equals("Write") || accessType.equals("Read-Write")) {
-            return Asy_WriteRecord(vnfRequest, txnContext);
-        } else {
-            throw new UnsupportedOperationException("Unsupported access type: " + accessType);
+        try {
+            String accessType = vnfRequest.getType();
+            if (Objects.equals(accessType, "Read")) {
+                return Asy_ReadRecord(vnfRequest, txnContext);
+            } else if (accessType.equals("Write") || accessType.equals("Read-Write")) {
+                return Asy_WriteRecord(vnfRequest, txnContext);
+            } else {
+                throw new UnsupportedOperationException("Unsupported access type: " + accessType);
+            }
+        } catch (NullPointerException e) {
+            System.out.println("No record is found for table: " + vnfRequest.getTupleID());
+            return false;
         }
+
     }
 
     //If read only, set src key and table to read key, and add this single read access into readRecords.

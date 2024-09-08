@@ -199,7 +199,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "testTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "5000"; // 10000,10000
+    public String numberItemsForTables = "5000";
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
@@ -288,17 +288,13 @@ public class JCommanderHandler {
     public int checkpoint_interval = 1000;//checkpoint per thread.
     @Parameter(names = {"--nfvWorkloadPath"}, description = "The simulated input data path")
     public String nfvWorkloadPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
-    @Parameter(names = {"--communicationChoice"}, description = "True if vnf instances are connecting through socket, false if vnf instances are simulated locally")
-    public int communicationChoice = 0;
     @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
     public int vnfInstanceNum = 4;
     @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadCCThreadNum = 2;
-    @Parameter(names = {"--offloadLockNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadLockNum = 1000;
+    public int offloadCCThreadNum = 4;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public String ccStrategy = "Partitioning";
-//    public String ccStrategy = "Replication";
+//    public String ccStrategy = "Partitioning";
+    public String ccStrategy = "Replication";
 //    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "Adaptive";
@@ -323,20 +319,15 @@ public class JCommanderHandler {
 //    public String vnfID = "8_ips";
     public String vnfID = "9_squid";
 //    public String vnfID = "10_adaptive_traffic_shaper";
-    @Parameter(names = {"--enableHardcodeCCSwitch"}, description = "If enabled, pattern_punc and cc_switch are performed at instance level. Otherwise monitor level.")
-    public int enableHardcodeCCSwitch = 0;
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 0;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-    public int doMVCC = 1;
+    public int doMVCC = 0;
+//    public int doMVCC = 1;
     @Parameter(names = {"--udfComplexity"}, description = "Simulated UDF complexity in microseconds")
-    public int udfComplexity = 10;
+    public int udfComplexity = 0;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
-    @Parameter(names = {"--conflictThreshold"}, description = "Threshold for monitor to judge the degree of share state access conflict")
-    public int conflictThreshold = 20;
-    @Parameter(names = {"--typeThreshold"}, description = "Threshold for monitor to judge the ratio of read/write operations")
-    public int typeThreshold = 20;
 
     public JCommanderHandler() {}
 
@@ -530,10 +521,8 @@ public class JCommanderHandler {
 
         /* TransNFV workload configurations */
         config.put("nfvWorkloadPath", nfvWorkloadPath);
-        config.put("communicationChoice", communicationChoice);
         config.put("vnfInstanceNum", vnfInstanceNum);
         config.put("offloadCCThreadNum", offloadCCThreadNum);
-        config.put("offloadLockNum", offloadLockNum);
         config.put("ccStrategy", ccStrategy);
         config.put("workloadPattern", workloadPattern);
         config.put("enableTimeBreakdown", enableTimeBreakdown);
@@ -541,13 +530,10 @@ public class JCommanderHandler {
         config.put("managerPatternPunctuation", managerPatternPunctuation);
         config.put("experimentID", experimentID);
         config.put("vnfID", vnfID);
-        config.put("enableHardcodeCCSwitch", enableHardcodeCCSwitch);
         config.put("enableMemoryFootprint", enableMemoryFootprint);
         config.put("doMVCC", doMVCC);
         config.put("udfComplexity", udfComplexity);
         config.put("memoryIntervalMS", memoryIntervalMS);
-        config.put("conflictThreshold", conflictThreshold);
-        config.put("typeThreshold", typeThreshold);
 
         configSystem(config);
     }

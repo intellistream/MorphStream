@@ -50,15 +50,10 @@ public class StateManagerRunner extends Client {
         vnfMain.initializeDB();
         vnfMain.prepareAdaptiveCC(); // Create AdaptiveCCManager, which initializes TPG queues
 
-        int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
-        if (communicationChoice == 0) { // Java VNF instances
-            int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
-            vnfMain.registerOperator("sim_vnf", numTPGThreads);
-            vnfMain.runStateManager(); // Start CC threads, and wait for them to finish
+        int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
+        vnfMain.registerOperator("sim_vnf", numTPGThreads);
+        vnfMain.runStateManager(); // Start CC threads, and wait for them to finish
 
-        } else if (communicationChoice == 1) {
-            throw new NotSupportedException("Remote communication not supported");
-        }
     }
 
     public static void startMemoryMonitoring() {

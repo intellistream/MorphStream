@@ -32,9 +32,9 @@ public class OffloadSVCCStateManager {
         S2PLLockObject lockObject = lockTable.get(key);
         if (lockObject != null) {
             lockObject.releaseLock(timestamp);
-            if (lockObject.isFree()) {
-                lockTable.remove(key);
-            }
+//            if (lockObject.isFree()) {
+//                lockTable.remove(key);
+//            }
         }
     }
 

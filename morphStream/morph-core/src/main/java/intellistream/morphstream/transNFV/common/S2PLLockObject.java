@@ -61,7 +61,7 @@ public class S2PLLockObject {
         }
     }
 
-    public boolean isFree() {
-        return !hasExclusiveLock && sharedLockCount == 0;
-    }
+//    public boolean isFree() {
+//        return !hasExclusiveLock && sharedLockCount == 0;
+//    }
 }

@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CHCStateManager implements Runnable {
     private static BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances
-    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
@@ -45,64 +44,56 @@ public class CHCStateManager implements Runnable {
     public void run() {
         initEndTime = System.nanoTime();
 
-        if (communicationChoice == 1) {
-            throw new RuntimeException("Remote communication not supported");
+        System.out.println("Flushing Controller has started.");
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                VNFRequest request;
+                request = requestQueue.take();
+                if (request.getCreateTime() == -1) {
+                    processEndTime = System.nanoTime();
+                    writeCSVTimestamps();
+                    System.out.println("Flushing CC thread received stop signal");
+                    break;
+                }
+                int instanceID = request.getInstanceID();
+                int tupleID = request.getTupleID();
+                long timeStamp = request.getCreateTime();
+                long txnReqId = request.getReqID();
 
-        } else if (communicationChoice == 0) {
-            System.out.println("Flushing Controller has started.");
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    VNFRequest request;
-                    request = requestQueue.take();
-                    if (request.getCreateTime() == -1) {
-                        processEndTime = System.nanoTime();
-                        writeCSVTimestamps();
-                        System.out.println("Flushing CC thread received stop signal");
-                        break;
-                    }
-                    int instanceID = request.getInstanceID();
-                    int tupleID = request.getTupleID();
-                    long timeStamp = request.getCreateTime();
-                    long txnReqId = request.getReqID();
+                if (tupleOwnership.get(tupleID) == null) { // State ownership is not yet assigned, assign it to the current instance
+                    long syncStartTime = System.nanoTime();
+                    tupleOwnership.put(tupleID, instanceID);
+                    TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                    SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                    VNFManager.getInstanceStateManager(instanceID).nullSafeStateUpdate(tupleID, readRecord.getValues().get(1).getInt());
 
-                    if (tupleOwnership.get(tupleID) == null) { // State ownership is not yet assigned, assign it to the current instance
-                        long syncStartTime = System.nanoTime();
-                        tupleOwnership.put(tupleID, instanceID);
-                        TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                        SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                        VNFManager.getInstanceStateManager(instanceID).nullSafeStateUpdate(tupleID, readRecord.getValues().get(1).getInt());
-
-                    } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
-                        //TODO: Simulate permission for instance to do local state access
+                } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
+                    //TODO: Simulate permission for instance to do local state access
 //                        VNFRunner.getSender(instanceID).permitLocalStateAccess(tupleID);
 
-                    } else { // State ownership has changed, fetch state from the current owner and perform RW centrally
-                        int currentOwner = tupleOwnership.get(tupleID);
-                        int tupleValue = VNFManager.getInstanceStateManager(instanceID).nullSafeStateRead(tupleID);
+                } else { // State ownership has changed, fetch state from the current owner and perform RW centrally
+                    int currentOwner = tupleOwnership.get(tupleID);
+                    int tupleValue = VNFManager.getInstanceStateManager(instanceID).nullSafeStateRead(tupleID);
 
-                        TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                        SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                        SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                    TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                    SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
 
-                        long usefulStartTime = System.nanoTime();
-                        UDF.executeUDF(request);
-                        aggUsefulTime += System.nanoTime() - usefulStartTime;
+                    long usefulStartTime = System.nanoTime();
+                    UDF.executeUDF(request);
+                    aggUsefulTime += System.nanoTime() - usefulStartTime;
 
-                        tempo_record.getValues().get(1).setInt(tupleValue);
-                        tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+                    tempo_record.getValues().get(1).setInt(tupleValue);
+                    tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
-                    }
-
-                    VNFManager.getInstance(instanceID).submitFinishedRequest(request);
-
-                } catch (InterruptedException | DatabaseException | RuntimeException e) {
-                    System.out.println("CHC Interrupted exception: " + e.getMessage());
-                    throw new RuntimeException(e);
                 }
-            }
 
-        } else {
-            throw new RuntimeException("Invalid communication choice");
+                VNFManager.getInstance(instanceID).submitFinishedRequest(request);
+
+            } catch (InterruptedException | DatabaseException | RuntimeException e) {
+                System.out.println("CHC Interrupted exception: " + e.getMessage());
+                throw new RuntimeException(e);
+            }
         }
     }
 

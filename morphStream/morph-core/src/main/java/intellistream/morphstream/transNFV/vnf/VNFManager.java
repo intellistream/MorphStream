@@ -17,17 +17,7 @@ public class VNFManager implements Runnable {
     private static HashMap<Integer, VNFInstance> instanceMap = new HashMap<>();
     private static HashMap<Integer, Thread> instanceThreadMap = new HashMap<>();
     private static HashMap<Integer, LocalSVCCStateManager> instanceStateManagerMap = new HashMap<>();
-    private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
-    private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
-    private static HashMap<Integer, Double> puncThroughputMap = new HashMap<>(); //punctuationID -> punctuation overall throughput
-    private static HashMap<Integer, Double> throughputMap = new HashMap<>(); //instanceID -> instance's throughput
-    private static HashMap<Integer, Double> minLatencyMap = new HashMap<>(); //instanceID -> instance's min latency
-    private static HashMap<Integer, Double> maxLatencyMap = new HashMap<>(); //instanceID -> instance's max latency
-    private static HashMap<Integer, Double> avgLatencyMap = new HashMap<>(); //instanceID -> instance's avg latency
-    private static HashMap<Integer, Double> percentile95Map = new HashMap<>(); //instanceID -> instance's 95th percentile latency
-    private int totalRequestCounter = 0;
-    private long overallStartTime = Long.MAX_VALUE;
-    private long overallEndTime = Long.MIN_VALUE;
+
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int instancePatternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
     private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
@@ -39,11 +29,24 @@ public class VNFManager implements Runnable {
     private static final String nfvExpPath = MorphStreamEnv.get().configuration().getString("nfvWorkloadPath");
     private static final String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
     private static final String vnfID = MorphStreamEnv.get().configuration().getString("vnfID");
+    private static int partitionGap = stateRange / vnfInstanceNum;
+
+    private int totalRequestCounter = 0;
+    private long overallStartTime = Long.MAX_VALUE;
+    private long overallEndTime = Long.MIN_VALUE;
     private static double totalParseTimeMS = 0;
     private static double totalSyncTimeMS = 0;
     private static double totalUsefulTimeMS = 0;
     private static double totalCCSwitchTimeMS = 0;
     private static double totalTimeMS = 0;
+    private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
+    private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
+    private static HashMap<Integer, Double> puncThroughputMap = new HashMap<>(); //punctuationID -> punctuation overall throughput
+    private static HashMap<Integer, Double> throughputMap = new HashMap<>(); //instanceID -> instance's throughput
+    private static HashMap<Integer, Double> minLatencyMap = new HashMap<>(); //instanceID -> instance's min latency
+    private static HashMap<Integer, Double> maxLatencyMap = new HashMap<>(); //instanceID -> instance's max latency
+    private static HashMap<Integer, Double> avgLatencyMap = new HashMap<>(); //instanceID -> instance's avg latency
+    private static HashMap<Integer, Double> percentile95Map = new HashMap<>(); //instanceID -> instance's 95th percentile latency
 
     public VNFManager() {
         this.patternString = toPatternString(pattern);
@@ -59,12 +62,11 @@ public class VNFManager implements Runnable {
             } else {
                 csvFilePath = String.format(nfvExpPath + "/pattern_files/%s/instanceNum_%d/%s/instance_%d.csv", experimentID, vnfInstanceNum, patternString, i);
             }
-            int stateGap = stateRange / vnfInstanceNum;
             int instanceExpRequestCount = countLinesInCSV(csvFilePath);
             LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
             instanceStateManagerMap.put(i, localSVCCStateManager);
             VNFInstance instance = new VNFInstance(i,
-                    stateStartID + i * stateGap, stateStartID + (i + 1) * stateGap, stateRange,
+                    stateStartID + i * partitionGap, stateStartID + (i + 1) * partitionGap, stateRange,
                     ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
             Thread senderThread = new Thread(instance);
             instanceMap.put(i, instance);
@@ -80,6 +82,9 @@ public class VNFManager implements Runnable {
     }
     public static LocalSVCCStateManager getInstanceStateManager(int id) {
         return instanceStateManagerMap.get(id);
+    }
+    public static int getPartitionedInstanceID(int tupleID) {
+        return tupleID / partitionGap;
     }
 
     /** General entry for instances to sync local state update to others */

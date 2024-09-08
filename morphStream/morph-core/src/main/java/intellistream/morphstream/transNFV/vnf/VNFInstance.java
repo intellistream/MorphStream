@@ -25,16 +25,16 @@ import static intellistream.morphstream.transNFV.vnf.UDF.executeUDF;
 
 public class VNFInstance implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(VNFInstance.class);
-    private int instanceID;
-    private String csvFilePath;
+    private final int instanceID;
+    private final String csvFilePath;
     private final int statePartitionStart;
     private final int statePartitionEnd;
     private final CyclicBarrier finishBarrier;
 
     private final LocalSVCCStateManager localSVCCStateManager;
     private final ConcurrentHashMap<Integer, String> tupleCCMap = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = UniversalStateManager.tpgQueues;
-    private ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = UniversalStateManager.offloadingQueues;
+    private final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = UniversalStateManager.tpgQueues;
+    private final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = UniversalStateManager.offloadingQueues;
 
     private final BlockingQueue<SyncData> pendingStateSyncs = new LinkedBlockingQueue<>(); //TODO: Pending state updates from other replications
     private final BlockingQueue<VNFRequest> blockingFinishedReqs = new LinkedBlockingQueue<>(); //TODO: Waiting for manager's ACK for state update broadcast finish
@@ -56,11 +56,11 @@ public class VNFInstance implements Runnable {
     private final int expectedRequestCount;
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
-    private final boolean enableHardcodeCCSwitch = (MorphStreamEnv.get().configuration().getInt("enableHardcodeCCSwitch") == 1);
     private long aggParsingTime = 0; // ccID -> total parsing time
     private long AGG_SYNC_TIME = 0; // ccID -> total sync time at instance, for CC with local sync
     private long AGG_USEFUL_TIME = 0; // ccID -> total useful time at instance, for CC with local RW
     private long aggCCSwitchTime = 0; // ccID -> total time for CC switch
+
 
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, String ccStrategy, int numTPGThreads,
                           String csvFilePath, LocalSVCCStateManager stateManager, CyclicBarrier finishBarrier, int expectedRequestCount) {
@@ -73,14 +73,8 @@ public class VNFInstance implements Runnable {
         this.expectedRequestCount = expectedRequestCount;
         this.localSVCCStateManager = stateManager;
         if (Objects.equals(ccStrategy, "Adaptive")) { // Adaptive CC started from default CC strategy - Partitioning
-            if (enableHardcodeCCSwitch) {
-                for (int i = 0; i <= stateRange; i++) {
-                    tupleCCMap.put(i, "Partitioning");
-                }
-            } else {
-                for (int i = 0; i <= stateRange; i++) {
-                    tupleCCMap.put(i, "Partitioning");
-                }
+            for (int i = 0; i <= stateRange; i++) {
+                tupleCCMap.put(i, "Partitioning");
             }
 
         } else { // Static CC are fixed throughout the runtime
@@ -89,6 +83,7 @@ public class VNFInstance implements Runnable {
             }
         }
     }
+
 
     public void submitFinishedRequest(VNFRequest request) {
         try {
@@ -99,6 +94,7 @@ public class VNFInstance implements Runnable {
             throw new RuntimeException(e);
         }
     }
+
 
     public void addTupleCCSwitch(int tupleID, int newCC) {
         tupleUnderCCSwitch.put(tupleID, newCC);
@@ -155,7 +151,7 @@ public class VNFInstance implements Runnable {
                 CHCStateManager.submitCHCReq(stopSignal);
                 S6StateManager.submitS6Request(stopSignal);
                 for (int tpgQueueIndex = 0; tpgQueueIndex < tpgInputQueues.size(); tpgQueueIndex++) {
-                    tpgInputQueues.get(tpgQueueIndex).offer(new ProactiveVNFRequest(0));
+                    tpgInputQueues.get(tpgQueueIndex).offer(new ProactiveVNFRequest(stopSignal));
                 }
             }
 
@@ -176,15 +172,13 @@ public class VNFInstance implements Runnable {
 
     private VNFRequest createRequest(String inputLine) {
         long packetStartTime = System.nanoTime();
-        long parsingStartTime = System.nanoTime();
         String[] parts = inputLine.split(",");
         int reqID = Integer.parseInt(parts[0]);
         int tupleID = Integer.parseInt(parts[1]);
         int vnfID = Integer.parseInt(parts[2]);
-        String type = parts[3]; // 0: read, 1: write, 2: read-write
-        String scope = parts[4]; // 0: per-flow, 1: cross-flow
+        String type = parts[3]; // Read, Write or Read-Write
+        String scope = parts[4]; // Per-flow or Cross-flow
         int saID = 0; //TODO: Hardcoded saID
-
         return new VNFRequest(reqID, instanceID, tupleID, 0, scope, type, vnfID, saID, packetStartTime, instancePuncID);
     }
 
@@ -206,8 +200,10 @@ public class VNFInstance implements Runnable {
         if (Objects.equals(tupleCC, "Partitioning")) {
             if (statePartitionStart <= tupleID && tupleID <= statePartitionEnd) {
                 executeSVCCTransaction(this.localSVCCStateManager, request);
-            } else {
-                LocalSVCCStateManager remoteStateManager = VNFManager.getInstanceStateManager(tupleID);
+            }
+            else {
+                int targetInstanceID = VNFManager.getPartitionedInstanceID(tupleID);
+                LocalSVCCStateManager remoteStateManager = VNFManager.getInstanceStateManager(targetInstanceID);
                 executeSVCCTransaction(remoteStateManager, request); // Direct R/W to remote instance
             }
             submitFinishedRequest(request);
@@ -336,8 +332,6 @@ public class VNFInstance implements Runnable {
         for (int key : transaction.getAcquiredLocks()) {
             stateManager.releaseLock(key, timestamp);
         }
-
-        System.out.println("Transaction completed, locks released.");
     }
 
 

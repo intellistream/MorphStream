@@ -17,7 +17,7 @@ public class LocalSVCCStateManager {
     private final int instanceID;
     private final Map<Integer, S2PLLockObject> lockTable = new ConcurrentHashMap<>();
     private final LocalSVCCDatastore localSVCCDatastore = new LocalSVCCDatastore("testTable");
-    private final int numExecutors = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    private final int numExecutors = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
 //    private static final int numExecutors = 2;
 
     public LocalSVCCStateManager(int instanceID) {
@@ -33,9 +33,9 @@ public class LocalSVCCStateManager {
         S2PLLockObject lockObject = lockTable.get(key);
         if (lockObject != null) {
             lockObject.releaseLock(timestamp);
-            if (lockObject.isFree()) {
-                lockTable.remove(key);
-            }
+//            if (lockObject.isFree()) {
+//                lockTable.remove(key);
+//            }
         }
     }
 
