@@ -137,6 +137,7 @@ public class VNFManager implements Runnable {
                 break;
             case "5.4.1":
             case "5.4.2":
+            case "5.4.3":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 break;
         }
@@ -461,33 +462,6 @@ public class VNFManager implements Runnable {
             System.out.println("Data written to CSV file successfully.");
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
-        }
-    }
-
-    private static void writeIndicatorFile(String fileName) {
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String directoryPath = rootPath + "/indicators";
-        String filePath = String.format("%s/%s.csv", directoryPath, fileName);
-        System.out.println("Writing indicator: " + fileName);
-
-        File dir = new File(directoryPath);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory.");
-                return; // Stop further processing if unable to create the directory
-            }
-        }
-
-        File file = new File(filePath);
-        if (file.exists()) {
-            file.delete();
-        }
-
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            System.out.println("An error occurred while creating the file.");
             e.printStackTrace();
         }
     }

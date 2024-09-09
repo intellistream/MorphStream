@@ -305,7 +305,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.4.1";
+    public String expID = "5.4.3";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
@@ -320,7 +320,7 @@ public class JCommanderHandler {
 
     /** Parameters controls which csv file to read */
     @Parameter(names = {"--keySkew"})
-    public int keySkew = 75;
+    public int keySkew = 0;
     @Parameter(names = {"--workloadSkew"})
     public int workloadSkew = 0;
     @Parameter(names = {"--readRatio"})
