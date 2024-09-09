@@ -156,7 +156,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--isRemoteDB"}, description = "isRemoteDB.")
     public int isRemoteDB = 0;// 0: local, 1: remote
     @Parameter(names = {"--isDynamoDB"}, description = "isDynamoDB.")
-    public int isDynamoDB = 0;// 0: local, 1: remote
+    public int isDynamoDB = 0;
+    @Parameter(names = {"--r_w_capacity_unit"}, description = "r_w_capacity_unit.")
+    public long r_w_capacity_unit = 10L;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 8000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
@@ -493,6 +495,7 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_value_size", Integer.parseInt(valueSizeForTables.split(";")[i]));
             config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(";")[i]);//Field
         }
+        config.put("r_w_capacity_unit", r_w_capacity_unit);
 
         /* Input configurations */
         config.put("rootPath", rootPath);

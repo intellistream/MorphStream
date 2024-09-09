@@ -33,11 +33,13 @@ public class RdmaDatabaseManager {
     private final int[] valueSize;
     private final int[] numItems;
     public DynamoDbClient dynamoDBClient;
+    private long r_w_capacity_unit = 10L;
     public RdmaDatabaseManager(boolean isDriver, Configuration conf) throws Exception {
         this.isDriver = isDriver;
         tableNames = conf.getString("tableNames", "table1,table2").split(";");
         valueSize = new int[tableNames.length];
         numItems = new int[tableNames.length];
+        r_w_capacity_unit = conf.getLong("r_w_capacity_unit", 10L);
 
         for (int i = 0; i < tableNames.length; i++) {
             valueSize[i] = MorphStreamEnv.get().configuration().getInt(tableNames[i] + "_value_size");
@@ -100,6 +102,10 @@ public class RdmaDatabaseManager {
                     .attributeDefinitions(AttributeDefinition.builder()
                             .attributeName("id")
                             .attributeType(ScalarAttributeType.S)  // 主键类型：字符串
+                            .build())
+                    .provisionedThroughput(ProvisionedThroughput.builder()
+                            .readCapacityUnits(r_w_capacity_unit)
+                            .writeCapacityUnits(r_w_capacity_unit)
                             .build())
                     .build();
 

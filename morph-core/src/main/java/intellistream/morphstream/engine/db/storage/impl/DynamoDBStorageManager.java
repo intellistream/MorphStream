@@ -5,6 +5,7 @@ import intellistream.morphstream.engine.txn.scheduler.context.ds.DSContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -12,14 +13,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class DynamoDBStorageManager extends RemoteStorageManager {
     private static final Logger LOG = LoggerFactory.getLogger(DynamoDBStorageManager.class);
     private DynamoDbClient dynamoDBClient;
+    private DynamoDbAsyncClient dynamoDBAsyncClient;
 
     public DynamoDBStorageManager(CacheBuffer cacheBuffer, int totalWorker, int totalThread) {
         super(cacheBuffer, totalWorker, totalThread);
         dynamoDBClient = DynamoDbClient.builder().region(Region.US_EAST_2).build();
+        dynamoDBAsyncClient = DynamoDbAsyncClient.builder().region(Region.US_EAST_2).build();
     }
 
     @Override
@@ -35,12 +40,14 @@ public class DynamoDBStorageManager extends RemoteStorageManager {
                 end = interval * (context.thisThreadId + 1);
             }
             List<Map<String, AttributeValue>> groupKeys = new ArrayList<>();
+            HashMap<String, Integer> keyToIndex = new HashMap<>();
             for (int i = start; i < end; i++) {
                 Map<String, AttributeValue> key = new HashMap<>();
                 key.put("id", AttributeValue.builder().s(keys.get(i)).build());
                 groupKeys.add(key);
+                keyToIndex.put(keys.get(i), i);
             }
-            processBatchGetItem(dynamoDBClient, tableName, groupKeys, start, end);
+            processBatchGetItem(dynamoDBClient, tableName, groupKeys, keyToIndex);
             this.workerSideOwnershipTables.get(tableName).getTotalKeys().addAndGet(end - start);
         }
     }
@@ -58,69 +65,111 @@ public class DynamoDBStorageManager extends RemoteStorageManager {
                 end = interval * (context.thisThreadId + 1);
             }
             List<Map<String, AttributeValue>> batchKeys = new ArrayList<>();
-            List<Map<String, AttributeValueUpdate>> batchUpdates = new ArrayList<>();
+            List<String> newValues = new ArrayList<>();
             for (int i = start; i < end; i++) {
                 String key = keys.get(i);
                 Map<String, AttributeValue> keyMap = new HashMap<>();
                 keyMap.put("id", AttributeValue.builder().s(key).build());
-                Map<String, AttributeValueUpdate> updates = new HashMap<>();
-                updates.put(this.tableNameToValueName.get(tableName), AttributeValueUpdate.builder().value(AttributeValue.builder().s(this.workerSideOwnershipTables.get(tableName).valueList[i]).build()).action(AttributeAction.PUT).build());
                 batchKeys.add(keyMap);
-                batchUpdates.add(updates);
+                newValues.add(this.workerSideOwnershipTables.get(tableName).valueList[i]);
             }
-            processBatchUpdateItem(dynamoDBClient, tableName, batchKeys, batchUpdates);
+            processBatchUpdateItemsAsync(dynamoDBAsyncClient, tableName, batchKeys, this.tableNameToValueName.get(tableName), newValues);
         }
     }
 
-    private void processBatchGetItem(DynamoDbClient dynamicDBClient, String tableName, List<Map<String, AttributeValue>> batchKeys, int start, int end) {
-        Map<String, KeysAndAttributes> requestItems = new HashMap<>();
-        requestItems.put(tableName, KeysAndAttributes.builder().keys(batchKeys).build());
+    private void processBatchGetItem(DynamoDbClient dynamicDBClient, String tableName, List<Map<String, AttributeValue>> batchKeys, HashMap<String, Integer> keyToIndex) {
+        // 每次处理100个items
+        int batchSize = 100;
+        int totalItems = batchKeys.size();
 
-        BatchGetItemRequest batchGetItemRequest = BatchGetItemRequest.builder().requestItems(requestItems).build();
-        BatchGetItemResponse response;
+        // 分批处理batchKeys
+        for (int i = 0; i < totalItems; i += batchSize) {
+            int end = Math.min(i + batchSize, totalItems);
+            List<Map<String, AttributeValue>> currentBatchKeys = batchKeys.subList(i, end);
 
-        do {
-            // 执行批量获取操作
-            response = dynamicDBClient.batchGetItem(batchGetItemRequest);
+            // 构建requestItems
+            Map<String, KeysAndAttributes> requestItems = new HashMap<>();
+            requestItems.put(tableName, KeysAndAttributes.builder().keys(currentBatchKeys).build());
 
-            // 处理响应中的数据
-            Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
-            for (Map<String, AttributeValue> item : responses.get(tableName)) {
-                // 存储获取的值
-                this.workerSideOwnershipTables.get(tableName).valueList[start] = item.get(this.tableNameToValueName.get(tableName)).s();
-                start++;  // 递增 start
-            }
+            BatchGetItemRequest batchGetItemRequest = BatchGetItemRequest.builder().requestItems(requestItems).build();
+            BatchGetItemResponse response;
 
-            // 处理未处理的项目
-            requestItems = response.unprocessedKeys();
-            if (!requestItems.isEmpty()) {
-                batchGetItemRequest = BatchGetItemRequest.builder()
-                        .requestItems(requestItems)
-                        .build();
-            }
-        } while (!requestItems.isEmpty());  // 如果有未处理的项目，则继续重试
-    }
-    private void processBatchUpdateItem(DynamoDbClient dynamoDBClient, String tableName, List<Map<String, AttributeValue>> batchKeys, List<Map<String, AttributeValueUpdate>> batchUpdates) {
-        // Iterate over the keys and their corresponding updates
-        for (int i = 0; i < batchKeys.size(); i++) {
-            Map<String, AttributeValue> key = batchKeys.get(i);  // The key (UserID)
-            Map<String, AttributeValueUpdate> updates = batchUpdates.get(i);  // Updates for other fields (e.g., PWD)
+            do {
+                // 执行批量获取操作
+                response = dynamicDBClient.batchGetItem(batchGetItemRequest);
 
-            // Build UpdateItemRequest
-            UpdateItemRequest updateItemRequest = UpdateItemRequest.builder()
-                    .tableName(tableName)
-                    .key(key)
-                    .attributeUpdates(updates)
-                    .build();
+                // 处理响应中的数据
+                Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
+                for (Map<String, AttributeValue> item : responses.get(tableName)) {
+                    // 存储获取的值
+                    this.workerSideOwnershipTables.get(tableName).valueList[keyToIndex.get(item.get("id").s())] = item.get(this.tableNameToValueName.get(tableName)).s();
+                }
 
-            try {
-                // Execute the update
-                dynamoDBClient.updateItem(updateItemRequest);
-            } catch (DynamoDbException e) {
-                LOG.error("Failed to update item with key: " + key.get("UserID").s() + " - " + e.getMessage());
-            }
+                // 处理未处理的项目
+                requestItems = response.unprocessedKeys();
+                if (!requestItems.isEmpty()) {
+                    batchGetItemRequest = BatchGetItemRequest.builder()
+                            .requestItems(requestItems)
+                            .build();
+                }
+            } while (!requestItems.isEmpty());  // 如果有未处理的项目，则继续重试
         }
     }
+
+    public CompletableFuture<Void> processBatchUpdateItemsAsync(DynamoDbAsyncClient dynamoDbAsyncClient,
+                                                                String tableName,
+                                                                List<Map<String, AttributeValue>> batchKeys,
+                                                                String valueName,
+                                                                List<String> newValues) {
+        // 验证输入数据
+        if (batchKeys.size() != newValues.size()) {
+            throw new IllegalArgumentException("The number of keys and values must be the same");
+        }
+
+        // 异步更新所有项目
+        List<CompletableFuture<UpdateItemResponse>> updateFutures = batchKeys.stream()
+                .map(key -> {
+                    int index = batchKeys.indexOf(key);
+                    String newValue = newValues.get(index);
+                    return updateItemAsync(dynamoDbAsyncClient, tableName, key, valueName, newValue);
+                })
+                .collect(Collectors.toList());
+
+        // 等待所有异步操作完成
+        return CompletableFuture.allOf(updateFutures.toArray(new CompletableFuture[0]));
+    }
+    public CompletableFuture<UpdateItemResponse> updateItemAsync(DynamoDbAsyncClient dynamoDbAsyncClient,
+                                                                 String tableName,
+                                                                 Map<String, AttributeValue> key,
+                                                                 String valueName,
+                                                                 String newValue) {
+
+        // 构建更新表达式
+        String updateExpression = "SET " + valueName + " = :newValue";
+
+        // 定义表达式中的值
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":newValue", AttributeValue.builder().s(newValue).build());
+
+        // 构建更新请求
+        UpdateItemRequest updateItemRequest = UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(key)
+                .updateExpression(updateExpression)
+                .expressionAttributeValues(expressionAttributeValues)
+                .build();
+
+        // 异步执行更新操作
+        return dynamoDbAsyncClient.updateItem(updateItemRequest)
+                .thenApply(response -> {
+                    return response;
+                })
+                .exceptionally(e -> {
+                    LOG.error("Failed to update item in DynamoDB with key: " + key + " - " + e.getMessage());
+                    return null;
+                });
+    }
+
 
 
 }
