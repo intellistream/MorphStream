@@ -6,63 +6,63 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
-def generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvExperimentPath,
-                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
-                         workloadPattern, enableTimeBreakdown, experimentID, script_path):
+def generate_bash_script(app, checkpointInterval, numTPGThreads, scheduler, NUM_ITEMS, totalEvents, nfvExperimentPath,
+                         communicationChoice, numInstances, numOffloadThreads, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, expID, script_path):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
   app="{app}"
   checkpointInterval={checkpointInterval}
-  tthread={tthread}
+  numTPGThreads={numTPGThreads}
   scheduler="{scheduler}"
   NUM_ITEMS={NUM_ITEMS}
   totalEvents={totalEvents}
   nfvExperimentPath="{nfvExperimentPath}"
   communicationChoice={communicationChoice}
-  vnfInstanceNum={vnfInstanceNum}
-  offloadCCThreadNum={offloadCCThreadNum}
+  numInstances={numInstances}
+  numOffloadThreads={numOffloadThreads}
   offloadLockNum={offloadLockNum}
   ccStrategy={ccStrategy}
   workloadPattern={workloadPattern}
   enableTimeBreakdown={enableTimeBreakdown}
-  experimentID="{experimentID}"
+  expID="{expID}"
 }}
 
 function runTStream() {{
   echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --NUM_ITEMS $NUM_ITEMS \\
-          --tthread $tthread \\
+          --numTPGThreads $numTPGThreads \\
           --scheduler $scheduler \\
           --checkpoint_interval $checkpointInterval \\
           --totalEvents $totalEvents \\
           --nfvExperimentPath $nfvExperimentPath \\
           --communicationChoice $communicationChoice \\
-          --vnfInstanceNum $vnfInstanceNum \\
-          --offloadCCThreadNum $offloadCCThreadNum \\
+          --numInstances $numInstances \\
+          --numOffloadThreads $numOffloadThreads \\
           --offloadLockNum $offloadLockNum \\
           --ccStrategy $ccStrategy \\
           --workloadPattern $workloadPattern \\
           --enableTimeBreakdown $enableTimeBreakdown \\
-          --experimentID $experimentID
+          --expID $expID
           "
   java -Xms100g -Xmx100g -Xss10M -jar -d64 /home/shuhao/DB4NFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --NUM_ITEMS $NUM_ITEMS \\
-    --tthread $tthread \\
+    --numTPGThreads $numTPGThreads \\
     --scheduler $scheduler \\
     --checkpoint_interval $checkpointInterval \\
     --totalEvents $totalEvents \\
     --nfvExperimentPath $nfvExperimentPath \\
     --communicationChoice $communicationChoice \\
-    --vnfInstanceNum $vnfInstanceNum \\
-    --offloadCCThreadNum $offloadCCThreadNum \\
+    --numInstances $numInstances \\
+    --numOffloadThreads $numOffloadThreads \\
     --offloadLockNum $offloadLockNum \\
     --ccStrategy $ccStrategy \\
     --workloadPattern $workloadPattern \\
     --enableTimeBreakdown $enableTimeBreakdown \\
-    --experimentID $experimentID
+    --expID $expID
 }}
 
 function baselinePattern() {{
@@ -256,24 +256,24 @@ if __name__ == "__main__":
     # Define parameters
     app = "nfv_test"
     checkpointInterval = 100
-    tthread = 8
+    numTPGThreads = 8
     scheduler = "OP_BFS"
     NUM_ITEMS = 10000
     totalEvents = 400000
     nfvExperimentPath = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV"
     communicationChoice = 0
-    vnfInstanceNum = 4
-    offloadCCThreadNum = 16
+    numInstances = 4
+    numOffloadThreads = 16
     offloadLockNum = 10000
     ccStrategy = 0
     workloadPattern = 0
     enableTimeBreakdown = 0
-    experimentID = "5.2.1"
-    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % experimentID
+    expID = "5.2.1"
+    script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    generate_bash_script(app, checkpointInterval, tthread, scheduler, NUM_ITEMS, totalEvents, nfvExperimentPath,
-                         communicationChoice, vnfInstanceNum, offloadCCThreadNum, offloadLockNum, ccStrategy,
-                         workloadPattern, enableTimeBreakdown, experimentID, script_path)
+    generate_bash_script(app, checkpointInterval, numTPGThreads, scheduler, NUM_ITEMS, totalEvents, nfvExperimentPath,
+                         communicationChoice, numInstances, numOffloadThreads, offloadLockNum, ccStrategy,
+                         workloadPattern, enableTimeBreakdown, expID, script_path)
     execute_bash_script(script_path)
 
     throughput_root_directory = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/results/5.2.1/throughput"

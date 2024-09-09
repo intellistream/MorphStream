@@ -192,8 +192,8 @@ public class JCommanderHandler {
     /**
      * Database configurations
      */
-    @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 5000;//number of records in each table
+    @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
+    public int numItems = 5000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
@@ -280,34 +280,32 @@ public class JCommanderHandler {
     /**
      * TransNFV Specific configurations
      */
-    @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
+    @Parameter(names = {"--numPackets"}, description = "Total number of events to process.")
     public int numPackets = 400000;
-    @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
-    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 1000;//checkpoint per thread.
+    @Parameter(names = {"--numTPGThreads"}, description = "total execution threads")
+    public int numTPGThreads = 4;// default total execution threads
+    @Parameter(names = {"--puncInterval"}, description = "checkpoint interval (#tuples)")
+    public int puncInterval = 1000;//checkpoint per thread.
     @Parameter(names = {"--nfvExperimentPath"}, description = "The simulated input data path")
     public String nfvExperimentPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
-    @Parameter(names = {"--vnfInstanceNum"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
-    public int vnfInstanceNum = 4;
-    @Parameter(names = {"--offloadCCThreadNum"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int offloadCCThreadNum = 4;
+    @Parameter(names = {"--numInstances"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
+    public int numInstances = 4;
+    @Parameter(names = {"--numOffloadThreads"}, description = "Number of threads in Offloading CC's executor service thread pool")
+    public int numOffloadThreads = 4;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
 //    public String ccStrategy = "Partitioning";
     public String ccStrategy = "Replication";
 //    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "Adaptive";
-    @Parameter(names = {"--workloadPattern"}, description = "Chosen pattern workload")
-    public int workloadPattern = 4; // 4: dynamic workload
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
     @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
     public int instancePatternPunctuation = 25000;
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
-    @Parameter(names = {"--experimentID"}, description = "The running experiment ID")
-    public String experimentID = "5.4.1";
+    @Parameter(names = {"--expID"}, description = "The running experiment ID")
+    public String expID = "5.4.1";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
@@ -367,8 +365,8 @@ public class JCommanderHandler {
         if (batch != -1) {
             config.put("batch", batch);
         }
-        config.put("tthread", tthread);
-        config.put("checkpoint", checkpoint_interval);
+        config.put("tthread", numTPGThreads);
+        config.put("checkpoint", puncInterval);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
         if (isCyclic == 1) {
@@ -386,7 +384,7 @@ public class JCommanderHandler {
         /* Dynamic switch scheduler */
         if (isDynamic == 1) {
             config.put("isDynamic", true);
-            //config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
+            //config.put("totalEvents", phaseNum * numTPGThreads * checkpoint_interval);
             config.put("schedulersPool", schedulerPools);
             config.put("defaultScheduler", defaultScheduler);
             config.put("scheduler", defaultScheduler);
@@ -403,7 +401,7 @@ public class JCommanderHandler {
             config.put("isGroup", true);
             config.put("groupNum",groupNum);
             config.put("SchedulersForGroup",SchedulersForGroup);
-            config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+            config.put("totalEvents",phaseNum * numTPGThreads * puncInterval);
             config.put("skewGroup",skewGroup);
             config.put("Ratio_of_Transaction_Aborts_Highest",Ratio_of_Transaction_Aborts_Highest);
         } else {
@@ -435,7 +433,7 @@ public class JCommanderHandler {
 
         /* Fault tolerance configurations */
         config.put("FTOption", FTOption);
-        config.put("parallelNum", tthread);
+        config.put("parallelNum", numTPGThreads);
         config.put("compressionAlg", compressionAlg);
         config.put("snapshotInterval", snapshotInterval);
         config.put("arrivalRate", arrivalRate);
@@ -480,7 +478,7 @@ public class JCommanderHandler {
         }
 
         /* Database configurations */
-        config.put("NUM_ITEMS", NUM_ITEMS);
+        config.put("NUM_ITEMS", numItems);
         config.put("loadDBThreadNum", loadDBThreadNum);
         config.put("tableNames", tableNames);
         String[] tableNameString = tableNames.split(",");
@@ -531,14 +529,13 @@ public class JCommanderHandler {
 
         /* TransNFV workload configurations */
         config.put("nfvExperimentPath", nfvExperimentPath);
-        config.put("vnfInstanceNum", vnfInstanceNum);
-        config.put("offloadCCThreadNum", offloadCCThreadNum);
+        config.put("numInstances", numInstances);
+        config.put("numOffloadThreads", numOffloadThreads);
         config.put("ccStrategy", ccStrategy);
-        config.put("workloadPattern", workloadPattern);
         config.put("enableTimeBreakdown", enableTimeBreakdown);
         config.put("instancePatternPunctuation", instancePatternPunctuation);
         config.put("managerPatternPunctuation", managerPatternPunctuation);
-        config.put("experimentID", experimentID);
+        config.put("experimentID", expID);
         config.put("vnfID", vnfID);
         config.put("enableMemoryFootprint", enableMemoryFootprint);
         config.put("doMVCC", doMVCC);
@@ -550,7 +547,7 @@ public class JCommanderHandler {
         config.put("locality", locality);
         config.put("scopeRatio", scopeRatio);
         String inputWorkloadPath = String.format(nfvExperimentPath + "/workload/%s/vnfID=%s/numPackets=%d/numInstances=%d/numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d",
-                experimentID, vnfID, numPackets, vnfInstanceNum, NUM_ITEMS, keySkew, workloadSkew, readRatio, locality, scopeRatio);
+                expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio);
         config.put("inputWorkloadPath", inputWorkloadPath);
         configSystem(config);
     }
@@ -618,7 +615,7 @@ public class JCommanderHandler {
         //    Metrics.POST_COMPUTE_COMPLEXITY = conf.getInt("POST_COMPUTE");
         //    Metrics.NUM_ACCESSES = conf.getInt("NUM_ACCESS");
         //    Metrics.NUM_ITEMS = conf.getInt("NUM_ITEMS");
-        //    Metrics.H2_SIZE = Metrics.NUM_ITEMS / conf.getInt("tthread");
+        //    Metrics.H2_SIZE = Metrics.NUM_ITEMS / conf.getInt("numTPGThreads");
         //}
     }
 }

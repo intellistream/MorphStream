@@ -36,7 +36,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final int expRequestCount = totalRequests / boltThreadCount;
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private int requestCounter;
-    private static final int numInstance = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    private static final int numInstance = MorphStreamEnv.get().configuration().getInt("numInstances");
     private static final ConcurrentHashMap<Integer, Integer> instanceFinishReqCounter = new ConcurrentHashMap<>();
     private static final AtomicInteger totalFinishedReqCounter = new AtomicInteger(0);
 

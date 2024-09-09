@@ -48,7 +48,7 @@ public class VNFInstance implements Runnable {
 
     private int instancePuncID = 1; //Start from 1
     private final int numTPGThreads;
-    private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private int tpgRequestCount = 0;
     private int inputLineCounter = 0;
     private long overallStartTime;

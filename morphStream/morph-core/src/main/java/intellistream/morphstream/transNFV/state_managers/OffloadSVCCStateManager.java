@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OffloadSVCCStateManager {
     private final Map<Integer, S2PLLockObject> lockTable = new ConcurrentHashMap<>();
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-    private static final int numExecutors = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    private static final int numExecutors = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
 //    private static final int numExecutors = 2;
 
     public void acquireLock(int key, long timestamp, boolean isWrite) throws InterruptedException {

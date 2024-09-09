@@ -28,10 +28,9 @@ public class UniversalStateManager {
     public static final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
-    private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
-    private final int offloadCCThreadNum = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
+    private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
-    private final int pattern = MorphStreamEnv.get().configuration().getInt("workloadPattern");
     private final String ccStrategy = MorphStreamEnv.get().configuration().getString("ccStrategy");
 
 
@@ -48,14 +47,14 @@ public class UniversalStateManager {
             tpgQueues.put(i, inputQueue);
         }
 
-        for (int i = 0; i < offloadCCThreadNum; i++) {
+        for (int i = 0; i < numOffloadThreads; i++) {
             BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
             offloadingQueues.put(i, inputQueue);
             Thread offloadExecutorThread = new Thread(new OffloadExecutorThread(i, inputQueue));
             offloadExecutorThreads.put(i, offloadExecutorThread);
         }
 
-        int partitionGap = tableSize / vnfInstanceNum;
+        int partitionGap = tableSize / numInstances;
         for (int i = 0; i < tableSize; i++) {
             partitionOwnership.put(i, i / partitionGap); //TODO: Refine this
         }
@@ -64,7 +63,7 @@ public class UniversalStateManager {
     public void startAdaptiveCC() {
         monitorThread.start();
         replicationCCThread.start();
-        for (int i = 0; i < offloadCCThreadNum; i++) {
+        for (int i = 0; i < numOffloadThreads; i++) {
             offloadExecutorThreads.get(i).start();
         }
         System.out.println("CC123 and Monitor started");
@@ -74,7 +73,7 @@ public class UniversalStateManager {
         try {
             monitorThread.join();
             replicationCCThread.join();
-            for (int i = 0; i < offloadCCThreadNum; i++) {
+            for (int i = 0; i < numOffloadThreads; i++) {
                 offloadExecutorThreads.get(i).join();
             }
         } catch (InterruptedException e) {
@@ -96,7 +95,7 @@ public class UniversalStateManager {
     }
 
     public void startOffloadExecutorThreads() {
-        for (int i = 0; i < offloadCCThreadNum; i++) {
+        for (int i = 0; i < numOffloadThreads; i++) {
             offloadExecutorThreads.get(i).start();
         }
         System.out.println("Offload executors started");
@@ -104,7 +103,7 @@ public class UniversalStateManager {
 
     public void joinOffloadExecutorThreads() {
         try {
-            for (int i = 0; i < offloadCCThreadNum; i++) {
+            for (int i = 0; i < numOffloadThreads; i++) {
                 offloadExecutorThreads.get(i).join();
             }
         } catch (InterruptedException e) {
@@ -149,22 +148,6 @@ public class UniversalStateManager {
 
     public BlockingQueue<VNFRequest> getOffloadingInputQueue(int offloadingId) {
         return offloadingQueues.get(offloadingId);
-    }
-
-    public String getPattern() {
-        if (pattern == 0) {
-            return "loneOperative";
-        } else if (pattern == 1) {
-            return "sharedReaders";
-        } else if (pattern == 2) {
-            return "sharedWriters";
-        } else if (pattern == 3) {
-            return "mutualInteractive";
-        } else if (pattern == 4) {
-            return "dynamic";
-        } else {
-            throw new UnsupportedOperationException();
-        }
     }
 
 }

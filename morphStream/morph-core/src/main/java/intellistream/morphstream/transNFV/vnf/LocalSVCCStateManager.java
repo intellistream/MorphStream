@@ -17,7 +17,7 @@ public class LocalSVCCStateManager {
     private final int instanceID;
     private final Map<Integer, S2PLLockObject> lockTable = new ConcurrentHashMap<>();
     private final LocalSVCCDatastore localSVCCDatastore = new LocalSVCCDatastore("testTable");
-    private final int numExecutors = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    private final int numExecutors = MorphStreamEnv.get().configuration().getInt("numInstances");
 //    private static final int numExecutors = 2;
 
     public LocalSVCCStateManager(int instanceID) {

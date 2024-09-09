@@ -20,7 +20,7 @@ public class OpenNFStateManager implements Runnable {
     private static BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
-    private final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+    private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private static long aggUsefulTime = 0;
     private static long initEndTime = -1;
@@ -73,7 +73,7 @@ public class OpenNFStateManager implements Runnable {
                 tempo_record.getValues().get(1).setInt(readValue);
                 tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
 
-                for (int i = 0; i < vnfInstanceNum; i++) {
+                for (int i = 0; i < numInstances; i++) {
                     VNFManager.getInstanceStateManager(i).nullSafeStateUpdate(tupleID, readValue);
                 }
 

@@ -33,9 +33,9 @@ public class BatchMonitorThread implements Runnable {
 //    private static final HashMap<Integer, String> tuplePattern_23_to_1 = new HashMap<>();
 //    private static final HashMap<Integer, String> statesPatternChanges = new HashMap<>(); //Tuples under pattern changes -> new pattern
 //    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-//    private static final int vnfInstanceNum = MorphStreamEnv.get().configuration().getInt("vnfInstanceNum");
+//    private static final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
 //    private static final int instancePuncSize = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
-//    private static final int patternPunctuation = vnfInstanceNum * instancePuncSize;
+//    private static final int patternPunctuation = numInstances * instancePuncSize;
 //    private static final int conflictThreshold = MorphStreamEnv.get().configuration().getInt("conflictThreshold");
 //    private static final int typeThreshold = MorphStreamEnv.get().configuration().getInt("typeThreshold");
 //    private static final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
@@ -229,7 +229,7 @@ public class BatchMonitorThread implements Runnable {
 //        for (Map.Entry<Integer, Integer> entry : statesPatternChanges.entrySet()) {
 //            int tupleID = entry.getKey();
 //            int newPattern = entry.getValue();
-//            for (int instanceID = 0; instanceID < vnfInstanceNum; instanceID++) {
+//            for (int instanceID = 0; instanceID < numInstances; instanceID++) {
 //                VNFManager.getSender(instanceID).addTupleCCSwitch(tupleID, newPattern);
 //            }
 //        }
@@ -237,7 +237,7 @@ public class BatchMonitorThread implements Runnable {
 //
 //    private static void notifyStartNextPunctuation() {
 //        //Notify instances to start the next punctuation
-//        for (int instanceID = 0; instanceID < vnfInstanceNum; instanceID++) {
+//        for (int instanceID = 0; instanceID < numInstances; instanceID++) {
 //            VNFManager.getSender(instanceID).notifyNextPuncStart(nextPunctuationID);
 //        }
 //    }
@@ -265,7 +265,7 @@ public class BatchMonitorThread implements Runnable {
 //        //From global store to ALL local caches
 //        for (Map.Entry<Integer, String> entry : tuplePattern_23_to_1.entrySet()) {
 //            int tupleID = entry.getKey();
-//            for (int instanceID = 0; instanceID < vnfInstanceNum; instanceID++) {
+//            for (int instanceID = 0; instanceID < numInstances; instanceID++) {
 //                syncTupleToLocal(instanceID, tupleID);
 //            }
 //        }

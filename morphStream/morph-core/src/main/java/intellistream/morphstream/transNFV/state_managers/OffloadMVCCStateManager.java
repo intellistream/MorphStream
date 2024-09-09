@@ -18,7 +18,7 @@ public class OffloadMVCCStateManager {
     private final Map<Integer, VersionControl> versionedStateTable = new ConcurrentHashMap<>();
 
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-    private static final int numExecutors = MorphStreamEnv.get().configuration().getInt("offloadCCThreadNum");
+    private static final int numExecutors = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private static final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
 
     public OffloadMVCCStateManager() {
