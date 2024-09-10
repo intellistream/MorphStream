@@ -33,8 +33,8 @@ public class VNFInstance implements Runnable {
 
     private final LocalSVCCStateManager localSVCCStateManager;
     private final ConcurrentHashMap<Integer, String> tupleCCMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = UniversalStateManager.tpgQueues;
-    private final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = UniversalStateManager.offloadingQueues;
+    private final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = UniversalStateManager.tpgInputQueues;
+    private final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = UniversalStateManager.offloadInputQueues;
 
     private final BlockingQueue<SyncData> pendingStateSyncs = new LinkedBlockingQueue<>(); //TODO: Pending state updates from other replications
     private final BlockingQueue<VNFRequest> blockingFinishedReqs = new LinkedBlockingQueue<>(); //TODO: Waiting for manager's ACK for state update broadcast finish

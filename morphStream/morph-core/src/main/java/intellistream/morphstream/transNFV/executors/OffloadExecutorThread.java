@@ -1,14 +1,18 @@
 package intellistream.morphstream.transNFV.executors;
 
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.state_managers.OffloadMVCCStateManager;
 import intellistream.morphstream.transNFV.state_managers.OffloadSVCCStateManager;
 import intellistream.morphstream.transNFV.common.Operation;
 import intellistream.morphstream.transNFV.common.Transaction;
+import intellistream.morphstream.transNFV.state_managers.UniversalStateManager;
 import intellistream.morphstream.transNFV.vnf.UDF;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -19,8 +23,19 @@ public class OffloadExecutorThread implements Runnable {
     BlockingQueue<VNFRequest> inputQueue;
     private int requestCounter;
     private final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
+
     private final OffloadSVCCStateManager svccStateManager = new OffloadSVCCStateManager();
     private final OffloadMVCCStateManager mvccStateManager = new OffloadMVCCStateManager();
+    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private static final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
+
+    /** Garbage collection in MVCC */
+    private final int gcCheckInterval = MorphStreamEnv.get().configuration().getInt("gcCheckInterval");
+    private final int gcBatchInterval = MorphStreamEnv.get().configuration().getInt("gcBatchInterval");
+    private HashMap<Integer, Long> batchToTimestamp = new HashMap<>();
+    private int currentGCBatchID = 0;
+    private int globalCurrentGCBatchID = 0;
+    private NonBlockingGCThread gcExecutorThread;
 
     public OffloadExecutorThread(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue) {
         this.offloadExecutorID = offloadExecutorID;
@@ -29,6 +44,12 @@ public class OffloadExecutorThread implements Runnable {
 
     @Override
     public void run() {
+        if (offloadExecutorID == 0 && doMVCC == 1) {
+            gcExecutorThread = new NonBlockingGCThread();
+            Thread gcThread = new Thread(gcExecutorThread);
+            gcThread.start();
+        }
+
         while (!Thread.currentThread().isInterrupted()) {
             VNFRequest request;
             try {
@@ -38,6 +59,10 @@ public class OffloadExecutorThread implements Runnable {
             }
             if (request.getCreateTime() == -1) {
                 System.out.println("Offload executor " + offloadExecutorID + " received stop signal. Total requests: " + requestCounter);
+                if (offloadExecutorID == 0 && doMVCC == 1) {
+                    gcExecutorThread.stopGC();
+                    System.out.println("GC thread stopped.");
+                }
                 break;
             }
             requestCounter++;
@@ -45,8 +70,38 @@ public class OffloadExecutorThread implements Runnable {
             try {
                 if (doMVCC == 0) {
                     executeSVCCTransaction(request);
+
                 } else if (doMVCC == 1) {
                     executeMVCCTransaction(request);
+
+                    // Each thread records the end timestamp of each batch
+                    if (requestCounter % gcBatchInterval == 0) {
+                        long lastBatchEndTimestamp = request.getCreateTime();
+                        batchToTimestamp.put(currentGCBatchID, lastBatchEndTimestamp);
+                        currentGCBatchID++;
+                    }
+
+                    // Thread 0 periodically checks for global finished batch ID and initiates GC
+                    if (requestCounter % gcCheckInterval == 0 && offloadExecutorID == 0) {
+                        HashMap<Integer, OffloadExecutorThread> offloadExecutorThreads = UniversalStateManager.getOffloadExecutorThreads();
+                        int minCurrentBatchID = Integer.MAX_VALUE;
+
+                        for (OffloadExecutorThread offloadExecutorThread : offloadExecutorThreads.values()) {
+                            minCurrentBatchID = Math.min(minCurrentBatchID, offloadExecutorThread.getCurrentGCBatchID());
+                        }
+
+                        if (minCurrentBatchID > globalCurrentGCBatchID) {
+                            globalCurrentGCBatchID = minCurrentBatchID;
+                            long minBatchEndTimestamp = Long.MAX_VALUE;
+                            for (int batchID = 0; batchID < globalCurrentGCBatchID; batchID++) {
+                                minBatchEndTimestamp = Math.min(minBatchEndTimestamp, getLastBatchEndTimestamp(batchID));
+                            }
+
+                            // Garbage collection
+                            gcExecutorThread.startGC((int) minBatchEndTimestamp);
+                        }
+                    }
+
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -95,8 +150,6 @@ public class OffloadExecutorThread implements Runnable {
         for (int key : transaction.getAcquiredLocks()) {
             svccStateManager.releaseLock(key, timestamp);
         }
-
-//        System.out.println("Transaction completed, locks released.");
     }
 
 
@@ -117,9 +170,6 @@ public class OffloadExecutorThread implements Runnable {
         }
 
         UDF.executeUDF(request); // Simulated UDF execution
-
-//        System.out.println("Transaction completed.");
-
     }
 
 
@@ -147,6 +197,21 @@ public class OffloadExecutorThread implements Runnable {
         }
         VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request); // register finished req to instance
     }
-    
+
+    private void garbageCollection(int tupleID, long timestamp) {
+        try {
+            storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.garbageCollect(timestamp);
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int getCurrentGCBatchID() {
+        return currentGCBatchID;
+    }
+
+    private long getLastBatchEndTimestamp(int batchID) {
+        return batchToTimestamp.get(batchID);
+    }
     
 }

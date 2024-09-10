@@ -15,23 +15,22 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class UniversalStateManager {
     private Thread monitorThread;
     private Thread replicationCCThread;
-    private HashMap<Integer, Thread> offloadExecutorThreads = new HashMap<>();
+    private HashMap<Integer, Thread> offloadThreads = new HashMap<>();
+    private static final HashMap<Integer, OffloadExecutorThread> offloadExecutorThreads = new HashMap<>();
     private Thread openNFThread;
     private Thread chcThread;
     private Thread s6Thread;
     private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<VNFRequest> partitionQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> replicationQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> openNFQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> chcQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> s6Queue = new LinkedBlockingQueue<>();
-    public static final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = new ConcurrentHashMap<>();
-    public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
+    public static final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadInputQueues = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
-    private final String ccStrategy = MorphStreamEnv.get().configuration().getString("ccStrategy");
 
 
     public UniversalStateManager() {
@@ -44,14 +43,16 @@ public class UniversalStateManager {
         int tpgThreadNum = MorphStreamEnv.get().configuration().getInt("tthread"); //Number of thread for TPG_CC
         for (int i = 0; i < tpgThreadNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
-            tpgQueues.put(i, inputQueue);
+            tpgInputQueues.put(i, inputQueue);
         }
 
         for (int i = 0; i < numOffloadThreads; i++) {
             BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
-            offloadingQueues.put(i, inputQueue);
-            Thread offloadExecutorThread = new Thread(new OffloadExecutorThread(i, inputQueue));
+            offloadInputQueues.put(i, inputQueue);
+            OffloadExecutorThread offloadExecutorThread = new OffloadExecutorThread(i, inputQueue);
             offloadExecutorThreads.put(i, offloadExecutorThread);
+            Thread offloadThread = new Thread(offloadExecutorThread);
+            offloadThreads.put(i, offloadThread);
         }
 
         int partitionGap = tableSize / numInstances;
@@ -64,7 +65,7 @@ public class UniversalStateManager {
         monitorThread.start();
         replicationCCThread.start();
         for (int i = 0; i < numOffloadThreads; i++) {
-            offloadExecutorThreads.get(i).start();
+            offloadThreads.get(i).start();
         }
         System.out.println("CC123 and Monitor started");
     }
@@ -74,7 +75,7 @@ public class UniversalStateManager {
             monitorThread.join();
             replicationCCThread.join();
             for (int i = 0; i < numOffloadThreads; i++) {
-                offloadExecutorThreads.get(i).join();
+                offloadThreads.get(i).join();
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -96,7 +97,7 @@ public class UniversalStateManager {
 
     public void startOffloadExecutorThreads() {
         for (int i = 0; i < numOffloadThreads; i++) {
-            offloadExecutorThreads.get(i).start();
+            offloadThreads.get(i).start();
         }
         System.out.println("Offload executors started");
     }
@@ -104,7 +105,7 @@ public class UniversalStateManager {
     public void joinOffloadExecutorThreads() {
         try {
             for (int i = 0; i < numOffloadThreads; i++) {
-                offloadExecutorThreads.get(i).join();
+                offloadThreads.get(i).join();
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -143,11 +144,15 @@ public class UniversalStateManager {
     }
 
     public BlockingQueue<TransactionalEvent> getTPGInputQueue(int spoutId) {
-        return tpgQueues.get(spoutId);
+        return tpgInputQueues.get(spoutId);
     }
 
     public BlockingQueue<VNFRequest> getOffloadingInputQueue(int offloadingId) {
-        return offloadingQueues.get(offloadingId);
+        return offloadInputQueues.get(offloadingId);
+    }
+
+    public static HashMap<Integer, OffloadExecutorThread> getOffloadExecutorThreads() {
+        return offloadExecutorThreads;
     }
 
 }

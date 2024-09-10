@@ -107,7 +107,7 @@ public abstract class TStreamContent implements Content {
             record_at_ts = versions.get(ts);//not modified in last round
         }
         if (record_at_ts == null || record_at_ts.getValues() == null)
-            System.out.println("Read a null value??");
+            System.out.println("Read a null value?? " + ts);
         return record_at_ts;
     }
 
@@ -170,6 +170,7 @@ public abstract class TStreamContent implements Content {
 
     @Override
     public void garbageCollect(long ts) {
+        System.out.println("GC is properly triggered for: " + ts);
         versions.headMap(ts, false).clear();
         record.updateValues(versions.firstEntry().getValue().getValues());
     }

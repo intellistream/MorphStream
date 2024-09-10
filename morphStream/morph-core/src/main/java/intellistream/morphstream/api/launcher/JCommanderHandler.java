@@ -294,8 +294,8 @@ public class JCommanderHandler {
     public int numOffloadThreads = 4;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
 //    public String ccStrategy = "Partitioning";
-    public String ccStrategy = "Replication";
-//    public String ccStrategy = "Offloading";
+//    public String ccStrategy = "Replication";
+    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "Adaptive";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -311,13 +311,16 @@ public class JCommanderHandler {
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 0;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-    public int doMVCC = 0;
-//    public int doMVCC = 1;
+//    public int doMVCC = 0;
+    public int doMVCC = 1;
     @Parameter(names = {"--udfComplexity"}, description = "Simulated UDF complexity in microseconds")
     public int udfComplexity = 0;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
-
+    @Parameter(names = {"--gcCheckInterval"}, description = "Counter-based interval to align GC batches among instances")
+    public int gcCheckInterval = 100;
+    @Parameter(names = {"--gcBatchInterval"}, description = "Do GC after the entire batch of transactions has been processed")
+    public int gcBatchInterval = 10000;
     /** Parameters controls which csv file to read */
     @Parameter(names = {"--keySkew"})
     public int keySkew = 0;
@@ -541,6 +544,8 @@ public class JCommanderHandler {
         config.put("doMVCC", doMVCC);
         config.put("udfComplexity", udfComplexity);
         config.put("memoryIntervalMS", memoryIntervalMS);
+        config.put("gcCheckInterval", gcCheckInterval);
+        config.put("gcBatchInterval", gcBatchInterval);
         config.put("keySkew", keySkew);
         config.put("workloadSkew", workloadSkew);
         config.put("readRatio", readRatio);

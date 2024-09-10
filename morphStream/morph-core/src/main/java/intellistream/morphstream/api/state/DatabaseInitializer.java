@@ -52,7 +52,7 @@ public class DatabaseInitializer {
                 _key = String.valueOf(key);
                 insertRecord(tableName, _key, pid, spinLocks, pid);
             }
-            LOG.info("Thread " + threadId + " loaded " + (right_bound - left_bound) + " records into table " + tableName);
+//            LOG.info("Thread " + threadId + " loaded " + (right_bound - left_bound) + " records into table " + tableName);
         }
     }
     public void loadDB(int threadId, boolean isPartition) {//TODO: loadDB should be called by other CCs as well
