@@ -93,15 +93,6 @@ public class VNFManager implements Runnable {
         return tupleID / partitionGap;
     }
 
-    /** General entry for instances to sync local state update to others */
-    public static void broadcastUpdate(int originInstanceID, int tupleID, int value) {
-        for (int i = 0; i < numInstances; i++) {
-            if (i != originInstanceID) {
-                instanceMap.get(i).addStateSync(new SyncData(tupleID, value));
-            }
-        }
-    }
-
     @Override
     public void run() {
         startVNFInstances();

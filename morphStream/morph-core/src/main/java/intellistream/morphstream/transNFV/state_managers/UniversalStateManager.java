@@ -14,6 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class UniversalStateManager {
     private Thread monitorThread;
+    private Thread partitioningCCThread;
     private Thread replicationCCThread;
     private HashMap<Integer, Thread> offloadThreads = new HashMap<>();
     private static final HashMap<Integer, OffloadExecutorThread> offloadExecutorThreads = new HashMap<>();
@@ -21,6 +22,7 @@ public class UniversalStateManager {
     private Thread chcThread;
     private Thread s6Thread;
     private final LinkedBlockingQueue<PatternData> monitorQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<VNFRequest> partitioningQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> replicationQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> openNFQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<VNFRequest> chcQueue = new LinkedBlockingQueue<>();
@@ -35,6 +37,7 @@ public class UniversalStateManager {
 
     public UniversalStateManager() {
         monitorThread = new Thread(new BatchMonitorThread(monitorQueue));
+        partitioningCCThread = new Thread(new PartitionStateManager(partitioningQueue));
         replicationCCThread = new Thread(new ReplicationStateManager(replicationQueue));
         openNFThread = new Thread(new OpenNFStateManager(openNFQueue));
         chcThread = new Thread(new CHCStateManager(chcQueue));
@@ -62,21 +65,36 @@ public class UniversalStateManager {
     }
 
     public void startAdaptiveCC() {
-        monitorThread.start();
-        replicationCCThread.start();
-        for (int i = 0; i < numOffloadThreads; i++) {
-            offloadThreads.get(i).start();
-        }
-        System.out.println("CC123 and Monitor started");
+        throw new UnsupportedOperationException("Adaptive state management to be updated");
+//        monitorThread.start();
+//        replicationCCThread.start();
+//        for (int i = 0; i < numOffloadThreads; i++) {
+//            offloadThreads.get(i).start();
+//        }
+//        System.out.println("CC123 and Monitor started");
     }
 
     public void joinAdaptiveCC() {
+        throw new UnsupportedOperationException("Adaptive state management to be updated");
+//        try {
+//            monitorThread.join();
+//            replicationCCThread.join();
+//            for (int i = 0; i < numOffloadThreads; i++) {
+//                offloadThreads.get(i).join();
+//            }
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+    }
+
+    public void startPartitioningCC() {
+        partitioningCCThread.start();
+        System.out.println("Partitioning controller started");
+    }
+
+    public void joinPartitioningCC() {
         try {
-            monitorThread.join();
-            replicationCCThread.join();
-            for (int i = 0; i < numOffloadThreads; i++) {
-                offloadThreads.get(i).join();
-            }
+            partitioningCCThread.join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

@@ -22,6 +22,7 @@ public class OffloadExecutorThread implements Runnable {
     private final int offloadExecutorID;
     BlockingQueue<VNFRequest> inputQueue;
     private int requestCounter;
+    private int writeCounter;
     private final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
 
     private final OffloadSVCCStateManager svccStateManager = new OffloadSVCCStateManager();
@@ -66,6 +67,10 @@ public class OffloadExecutorThread implements Runnable {
                 break;
             }
             requestCounter++;
+            String type = request.getType();
+            if (Objects.equals(type, "Write") || Objects.equals(type, "Read-Write")) {
+                writeCounter++;
+            }
 
             try {
                 if (doMVCC == 0) {
@@ -75,14 +80,14 @@ public class OffloadExecutorThread implements Runnable {
                     executeMVCCTransaction(request);
 
                     // Each thread records the end timestamp of each batch
-                    if (requestCounter % gcBatchInterval == 0) {
+                    if (writeCounter % gcBatchInterval == 0) {
                         long lastBatchEndTimestamp = request.getCreateTime();
                         batchToTimestamp.put(currentGCBatchID, lastBatchEndTimestamp);
                         currentGCBatchID++;
                     }
 
                     // Thread 0 periodically checks for global finished batch ID and initiates GC
-                    if (requestCounter % gcCheckInterval == 0 && offloadExecutorID == 0) {
+                    if (writeCounter > 0 && writeCounter % gcCheckInterval == 0 && offloadExecutorID == 0) {
                         HashMap<Integer, OffloadExecutorThread> offloadExecutorThreads = UniversalStateManager.getOffloadExecutorThreads();
                         int minCurrentBatchID = Integer.MAX_VALUE;
 
@@ -98,7 +103,10 @@ public class OffloadExecutorThread implements Runnable {
                             }
 
                             // Garbage collection
-                            gcExecutorThread.startGC((int) minBatchEndTimestamp);
+//                            gcExecutorThread.startGC((int) minBatchEndTimestamp);
+                            for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
+                                garbageCollection(tupleID, minBatchEndTimestamp);
+                            }
                         }
                     }
 
@@ -110,7 +118,8 @@ public class OffloadExecutorThread implements Runnable {
                 throw new RuntimeException(e);
             }
 
-            sendACK(request);
+//            sendACK(request);
+            VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
         }
     }
 
@@ -195,15 +204,16 @@ public class OffloadExecutorThread implements Runnable {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request); // register finished req to instance
     }
 
     private void garbageCollection(int tupleID, long timestamp) {
         try {
-            storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.garbageCollect(timestamp);
+            storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.garbageCollect(0);
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
+
+        timeout(2); // TODO: Simulate garbage collection delay
     }
 
     public int getCurrentGCBatchID() {
@@ -212,6 +222,14 @@ public class OffloadExecutorThread implements Runnable {
 
     private long getLastBatchEndTimestamp(int batchID) {
         return batchToTimestamp.get(batchID);
+    }
+
+    private static void timeout(int microseconds) {
+        long startTime = System.nanoTime();
+        long waitTime = microseconds * 1000L; // Convert microseconds to nanoseconds
+        while (System.nanoTime() - startTime < waitTime) {
+            // Busy-wait loop
+        }
     }
     
 }

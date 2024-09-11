@@ -15,27 +15,27 @@ def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew,
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
     workloadDir = f'{rootDir}/{workloadConfig}'
 
+    readRatio = readRatio / 100
+    scopeRatio = scopeRatio / 100
+    locality = locality / 100
+
     # Ensure the output directory exists
     os.makedirs(workloadDir, exist_ok=True)
     
-    # Remove all existing files in the output directory
-    for filename in os.listdir(workloadDir):
-        file_path = os.path.join(workloadDir, filename)
-        if os.path.isfile(file_path) or os.path.islink(file_path):
-            os.unlink(file_path)
-        elif os.path.isdir(file_path):
-            os.rmdir(file_path)
-
-    os.makedirs(rootDir, exist_ok=True)
     for instance_id in range(numInstances):
+        file_path = os.path.join(workloadDir, f'instance_{instance_id}.csv')
+        
+        # Check if the specific file exists and remove it if necessary
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
         partition_start = instance_id * numItems // numInstances
         partition_end = (instance_id + 1) * numItems // numInstances
         intra_partition_keyset = list(range(partition_start, partition_end))
         cross_partition_keyset = subtract_ranges(partition_start, partition_end, numItems)
         num_request_instance = numPackets // numInstances
 
-        file_path = os.path.join(workloadDir, f'instance_{instance_id}.csv')
-
+        # Write the new workload file
         with open(file_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             for request_id in range(num_request_instance):
@@ -50,8 +50,7 @@ def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew,
                 access_type = 'Read' if random.random() < readRatio else 'Read-Write'
                 scope = 'Per-flow' if random.random() < scopeRatio else 'Cross-flow'
                 writer.writerow([request_id, key, vnfID, access_type, scope])
-            # print("intra_partition_keyset: ", intra_partition_keyset[0], ", ", intra_partition_keyset[-1])
-            # print("cross_partition_keyset: ", cross_partition_keyset[0], ", ", cross_partition_keyset[-1])
+        
         print(f'Generated file: {file_path}')
 
 
@@ -62,9 +61,9 @@ vnfID = 11
 
 numPackets = 400000
 numInstances = 4
-numItems = 5000
+numItems = 1000
 
-keySkew = 0
+keySkew = 50
 workloadSkew = 0
 readRatioList = [0, 25, 50, 75, 100]
 scopeRatioList = [0, 25, 50, 75, 100]

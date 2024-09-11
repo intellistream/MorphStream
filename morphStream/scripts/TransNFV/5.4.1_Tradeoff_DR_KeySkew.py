@@ -134,7 +134,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     
     colors = ['white', 'white']
     hatches = ['\\\\\\', '////']
-    hatch_colors = ['#d97400', '#0060bf']
+    hatch_colors = ['#0060bf', '#8c0b0b']
 
     # Prepare the structure to hold data
     data = {keySkew: {} for keySkew in keySkewList}
@@ -193,7 +193,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
 
     # Save the figure in the same directory as the script
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.1_keySkew_complexity={udfComplexity}.pdf'
+    figure_name = f'5.4.1_keySkew_range={numItems}_complexity={udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.1"
     vnfID = 11
-    numItems = 5000
+    numItems = 1000
     numPackets = 400000
     numInstances = 4
 
@@ -227,17 +227,17 @@ if __name__ == "__main__":
     puncInterval = 1000
     ccStrategy = "Partitioning"
     doMVCC = 0
-    udfComplexity = 0
+    udfComplexity = 10
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
+    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
     
-    # execute_bash_script(shellScriptPath)
+    execute_bash_script(shellScriptPath)
 
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,

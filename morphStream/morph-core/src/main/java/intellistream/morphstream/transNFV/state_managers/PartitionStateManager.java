@@ -1,10 +1,10 @@
 package intellistream.morphstream.transNFV.state_managers;
 
-import intellistream.morphstream.transNFV.common.VNFRequest;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.common.SyncData;
+import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.transNFV.vnf.VNFInstance;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
-import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,16 +12,19 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-public class ReplicationStateManager implements Runnable {
+public class PartitionStateManager implements Runnable {
     private static BlockingQueue<VNFRequest> operationQueue;
     private static long initEndTime = -1;
     private static long processEndTime = -1;
+    private final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
+    private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
+    private final int partitionRange = NUM_ITEMS / numInstances;
 
-    public ReplicationStateManager(BlockingQueue<VNFRequest> operationQueue) {
-        ReplicationStateManager.operationQueue = operationQueue;
+    public PartitionStateManager(BlockingQueue<VNFRequest> operationQueue) {
+        PartitionStateManager.operationQueue = operationQueue;
     }
 
-    public static void submitReplicationRequest(VNFRequest request) {
+    public static void submitPartitioningRequest(VNFRequest request) {
         try {
             operationQueue.put(request);
         } catch (InterruptedException e) {
@@ -43,17 +46,13 @@ public class ReplicationStateManager implements Runnable {
             if (request.getCreateTime() == -1) {
                 processEndTime = System.nanoTime();
                 writeCSVTimestamps();
-                System.out.println("Replication CC thread received stop signal");
+                System.out.println("Partitioning CC thread received stop signal");
                 break;
             }
 
-            // Simulating state update synchronization to other instances
-            for (Map.Entry<Integer, VNFInstance> entry : VNFManager.getAllInstances().entrySet()) {
-                if (entry.getKey() != request.getInstanceID()) {
-                    SyncData syncData = new SyncData(request.getTupleID(), request.getValue());
-                    entry.getValue().addStateSync(syncData);
-                }
-            }
+            int targetInstanceID = getPartitionInstance(request.getTupleID());
+            VNFInstance targetInstance = VNFManager.getInstance(targetInstanceID);
+            targetInstance.getLocalSVCCStateManager().executeTransaction(request);
 
             try {
                 VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
@@ -64,12 +63,16 @@ public class ReplicationStateManager implements Runnable {
         }
     }
 
+    private int getPartitionInstance(int tupleID) {
+        return tupleID / partitionRange;
+    }
+
 
     private static void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
-        String filePath = String.format("%s/%s.csv", baseDirectory, "Replication");
+        String filePath = String.format("%s/%s.csv", baseDirectory, "Partitioning");
         System.out.println("Writing to " + filePath);
         File dir = new File(baseDirectory);
         if (!dir.exists()) {

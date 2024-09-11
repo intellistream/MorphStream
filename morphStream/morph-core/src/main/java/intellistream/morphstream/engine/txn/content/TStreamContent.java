@@ -170,7 +170,6 @@ public abstract class TStreamContent implements Content {
 
     @Override
     public void garbageCollect(long ts) {
-        System.out.println("GC is properly triggered for: " + ts);
         versions.headMap(ts, false).clear();
         record.updateValues(versions.firstEntry().getValue().getValues());
     }

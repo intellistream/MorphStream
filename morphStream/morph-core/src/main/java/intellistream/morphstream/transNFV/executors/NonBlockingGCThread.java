@@ -46,7 +46,7 @@ public class NonBlockingGCThread implements Runnable {
                 garbageCollection(tupleID, lastBatchEndTimestamp);
             }
 
-            System.out.println("GC completed for batch with timestamp: " + lastBatchEndTimestamp);
+//            System.out.println("GC completed for batch with timestamp: " + lastBatchEndTimestamp);
         }
     }
 

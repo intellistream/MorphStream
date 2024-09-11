@@ -11,7 +11,8 @@ import csv
 
 def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path):
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path,
+                         gcCheckInterval, gcBatchInterval):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -33,6 +34,8 @@ function ResetParameters() {{
   readRatio={readRatio}
   locality={locality}
   scopeRatio={scopeRatio}
+  gcCheckInterval={gcCheckInterval}
+  gcBatchInterval={gcBatchInterval}
 }}
 
 function runTStream() {{
@@ -54,7 +57,9 @@ function runTStream() {{
           --workloadSkew $workloadSkew \\
           --readRatio $readRatio \\
           --locality $locality \\
-          --scopeRatio $scopeRatio
+          --scopeRatio $scopeRatio \\
+          --gcCheckInterval $gcCheckInterval \\
+          --gcBatchInterval $gcBatchInterval
           "
   java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
@@ -74,7 +79,9 @@ function runTStream() {{
     --workloadSkew $workloadSkew \\
     --readRatio $readRatio \\
     --locality $locality \\
-    --scopeRatio $scopeRatio
+    --scopeRatio $scopeRatio \\
+    --gcCheckInterval $gcCheckInterval \\
+    --gcBatchInterval $gcBatchInterval
 }}
 
 function iterateExperiments() {{
@@ -134,7 +141,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     
     colors = ['white', 'white']
     hatches = ['\\\\\\', '////']
-    hatch_colors = ['#d97400', '#0060bf']
+    hatch_colors = ['#0060bf', '#8c0b0b']
 
     # Prepare the structure to hold data
     data = {readRatioIndex: {} for readRatioIndex in readRatioList}
@@ -156,7 +163,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[readRatioIndex][sacOptionIndex] = None
 
-    print(data)
+    # print(data)
     # Convert the data into a NumPy array and normalize by 10^6
     throughput_data = np.array([[data[readRatioIndex][sacOptionIndex] if data[readRatioIndex][sacOptionIndex] is not None else 0
                                  for sacOptionIndex in sacList] for readRatioIndex in readRatioList]) / 1e6
@@ -211,12 +218,12 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.2"
     vnfID = 11
-    numItems = 5000
+    numItems = 1000
     numPackets = 400000
     numInstances = 4
 
     # Workload chars
-    keySkew = 75
+    keySkew = 50
     workloadSkew = 0
     readRatio = 50
     locality = 0
@@ -229,16 +236,19 @@ if __name__ == "__main__":
     ccStrategy = "Offloading"
     doMVCC = 0
     udfComplexity = 0
+    gcCheckInterval = 100
+    gcBatchInterval = 10000
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
+    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath,
+                         gcCheckInterval, gcBatchInterval)
     
-    # execute_bash_script(shellScriptPath)
+    execute_bash_script(shellScriptPath)
 
     readRatioList = [0, 25, 50, 75, 100]
     sacList = [0, 1]

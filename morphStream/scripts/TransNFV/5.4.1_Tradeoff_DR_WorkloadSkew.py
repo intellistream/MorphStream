@@ -134,7 +134,7 @@ def plot_throughput_figure(nfvExperimentPath,
     
     colors = ['white', 'white']
     hatches = ['\\\\\\', '////']
-    hatch_colors = ['#d97400', '#0060bf']
+    hatch_colors = ['#0060bf', '#8c0b0b']
 
     # Prepare the structure to hold data
     data = {workloadSkewIndex: {} for workloadSkewIndex in workloadSkewList}
@@ -193,7 +193,7 @@ def plot_throughput_figure(nfvExperimentPath,
 
     # Save the figure in the same directory as the script
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.1_workloadSkew_complexity={udfComplexity}.pdf'
+    figure_name = f'5.4.1_workloadSkew_range={numItems}_complexity={udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure

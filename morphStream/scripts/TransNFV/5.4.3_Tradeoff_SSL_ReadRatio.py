@@ -133,8 +133,8 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                         readRatioList, ccStrategyList):
     
     colors = ['white', 'white', 'white']
-    hatches = ['\\\\\\', '////', 'xxx']
-    hatch_colors = ['#d97400', '#0060bf', '#8c0b0b']
+    hatches = ['\\\\\\', '////', '--']
+    hatch_colors = ['#8c0b0b', '#0060bf', '#d97400']
 
     # Prepare the structure to hold data
     data = {readRatioIndex: {} for readRatioIndex in readRatioList}
@@ -156,7 +156,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[readRatioIndex][ccStrategyIndex] = None
 
-    print(data)
+    # print(data)
     # Convert the data into a NumPy array and normalize by 10^6
     throughput_data = np.array([[data[readRatioIndex][ccStrategyIndex] if data[readRatioIndex][ccStrategyIndex] is not None else 0
                                  for ccStrategyIndex in ccStrategyList] for readRatioIndex in readRatioList]) / 1e6
@@ -188,7 +188,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
 
     # Save the figure in the same directory as the script
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_readRatio_complexity={udfComplexity}.pdf'
+    figure_name = f'{expID}_readRatio_range={numItems}_complexity={udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
@@ -205,12 +205,12 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.3"
     vnfID = 11
-    numItems = 5000
+    numItems = 1000
     numPackets = 400000
     numInstances = 4
 
     # Workload chars
-    keySkew = 0
+    keySkew = 50
     workloadSkew = 0
     readRatio = 50
     locality = 0
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     puncInterval = 1000
     ccStrategy = "Offloading"
     doMVCC = 0
-    udfComplexity = 0
+    udfComplexity = 10
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"

@@ -100,7 +100,9 @@ public class CliFrontend {
         String ccStrategy = env.configuration().getString("ccStrategy");
         boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
         if (Objects.equals(ccStrategy, "Partitioning")) {
+            env.getAdaptiveCCManager().startPartitioningCC();
             startVNF();
+            env.getAdaptiveCCManager().joinPartitioningCC();
         } else if (Objects.equals(ccStrategy, "Replication")) {
             env.getAdaptiveCCManager().startReplicationCC();
             startVNF();
@@ -110,7 +112,7 @@ public class CliFrontend {
             startVNF();
             env.getAdaptiveCCManager().joinOffloadExecutorThreads();
         } else if (Objects.equals(ccStrategy, "Proactive")) {
-            runTopologyLocally();
+            runTopologyLocally(); // This starts the TPG threads
         } else if (Objects.equals(ccStrategy, "OpenNF")) {
             env.getAdaptiveCCManager().startOpenNF();
             startVNF();
@@ -183,37 +185,9 @@ public class CliFrontend {
     }
 
     private static void startVNF() {
-        writeIndicatorFile("manager_ready");
         Thread vnfThread = new Thread(new VNFManager());
         vnfThread.start();
         LOG.info("VNF instances have started.");
-    }
-
-    private static void writeIndicatorFile(String fileName) {
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String directoryPath = rootPath + "/indicators";
-        String filePath = String.format("%s/%s.csv", directoryPath, fileName);
-        LOG.info("Writing indicator: " + fileName);
-
-        File dir = new File(directoryPath);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory.");
-                return; // Stop further processing if unable to create the directory
-            }
-        }
-
-        File file = new File(filePath);
-        if (file.exists()) {
-            file.delete();
-        }
-
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            System.out.println("An error occurred while creating the file.");
-            e.printStackTrace();
-        }
     }
 
 }

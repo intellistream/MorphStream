@@ -124,7 +124,7 @@ vnfID = 11
 
 numPackets = 400000
 numInstances = 4
-numItems = 5000
+numItems = 1000
 
 keySkewList = [0, 25, 50, 75, 100]
 workloadSkew = 0

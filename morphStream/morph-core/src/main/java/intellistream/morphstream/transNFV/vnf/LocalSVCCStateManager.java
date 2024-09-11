@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * A global state manager that control concurrent access from Offload Executors to states under Offload-CC
+ * Each instance is guarded by its corresponding local state manager. Used in partitioning and replication
  * */
 
 public class LocalSVCCStateManager {
@@ -46,12 +46,12 @@ public class LocalSVCCStateManager {
         String type = request.getType();
 
         if (Objects.equals(type, "Read")) {
-            localSVCCDatastore.readSVCCLocalState(tupleID);
+            localSVCCDatastore.readLocalState(tupleID);
         } else if (Objects.equals(type, "Write")) {
-            localSVCCDatastore.writeSVCCLocalState(tupleID, value);
+            localSVCCDatastore.writeLocalState(tupleID, value);
         } else if (Objects.equals(type, "Read-Write")) {
-            localSVCCDatastore.readSVCCLocalState(tupleID);
-            localSVCCDatastore.writeSVCCLocalState(tupleID, value);
+            localSVCCDatastore.readLocalState(tupleID);
+            localSVCCDatastore.writeLocalState(tupleID, value);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -61,12 +61,15 @@ public class LocalSVCCStateManager {
 
     /** Warning: This is not thread-safe, need to be guarded with timeout or other sync mechanisms */
     public void nullSafeStateUpdate(int key, int value) {
-        localSVCCDatastore.writeSVCCLocalState(key, value);
+        localSVCCDatastore.writeLocalState(key, value);
     }
 
     /** Warning: This is not thread-safe, need to be guarded with timeout or other sync mechanisms */
     public int nullSafeStateRead(int key) {
-        return localSVCCDatastore.readSVCCLocalState(key);
+        return localSVCCDatastore.readLocalState(key);
     }
 
+    public LocalSVCCDatastore getLocalSVCCDatastore() {
+        return localSVCCDatastore;
+    }
 }

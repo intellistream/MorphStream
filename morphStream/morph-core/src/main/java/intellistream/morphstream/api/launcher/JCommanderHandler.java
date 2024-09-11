@@ -193,7 +193,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
-    public int numItems = 5000;//number of records in each table
+    public int numItems = 1000;//number of records in each table
     @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
     public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
@@ -295,8 +295,8 @@ public class JCommanderHandler {
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
 //    public String ccStrategy = "Partitioning";
 //    public String ccStrategy = "Replication";
-    public String ccStrategy = "Offloading";
-//    public String ccStrategy = "Proactive";
+//    public String ccStrategy = "Offloading";
+    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "Adaptive";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
@@ -305,16 +305,16 @@ public class JCommanderHandler {
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.4.3";
+    public String expID = "5.4.1";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 0;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-//    public int doMVCC = 0;
-    public int doMVCC = 1;
+    public int doMVCC = 0;
+//    public int doMVCC = 1;
     @Parameter(names = {"--udfComplexity"}, description = "Simulated UDF complexity in microseconds")
-    public int udfComplexity = 0;
+    public int udfComplexity = 10;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
     @Parameter(names = {"--gcCheckInterval"}, description = "Counter-based interval to align GC batches among instances")
@@ -327,7 +327,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--workloadSkew"})
     public int workloadSkew = 0;
     @Parameter(names = {"--readRatio"})
-    public int readRatio = 50;
+    public int readRatio = 0;
     @Parameter(names = {"--locality"})
     public int locality = 0;
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
