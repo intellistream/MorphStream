@@ -102,7 +102,7 @@ public class OffloadExecutorThread implements Runnable {
                                 minBatchEndTimestamp = Math.min(minBatchEndTimestamp, getLastBatchEndTimestamp(batchID));
                             }
 
-                            // Garbage collection
+                            // Garbage collection TODO: Hardcoded timeout
 //                            gcExecutorThread.startGC((int) minBatchEndTimestamp);
                             for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
                                 garbageCollection(tupleID, minBatchEndTimestamp);
@@ -118,7 +118,6 @@ public class OffloadExecutorThread implements Runnable {
                 throw new RuntimeException(e);
             }
 
-//            sendACK(request);
             VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
         }
     }
@@ -172,9 +171,9 @@ public class OffloadExecutorThread implements Runnable {
         // Sequentially execute operations inside transaction
         for (Operation operation : transaction.getOperations()) {
             if (operation.isWrite()) {
-                mvccStateManager.write(tupleID, -1, timestamp);
+                mvccStateManager.mvccWrite(tupleID, -1, timestamp);
             } else {
-                mvccStateManager.read(tupleID, timestamp);
+                mvccStateManager.mvccRead(tupleID, timestamp);
             }
         }
 
@@ -197,14 +196,6 @@ public class OffloadExecutorThread implements Runnable {
         return transaction;
     }
 
-
-    private void sendACK(VNFRequest request) {
-        try {
-            request.getTxnACKQueue().put(1); // ACK to instance, notify it to proceed with the next request
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private void garbageCollection(int tupleID, long timestamp) {
         try {

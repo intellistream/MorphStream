@@ -176,8 +176,6 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     # Set x-axis labels and positions
     ax.set_xticks([r + bar_width for r in range(len(localityList))])
     ax.set_xticklabels(localityList, fontsize=16)
-    ax.set_ylabel('Throughput (M req/sec)', fontsize=18, labelpad=12)
-    ax.set_xlabel('Trojan Detector Workload Variations', fontsize=18, labelpad=12)
     ax.tick_params(axis='y', labelsize=14)
     ax.set_xlabel('Locality', fontsize=18)
     ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
@@ -198,6 +196,82 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     local_figure_dir = os.path.join(local_script_dir, 'Figures')
     os.makedirs(local_figure_dir, exist_ok=True)
     plt.savefig(os.path.join(local_figure_dir, figure_name))  # Save the figure
+
+
+def plot_keyskew_latency_boxplot(nfvExperimentPath,
+                                 expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 
+                                 puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
+                                 scopeRatio, ccStrategy,
+                                 localityList, ccStrategyList):
+    
+    data = {localityIndex: {ccStrategyIndex: [] for ccStrategyIndex in ccStrategyList} for localityIndex in localityList}
+    
+    for localityIndex in localityList:
+        for ccStrategyIndex in ccStrategyList:
+            outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={localityIndex}/" \
+                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
+                 f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
+                 "latency.csv"
+            
+            try:
+                df = pd.read_csv(outputFilePath, header=None, names=['latency'])
+                data[localityIndex][ccStrategyIndex] = [value / 1e6 for value in df['latency'].tolist()]
+            except Exception as e:
+                print(f"Failed to read {outputFilePath}: {e}")
+                data[localityIndex][ccStrategyIndex] = []
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    
+    boxplot_data = []
+    boxplot_labels = []  # This will hold unique keySkew values
+    colors = ['#8c0b0b', '#0060bf', '#d97400']
+    displayedStrategyList = ["Partitioned", "Replicated", "Global"]
+    
+    positions = []  # Will store x-axis positions for the box plots
+    num_cc_strategies = len(ccStrategyList)
+    width_per_group = 0.8  # Space allocated per keySkew group
+
+    for i, localityIndex in enumerate(localityList):
+        for j, ccStrategyIndex in enumerate(ccStrategyList):
+            latency_values = data[localityIndex][ccStrategyIndex]
+            if latency_values:  # If there's data for this combination
+                boxplot_data.append(latency_values)
+                positions.append(i * (num_cc_strategies + 1) + j)
+        
+        boxplot_labels.append(f'{localityIndex}')
+
+    bplot = ax.boxplot(boxplot_data, positions=positions, patch_artist=True, widths=0.6)
+    for patch, color in zip(bplot['boxes'], colors * len(localityList)):
+        patch.set_facecolor(color)
+
+    for median in bplot['medians']:
+        median.set(linewidth=2.5) # Set the median line width
+
+    ax.set_xticks([i * (num_cc_strategies + 1) + num_cc_strategies / 2 - 0.5 for i in range(len(localityList))])
+    ax.set_xticklabels(boxplot_labels, fontsize=16)
+    ax.tick_params(axis='y', labelsize=16)
+    
+    ax.set_ylabel('Latency (s)', fontsize=18)
+    ax.set_xlabel('Key-Instance Locality', fontsize=18)
+
+    handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=3, fontsize=17)
+    plt.tight_layout()
+
+    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
+    figure_name = f'5.4.3_locality_range{numItems}_complexity{udfComplexity}_lat.pdf'
+    figure_name_png = f'5.4.3_locality_range{numItems}_complexity{udfComplexity}_lat.png'
+    figure_dir = os.path.join(script_dir, 'figures')
+    os.makedirs(figure_dir, exist_ok=True)
+    # plt.savefig(os.path.join(figure_dir, figure_name))
+    plt.savefig(os.path.join(figure_dir, figure_name_png))
+
+    local_script_dir = "/home/zhonghao/图片"
+    local_figure_dir = os.path.join(local_script_dir, 'Figures')
+    os.makedirs(local_figure_dir, exist_ok=True)
+    # plt.savefig(os.path.join(local_figure_dir, figure_name))
+    plt.savefig(os.path.join(local_figure_dir, figure_name_png))
 
 
 if __name__ == "__main__":
@@ -223,6 +297,8 @@ if __name__ == "__main__":
     ccStrategy = "Offloading"
     doMVCC = 0
     udfComplexity = 10
+    localityList = [0, 25, 50, 75, 100]
+    ccStrategyList = ["Partitioning", "Replication", "Offloading"]
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
@@ -234,11 +310,14 @@ if __name__ == "__main__":
     
     # execute_bash_script(shellScriptPath)
 
-    localityList = [0, 25, 50, 75, 100]
-    ccStrategyList = ["Partitioning", "Replication", "Offloading"]
-
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
                                    keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy, 
                                    localityList, ccStrategyList)
+    
+    plot_keyskew_latency_boxplot(rootDir,
+                                 expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 
+                                 puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
+                                 scopeRatio, ccStrategy,
+                                 localityList, ccStrategyList)
 

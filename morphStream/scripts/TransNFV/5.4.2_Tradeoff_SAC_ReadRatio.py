@@ -183,9 +183,6 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     # Set x-axis labels and positions
     ax.set_xticks([r + bar_width for r in range(len(readRatioList))])
     ax.set_xticklabels(readRatioList, fontsize=16)
-    ax.set_ylabel('Throughput (M req/sec)', fontsize=18, labelpad=12)
-    ax.set_xlabel('Trojan Detector Workload Variations', fontsize=18, labelpad=12)
-
     ax.tick_params(axis='y', labelsize=14)
 
     # Set labels and title
@@ -213,6 +210,83 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     plt.savefig(os.path.join(local_figure_dir, figure_name))  # Save the figure
 
 
+def plot_keyskew_latency_boxplot(nfvExperimentPath,
+                                 expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 
+                                 puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
+                                 scopeRatio, ccStrategy,
+                                 readRatioList, doMVCCList):
+    
+    data = {readRatioIndex: {doMVCCIndex: [] for doMVCCIndex in doMVCCList} for readRatioIndex in readRatioList}
+    
+    for readRatioIndex in readRatioList:
+        for doMVCCIndex in doMVCCList:
+            outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatioIndex}/locality={locality}/" \
+                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
+                 f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCCIndex}/udfComplexity={udfComplexity}/" \
+                 "latency.csv"
+            
+            try:
+                df = pd.read_csv(outputFilePath, header=None, names=['latency'])
+                data[readRatioIndex][doMVCCIndex] = [value / 1e6 for value in df['latency'].tolist()]
+            except Exception as e:
+                print(f"Failed to read {outputFilePath}: {e}")
+                data[readRatioIndex][doMVCCIndex] = []
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    
+    boxplot_data = []
+    boxplot_labels = []  # This will hold unique keySkew values
+    colors = ['#0060bf', '#8c0b0b']  # Different colors for different ccStrategies
+    displayedStrategyList = ["SVCC", "MVCC"]
+    
+    positions = []  # Will store x-axis positions for the box plots
+    num_cc_strategies = len(doMVCCList)
+    width_per_group = 0.8  # Space allocated per keySkew group
+
+    for i, readRatioIndex in enumerate(readRatioList):
+        for j, doMVCCIndex in enumerate(doMVCCList):
+            latency_values = data[readRatioIndex][doMVCCIndex]
+            if latency_values:  # If there's data for this combination
+                boxplot_data.append(latency_values)
+                positions.append(i * (num_cc_strategies + 1) + j)
+        
+        boxplot_labels.append(f'{readRatioIndex}')
+
+    bplot = ax.boxplot(boxplot_data, positions=positions, patch_artist=True, widths=0.6)
+    for patch, color in zip(bplot['boxes'], colors * len(readRatioList)):
+        patch.set_facecolor(color)
+
+    for median in bplot['medians']:
+        median.set(linewidth=2.5) # Set the median line width
+
+    ax.set_xticks([i * (num_cc_strategies + 1) + num_cc_strategies / 2 - 0.5 for i in range(len(readRatioList))])
+    ax.set_xticklabels(boxplot_labels, fontsize=16)
+    ax.tick_params(axis='y', labelsize=16)
+    
+    ax.set_ylabel('Latency (s)', fontsize=18)
+    ax.set_xlabel('Read Ratio', fontsize=18)
+
+    handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=17)
+    plt.tight_layout()
+
+    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
+    figure_name = f'5.4.2_readRatio_range{numItems}_complexity{udfComplexity}_lat.pdf'
+    figure_name_png = f'5.4.2_readRatio_range{numItems}_complexity{udfComplexity}_lat.png'
+    figure_dir = os.path.join(script_dir, 'figures')
+    os.makedirs(figure_dir, exist_ok=True)
+    # plt.savefig(os.path.join(figure_dir, figure_name))
+    plt.savefig(os.path.join(figure_dir, figure_name_png))
+
+    local_script_dir = "/home/zhonghao/图片"
+    local_figure_dir = os.path.join(local_script_dir, 'Figures')
+    os.makedirs(local_figure_dir, exist_ok=True)
+    # plt.savefig(os.path.join(local_figure_dir, figure_name))
+    plt.savefig(os.path.join(local_figure_dir, figure_name_png))
+
+
+
 if __name__ == "__main__":
     # Basic params
     app = "nfv_test"
@@ -223,7 +297,7 @@ if __name__ == "__main__":
     numInstances = 4
 
     # Workload chars
-    keySkew = 50
+    keySkew = 0
     workloadSkew = 0
     readRatio = 50
     locality = 0
@@ -231,11 +305,11 @@ if __name__ == "__main__":
 
     # System params
     numTPGThreads = 4
-    numOffloadThreads = 4
+    numOffloadThreads = 8
     puncInterval = 1000
     ccStrategy = "Offloading"
     doMVCC = 0
-    udfComplexity = 0
+    udfComplexity = 5
     gcCheckInterval = 100
     gcBatchInterval = 10000
 
@@ -251,10 +325,16 @@ if __name__ == "__main__":
     execute_bash_script(shellScriptPath)
 
     readRatioList = [0, 25, 50, 75, 100]
-    sacList = [0, 1]
+    doMVCCList = [0, 1]
 
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
                                    keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy, 
-                                   readRatioList, sacList)
+                                   readRatioList, doMVCCList)
+    
+    plot_keyskew_latency_boxplot(rootDir,
+                                 expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 
+                                 puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
+                                 scopeRatio, ccStrategy,
+                                 readRatioList, doMVCCList)
 

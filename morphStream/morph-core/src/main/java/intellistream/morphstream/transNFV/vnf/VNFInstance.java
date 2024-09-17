@@ -49,6 +49,7 @@ public class VNFInstance implements Runnable {
     private final int numTPGThreads;
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private int tpgRequestCount = 0;
+    private int offloadRequestCount = 0;
     private int inputLineCounter = 0;
     private long overallStartTime;
     private long overallEndTime;
@@ -252,8 +253,8 @@ public class VNFInstance implements Runnable {
         else if (Objects.equals(tupleCC, "Offloading")) {
 //            BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
 //            request.setTxnACKQueue(responseQueue);
-            offloadingQueues.get(tpgRequestCount % numOffloadThreads).offer(request);
-            tpgRequestCount++;
+            offloadingQueues.get(offloadRequestCount % numOffloadThreads).offer(request);
+            offloadRequestCount++;
 //            if (!Objects.equals(request.getType(), "Write")) { //Simply continue with the next request without waiting for ACK
 //                while (responseQueue.isEmpty()) {
 //                    //Wait for manager's ack

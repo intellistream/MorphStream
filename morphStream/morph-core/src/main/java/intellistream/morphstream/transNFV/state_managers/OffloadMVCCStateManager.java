@@ -32,7 +32,7 @@ public class OffloadMVCCStateManager {
         }
     }
 
-    public void write(int key, int value, long timestamp) throws InterruptedException {
+    public void mvccWrite(int key, int value, long timestamp) throws InterruptedException {
         VersionControl versionedValue = versionedStateTable.get(key);
         if (versionedValue == null) {
             throw new RuntimeException("Key does not exist");
@@ -54,7 +54,7 @@ public class OffloadMVCCStateManager {
         }
     }
 
-    public int read(int key, long timestamp) throws InterruptedException {
+    public int mvccRead(int key, long timestamp) throws InterruptedException {
         VersionControl versionedValue = versionedStateTable.get(key);
         if (versionedValue == null) {
             throw new RuntimeException("Key does not exist");

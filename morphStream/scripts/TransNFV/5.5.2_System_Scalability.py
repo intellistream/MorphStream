@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import csv
 
-
 def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
                          doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path):
@@ -79,9 +78,11 @@ function runTStream() {{
 
 function iterateExperiments() {{
   ResetParameters
-  for readRatio in 0 25 50 75 100
+  for numThread in 1 2 4 8 16
   do
-    for ccStrategy in Partitioning Replication Offloading
+    numTPGThreads=$numThread
+    numOffloadThreads=$numThread
+    for ccStrategy in Partitioning Replication Offloading Proactive
     do
       runTStream
     done
@@ -128,68 +129,67 @@ def execute_bash_script(script_path):
 
 def plot_keyskew_throughput_figure(nfvExperimentPath,
                         expID, vnfID, numPackets, numItems, numInstances, 
-                        numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity, 
-                        keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy,
-                        readRatioList, ccStrategyList):
+                        numTPGThreads, numOffloadThreads, puncInterval, 
+                        doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio,
+                        numThreadsList, ccStrategyList):
     
-    colors = ['white', 'white', 'white']
-    hatches = ['\\\\\\', '////', '--']
-    hatch_colors = ['#8c0b0b', '#0060bf', '#d97400']
+    colors = ['white', 'white', 'white', 'white']
+    hatches = ['\\\\\\', '////', '--', 'xxx']
+    hatch_colors = ['#0060bf', '#8c0b0b', '#d97400', '#7812a1']
 
     # Prepare the structure to hold data
-    data = {readRatioIndex: {} for readRatioIndex in readRatioList}
+    data = {keySkew: {} for keySkew in numThreadsList}
 
     # Iterate over the patterns and ccStrategies
-    for readRatioIndex in readRatioList:
+    for numThreadsIndex in numThreadsList:
         for ccStrategyIndex in ccStrategyList:
             outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
-                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatioIndex}/locality={locality}/" \
-                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
+                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
+                 f"scopeRatio={scopeRatio}/numTPGThreads={numThreadsIndex}/numOffloadThreads={numThreadsIndex}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
                  "throughput.csv"
 
             # Read the CSV file
             try:
                 df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
-                data[readRatioIndex][ccStrategyIndex] = df['Throughput'].iloc[0]
+                data[numThreadsIndex][ccStrategyIndex] = df['Throughput'].iloc[0]
             except Exception as e:
                 print(f"Failed to read {outputFilePath}: {e}")
-                data[readRatioIndex][ccStrategyIndex] = None
+                data[numThreadsIndex][ccStrategyIndex] = None
 
-    # print(data)
     # Convert the data into a NumPy array and normalize by 10^6
-    throughput_data = np.array([[data[readRatioIndex][ccStrategyIndex] if data[readRatioIndex][ccStrategyIndex] is not None else 0
-                                 for ccStrategyIndex in ccStrategyList] for readRatioIndex in readRatioList]) / 1e6
-
+    throughput_data = np.array([[data[numThreads][ccStrategy] if data[numThreads][ccStrategy] is not None else 0
+                                 for ccStrategy in ccStrategyList] for numThreads in numThreadsList]) / 1e6
+    
+    print(throughput_data)
     # Plotting parameters
     bar_width = 0.2
-    index = np.arange(len(readRatioList))
+    index = np.arange(len(numThreadsList))
 
     # Plot the data
     fig, ax = plt.subplots(figsize=(7, 5))
 
-    displayedStrategyList = ["Partitioned", "Replicated", "Global"]
+    displayedStrategyList = ["Partitioning", "Replication", "Offloading", "Proactive"]
     for i, strategy in enumerate(ccStrategyList):
         ax.bar(index + i * bar_width, throughput_data[:, i], color=colors[i], hatch=hatches[i],
                edgecolor=hatch_colors[i], width=bar_width, label=displayedStrategyList[i])
 
-    # Set x-axis labels and positions
-    ax.set_xticks([r + bar_width for r in range(len(readRatioList))])
-    ax.set_xticklabels(readRatioList, fontsize=16)
+    ax.set_xticks([r + bar_width for r in range(len(numThreadsList))])
+    ax.set_xticklabels(numThreadsList, fontsize=16)
     ax.tick_params(axis='y', labelsize=14)
-    ax.set_xlabel('Read Ratio', fontsize=18)
+    ax.set_xlabel('Number of Executor Threads', fontsize=18)
     ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
+
     handles = [Patch(facecolor=color, edgecolor=hatchcolor, hatch=hatch, label=label)
                for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, displayedStrategyList)]
-    ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=3, fontsize=16)
+    ax.legend(handles=handles, bbox_to_anchor=(0.5, 1), loc='upper center', ncol=2, fontsize=16)
+
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    # Save the figure in the same directory as the script
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_readRatio_range={numItems}_complexity={udfComplexity}.pdf'
+    figure_name = f'5.5.2_numThre_range={numItems}_complexity={udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
 
     local_script_dir = "/home/zhonghao/图片"
@@ -198,93 +198,18 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     plt.savefig(os.path.join(local_figure_dir, figure_name))  # Save the figure
 
 
-def plot_keyskew_latency_boxplot(nfvExperimentPath,
-                                 expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 
-                                 puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
-                                 scopeRatio, ccStrategy,
-                                 readRatioList, ccStrategyList):
-    
-    data = {readRatioIndex: {ccStrategyIndex: [] for ccStrategyIndex in ccStrategyList} for readRatioIndex in readRatioList}
-    
-    for readRatioIndex in readRatioList:
-        for ccStrategyIndex in ccStrategyList:
-            outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
-                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatioIndex}/locality={locality}/" \
-                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
-                 f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
-                 "latency.csv"
-            
-            try:
-                df = pd.read_csv(outputFilePath, header=None, names=['latency'])
-                data[readRatioIndex][ccStrategyIndex] = [value / 1e6 for value in df['latency'].tolist()]
-            except Exception as e:
-                print(f"Failed to read {outputFilePath}: {e}")
-                data[readRatioIndex][ccStrategyIndex] = []
-
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    
-    boxplot_data = []
-    boxplot_labels = []  # This will hold unique keySkew values
-    colors = ['#8c0b0b', '#0060bf', '#d97400']
-    displayedStrategyList = ["Partitioned", "Replicated", "Global"]
-    
-    positions = []  # Will store x-axis positions for the box plots
-    num_cc_strategies = len(ccStrategyList)
-    width_per_group = 0.8  # Space allocated per keySkew group
-
-    for i, readRatioIndex in enumerate(readRatioList):
-        for j, ccStrategyIndex in enumerate(ccStrategyList):
-            latency_values = data[readRatioIndex][ccStrategyIndex]
-            if latency_values:  # If there's data for this combination
-                boxplot_data.append(latency_values)
-                positions.append(i * (num_cc_strategies + 1) + j)
-        
-        boxplot_labels.append(f'{readRatioIndex}')
-
-    bplot = ax.boxplot(boxplot_data, positions=positions, patch_artist=True, widths=0.6)
-    for patch, color in zip(bplot['boxes'], colors * len(readRatioList)):
-        patch.set_facecolor(color)
-
-    for median in bplot['medians']:
-        median.set(linewidth=2.5) # Set the median line width
-
-    ax.set_xticks([i * (num_cc_strategies + 1) + num_cc_strategies / 2 - 0.5 for i in range(len(readRatioList))])
-    ax.set_xticklabels(boxplot_labels, fontsize=16)
-    ax.tick_params(axis='y', labelsize=16)
-    
-    ax.set_ylabel('Latency (s)', fontsize=18)
-    ax.set_xlabel('Read Ratio', fontsize=18)
-
-    handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
-    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=3, fontsize=17)
-    plt.tight_layout()
-
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.3_readRatio_range{numItems}_complexity{udfComplexity}_lat.pdf'
-    figure_name_png = f'5.4.3_readRatio_range{numItems}_complexity{udfComplexity}_lat.png'
-    figure_dir = os.path.join(script_dir, 'figures')
-    os.makedirs(figure_dir, exist_ok=True)
-    # plt.savefig(os.path.join(figure_dir, figure_name))
-    plt.savefig(os.path.join(figure_dir, figure_name_png))
-
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    # plt.savefig(os.path.join(local_figure_dir, figure_name))
-    plt.savefig(os.path.join(local_figure_dir, figure_name_png))
-
 
 if __name__ == "__main__":
     # Basic params
     app = "nfv_test"
-    expID = "5.4.3"
+    expID = "5.5.2"
     vnfID = 11
-    numItems = 1000
+    numItems = 1600
     numPackets = 400000
     numInstances = 4
 
     # Workload chars
-    keySkew = 50
+    keySkew = 0
     workloadSkew = 0
     readRatio = 50
     locality = 0
@@ -294,14 +219,14 @@ if __name__ == "__main__":
     numTPGThreads = 4
     numOffloadThreads = 4
     puncInterval = 1000
-    ccStrategy = "Offloading"
+    ccStrategy = "Partitioning"
     doMVCC = 0
     udfComplexity = 10
-    readRatioList = [0, 25, 50, 75, 100]
-    ccStrategyList = ["Partitioning", "Replication", "Offloading"]
+    numInstances = 4
+    numThreadsList = [1, 2, 4, 8, 16]
+    ccStrategyList = ["Partitioning", "Replication", "Offloading", "Proactive"]
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
     # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
@@ -310,16 +235,7 @@ if __name__ == "__main__":
     
     # execute_bash_script(shellScriptPath)
 
-    
-
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
-                                   keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy, 
-                                   readRatioList, ccStrategyList)
-    
-    plot_keyskew_latency_boxplot(rootDir,
-                                 expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 
-                                 puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
-                                 scopeRatio, ccStrategy,
-                                 readRatioList, ccStrategyList)
+                                   keySkew, workloadSkew, readRatio, locality, scopeRatio, numThreadsList, ccStrategyList)
 

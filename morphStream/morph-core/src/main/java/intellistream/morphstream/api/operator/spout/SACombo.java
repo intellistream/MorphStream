@@ -108,7 +108,7 @@ public class SACombo extends AbstractSpoutCombo {
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps", "Preemptive");
         String filePath = String.format("%s/bolt_%d.csv", baseDirectory, this.taskId);
-        System.out.println("Writing to " + filePath);
+//        System.out.println("Writing to " + filePath);
         File dir = new File(baseDirectory);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {

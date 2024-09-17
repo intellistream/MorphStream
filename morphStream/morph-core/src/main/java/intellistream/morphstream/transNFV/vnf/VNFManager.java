@@ -1,6 +1,5 @@
 package intellistream.morphstream.transNFV.vnf;
 
-import intellistream.morphstream.transNFV.common.SyncData;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
@@ -111,16 +110,16 @@ public class VNFManager implements Runnable {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         switch (experimentID) {
             case "5.1": // Preliminary study
-                writeCSVThroughput(patternString, ccStrategy, overallThroughput);
+                writeCSVThroughput_Pattern(patternString, ccStrategy, overallThroughput);
                 break;
             case "5.2.1": // Static VNF throughput and latency
-                writeCSVThroughput(patternString, ccStrategy, overallThroughput);
-                writeCSVLatency(patternString, ccStrategy);
+                writeCSVThroughput_Pattern(patternString, ccStrategy, overallThroughput);
+                writeCSVLatency_Pattern(patternString, ccStrategy);
                 break;
             case "5.2.2": // Dynamic VNF throughput and latency
                 computeDynamicThroughput();
                 writeCSVDynamicThroughput(patternString, ccStrategy);
-                writeCSVLatency(patternString, ccStrategy);
+                writeCSVLatency_Pattern(patternString, ccStrategy);
                 break;
             case "5.3.1": // Dynamic VNF time breakdown
                 computeTimeBreakdown();
@@ -129,6 +128,11 @@ public class VNFManager implements Runnable {
             case "5.4.1":
             case "5.4.2":
             case "5.4.3":
+                writeCSVThroughput(outputFileDir, overallThroughput);
+                writeCSVLatency(outputFileDir);
+                break;
+            case "5.5.1":
+            case "5.5.2":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 break;
         }
@@ -156,8 +160,8 @@ public class VNFManager implements Runnable {
         instanceLatencyStats.clear();
         for (int i = 0; i < numInstances; i++) {
             for (VNFRequest request : latencyMap.get(i)) {
-                long latency = request.getFinishTime() - request.getCreateTime();
-                double latencyInUS = latency / 1E3;
+                long latency = request.getFinishTime() - request.getCreateTime(); // in nanoseconds (1e-9)
+                double latencyInUS = latency / 1E3; // in microseconds (1e-6)
                 instanceLatencyStats.addValue(latencyInUS);
             }
         }
@@ -294,7 +298,7 @@ public class VNFManager implements Runnable {
         }
     }
 
-    private static void writeCSVLatency(String pattern, String ccStrategy) {
+    private static void writeCSVLatency_Pattern(String pattern, String ccStrategy) {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "latency");
@@ -331,7 +335,7 @@ public class VNFManager implements Runnable {
         }
     }
 
-    private static void writeCSVThroughput(String pattern, String ccStrategy, double throughput) {
+    private static void writeCSVThroughput_Pattern(String pattern, String ccStrategy, double throughput) {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
@@ -385,7 +389,37 @@ public class VNFManager implements Runnable {
         try (FileWriter fileWriter = new FileWriter(file)) {
             String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
             fileWriter.write(lineToWrite);
-            System.out.println("Data written to CSV file successfully.");
+            System.out.println("Throughput data written to CSV file successfully.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeCSVLatency(String outputDir) {
+        String filePath = String.format("%s/latency.csv", outputDir);
+        System.out.println("Writing to " + filePath);
+        File dir = new File(outputDir);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            for (double latency : instanceLatencyStats.getValues()) {
+                String lineToWrite = String.valueOf(latency) + "\n";
+                fileWriter.write(lineToWrite);
+            }
+            System.out.println("Latency data written to CSV file successfully.");
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();

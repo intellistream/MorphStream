@@ -65,7 +65,8 @@ public class OffloadSVCCStateManager {
 
             UDF.executeUDF(request); // Simulated UDF execution
 
-        } catch (DatabaseException e) {
+        } catch (DatabaseException | NullPointerException e) {
+            System.out.println("Offload CC received error request with tupleID: " + request.getTupleID() + " and instanceID: " + request.getInstanceID());
             throw new RuntimeException(e);
         }
     }
