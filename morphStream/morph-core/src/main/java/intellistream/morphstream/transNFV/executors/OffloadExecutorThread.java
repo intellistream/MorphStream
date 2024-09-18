@@ -9,7 +9,6 @@ import intellistream.morphstream.transNFV.state_managers.OffloadSVCCStateManager
 import intellistream.morphstream.transNFV.common.Operation;
 import intellistream.morphstream.transNFV.common.Transaction;
 import intellistream.morphstream.transNFV.state_managers.UniversalStateManager;
-import intellistream.morphstream.transNFV.vnf.UDF;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 
 import java.util.HashMap;
@@ -25,8 +24,8 @@ public class OffloadExecutorThread implements Runnable {
     private int writeCounter;
     private final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
 
-    private final OffloadSVCCStateManager svccStateManager = new OffloadSVCCStateManager();
-    private final OffloadMVCCStateManager mvccStateManager = new OffloadMVCCStateManager();
+    private final OffloadSVCCStateManager svccStateManager;
+    private final OffloadMVCCStateManager mvccStateManager;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private static final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
 
@@ -38,17 +37,20 @@ public class OffloadExecutorThread implements Runnable {
     private int globalCurrentGCBatchID = 0;
     private NonBlockingGCThread gcExecutorThread;
 
-    public OffloadExecutorThread(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue) {
+    public OffloadExecutorThread(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue,
+                                 OffloadSVCCStateManager svccStateManager, OffloadMVCCStateManager mvccStateManager) {
         this.offloadExecutorID = offloadExecutorID;
         this.inputQueue = inputQueue;
+        this.svccStateManager = svccStateManager;
+        this.mvccStateManager = mvccStateManager;
     }
 
     @Override
     public void run() {
         if (offloadExecutorID == 0 && doMVCC == 1) {
-            gcExecutorThread = new NonBlockingGCThread();
-            Thread gcThread = new Thread(gcExecutorThread);
-            gcThread.start();
+//            gcExecutorThread = new NonBlockingGCThread();
+//            Thread gcThread = new Thread(gcExecutorThread);
+//            gcThread.start();
         }
 
         while (!Thread.currentThread().isInterrupted()) {
@@ -60,12 +62,13 @@ public class OffloadExecutorThread implements Runnable {
             }
             if (request.getCreateTime() == -1) {
                 System.out.println("Offload executor " + offloadExecutorID + " received stop signal. Total requests: " + requestCounter);
-                if (offloadExecutorID == 0 && doMVCC == 1) {
-                    gcExecutorThread.stopGC();
-                    System.out.println("GC thread stopped.");
-                }
+//                if (offloadExecutorID == 0 && doMVCC == 1) {
+//                    gcExecutorThread.stopGC();
+//                    System.out.println("GC thread stopped.");
+//                }
                 break;
             }
+
             requestCounter++;
             String type = request.getType();
             if (Objects.equals(type, "Write") || Objects.equals(type, "Read-Write")) {
@@ -91,19 +94,23 @@ public class OffloadExecutorThread implements Runnable {
                         HashMap<Integer, OffloadExecutorThread> offloadExecutorThreads = UniversalStateManager.getOffloadExecutorThreads();
                         int minCurrentBatchID = Integer.MAX_VALUE;
 
+                        // Find the minimum finished batch ID among all threads
                         for (OffloadExecutorThread offloadExecutorThread : offloadExecutorThreads.values()) {
                             minCurrentBatchID = Math.min(minCurrentBatchID, offloadExecutorThread.getCurrentGCBatchID());
                         }
 
+                        // If the global finished batch ID is updated, initiate GC
                         if (minCurrentBatchID > globalCurrentGCBatchID) {
                             globalCurrentGCBatchID = minCurrentBatchID;
                             long minBatchEndTimestamp = Long.MAX_VALUE;
-                            for (int batchID = 0; batchID < globalCurrentGCBatchID; batchID++) {
-                                minBatchEndTimestamp = Math.min(minBatchEndTimestamp, getLastBatchEndTimestamp(batchID));
+
+                            for (OffloadExecutorThread offloadExecutorThread : offloadExecutorThreads.values()) {
+                                minBatchEndTimestamp = Math.min(minBatchEndTimestamp, offloadExecutorThread.getLastBatchEndTimestamp(globalCurrentGCBatchID - 1));
                             }
 
-                            // Garbage collection TODO: Hardcoded timeout
-//                            gcExecutorThread.startGC((int) minBatchEndTimestamp);
+                            System.out.println("Offload executor 0 initiates GC for batch " + (globalCurrentGCBatchID - 1) + " with end timestamp " + minBatchEndTimestamp);
+
+                            // Garbage collection
                             for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
                                 garbageCollection(tupleID, minBatchEndTimestamp);
                             }
@@ -140,7 +147,6 @@ public class OffloadExecutorThread implements Runnable {
                 sharedLocks.add(operation.getKey());
             }
         }
-
         sharedLocks.removeAll(exclusiveLocks);
         for (int key : sharedLocks) {
             svccStateManager.acquireLock(key, transaction.getTimestamp(), false);
@@ -151,7 +157,7 @@ public class OffloadExecutorThread implements Runnable {
             transaction.getAcquiredLocks().add(key);
         }
 
-        // Simulate transaction execution
+        // Execute transaction
         svccStateManager.executeTransaction(request);
 
         // Phase 2: Release all locks
@@ -165,19 +171,17 @@ public class OffloadExecutorThread implements Runnable {
         int tupleID = request.getTupleID();
         String type = request.getType();
         long timestamp = request.getCreateTime();
-
         Transaction transaction = constructTransaction(request, type, tupleID, timestamp);
 
         // Sequentially execute operations inside transaction
         for (Operation operation : transaction.getOperations()) {
             if (operation.isWrite()) {
-                mvccStateManager.mvccWrite(tupleID, -1, timestamp);
+                mvccStateManager.mvccWrite(request);
+
             } else {
-                mvccStateManager.mvccRead(tupleID, timestamp);
+                mvccStateManager.mvccRead(request);
             }
         }
-
-        UDF.executeUDF(request); // Simulated UDF execution
     }
 
 
@@ -186,9 +190,6 @@ public class OffloadExecutorThread implements Runnable {
         if (Objects.equals(type, "Read")) {
             transaction.addOperation(tupleID, -1, timestamp,false);
         } else if (Objects.equals(type, "Write")) {
-            transaction.addOperation(tupleID, -1, timestamp, true);
-        } else if (Objects.equals(type, "Read-Write")) {
-            transaction.addOperation(tupleID, -1, timestamp, false);
             transaction.addOperation(tupleID, -1, timestamp, true);
         } else {
             throw new UnsupportedOperationException("Unsupported operation type: " + type);
@@ -203,8 +204,6 @@ public class OffloadExecutorThread implements Runnable {
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
-
-        timeout(2); // TODO: Simulate garbage collection delay
     }
 
     public int getCurrentGCBatchID() {

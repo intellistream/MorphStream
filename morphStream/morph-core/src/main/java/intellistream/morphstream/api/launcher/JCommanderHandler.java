@@ -193,7 +193,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
-    public int numItems = 1000;//number of records in each table
+    public int numItems = 10000;//number of records in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "testTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
@@ -303,14 +303,14 @@ public class JCommanderHandler {
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.4.3";
+    public String expID = "5.4.2";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
     public int enableMemoryFootprint = 0;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-    public int doMVCC = 0;
-//    public int doMVCC = 1;
+//    public int doMVCC = 0;
+    public int doMVCC = 1;
     @Parameter(names = {"--udfComplexity"}, description = "Simulated UDF complexity in microseconds")
     public int udfComplexity = 10;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")

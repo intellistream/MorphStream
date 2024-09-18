@@ -24,7 +24,7 @@ public class S2PLLockObject {
 
             // Blocked
             while (!request.equals(lockQueue.peek())
-//                        || lockQueue.size() < S2PLLockManagerOrdered.numExecutors // TODO: Double confirm the queue length value to ensure ordering, or use timeout instead?
+//                        || lockQueue.size() < S2PLLockManagerOrdered.numExecutors //TODO: Enforce lock ordering?
                     || (isWrite && (hasExclusiveLock || sharedLockCount > 0))
                     || (!isWrite && hasExclusiveLock)) {
                 condition.await();  // Wait on the shared condition
@@ -61,7 +61,4 @@ public class S2PLLockObject {
         }
     }
 
-//    public boolean isFree() {
-//        return !hasExclusiveLock && sharedLockCount == 0;
-//    }
 }

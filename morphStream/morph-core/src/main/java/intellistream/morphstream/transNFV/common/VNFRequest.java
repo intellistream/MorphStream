@@ -7,7 +7,7 @@ public class VNFRequest {
     private final int instanceID;
     private final int tupleID;
     private final int value;
-    private final String type; // 0: read, 1: write, 2: read-write
+    private final String type; // Read or Write
     private final String scope; // 0: per-flow, 1: cross-flow
     private final long createTime; // Time when the request is created by the instance
     private long finishTime; // Time when the finished request is received by the instance

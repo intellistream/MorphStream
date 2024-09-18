@@ -86,7 +86,7 @@ function runTStream() {{
 
 function iterateExperiments() {{
   ResetParameters
-  for keySkew in 0 25 50 75 100
+  for keySkew in 0 50 100 150 200 250
   do
     for doMVCC in 0 1
     do
@@ -179,7 +179,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_keySkew_complexity={udfComplexity}.pdf'
+    figure_name = f'{expID}_key_range{numItems}_comp{udfComplexity}_read{readRatio}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
@@ -253,8 +253,8 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     plt.tight_layout()
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.2_keySkew_range{numItems}_complexity{udfComplexity}_lat.pdf'
-    figure_name_png = f'5.4.2_keySkew_range{numItems}_complexity{udfComplexity}_lat.png'
+    figure_name = f'5.4.2_key_range{numItems}_comp{udfComplexity}_read{readRatio}_lat.pdf'
+    figure_name_png = f'5.4.2_key_range{numItems}_comp{udfComplexity}_lat.png'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     # plt.savefig(os.path.join(figure_dir, figure_name))
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.2"
     vnfID = 11
-    numItems = 1000
+    numItems = 10000
     numPackets = 400000
     numInstances = 4
 
@@ -289,9 +289,9 @@ if __name__ == "__main__":
     puncInterval = 1000
     ccStrategy = "Offloading"
     doMVCC = 0
-    udfComplexity = 10
-    gcCheckInterval = 100
-    gcBatchInterval = 10000
+    udfComplexity = 5
+    gcCheckInterval = 1000000
+    gcBatchInterval = 1000000
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
@@ -304,7 +304,7 @@ if __name__ == "__main__":
     
     execute_bash_script(shellScriptPath)
     
-    keySkewList = [0, 25, 50, 75, 100]
+    keySkewList = [0, 50, 100, 150, 200, 250]
     sacList = [0, 1]
 
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,

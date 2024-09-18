@@ -198,7 +198,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
 
     # Save the figure in the same directory as the script
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_readRatio_complexity={udfComplexity}.pdf'
+    figure_name = f'{expID}_readRatio_range={numItems}_complexity={udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.2"
     vnfID = 11
-    numItems = 1000
+    numItems = 5000
     numPackets = 400000
     numInstances = 4
 
@@ -305,24 +305,24 @@ if __name__ == "__main__":
 
     # System params
     numTPGThreads = 4
-    numOffloadThreads = 8
+    numOffloadThreads = 4
     puncInterval = 1000
     ccStrategy = "Offloading"
     doMVCC = 0
     udfComplexity = 5
-    gcCheckInterval = 100
-    gcBatchInterval = 10000
+    gcCheckInterval = 1000000
+    gcBatchInterval = 1000000
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath,
-                         gcCheckInterval, gcBatchInterval)
+    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
+    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath,
+    #                      gcCheckInterval, gcBatchInterval)
     
-    execute_bash_script(shellScriptPath)
+    # execute_bash_script(shellScriptPath)
 
     readRatioList = [0, 25, 50, 75, 100]
     doMVCCList = [0, 1]

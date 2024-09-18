@@ -18,6 +18,8 @@ public class UniversalStateManager {
     private Thread replicationCCThread;
     private HashMap<Integer, Thread> offloadThreads = new HashMap<>();
     private static final HashMap<Integer, OffloadExecutorThread> offloadExecutorThreads = new HashMap<>();
+    private static final OffloadSVCCStateManager svccStateManager = new OffloadSVCCStateManager();
+    private static final OffloadMVCCStateManager mvccStateManager = new OffloadMVCCStateManager();
     private Thread openNFThread;
     private Thread chcThread;
     private Thread s6Thread;
@@ -52,7 +54,7 @@ public class UniversalStateManager {
         for (int i = 0; i < numOffloadThreads; i++) {
             BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
             offloadInputQueues.put(i, inputQueue);
-            OffloadExecutorThread offloadExecutorThread = new OffloadExecutorThread(i, inputQueue);
+            OffloadExecutorThread offloadExecutorThread = new OffloadExecutorThread(i, inputQueue, svccStateManager, mvccStateManager);
             offloadExecutorThreads.put(i, offloadExecutorThread);
             Thread offloadThread = new Thread(offloadExecutorThread);
             offloadThreads.put(i, offloadThread);

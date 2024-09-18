@@ -17,15 +17,9 @@ def zipfian_distribution(num_keys, zipf_skewness, num_samples):
     Returns:
     key_accesses (list): List of accessed keys.
     """
-
-    # Generate keys in the range [0, num_keys-1]
     keys = np.arange(0, num_keys)
-
-    # Calculate probabilities using Zipf's law
     probabilities = 1 / np.power(keys + 1, zipf_skewness)  # keys + 1 to avoid division by zero
     probabilities /= np.sum(probabilities)  # Normalize to sum to 1
-
-    # Generate key accesses based on the Zipfian distribution
     key_accesses = np.random.choice(keys, size=num_samples, p=probabilities)
 
     return key_accesses
@@ -65,7 +59,7 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
     # plt.title('Zipfian Distribution of Key Accesses')
     # plt.show()
 
-    types = np.random.choice(['Read', 'Read-Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
+    types = np.random.choice(['Read', 'Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
     scopes = np.random.choice(['Per-flow', 'Cross-flow'], total_requests, p=[prob_scope, 1 - prob_scope])
     
     lines = []
@@ -124,9 +118,9 @@ vnfID = 11
 
 numPackets = 400000
 numInstances = 4
-numItems = 1000
+numItems = 10000
 
-keySkewList = [0, 25, 50, 75, 100]
+keySkewList = [0, 25, 50, 75, 100, 150, 200, 250]
 workloadSkew = 0
 readRatioList = [0, 25, 50, 75, 100]
 scopeRatio = 0

@@ -4,9 +4,9 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
-import intellistream.morphstream.transNFV.common.VersionControl;
+import intellistream.morphstream.transNFV.common.VNFRequest;
+import intellistream.morphstream.transNFV.common.OffloadVersionControl;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -15,61 +15,75 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class OffloadMVCCStateManager {
     // Map to store versions of each key's value and their locks
-    private final Map<Integer, VersionControl> versionedStateTable = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, OffloadVersionControl> versionedStateTable = new ConcurrentHashMap<>();
 
-    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-    private static final int numExecutors = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
-    private static final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
+    private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private final int numExecutors = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
+    private final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
 
     public OffloadMVCCStateManager() {
         for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
             try {
                 TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                versionedStateTable.put(tupleID, new VersionControl(tableRecord));
+                versionedStateTable.put(tupleID, new OffloadVersionControl(tableRecord));
             } catch (DatabaseException e) {
                 throw new RuntimeException(e);
+            } catch (NullPointerException e) {
+                throw new RuntimeException("Key does not exist: " + tupleID);
             }
         }
     }
 
-    public void mvccWrite(int key, int value, long timestamp) throws InterruptedException {
-        VersionControl versionedValue = versionedStateTable.get(key);
-        if (versionedValue == null) {
+    public void mvccWrite(VNFRequest request) throws InterruptedException {
+        int key = request.getTupleID();
+        int value = request.getValue();
+        long timestamp = request.getCreateTime();
+        OffloadVersionControl targetVersionControl = versionedStateTable.get(key);
+        if (targetVersionControl == null) {
             throw new RuntimeException("Key does not exist");
         }
 
-        versionedValue.lock();
+        targetVersionControl.lock();
         try {
-            versionedValue.enqueueWriteRequest(key, value, timestamp, true);
+            targetVersionControl.enqueueWriteRequest(key, value, timestamp, true);
 
             // Only allow the write with the smallest timestamp
-            while (!versionedValue.canGrantWrite(timestamp)) {
-                versionedValue.awaitWrite();
+            while (!targetVersionControl.canGrantWrite(timestamp)) {
+                targetVersionControl.awaitForWrite();
             }
 
-            versionedValue.commitWrite(timestamp, value);
-            versionedValue.signalAll();
+            // State access
+            targetVersionControl.writeVersion(request);
+
+            // Signal all waiting threads TODO: This can be improved by only signal one thread
+            targetVersionControl.signalNext();
+
         } finally {
-            versionedValue.unlock();
+            targetVersionControl.unlock();
         }
     }
 
-    public int mvccRead(int key, long timestamp) throws InterruptedException {
-        VersionControl versionedValue = versionedStateTable.get(key);
-        if (versionedValue == null) {
+    public int mvccRead(VNFRequest request) throws InterruptedException {
+        int key = request.getTupleID();
+        long timestamp = request.getCreateTime();
+        OffloadVersionControl targetVersionControl = versionedStateTable.get(key);
+        if (targetVersionControl == null) {
             throw new RuntimeException("Key does not exist");
         }
 
-        versionedValue.lock();
+        targetVersionControl.lock();
         try {
             // Only allow reads if the timestamp is smaller than the LWM
-            while (versionedValue.isWriting() && !versionedValue.canGrantRead(timestamp)) {
-                versionedValue.awaitWrite();
+            while (!targetVersionControl.canGrantRead(timestamp)) {
+                targetVersionControl.awaitForWrite();
             }
 
-            return versionedValue.getVersion(timestamp);
-        } finally {
-            versionedValue.unlock();
+            // State access
+            return targetVersionControl.readVersion(timestamp);
+
+        }
+        finally {
+            targetVersionControl.unlock();
         }
     }
 }

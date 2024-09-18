@@ -19,8 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class OffloadSVCCStateManager {
     private final Map<Integer, S2PLLockObject> lockTable = new ConcurrentHashMap<>();
-    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
-    private static final int numExecutors = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
+    private final HashMap<Integer, Integer> singleVersionStorage = new HashMap<>();
+    private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private final int numExecutors = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
 //    private static final int numExecutors = 2;
 
     public void acquireLock(int key, long timestamp, boolean isWrite) throws InterruptedException {
@@ -43,32 +44,35 @@ public class OffloadSVCCStateManager {
         long timeStamp = request.getCreateTime();
         String type = request.getType();
 
-        try {
-            if (Objects.equals(type, "Read")) {
-                storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.readPreValues(timeStamp).getValues().get(1).getInt();
-            } else if (Objects.equals(type, "Write")) {
-                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                tempo_record.getValues().get(1).setInt(-1);
-                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-            } else if (Objects.equals(type, "Read-Write")) {
-                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                int readValue = readRecord.getValues().get(1).getInt();
-                SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                tempo_record.getValues().get(1).setInt(readValue);
-                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-            } else {
-                throw new UnsupportedOperationException();
-            }
-
+        if (Objects.equals(type,"Read")) {
+            singleVersionStorage.get(tupleID);
+        } else if (Objects.equals(type,"Write")) {
+            singleVersionStorage.put(tupleID, request.getValue());
             UDF.executeUDF(request); // Simulated UDF execution
-
-        } catch (DatabaseException | NullPointerException e) {
-            System.out.println("Offload CC received error request with tupleID: " + request.getTupleID() + " and instanceID: " + request.getInstanceID());
-            throw new RuntimeException(e);
+        } else {
+            throw new UnsupportedOperationException();
         }
+
+//        try {
+//            if (Objects.equals(type, "Read")) {
+//                storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.readPreValues(timeStamp).getValues().get(1).getInt();
+//            } else if (Objects.equals(type, "Write")) {
+//                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+//                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+//                SchemaRecord tempo_record = new SchemaRecord(readRecord);
+//                tempo_record.getValues().get(1).setInt(-1);
+//                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+//
+//                UDF.executeUDF(request); // Simulated UDF execution
+//
+//            } else {
+//                throw new UnsupportedOperationException();
+//            }
+//
+//        } catch (DatabaseException | NullPointerException e) {
+//            System.out.println("Offload CC received error request with tupleID: " + request.getTupleID() + " and instanceID: " + request.getInstanceID());
+//            throw new RuntimeException(e);
+//        }
     }
 
 }
