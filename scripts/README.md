@@ -14,7 +14,7 @@
 - Once downloaded, you can use the provided scripts to compile the source code and install the JAR artifact by running the following command.
 ```
 cd ..
-mvn install -Dmaven.test.skip=true
+mvn clean install -Dmaven.test.skip=true
 cd scripts
 ```
 - The project and JAR directory can be modified in global.sh:
@@ -25,6 +25,10 @@ jar_Dir="${project_Dir}/application/target/application-0.0.2-jar-with-dependenci
 ## Comparing to Conventional SPEs (Fig.10)
 - To compare MorphStream with conventional SPEs, we provide a script to run the experiment in /scripts/PerformanceEvaluation/PerformanceComparison
 - The script will run the experiment and generate the result in the result directory.
+- To run all experiments together, you can run the following command:
+```
+bash PerformanceComparison.sh
+```
 - To run MorphStream, TStream and S-Store, you can run the following command:
 ```
 bash morphstream_autorun.sh

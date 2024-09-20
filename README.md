@@ -9,6 +9,57 @@
 - The code is still under active development and more features will be introduced. We are also actively maintaining the project [wiki](https://github.com/intellistream/MorphStream/wiki). Please checkout it for more detailed desciptions.
 - We welcome your contributions, if you are interested to contribute to the project, please fork and submit a PR. If you have questions, feel free to log an issue or write an email to me: shuhao_zhang AT sutd.edu.sg
 
+
+## Project Structrue
+
+- `affinity` contains libraries used for pinning threads to corresponding CPUs in Multicore architecture.
+- `appliication` contains all experimental workloads implemented based on MorphStream's programming APIs.
+- `common` contains common utility variable/functions for the entire project.
+- `scripts` contain all experiment scripts to reproduce our experiments.
+- `state-engine` contains state management modules in MorphStream.
+- `stream-engine` contains transactional events scheduling modules in MorphStream.
+
+
+## How to Reproduce Our Experimental Results?
+
+1. System specification: We run all our experiment in 
+
+   | Component         | Details                                                                                            |
+   |-------------------|----------------------------------------------------------------------------------------------------|
+   | Server            | Dual-socket Intel Xeon Gold 6248R server with 384 GB DRAM                                          |
+   | OS                | Ubuntu                                                                                             |
+   | Cores per Socket  | 24 cores of 3.00GHz                                                                                |
+   | L3 Cache          | 35.75MB                                                                                            |
+   | NUMA              | Single socket used to isolate the impact of NUMA                                                   |
+   | Core Pinning      | Each thread pinned to one core, using 1 to 24 cores to evaluate scalability                        |
+   | OS Kernel         | Linux 4.15.0-118-generic                                                                           |
+   | JDK Version       | JDK 1.8.0_301                                                                                      |
+   | JVM Configuration | -Xmx and -Xms set to 300 GB                                                                        |
+   | Garbage Collector | G1GC, configured to not clear temporal objects such as processed TPGs and multi-versions of states |
+
+2. Third-party Lib: Make sure to install and configure environments all required dependencies as shown below.
+   - wget: ```sudo apt install wget -y```
+   - [JDK 1.8.x](https://www.oracle.com/sg/java/technologies/javase/javase8-archive-downloads.html)
+   - Maven 3.8.6: ```sudo apt install maven -y```
+   - [Intel Vtune](https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html#gs.ffrana): Configure Vtune path to `/opt/intel/oneapi/vtune/latest/bin64/vtune`, set `/proc/sys/kernel/perf_event_paranoid` to 0.
+   
+3. Environment Configurations: All environment configurations are extracted to `global.sh`, in fact, users only need to set `project_Dir` before running all our experiments.
+
+4. We categorize all our experiment scripts by 4 subsections in our paper, you can reproduce the results of each subsection by enter the associated folder and run scripts.
+Inside every folder, we can run each experiment easily with the following command:
+   ```agsl
+   cd $EXPERIMENT_FOLDER_PATH # The experiment must be done in the associated folder.
+   bash ${EXPERIMENT_SCRIPT}.sh # e.g., EXPERIMENT_SCRIPT=PerformanceComparison
+   ```
+
+
+## Results
+
+All raw data results can be found in `${project_Dir}/result/data/`.
+
+We demonstrate how to draw all figures in our experiments in `scripts/draw/README.md`.
+
+
 ## How to Cite MorphStream
 
 If you use MorphStream in your paper, please cite our work.
