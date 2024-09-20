@@ -122,12 +122,3 @@ function scheduling_granularity_study() {
 rm -rf /home/shuhao/jjzhao/data
 granularity_study
 ResetParameters
-cd ../draw || exit
-
-echo "newmodel/python model_granularity_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-ResetParameters
-echo "newmodel/python model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity"
-python newmodel/model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity
-ResetParameters
-echo "newmodel/python model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n 2 -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity"
-python newmodel/model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n 2 -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity

@@ -46,7 +46,7 @@ _install/
 *.iml
 
 logs
-scripts/draw/results*
+scripts/22.11.18/draw/results*
 scripts/*.jar
 
 target/

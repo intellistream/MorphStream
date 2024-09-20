@@ -94,10 +94,6 @@ function vary_skew(){
         done
    done
   ResetParameters
-  checkpointInterval=81920
-  cd ../draw || exit
-  echo "newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python newmodel/model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 }
 
 function exploration_strategy_study() {
@@ -105,6 +101,5 @@ function exploration_strategy_study() {
   vary_skew
 }
 
-rm -rf /home/shuhao/jjzhao/data
 exploration_strategy_study
 
