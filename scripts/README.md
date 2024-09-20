@@ -34,35 +34,35 @@ bash morphstream_autorun.sh
 bash flink_autorun.sh
 ```
 ## Evaluation on Dynamic Workloads (Fig.11)
-- To evaluate the performance of MorphStream under dynamic workloads, we provide a script to run the experiment in /scripts/PerformanceEvaluation
+- To evaluate the performance of MorphStream under dynamic workloads, we provide a script to run the experiment in /PerformanceEvaluation
 - The script will run the experiment and generate the result in the result directory.
 - To run the experiment, you can run the following command:
 ```
 bash DynamicWorkload.sh
 ```
 ## Evaluation of Multiple Scheduling Strategies (Fig.12)
-- To evaluate the performance of MorphStream under multiple scheduling strategies, we provide a script to run the experiment in /scripts/PerformanceEvaluation
+- To evaluate the performance of MorphStream under multiple scheduling strategies, we provide a script to run the experiment in /PerformanceEvaluation
 - The script will run the experiment and generate the result in the result directory.
 - To run the experiment, you can run the following command:
 ```
 bash MultipleSchedulingStrategies.sh
 ```
 ## Evaluation of System Overhead (Fig.13)
-- To evaluate the system overhead of MorphStream, we provide a script to run the experiment in /scripts/Overhead
+- To evaluate the system overhead of MorphStream, we provide a script to run the experiment in /Overhead
 - The script will run the experiment and generate the result in the result directory.
 - To run the experiment, you can run the following command:
 ```
 bash SystemOverhead.sh
 ```
 ## Evaluation of GC Overhead (Fig.14)
-- To evaluate the GC overhead of MorphStream, we provide a script to run the experiment in /scripts/Overhead
+- To evaluate the GC overhead of MorphStream, we provide a script to run the experiment in /Overhead
 - The script will run the experiment and generate the result in the result directory.
 - To run the experiment, you can run the following command:
 ```
 bash VaryingJVMSize.sh
 ```
 ## Evaluation of Scheduling Decision (Fig.15 ~ Fig.17)
-- To evaluate the scheduling decision of MorphStream, we provide a script to run the experiment in /scripts/SchedulingDecisions
+- To evaluate the scheduling decision of MorphStream, we provide a script to run the experiment in /SchedulingDecisions
 - The script will run the experiment and generate the result in the result directory.
 - Impact of Scheduling Exploration Strategies (Fig.15)
 ```
@@ -77,7 +77,7 @@ bash SchedulingGranularities.sh
 bash AbortHandling.sh
 ```
 ## Evaluation of Modern Hardware (Fig.18)
-- To evaluate the performance of MorphStream on modern hardware, we provide a script to run the experiment in /scripts/ModernHardware
+- To evaluate the performance of MorphStream on modern hardware, we provide a script to run the experiment in /ModernHardware
 - The script will run the experiment and generate the result in the result directory.
 - Micro-architectural Analysis (Fig.18 a)
 ```
