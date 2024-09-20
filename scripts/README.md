@@ -78,12 +78,12 @@ bash AbortHandling.sh
 ```
 ## Evaluation of Modern Hardware (Fig.18)
 - To evaluate the performance of MorphStream on modern hardware, we provide a script to run the experiment in /ModernHardware
-- The script will run the experiment and generate the result in the result directory.
-- Micro-architectural Analysis (Fig.18 a)
+- Micro-architectural Analysis (Fig.18 a). The script will run the experiment and generate the result in the result directory. We measure the hardware performance counters through Intel Vtune Profiler during the
+algorithm execution and compute the top-down metrics. 
 ```
 bash MicroArchitecturalAnalysis.sh.sh
 ```
-- Multicore Scalability (Fig.18 b)
+- Multicore Scalability (Fig.18 b). The script will run the experiment and generate the result in the result directory.
 ```
 bash MulticoreScalability.sh
 ```
