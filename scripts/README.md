@@ -85,7 +85,8 @@ bash AbortHandling.sh
 - Micro-architectural Analysis (Fig.18 a). The script will run the experiment and generate the result in the result directory. We measure the hardware performance counters through Intel Vtune Profiler during the
 algorithm execution and compute the top-down metrics. 
 ```
-bash MicroArchitecturalAnalysis.sh.sh
+cd MicroArchitecturalAnalysis/
+bash vtune_uarch_profiling.sh
 ```
 - Multicore Scalability (Fig.18 b). The script will run the experiment and generate the result in the result directory.
 ```
