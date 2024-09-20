@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../global.sh || exit
+source ../../global.sh || exit
 
 function ResetParameters() {
   app="StreamLedger"

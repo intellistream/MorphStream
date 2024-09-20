@@ -1,5 +1,8 @@
 #!/bin/bash
-source ../global.sh || exit
+
+source ../../global.sh || exit
+
+
 function ResetParameters() {
   app="StreamLedger"
   checkpointInterval=10240
@@ -17,7 +20,7 @@ function ResetParameters() {
   isDynamic=0
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
   schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
-  rootFilePath="${project_Dir}/result/data/MulticoreScalability"
+  rootFilePath="${project_Dir}/result/data/MicroArchitecturalAnalysis"
   shiftRate=1
   totalEvents=`expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`
 }
@@ -33,7 +36,6 @@ function runTStream() {
           --CCOption $CCOption \
           --complexity $complexity \
           --deposit_ratio $deposit_ratio \
-          --key_skewness $key_skewness \
           --isCyclic $isCyclic \
           --rootFilePath $rootFilePath \
           --isDynamic $isDynamic \
@@ -41,7 +43,7 @@ function runTStream() {
           --shiftRate $shiftRate \
           --workloadType $workloadType \
           --schedulerPool $schedulerPool"
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 $jar_Dir \
+  java -Xms300g -Xmx300g -Xss100M -jar -d64 ${jar_Dir} \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
@@ -51,7 +53,6 @@ function runTStream() {
     --CCOption $CCOption \
     --complexity $complexity \
     --deposit_ratio $deposit_ratio \
-    --key_skewness $key_skewness \
     --isCyclic $isCyclic \
     --rootFilePath $rootFilePath \
     --isDynamic $isDynamic \
@@ -64,27 +65,19 @@ function runTStream() {
 # run basic experiment for different algorithms
 function baselineEvaluation() {
   isDynamic=1
-  runTStream
+  # runTStream
   ResetParameters
 
   scheduler=TStream
+  #workloadType="default"
   isDynamic=0
   runTStream
 }
-
-
-function patEvluation() {
-  isDynamic=0
-  CCOption=4 #SSTORE
-  runTStream
-}
-
 
 function dynamic_runner() { # multi-batch exp
  ResetParameters
  app=StreamLedger
  baselineEvaluation
- patEvluation
 }
+
 dynamic_runner
-ResetParameters

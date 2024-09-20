@@ -172,6 +172,6 @@ if __name__ == "__main__":
     # for batchInterval in [4096]:
     legend_labels = ["Throughput"]
     x_values = ["MorphStream", "TStream", "S-Store", "Flink+Redis \n (w/o Locks)", "Flink+Redis \n (w/ Locks)"]
-    y_values = [[176.698, 110.877, 47.194, 14.078, 1.475]]
+    y_values = [[176.698, 110.877, 47.194, 14.078, 1.475]]  # data is collected after running all experiments.
     DrawFigure(x_values, y_values, legend_labels,
                '', 'Throughput (K/sec)', "overview_comparison_t24_b122880_10240_25_25_0_0_false_10000", False)

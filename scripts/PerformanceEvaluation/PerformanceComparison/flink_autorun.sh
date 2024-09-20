@@ -1,6 +1,8 @@
 #!/bin/bash
 
-PROJECT_DIR="/home/myc/workspace/myc/MorphStream/scripts/PerformanceEvluation/PerformanceComparison/flink-sl"
+source ../../global.sh || exit
+
+PROJECT_DIR="${project_Dir}/scripts/PerformanceEvaluation/PerformanceComparison/flink-sl"
 
 FLINK_DIR=${PROJECT_DIR}/flink
 REDIS_DIR=${PROJECT_DIR}/redis
@@ -74,8 +76,16 @@ build () {
   mvn clean package
 }
 
+
 cd ${PROJECT_DIR}
+
+# Download Flink
+wget https://archive.apache.org/dist/flink/flink-1.10.0/apache-flink-1.10.0.tar.gz
+tar -zvxf apache-flink-1.10.0.tar.gz
+rm apache-flink-1.10.0.tar.gz
+mv apache-flink-1.10.0 flink
 build
+
 cd -
 
 stopRedis
