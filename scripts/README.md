@@ -6,7 +6,7 @@
 - For optimal performance, we recommend using a machine with at least 24 cores and 300GB of memory.
 - This configuration should be sufficient to run the MorphStream artifact effectively.
 # Software Dependencies
-- To ensure successful compilation, we recommend using a machine with Ubuntu 20.04 with JDK 1.8.0_301 and Mavean 3.8.1.
+- To ensure successful compilation, we recommend using a machine with Ubuntu 20.04 with JDK 1.8.0_301 and Maven 3.8.1.
 - Additionally, we set -Xmx and -Xms to be 300GB and use G1GC as the garbage collector arcoss all the experiments.
 # Experiment Workflow
 ## Installation
