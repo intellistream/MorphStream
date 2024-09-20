@@ -15,10 +15,7 @@
 ```
 bash compile.sh
 ```
-- The result and jar directory can be modified in dir.sh:
-```
-RSTDIR="/home/username/Benchmark/projectName"
-```
+- The result and jar directory can be modified in global.sh:
 ```
 JAR="/home/username/project/projectName/application/target/application-0.0.2-jar-with-dependencies.jar"
 ```
