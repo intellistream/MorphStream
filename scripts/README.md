@@ -13,11 +13,14 @@
 - Clone the MorphStream repository to your local machine.
 - Once downloaded, you can use the provided scripts to compile the source code and install the JAR artifact by running the following command.
 ```
-bash compile.sh
+cd ..
+mvn install -Dmaven.test.skip=true
+cd scripts
 ```
-- The result and jar directory can be modified in global.sh:
+- The project and JAR directory can be modified in global.sh:
 ```
-JAR="/home/username/project/projectName/application/target/application-0.0.2-jar-with-dependencies.jar"
+project_Dir="/home/username/workspace/MorphStream"
+jar_Dir="${project_Dir}/application/target/application-0.0.2-jar-with-dependencies.jar"
 ```
 ## Comparing to Conventional SPEs (Fig.10)
 - To compare MorphStream with conventional SPEs, we provide a script to run the experiment in /scripts/PerformanceEvaluation/PerformanceComparison
