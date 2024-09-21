@@ -46,7 +46,7 @@
 3. Environment Configurations: All environment configurations are extracted to `global.sh`, in fact, users only need to set `project_Dir` before running all our experiments.
 
 4. We categorize all our experiment scripts by 4 subsections in our paper, you can reproduce the results of each subsection by enter the associated folder and run scripts.
-Inside every folder, we can run each experiment easily with the following command:
+Inside every folder, we can run each experiment easily with the following command. More detailed instructions can be found in `scripts/README.md`.
    ```agsl
    cd $EXPERIMENT_FOLDER_PATH # The experiment must be done in the associated folder.
    bash ${EXPERIMENT_SCRIPT}.sh # e.g., EXPERIMENT_SCRIPT=PerformanceComparison
