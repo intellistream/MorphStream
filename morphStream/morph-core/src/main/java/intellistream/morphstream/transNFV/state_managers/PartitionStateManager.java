@@ -13,18 +13,18 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class PartitionStateManager implements Runnable {
-    private static BlockingQueue<VNFRequest> operationQueue;
-    private static long initEndTime = -1;
-    private static long processEndTime = -1;
+    private BlockingQueue<VNFRequest> operationQueue;
+    private long initEndTime = -1;
+    private long processEndTime = -1;
     private final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private final int partitionRange = NUM_ITEMS / numInstances;
 
     public PartitionStateManager(BlockingQueue<VNFRequest> operationQueue) {
-        PartitionStateManager.operationQueue = operationQueue;
+        this.operationQueue = operationQueue;
     }
 
-    public static void submitPartitioningRequest(VNFRequest request) {
+    public void submitPartitioningRequest(VNFRequest request) {
         try {
             operationQueue.put(request);
         } catch (InterruptedException e) {
@@ -45,7 +45,7 @@ public class PartitionStateManager implements Runnable {
             }
             if (request.getCreateTime() == -1) {
                 processEndTime = System.nanoTime();
-                writeCSVTimestamps();
+//                writeCSVTimestamps();
                 System.out.println("Partitioning CC thread received stop signal");
                 break;
             }
@@ -68,7 +68,7 @@ public class PartitionStateManager implements Runnable {
     }
 
 
-    private static void writeCSVTimestamps() {
+    private void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");

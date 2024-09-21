@@ -8,7 +8,7 @@ import intellistream.morphstream.transNFV.state_managers.OffloadMVCCStateManager
 import intellistream.morphstream.transNFV.state_managers.OffloadSVCCStateManager;
 import intellistream.morphstream.transNFV.common.Operation;
 import intellistream.morphstream.transNFV.common.Transaction;
-import intellistream.morphstream.transNFV.state_managers.UniversalStateManager;
+import intellistream.morphstream.transNFV.state_managers.TransNFVStateManager;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 
 import java.util.HashMap;
@@ -17,13 +17,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
-public class OffloadExecutorThread implements Runnable {
+public class OffloadExecutor implements Runnable {
     private final int offloadExecutorID;
     BlockingQueue<VNFRequest> inputQueue;
     private int requestCounter;
     private int writeCounter;
     private final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
 
+    private final HashMap<Integer, OffloadExecutor> offloadExecutors = MorphStreamEnv.get().getTransNFVStateManager().getOffloadExecutors();
     private final OffloadSVCCStateManager svccStateManager;
     private final OffloadMVCCStateManager mvccStateManager;
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
@@ -37,8 +38,8 @@ public class OffloadExecutorThread implements Runnable {
     private int globalCurrentGCBatchID = 0;
     private NonBlockingGCThread gcExecutorThread;
 
-    public OffloadExecutorThread(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue,
-                                 OffloadSVCCStateManager svccStateManager, OffloadMVCCStateManager mvccStateManager) {
+    public OffloadExecutor(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue,
+                           OffloadSVCCStateManager svccStateManager, OffloadMVCCStateManager mvccStateManager) {
         this.offloadExecutorID = offloadExecutorID;
         this.inputQueue = inputQueue;
         this.svccStateManager = svccStateManager;
@@ -91,11 +92,10 @@ public class OffloadExecutorThread implements Runnable {
 
                     // Thread 0 periodically checks for global finished batch ID and initiates GC
                     if (writeCounter > 0 && writeCounter % gcCheckInterval == 0 && offloadExecutorID == 0) {
-                        HashMap<Integer, OffloadExecutorThread> offloadExecutorThreads = UniversalStateManager.getOffloadExecutorThreads();
                         int minCurrentBatchID = Integer.MAX_VALUE;
 
                         // Find the minimum finished batch ID among all threads
-                        for (OffloadExecutorThread offloadExecutorThread : offloadExecutorThreads.values()) {
+                        for (OffloadExecutor offloadExecutorThread : offloadExecutors.values()) {
                             minCurrentBatchID = Math.min(minCurrentBatchID, offloadExecutorThread.getCurrentGCBatchID());
                         }
 
@@ -104,7 +104,7 @@ public class OffloadExecutorThread implements Runnable {
                             globalCurrentGCBatchID = minCurrentBatchID;
                             long minBatchEndTimestamp = Long.MAX_VALUE;
 
-                            for (OffloadExecutorThread offloadExecutorThread : offloadExecutorThreads.values()) {
+                            for (OffloadExecutor offloadExecutorThread : offloadExecutors.values()) {
                                 minBatchEndTimestamp = Math.min(minBatchEndTimestamp, offloadExecutorThread.getLastBatchEndTimestamp(globalCurrentGCBatchID - 1));
                             }
 

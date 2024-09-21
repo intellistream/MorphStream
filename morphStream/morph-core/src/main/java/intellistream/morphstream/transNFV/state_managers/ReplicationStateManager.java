@@ -13,15 +13,15 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class ReplicationStateManager implements Runnable {
-    private static BlockingQueue<VNFRequest> operationQueue;
-    private static long initEndTime = -1;
-    private static long processEndTime = -1;
+    private BlockingQueue<VNFRequest> operationQueue;
+    private long initEndTime = -1;
+    private long processEndTime = -1;
 
     public ReplicationStateManager(BlockingQueue<VNFRequest> operationQueue) {
-        ReplicationStateManager.operationQueue = operationQueue;
+        this.operationQueue = operationQueue;
     }
 
-    public static void submitReplicationRequest(VNFRequest request) {
+    public void submitReplicationRequest(VNFRequest request) {
         try {
             operationQueue.put(request);
         } catch (InterruptedException e) {
@@ -42,7 +42,7 @@ public class ReplicationStateManager implements Runnable {
             }
             if (request.getCreateTime() == -1) {
                 processEndTime = System.nanoTime();
-                writeCSVTimestamps();
+//                writeCSVTimestamps();
                 System.out.println("Replication CC thread received stop signal");
                 break;
             }
@@ -65,7 +65,7 @@ public class ReplicationStateManager implements Runnable {
     }
 
 
-    private static void writeCSVTimestamps() {
+    private void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
@@ -93,6 +93,14 @@ public class ReplicationStateManager implements Runnable {
             System.out.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();
         }
+    }
+
+    public long getInitEndNanoTimestamp() {
+        return initEndTime;
+    }
+
+    public long getProcessEndNanoTimestamp() {
+        return processEndTime;
     }
 
 }

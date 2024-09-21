@@ -17,15 +17,9 @@ def zipfian_distribution(num_keys, zipf_skewness, num_samples):
     Returns:
     key_accesses (list): List of accessed keys.
     """
-
-    # Generate keys in the range [0, num_keys-1]
     keys = np.arange(0, num_keys)
-
-    # Calculate probabilities using Zipf's law
     probabilities = 1 / np.power(keys + 1, zipf_skewness)  # keys + 1 to avoid division by zero
     probabilities /= np.sum(probabilities)  # Normalize to sum to 1
-
-    # Generate key accesses based on the Zipfian distribution
     key_accesses = np.random.choice(keys, size=num_samples, p=probabilities)
 
     return key_accesses
@@ -53,18 +47,6 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
     prob_scope = prob_scope / 100
     """Generate CSV lines based on the given skewness, read/write, and scope probabilities."""
     keys = zipfian_distribution(num_keys, key_skewness, total_requests)
-
-    # Count the frequency of each key access
-    key_counts = np.bincount(keys, minlength=num_keys)
-
-    # Plot the frequency distribution
-    # plt.figure(figsize=(10, 6))
-    # plt.bar(range(num_keys), key_counts)
-    # plt.xlabel('Key')
-    # plt.ylabel('Frequency')
-    # plt.title('Zipfian Distribution of Key Accesses')
-    # plt.show()
-
     types = np.random.choice(['Read', 'Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
     scopes = np.random.choice(['Per-flow', 'Cross-flow'], total_requests, p=[prob_scope, 1 - prob_scope])
     
@@ -77,11 +59,8 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
 
 def distribute_lines_among_instances(lines, instance_workloads, output_dir):
     """Distribute the generated lines among instances based on workload distribution."""
-    
-    # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
     
-    # Remove all existing files in the output directory
     for filename in os.listdir(output_dir):
         file_path = os.path.join(output_dir, filename)
         if os.path.isfile(file_path) or os.path.islink(file_path):
@@ -109,30 +88,70 @@ def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew,
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
     workloadDir = f'{rootDir}/{workloadConfig}'
 
-    # Generate all CSV lines
     lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
 
-    # Distribute lines based on workload skewness
     instance_workloads = generate_workload_distribution(numInstances, numPackets, workloadSkew, puncInterval)
     distribute_lines_among_instances(lines, instance_workloads, workloadDir)
+    print(f'Generated {expID} workload for keySkew={keySkew}, workloadSkew={workloadSkew}, readRatio={readRatio}, scopeRatio={scopeRatio}, locality={locality}')
 
 
-# Example usage
+
+# Common Parameters
 puncInterval = 1000 # Used to normalize workload distribution among instances 
-expID = '5.4.1'
 vnfID = 11
 
 numPackets = 400000
 numInstances = 4
-numItems = 1000
+numItems = 10000
 
-keySkew = 0
-workloadSkewList = [0, 25, 50, 75, 100]
-readRatioList = [0, 25, 50, 75, 100]
-scopeRatio = 0
-locality = 0
+# Per-phase Parameters
 
-for workloadSkew in workloadSkewList:
-    for readRatio in readRatioList:
-        generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval)
-        print(f'Generated {expID} workload for workloadSkew={workloadSkew}, readRatio={readRatio}')
+# Phase 1: Mostly per-flow, balanced / high skewness, read-write balanced
+Phase1_expID = '5.3.2_phase1'
+Phase1_keySkewList = [0, 25, 50, 75, 100, 150]
+Phase1_workloadSkew = 0
+Phase1_readRatio = 50
+Phase1_scopeRatio = 0
+Phase1_localityList = [75, 80, 85, 90, 95, 100]
+
+# Phase 2: Mostly cross-partition, balanced / high skewness, mostly read-only
+Phase2_expID = '5.3.2_phase2'
+Phase2_keySkewList = [0, 25, 50, 75, 100, 150]
+Phase2_workloadSkew = 0
+Phase2_readRatioList = [75, 80, 85, 90, 95, 100]
+Phase2_scopeRatio = 0
+Phase2_locality = 0
+
+# Phase 3: Mostly cross-partition, balanced / high skewness, mostly write-only
+Phase3_expID = '5.3.2_phase3'
+Phase3_keySkewList = [0, 25, 50, 75, 100, 150]
+Phase3_workloadSkew = 0
+Phase3_readRatioList = [0, 5, 10, 15, 20, 25]
+Phase3_scopeRatio = 0
+Phase3_locality = 0
+
+# Phase 4: Mostly cross-partition, high skewness, read-write balanced
+Phase4_expID = '5.3.2_phase4'
+Phase4_keySkewList = [0, 25, 50, 75, 100, 150]
+Phase4_workloadSkew = 0
+Phase4_readRatioList = [0, 25, 50, 75, 100]
+Phase4_scopeRatio = 0
+Phase4_locality = 0
+
+
+# Workload generation
+for Phase1_keySkew in Phase1_keySkewList:
+    for Phase1_locality in Phase1_localityList:
+        generate_workload(Phase1_expID, vnfID, numPackets, numInstances, numItems, Phase1_keySkew, Phase1_workloadSkew, Phase1_readRatio, Phase1_scopeRatio, Phase1_locality, puncInterval)
+
+for Phase2_keySkew in Phase2_keySkewList:
+    for Phase2_readRatio in Phase2_readRatioList:
+        generate_workload(Phase2_expID, vnfID, numPackets, numInstances, numItems, Phase2_keySkew, Phase2_workloadSkew, Phase2_readRatio, Phase2_scopeRatio, Phase2_locality, puncInterval)
+
+for Phase3_keySkew in Phase3_keySkewList:
+    for Phase3_readRatio in Phase3_readRatioList:
+        generate_workload(Phase3_expID, vnfID, numPackets, numInstances, numItems, Phase3_keySkew, Phase3_workloadSkew, Phase3_readRatio, Phase3_scopeRatio, Phase3_locality, puncInterval)
+
+for Phase4_keySkew in Phase4_keySkewList:
+    for Phase4_readRatio in Phase4_readRatioList:
+        generate_workload(Phase4_expID, vnfID, numPackets, numInstances, numItems, Phase4_keySkew, Phase4_workloadSkew, Phase4_readRatio, Phase4_scopeRatio, Phase4_locality, puncInterval)

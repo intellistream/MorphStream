@@ -1,6 +1,6 @@
 package intellistream.morphstream.api.launcher;
 
-import intellistream.morphstream.transNFV.state_managers.UniversalStateManager;
+import intellistream.morphstream.transNFV.state_managers.TransNFVStateManager;
 import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
@@ -26,33 +26,28 @@ public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
-    private UniversalStateManager universalStateManager;
+    private TransNFVStateManager transNFVStateManager;
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
-    private ServerSocket stateManagerSocket;
     private final HashMap<Integer, Socket> socketsToInstances = new java.util.HashMap<>();
     private final HashMap<Integer, Integer> stateInstanceMap = new java.util.HashMap<>(); //TODO: Hardcoded
-    public String vnfJSON = null;
     private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
     private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
-    public static final ConcurrentHashMap<Integer, Object> instanceLocks = new ConcurrentHashMap<>();
-    public static final ConcurrentHashMap<Integer, Integer> fetchedValues = new ConcurrentHashMap<>(); // tupleID -> value
 
-    public void initializeAdaptiveCCManager() {
-        if (universalStateManager == null) {
-            universalStateManager = new UniversalStateManager();
+    public void createTransNFVStateManager() {
+        if (transNFVStateManager == null) {
+            transNFVStateManager = new TransNFVStateManager();
         } else {
             throw new RuntimeException("AdaptiveCCManager already initialized");
         }
     }
 
-    public UniversalStateManager getAdaptiveCCManager() {
-        System.out.println("AdaptiveCCManager: " + universalStateManager);
-        return universalStateManager;
+    public TransNFVStateManager getTransNFVStateManager() {
+        return transNFVStateManager;
     }
     public static MorphStreamEnv get() {
         return ourInstance;
@@ -75,7 +70,6 @@ public class MorphStreamEnv {
     }
     public Map<Integer, Socket> instanceSocketMap() {return socketsToInstances;}
     public HashMap<Integer, Integer> stateInstanceMap() {return stateInstanceMap;}
-    public ServerSocket stateManagerSocket() {return stateManagerSocket;}
     public void updateSATypeMap(int saID, int saType) {
         saTypeMap.put(saID, saType);
     }

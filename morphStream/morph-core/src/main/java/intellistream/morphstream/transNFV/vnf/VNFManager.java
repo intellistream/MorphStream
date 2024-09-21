@@ -2,6 +2,7 @@ package intellistream.morphstream.transNFV.vnf;
 
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.state_managers.ReplicationStateManager;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 import java.io.*;
@@ -44,6 +45,10 @@ public class VNFManager implements Runnable {
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
+
+    private static long initEndNanoTimestamp = -1;
+    private static long processEndNanoTimestamp = -1;
+
     private static double totalParseTimeMS = 0;
     private static double totalSyncTimeMS = 0;
     private static double totalUsefulTimeMS = 0;
@@ -106,32 +111,42 @@ public class VNFManager implements Runnable {
                 expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality,
                 scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity);
 
-        String patternString = toPatternString(pattern);
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         switch (experimentID) {
-            case "5.1": // Preliminary study
-                writeCSVThroughput_Pattern(patternString, ccStrategy, overallThroughput);
+            case "5.1": // Dynamic workload, throughput, three existing strategies
+                writeCSVThroughput(outputFileDir, overallThroughput); //TODO: To be aligned
                 break;
-            case "5.2.1": // Static VNF throughput and latency
-                writeCSVThroughput_Pattern(patternString, ccStrategy, overallThroughput);
-                writeCSVLatency_Pattern(patternString, ccStrategy);
+            case "5.2.1": // Static workload, throughput and latency
+                writeCSVThroughput(outputFileDir, overallThroughput); //TODO: To be aligned
                 break;
-            case "5.2.2": // Dynamic VNF throughput and latency
-                computeDynamicThroughput();
-                writeCSVDynamicThroughput(patternString, ccStrategy);
-                writeCSVLatency_Pattern(patternString, ccStrategy);
+            case "5.2.2_phase1": // Dynamic workload, throughput and latency
+            case "5.2.2_phase2":
+            case "5.2.2_phase3":
+            case "5.2.2_phase4":
+                writeCSVThroughput(outputFileDir, overallThroughput);
+                writeCSVLatency(outputFileDir);
                 break;
-            case "5.3.1": // Dynamic VNF time breakdown
+            case "5.3.1_phase1": // Dynamic workload, Time breakdown
+            case "5.3.1_phase2":
+            case "5.3.1_phase3":
+            case "5.3.1_phase4":
                 computeTimeBreakdown();
                 writeCSVBreakdown();
                 break;
-            case "5.4.1":
+            case "5.3.2_phase1": // Dynamic workload, Mem utilization
+            case "5.3.2_phase2":
+            case "5.3.2_phase3":
+            case "5.3.2_phase4":
+                computeTimeBreakdown();
+                writeCSVBreakdown();
+                break;
+            case "5.4.1": // Static workload, throughput and latency
             case "5.4.2":
             case "5.4.3":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 writeCSVLatency(outputFileDir);
                 break;
-            case "5.5.1":
+            case "5.5.1": // Dynamic workload, throughput
             case "5.5.2":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 break;
@@ -180,21 +195,6 @@ public class VNFManager implements Runnable {
         long overallDuration = overallEndTime - overallStartTime;
         double overallThroughput = totalRequestCounter / (overallDuration / 1E9);
         return overallThroughput;
-    }
-
-    private void computeDynamicThroughput() {
-        int numPunc = numPackets / (instancePatternPunctuation * numInstances);
-        for (int puncID = 1; puncID <= numPunc; puncID++) {
-            long puncStartTime = Long.MAX_VALUE;
-            long puncEndTime = Long.MIN_VALUE;
-            for (int i = 0; i < numInstances; i++) {
-                long[] instancePuncTimes = instanceMap.get(i).getPuncStartEndTimes(puncID);
-                puncStartTime = Math.min(puncStartTime, instancePuncTimes[0]);
-                puncEndTime = Math.max(puncEndTime, instancePuncTimes[1]);
-            }
-            double puncThroughput = instancePatternPunctuation * numInstances / ((puncEndTime - puncStartTime) / 1E9);
-            puncThroughputMap.put(puncID, puncThroughput);
-        }
     }
 
 
@@ -249,123 +249,6 @@ public class VNFManager implements Runnable {
 //        totalUsefulTimeMS = aggInstanceUsefulTime + aggManagerUsefulTime;
 //        totalCCSwitchTimeMS = aggCCSwitchTime;
 //        totalTimeMS = aggTotalTime;
-    }
-
-    private static void writeCSVDynamicThroughput(String pattern, String ccStrategy) {
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
-        String directoryPath = String.format("%s/%s", baseDirectory, pattern);
-
-        // Create the directory if it does not exist
-        File dir = new File(directoryPath);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory: " + directoryPath);
-                return;
-            }
-        }
-
-        // Ensure the subdirectory for the strategy exists
-        String strategyDirectoryPath = String.format("%s/%s", directoryPath, ccStrategy);
-        File strategyDir = new File(strategyDirectoryPath);
-        if (!strategyDir.exists()) {
-            if (!strategyDir.mkdirs()) {
-                System.out.println("Failed to create the strategy directory: " + strategyDirectoryPath);
-                return;
-            }
-        }
-
-        for (int puncID : puncThroughputMap.keySet()) {
-            String filePath = String.format("%s/punc_%d.csv", strategyDirectoryPath, puncID);
-            System.out.println("Writing to " + filePath);
-            File file = new File(filePath);
-            if (file.exists()) {
-                boolean isDeleted = file.delete();
-                if (!isDeleted) {
-                    System.out.println("Failed to delete existing file: " + filePath);
-                    return;
-                }
-            }
-            try (FileWriter fileWriter = new FileWriter(file)) {
-                String lineToWrite = pattern + "," + ccStrategy + "," + puncThroughputMap.get(puncID) + "\n";
-                fileWriter.write(lineToWrite);
-                System.out.println("Data written to CSV file successfully: " + filePath);
-            } catch (IOException e) {
-                System.out.println("An error occurred while writing to the CSV file: " + filePath);
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private static void writeCSVLatency_Pattern(String pattern, String ccStrategy) {
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "latency");
-        String directoryPath = String.format("%s/%s", baseDirectory, pattern);
-        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
-        System.out.println("Writing to " + filePath);
-
-        File dir = new File(directoryPath);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory.");
-                return;
-            }
-        }
-
-        File file = new File(filePath);
-        if (file.exists()) {
-            boolean isDeleted = file.delete();
-            if (!isDeleted) {
-                System.out.println("Failed to delete existing file.");
-                return;
-            }
-        }
-
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            for (double latency : instanceLatencyStats.getValues()) {
-                String lineToWrite = String.valueOf(latency) + "\n";
-                fileWriter.write(lineToWrite);
-            }
-            System.out.println("Data written to CSV file successfully.");
-        } catch (IOException e) {
-            System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
-        }
-    }
-
-    private static void writeCSVThroughput_Pattern(String pattern, String ccStrategy, double throughput) {
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
-        String directoryPath = String.format("%s/%s", baseDirectory, pattern);
-        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
-        System.out.println("Writing to " + filePath);
-
-        File dir = new File(directoryPath);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory.");
-                return;
-            }
-        }
-        File file = new File(filePath);
-        if (file.exists()) {
-            boolean isDeleted = file.delete();
-            if (!isDeleted) {
-                System.out.println("Failed to delete existing file.");
-                return;
-            }
-        }
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
-            fileWriter.write(lineToWrite);
-            System.out.println("Data written to CSV file successfully.");
-        } catch (IOException e) {
-            System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
-        }
     }
 
     private static void writeCSVThroughput(String outputDir, double throughput) {
@@ -426,43 +309,12 @@ public class VNFManager implements Runnable {
         }
     }
 
-    private static void writeCSVScalability(String pattern, String ccStrategy, double throughput) {
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "throughput");
-        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, numInstances, pattern);
-        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
-        System.out.println("Writing to " + filePath);
-        File dir = new File(directoryPath);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory.");
-                return;
-            }
-        }
-        File file = new File(filePath);
-        if (file.exists()) {
-            boolean isDeleted = file.delete();
-            if (!isDeleted) {
-                System.out.println("Failed to delete existing file.");
-                return;
-            }
-        }
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
-            fileWriter.write(lineToWrite);
-            System.out.println("Data written to CSV file successfully.");
-        } catch (IOException e) {
-            System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
-        }
-    }
 
-    private static void writeCSVBreakdown() {
+    private static void writeCSVBreakdown() { //TODO: To be updated with correct output path
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "breakdown");
-        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, numInstances, toPatternString(pattern));
+        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, numInstances, "-1");
         String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
         System.out.println("Writing to " + filePath);
         File dir = new File(directoryPath);
@@ -488,23 +340,6 @@ public class VNFManager implements Runnable {
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();
-        }
-    }
-
-    private static String toPatternString(int pattern) {
-        switch (pattern) {
-            case 0:
-                return "loneOperative";
-            case 1:
-                return "sharedReaders";
-            case 2:
-                return "sharedWriters";
-            case 3:
-                return "mutualInteractive";
-            case 4:
-                return "dynamic";
-            default:
-                return "invalid";
         }
     }
 

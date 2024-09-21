@@ -47,7 +47,7 @@ def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew,
                 else:
                     key_index = random.randint(0, len(cross_partition_keyset) - 1)
                     key = cross_partition_keyset[key_index]
-                access_type = 'Read' if random.random() < readRatio else 'Read-Write'
+                access_type = 'Read' if random.random() < readRatio else 'Write'
                 scope = 'Per-flow' if random.random() < scopeRatio else 'Cross-flow'
                 writer.writerow([request_id, key, vnfID, access_type, scope])
         
@@ -63,7 +63,7 @@ numPackets = 400000
 numInstances = 4
 numItems = 1000
 
-keySkew = 50
+keySkew = 0
 workloadSkew = 0
 readRatioList = [0, 25, 50, 75, 100]
 scopeRatioList = [0, 25, 50, 75, 100]

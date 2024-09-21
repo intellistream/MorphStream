@@ -47,18 +47,6 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
     prob_scope = prob_scope / 100
     """Generate CSV lines based on the given skewness, read/write, and scope probabilities."""
     keys = zipfian_distribution(num_keys, key_skewness, total_requests)
-
-    # Count the frequency of each key access
-    key_counts = np.bincount(keys, minlength=num_keys)
-
-    # Plot the frequency distribution
-    # plt.figure(figsize=(10, 6))
-    # plt.bar(range(num_keys), key_counts)
-    # plt.xlabel('Key')
-    # plt.ylabel('Frequency')
-    # plt.title('Zipfian Distribution of Key Accesses')
-    # plt.show()
-
     types = np.random.choice(['Read', 'Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
     scopes = np.random.choice(['Per-flow', 'Cross-flow'], total_requests, p=[prob_scope, 1 - prob_scope])
     
@@ -71,11 +59,8 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
 
 def distribute_lines_among_instances(lines, instance_workloads, output_dir):
     """Distribute the generated lines among instances based on workload distribution."""
-    
-    # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
     
-    # Remove all existing files in the output directory
     for filename in os.listdir(output_dir):
         file_path = os.path.join(output_dir, filename)
         if os.path.isfile(file_path) or os.path.islink(file_path):
@@ -103,22 +88,20 @@ def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew,
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
     workloadDir = f'{rootDir}/{workloadConfig}'
 
-    # Generate all CSV lines
     lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
 
-    # Distribute lines based on workload skewness
     instance_workloads = generate_workload_distribution(numInstances, numPackets, workloadSkew, puncInterval)
     distribute_lines_among_instances(lines, instance_workloads, workloadDir)
 
 
-# Example usage
+# Parameters
 puncInterval = 1000 # Used to normalize workload distribution among instances 
 expID = '5.4.2'
 vnfID = 11
 
 numPackets = 400000
 numInstances = 4
-numItems = 10000
+numItems = 5000
 
 keySkewList = [0, 25, 50, 75, 100, 150, 200, 250]
 workloadSkew = 0

@@ -14,17 +14,17 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class S6StateManager implements Runnable {
-    private static BlockingQueue<VNFRequest> operationQueue;
+    private BlockingQueue<VNFRequest> operationQueue;
     private final Map<Integer, Socket> instanceSocketMap;
-    private static long initEndTime = -1;
-    private static long processEndTime = -1;
+    private long initEndTime = -1;
+    private long processEndTime = -1;
 
     public S6StateManager(BlockingQueue<VNFRequest> operationQueue) {
-        S6StateManager.operationQueue = operationQueue;
+        this.operationQueue = operationQueue;
         this.instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     }
 
-    public static void submitS6Request(VNFRequest request) {
+    public void submitS6Request(VNFRequest request) {
         try {
             operationQueue.put(request);
         } catch (InterruptedException e) {
@@ -45,7 +45,7 @@ public class S6StateManager implements Runnable {
             }
             if (request.getCreateTime() == -1) {
                 processEndTime = System.nanoTime();
-                writeCSVTimestamps();
+//                writeCSVTimestamps();
                 System.out.println("Cache CC thread received stop signal");
                 break;
             }
@@ -66,7 +66,7 @@ public class S6StateManager implements Runnable {
         }
     }
 
-    private static void writeCSVTimestamps() {
+    private void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");

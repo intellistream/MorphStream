@@ -88,7 +88,7 @@ public class SACombo extends AbstractSpoutCombo {
 
                 } else { //stop signal arrives, stop the current spout thread
                     processEndTime = System.nanoTime();
-                    writeCSVTimestamps();
+//                    writeCSVTimestamps();
                     System.out.println("TPG thread " + this.taskId + " received stop signal.");
                     SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                     SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.

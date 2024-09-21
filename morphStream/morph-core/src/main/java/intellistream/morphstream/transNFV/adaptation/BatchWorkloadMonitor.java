@@ -1,22 +1,10 @@
 package intellistream.morphstream.transNFV.adaptation;
 
 import intellistream.morphstream.transNFV.common.PatternData;
-import intellistream.morphstream.transNFV.vnf.VNFManager;
-import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-import intellistream.morphstream.engine.txn.storage.StorageManager;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 
-public class BatchMonitorThread implements Runnable {
+public class BatchWorkloadMonitor implements Runnable {
 //    private static final Logger LOG = LoggerFactory.getLogger(BatchMonitorThread.class);
 //    private static int txnCounter = 0;
 //    private static int nextPunctuationID = 1; // The next punctuation ID that instances can begin, start from 1
@@ -42,8 +30,8 @@ public class BatchMonitorThread implements Runnable {
 //    private static final int communicationChoice = MorphStreamEnv.get().configuration().getInt("communicationChoice");
 
 
-    public BatchMonitorThread(BlockingQueue<PatternData> patternDataQueue) {
-        BatchMonitorThread.patternDataQueue = patternDataQueue;
+    public BatchWorkloadMonitor(BlockingQueue<PatternData> patternDataQueue) {
+        BatchWorkloadMonitor.patternDataQueue = patternDataQueue;
     }
 
     @Override

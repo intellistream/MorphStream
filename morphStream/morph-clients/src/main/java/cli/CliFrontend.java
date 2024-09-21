@@ -18,7 +18,6 @@ import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Objects;
@@ -49,8 +48,33 @@ public class CliFrontend {
         env.DatabaseInitialize();
     }
 
-    public void prepareAdaptiveCC() {
-        env.initializeAdaptiveCCManager();
+    public void createTransNFVStateManager() {
+        env.createTransNFVStateManager();
+    }
+
+    public void prepareTransNFVStateManager() {
+        String ccStrategy = env.configuration().getString("ccStrategy");
+
+        if (Objects.equals(ccStrategy, "Partitioning")) {
+            env.getTransNFVStateManager().preparePartitionStateManager();
+        } else if (Objects.equals(ccStrategy, "Replication")) {
+            env.getTransNFVStateManager().prepareReplicationStateManager();
+        } else if (Objects.equals(ccStrategy, "Offloading")) {
+            env.getTransNFVStateManager().prepareOffloadExecutors();
+        } else if (Objects.equals(ccStrategy, "Proactive")) {
+            env.getTransNFVStateManager().prepareProactiveExecutors();
+        } else if (Objects.equals(ccStrategy, "OpenNF")) {
+            env.getTransNFVStateManager().prepareOpenNFStateManager();
+        } else if (Objects.equals(ccStrategy, "CHC")) {
+            env.getTransNFVStateManager().prepareCHCStateManager();
+        } else if (Objects.equals(ccStrategy, "S6")) {
+            env.getTransNFVStateManager().prepareS6StateManager();
+        } else if (Objects.equals(ccStrategy, "Adaptive")) {
+            //TODO: Prepare adaptive state manager
+            env.getTransNFVStateManager().prepareBatchWorkloadMonitor();
+        } else {
+            if (enable_log) LOG.error("Unknown CC strategy: " + ccStrategy);
+        }
     }
 
     public void registerStateAccess(String saID, String saType, String tableName) {
@@ -96,39 +120,39 @@ public class CliFrontend {
     }
 
 
-    public void runStateManager() throws InterruptedException {
+    public void startTransNFVStateManager() throws InterruptedException {
         String ccStrategy = env.configuration().getString("ccStrategy");
         boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
         if (Objects.equals(ccStrategy, "Partitioning")) {
-            env.getAdaptiveCCManager().startPartitioningCC();
+            env.getTransNFVStateManager().startPartitionStateManager();
             startVNF();
-            env.getAdaptiveCCManager().joinPartitioningCC();
+            env.getTransNFVStateManager().joinPartitionStateManager();
         } else if (Objects.equals(ccStrategy, "Replication")) {
-            env.getAdaptiveCCManager().startReplicationCC();
+            env.getTransNFVStateManager().startReplicationStateManager();
             startVNF();
-            env.getAdaptiveCCManager().joinReplicationCC();
+            env.getTransNFVStateManager().joinReplicationStateManager();
         } else if (Objects.equals(ccStrategy, "Offloading")) {
-            env.getAdaptiveCCManager().startOffloadExecutorThreads();
+            env.getTransNFVStateManager().startOffloadExecutors();
             startVNF();
-            env.getAdaptiveCCManager().joinOffloadExecutorThreads();
+            env.getTransNFVStateManager().joinOffloadExecutors();
         } else if (Objects.equals(ccStrategy, "Proactive")) {
             runTopologyLocally(); // This starts the TPG threads
         } else if (Objects.equals(ccStrategy, "OpenNF")) {
-            env.getAdaptiveCCManager().startOpenNF();
+            env.getTransNFVStateManager().startOpenNFStateManager();
             startVNF();
-            env.getAdaptiveCCManager().joinOpenNF();
+            env.getTransNFVStateManager().joinOpenNFStateManager();
         } else if (Objects.equals(ccStrategy, "CHC")) {
-            env.getAdaptiveCCManager().startCHC();
+            env.getTransNFVStateManager().startCHCStateManager();
             startVNF();
-            env.getAdaptiveCCManager().joinCHC();
+            env.getTransNFVStateManager().joinCHCStateManager();
         } else if (Objects.equals(ccStrategy, "S6")) {
-            env.getAdaptiveCCManager().startS6();
+            env.getTransNFVStateManager().startS6StateManager();
             startVNF();
-            env.getAdaptiveCCManager().joinS6();
+            env.getTransNFVStateManager().joinS6StateManager();
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
-            env.getAdaptiveCCManager().startAdaptiveCC();
+            env.getTransNFVStateManager().startAdaptiveCC();
             runTopologyLocally();
-            env.getAdaptiveCCManager().joinAdaptiveCC();
+            env.getTransNFVStateManager().joinAdaptiveCC();
         } else {
             if (enable_log) LOG.error("Unknown CC strategy: " + ccStrategy);
         }

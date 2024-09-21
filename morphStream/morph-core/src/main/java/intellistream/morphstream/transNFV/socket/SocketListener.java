@@ -31,7 +31,7 @@ public class SocketListener implements Runnable { //A single thread that listens
     private static final byte fullSeparator = 59;
     private static final byte msgSeparator = 10;
     private static final int PORT = 8080;
-    private final ServerSocket serverSocket = MorphStreamEnv.get().stateManagerSocket();
+    private final ServerSocket serverSocket = null; //TODO: Hardcoded
     private static final int socketHandlerThreadNum = 4; //TODO: Hardcoded
     private static int monitorCounter = 0;
     private static int partitionCounter = 0;

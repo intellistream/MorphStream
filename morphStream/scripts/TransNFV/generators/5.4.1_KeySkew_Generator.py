@@ -65,7 +65,7 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
     # plt.title('Zipfian Distribution of Key Accesses')
     # plt.show()
 
-    types = np.random.choice(['Read', 'Read-Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
+    types = np.random.choice(['Read', 'Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
     scopes = np.random.choice(['Per-flow', 'Cross-flow'], total_requests, p=[prob_scope, 1 - prob_scope])
     
     lines = []

@@ -317,12 +317,12 @@ if __name__ == "__main__":
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath,
-    #                      gcCheckInterval, gcBatchInterval)
+    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath,
+                         gcCheckInterval, gcBatchInterval)
     
-    # execute_bash_script(shellScriptPath)
+    execute_bash_script(shellScriptPath)
 
     readRatioList = [0, 25, 50, 75, 100]
     doMVCCList = [0, 1]

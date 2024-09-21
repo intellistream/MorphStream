@@ -272,7 +272,7 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.2"
     vnfID = 11
-    numItems = 10000
+    numItems = 5000
     numPackets = 400000
     numInstances = 4
 

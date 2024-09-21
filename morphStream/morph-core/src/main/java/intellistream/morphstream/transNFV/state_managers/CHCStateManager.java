@@ -17,22 +17,20 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CHCStateManager implements Runnable {
-    private static BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances
-    private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
+    private BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances
+    private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
-    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
-    private static final ConcurrentHashMap<Integer, Integer> tupleOwnership = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Integer, Integer> fetchedValues = MorphStreamEnv.fetchedValues;
-    private static long aggUsefulTime = 0;
-    private static long initEndTime = -1;
-    private static long processEndTime = -1;
+    private final ConcurrentHashMap<Integer, Integer> tupleOwnership = new ConcurrentHashMap<>();
+    private long aggUsefulTime = 0;
+    private long initEndTime = -1;
+    private long processEndTime = -1;
 
     public CHCStateManager(BlockingQueue<VNFRequest> requestQueue) {
-        CHCStateManager.requestQueue = requestQueue;
+        this.requestQueue = requestQueue;
     }
 
-    public static void submitCHCReq(VNFRequest request) {
+    public void submitCHCReq(VNFRequest request) {
         try {
             requestQueue.put(request);
         } catch (InterruptedException e) {
@@ -51,7 +49,7 @@ public class CHCStateManager implements Runnable {
                 request = requestQueue.take();
                 if (request.getCreateTime() == -1) {
                     processEndTime = System.nanoTime();
-                    writeCSVTimestamps();
+//                    writeCSVTimestamps();
                     System.out.println("Flushing CC thread received stop signal");
                     break;
                 }
@@ -97,7 +95,7 @@ public class CHCStateManager implements Runnable {
         }
     }
 
-    private static void writeCSVTimestamps() {
+    private void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
@@ -127,7 +125,7 @@ public class CHCStateManager implements Runnable {
         }
     }
 
-    public static long getAggUsefulTime() {
+    public long getAggUsefulTime() {
         return aggUsefulTime;
     }
 

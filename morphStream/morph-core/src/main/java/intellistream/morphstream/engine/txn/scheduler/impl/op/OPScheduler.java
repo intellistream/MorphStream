@@ -39,9 +39,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
     public LoggingManager loggingManager; // Used by fault tolerance
     public int isLogging;// Used by fault tolerance
-    private native boolean nativeTxnUDF(String operatorID, StateAccess stateAccess);
-    private final boolean useNativeLib = MorphStreamEnv.get().configuration().getBoolean("useNativeLib", false);
-    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.

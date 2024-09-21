@@ -6,7 +6,6 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.transaction.NotSupportedException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -39,32 +38,33 @@ public class StateManagerRunner extends Client {
      * ...
      */
     public static void main(String[] args) throws Exception {
-        CliFrontend vnfMain = new CliFrontend("VNF_Main");
-        vnfMain.loadConfigStreaming(args); // Load configuration, initialize DB
+        CliFrontend vnfMainClient = new CliFrontend("VNF_Main");
+        vnfMainClient.loadConfigStreaming(args); // Load configuration, initialize DB
 
         boolean enableMemoryFootprint = (MorphStreamEnv.get().configuration().getInt("enableMemoryFootprint") == 1);
         if (enableMemoryFootprint) {
             startMemoryMonitoring();
         }
 
-        vnfMain.initializeDB();
-        vnfMain.prepareAdaptiveCC(); // Create AdaptiveCCManager, which initializes TPG queues
+        vnfMainClient.initializeDB();
+        vnfMainClient.createTransNFVStateManager(); // Create the global state manager object
+        vnfMainClient.prepareTransNFVStateManager(); // Prepare state manager and state manager executors
 
         int numTPGThreads = MorphStreamEnv.get().configuration().getInt("tthread");
-        vnfMain.registerOperator("sim_vnf", numTPGThreads);
-        vnfMain.runStateManager(); // Start CC threads, and wait for them to finish
+        vnfMainClient.registerOperator("sim_vnf", numTPGThreads);
+        vnfMainClient.startTransNFVStateManager(); // Start CC threads, and wait for them to finish
 
     }
 
     public static void startMemoryMonitoring() {
         int memoryIntervalMS = MorphStreamEnv.get().configuration().getInt("memoryIntervalMS");
-        memoryFootprintExecutor.scheduleAtFixedRate(new MemoryMonitorTask(), 0, memoryIntervalMS, TimeUnit.MILLISECONDS);
+        memoryFootprintExecutor.scheduleAtFixedRate(new MemoryMonitorTask(), 0, memoryIntervalMS, TimeUnit.MILLISECONDS); // By default, every 10 milliseconds (10^-2)
     }
 
     public static void stopMemoryMonitoring() {
         memoryFootprintExecutor.shutdownNow();
         writeFootprintToCsv();
-        writeStartTimeCSV();
+//        writeStartTimeCSV();
     }
 
     static class MemoryMonitorTask implements Runnable {
@@ -106,7 +106,7 @@ public class StateManagerRunner extends Client {
         File dir = new File(baseDirectory);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
-                throw new RuntimeException("Failed to create the directory.");
+                throw new RuntimeException("Failed to create the footprint directory.");
             }
         }
         File file = new File(filePath);

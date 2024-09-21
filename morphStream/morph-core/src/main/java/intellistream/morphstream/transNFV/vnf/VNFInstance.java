@@ -31,10 +31,17 @@ public class VNFInstance implements Runnable {
     private final int statePartitionEnd;
     private final CyclicBarrier finishBarrier;
 
+    private final PartitionStateManager partitionStateManager = MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager();
+    private final ReplicationStateManager replicationStateManager = MorphStreamEnv.get().getTransNFVStateManager().getReplicationStateManager();
+    private final OpenNFStateManager openNFStateManager = MorphStreamEnv.get().getTransNFVStateManager().getOpenNFStateManager();
+    private final CHCStateManager chcStateManager = MorphStreamEnv.get().getTransNFVStateManager().getCHCStateManager();
+    private final S6StateManager s6StateManager = MorphStreamEnv.get().getTransNFVStateManager().getS6StateManager();
+
     private final LocalSVCCStateManager localSVCCStateManager;
     private final ConcurrentHashMap<Integer, String> tupleCCMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = UniversalStateManager.tpgInputQueues;
-    private final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = UniversalStateManager.offloadInputQueues;
+
+    private final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = MorphStreamEnv.get().getTransNFVStateManager().tpgInputQueues;
+    private final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = MorphStreamEnv.get().getTransNFVStateManager().offloadInputQueues;
 
     private final BlockingQueue<SyncData> pendingStateSyncs = new LinkedBlockingQueue<>(); //TODO: Pending state updates from other replications
     private final BlockingQueue<VNFRequest> blockingFinishedReqs = new LinkedBlockingQueue<>(); //TODO: Waiting for manager's ACK for state update broadcast finish
@@ -45,6 +52,7 @@ public class VNFInstance implements Runnable {
     private final HashMap<Integer, Long> bufferReqStartTimeMap = new HashMap<>();
 //    private final BlockingQueue<Integer> monitorMsgQueue = new LinkedBlockingQueue<>(); //Workload monitor controls instance punctuation barriers
 
+    private String ccStrategy;
     private int instancePuncID = 1; //Start from 1
     private final int numTPGThreads;
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
@@ -65,6 +73,7 @@ public class VNFInstance implements Runnable {
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, String ccStrategy, int numTPGThreads,
                           String csvFilePath, LocalSVCCStateManager stateManager, CyclicBarrier finishBarrier, int expectedRequestCount) {
         this.instanceID = instanceID;
+        this.ccStrategy = ccStrategy;
         this.statePartitionStart = statePartitionStart;
         this.statePartitionEnd = statePartitionEnd;
         this.numTPGThreads = numTPGThreads;
@@ -141,19 +150,7 @@ public class VNFInstance implements Runnable {
             int arrivedIndex = finishBarrier.await(); // Wait for other instances to finish
             if (arrivedIndex == 0) {
                 System.out.println("All instances have finished, sending stop signals to StateManager...");
-
-                VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, "-1", "-1", -1, -1, -1, -1);
-                PartitionStateManager.submitPartitioningRequest(stopSignal);
-                ReplicationStateManager.submitReplicationRequest(stopSignal);
-                for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
-                    offloadingQueues.get(offloadQueueIndex).offer(stopSignal);
-                }
-                OpenNFStateManager.submitOpenNFReq(stopSignal);
-                CHCStateManager.submitCHCReq(stopSignal);
-                S6StateManager.submitS6Request(stopSignal);
-                for (int tpgQueueIndex = 0; tpgQueueIndex < tpgInputQueues.size(); tpgQueueIndex++) {
-                    tpgInputQueues.get(tpgQueueIndex).offer(new ProactiveVNFRequest(stopSignal));
-                }
+                sendStopSignals();
             }
 
         } catch (IOException | InterruptedException | BrokenBarrierException e) {
@@ -204,7 +201,7 @@ public class VNFInstance implements Runnable {
                 submitFinishedRequest(request);
             }
             else {
-                PartitionStateManager.submitPartitioningRequest(request);
+                partitionStateManager.submitPartitioningRequest(request);
                 while (true) {
                     VNFRequest lastFinishedReq = blockingFinishedReqs.take();
                     if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -225,7 +222,7 @@ public class VNFInstance implements Runnable {
         } else if (Objects.equals(tupleCC, "Replication")) { // Replication: async read, sync write
             localSVCCStateManager.executeTransaction(request);
             if (involveWrite) {
-                ReplicationStateManager.submitReplicationRequest(request);
+                replicationStateManager.submitReplicationRequest(request);
                 while (true) {
                     VNFRequest lastFinishedReq = blockingFinishedReqs.take();
                     if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -266,7 +263,7 @@ public class VNFInstance implements Runnable {
             tpgRequestCount++;
 
         } else if (Objects.equals(tupleCC, "OpenNF")) { // OpenNF
-            OpenNFStateManager.submitOpenNFReq(request);
+            openNFStateManager.submitOpenNFReq(request);
             while (true) {
                 VNFRequest lastFinishedReq = blockingFinishedReqs.take();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -275,7 +272,7 @@ public class VNFInstance implements Runnable {
             }
 
         } else if (Objects.equals(tupleCC, "CHC")) { // CHC
-            CHCStateManager.submitCHCReq(request);
+            chcStateManager.submitCHCReq(request);
             while (true) {
                 VNFRequest lastFinishedReq = blockingFinishedReqs.take();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -294,7 +291,7 @@ public class VNFInstance implements Runnable {
             } else if (involveWrite) { // write
                 //TODO: Remove replication manager. This instance should wait for all other instances' ACK before proceeding
                 executeUDF(request);
-                S6StateManager.submitS6Request(request);
+                s6StateManager.submitS6Request(request);
                 while (true) {
                     VNFRequest lastFinishedReq = blockingFinishedReqs.take();
                     if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
@@ -468,6 +465,34 @@ public class VNFInstance implements Runnable {
         long waitTime = microseconds * 1000L; // Convert microseconds to nanoseconds
         while (System.nanoTime() - startTime < waitTime) {
             // Busy-wait loop
+        }
+    }
+
+    private void sendStopSignals() {
+        VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, "-1", "-1", -1, -1, -1, -1);
+
+        if (Objects.equals(ccStrategy, "Partitioning")) {
+            partitionStateManager.submitPartitioningRequest(stopSignal);
+        } else if (Objects.equals(ccStrategy, "Replication")) {
+            replicationStateManager.submitReplicationRequest(stopSignal);
+        } else if (Objects.equals(ccStrategy, "Offloading")) {
+            for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
+                offloadingQueues.get(offloadQueueIndex).offer(stopSignal);
+            }
+        } else if (Objects.equals(ccStrategy, "Proactive")) {
+            for (int tpgQueueIndex = 0; tpgQueueIndex < tpgInputQueues.size(); tpgQueueIndex++) {
+                tpgInputQueues.get(tpgQueueIndex).offer(new ProactiveVNFRequest(stopSignal));
+            }
+        } else if (Objects.equals(ccStrategy, "OpenNF")) {
+            openNFStateManager.submitOpenNFReq(stopSignal);
+        } else if (Objects.equals(ccStrategy, "CHC")) {
+            chcStateManager.submitCHCReq(stopSignal);
+        } else if (Objects.equals(ccStrategy, "S6")) {
+            s6StateManager.submitS6Request(stopSignal);
+        } else if (Objects.equals(ccStrategy, "Adaptive")) {
+            throw new UnsupportedOperationException("Adaptive CC strategy not supported yet");
+        } else {
+            throw new UnsupportedOperationException("Unsupported CC strategy: " + ccStrategy);
         }
     }
 }

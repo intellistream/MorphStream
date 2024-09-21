@@ -30,11 +30,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final ArrayDeque<ProactiveVNFRequest> eventQueue; //Transactional events deque
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private final Map<Integer, Socket> instanceSocketMap = MorphStreamEnv.get().instanceSocketMap();
     private final int boltThreadCount = MorphStreamEnv.get().configuration().getInt("tthread");
     private final int totalRequests = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private final int expRequestCount = totalRequests / boltThreadCount;
-    private static final ConcurrentHashMap<Integer, Object> instanceLocks = MorphStreamEnv.instanceLocks;
     private int requestCounter;
     private static final int numInstance = MorphStreamEnv.get().configuration().getInt("numInstances");
     private static final ConcurrentHashMap<Integer, Integer> instanceFinishReqCounter = new ConcurrentHashMap<>();

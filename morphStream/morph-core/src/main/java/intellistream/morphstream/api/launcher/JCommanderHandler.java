@@ -293,8 +293,11 @@ public class JCommanderHandler {
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
 //    public String ccStrategy = "Partitioning";
 //    public String ccStrategy = "Replication";
-    public String ccStrategy = "Offloading";
+//    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
+//    public String ccStrategy = "OpenNF";
+//    public String ccStrategy = "CHC";
+    public String ccStrategy = "S6";
 //    public String ccStrategy = "Adaptive";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 0;
