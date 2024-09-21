@@ -7,7 +7,7 @@ function ResetParameters() {
   checkpointInterval=10240
   tthread=24
   scheduler="OP_NS"
-  multiple_ratio=100
+  Ratio_of_Multiple_State_Access=100
   key_skewness=0
   overlap_ratio=0
   abort_ratio=0
@@ -88,6 +88,5 @@ function abort_mechanism_study() {
  varying_abort_ratio
 }
 
-rm -rf /home/shuhao/jjzhao/data
 abort_mechanism_study
 ResetParameters

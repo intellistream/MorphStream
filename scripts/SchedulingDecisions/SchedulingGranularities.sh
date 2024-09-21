@@ -119,6 +119,6 @@ function scheduling_granularity_study() {
    varying_punctuation_interval
    varying_ratio_of_multiple_state_access
 }
-rm -rf /home/shuhao/jjzhao/data
-granularity_study
+
+scheduling_granularity_study
 ResetParameters

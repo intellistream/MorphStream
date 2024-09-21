@@ -7,7 +7,7 @@ function ResetParameters() {
   checkpointInterval=10240
   tthread=24
   scheduler="BFS"
-  multiple_ratio=100
+  Ratio_of_Multiple_State_Access=100
   key_skewness=0
   overlap_ratio=0
   abort_ratio=0
@@ -102,4 +102,4 @@ function exploration_strategy_study() {
 }
 
 exploration_strategy_study
-
+ResetParameters

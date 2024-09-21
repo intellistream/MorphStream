@@ -94,5 +94,5 @@ function varying_JVMSize() { # multi-batch exp
     patEvluation
    done
 }
-dynamic_runner
+varying_JVMSize
 ResetParameters
