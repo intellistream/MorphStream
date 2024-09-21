@@ -80,10 +80,11 @@ build () {
 cd ${PROJECT_DIR}
 
 # Download Flink
-wget https://archive.apache.org/dist/flink/flink-1.10.0/apache-flink-1.10.0.tar.gz
-tar -zvxf apache-flink-1.10.0.tar.gz
-rm apache-flink-1.10.0.tar.gz
-mv apache-flink-1.10.0 flink
+wget https://archive.apache.org/dist/flink/flink-1.10.0/flink-1.10.0-bin-scala_2.11.tgz
+tar -zvxf flink-1.10.0-bin-scala_2.11.tgz
+rm flink-1.10.0-bin-scala_2.11.tgz
+mv flink-1.10.0 flink
+mv flink-conf.yaml flink/conf/
 build
 
 cd -

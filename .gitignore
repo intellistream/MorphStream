@@ -55,4 +55,5 @@ result/
 *.lock
 *.nolock
 *.bak
+flink/
 dependency-reduced-pom.xml
