@@ -34,7 +34,7 @@ public class OffloadMVCCStateManager {
         }
     }
 
-    public void mvccWrite(VNFRequest request) throws InterruptedException {
+    public long mvccWrite(VNFRequest request) throws InterruptedException {
         int key = request.getTupleID();
         int value = request.getValue();
         long timestamp = request.getCreateTime();
@@ -53,17 +53,19 @@ public class OffloadMVCCStateManager {
             }
 
             // State access
-            targetVersionControl.writeVersion(request);
+            long usefulTimePerOperation = targetVersionControl.writeVersion(request);
 
-            // Signal all waiting threads TODO: This can be improved by only signal one thread
+            // Only signal one waiting thread, avoid redundant signaling
             targetVersionControl.signalNext();
+
+            return usefulTimePerOperation;
 
         } finally {
             targetVersionControl.unlock();
         }
     }
 
-    public int mvccRead(VNFRequest request) throws InterruptedException {
+    public long mvccRead(VNFRequest request) throws InterruptedException {
         int key = request.getTupleID();
         long timestamp = request.getCreateTime();
         OffloadVersionControl targetVersionControl = versionedStateTable.get(key);

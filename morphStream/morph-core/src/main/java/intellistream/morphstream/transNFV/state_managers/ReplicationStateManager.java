@@ -17,6 +17,10 @@ public class ReplicationStateManager implements Runnable {
     private long initEndTime = -1;
     private long processEndTime = -1;
 
+    private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private long parsingStartTime = 0;
+    private long AGG_PARSING_TIME = 0;
+
     public ReplicationStateManager(BlockingQueue<VNFRequest> operationQueue) {
         this.operationQueue = operationQueue;
     }
@@ -55,15 +59,32 @@ public class ReplicationStateManager implements Runnable {
                 }
             }
 
+            REC_parsingStartTime();
             try {
                 VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
             } catch (NullPointerException e) {
                 throw new RuntimeException(e);
             }
+            REC_parsingEndTime();
 
         }
     }
 
+    private void REC_parsingStartTime() {
+        if (enableTimeBreakdown) {
+            parsingStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_parsingEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_PARSING_TIME += System.nanoTime() - parsingStartTime;
+        }
+    }
+
+    public long getAGG_PARSING_TIME() {
+        return AGG_PARSING_TIME;
+    }
 
     private void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");

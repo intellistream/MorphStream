@@ -1,5 +1,6 @@
 package intellistream.morphstream.transNFV.common;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.transNFV.vnf.UDF;
@@ -20,6 +21,10 @@ public class OffloadVersionControl {
     private final TableRecord tableRecord;
     private final PriorityQueue<Operation> writeRequestQueue;
     private long lwm = Long.MAX_VALUE;
+
+    private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private long usefulStartTime = 0;
+    private long usefulTimePerOperation = 0;
 
     public OffloadVersionControl(TableRecord tableRecord) {
         this.tableRecord = tableRecord;
@@ -48,18 +53,6 @@ public class OffloadVersionControl {
         return timestamp < lwm;
     }
 
-    public void writeVersion(VNFRequest request) {
-        int value = request.getValue();
-        long timestamp = request.getCreateTime();
-        SchemaRecord tempo_record = new SchemaRecord(tableRecord.content_.readPreValues(timestamp));
-        tempo_record.getValues().get(1).setInt(value);
-        tableRecord.content_.updateMultiValues(timestamp, timestamp, false, tempo_record);
-        UDF.executeUDF(request);
-
-        writeRequestQueue.poll();
-        lwm = writeRequestQueue.isEmpty() ? Long.MAX_VALUE : writeRequestQueue.peek().getTimestamp();
-    }
-
     public void awaitForWrite() throws InterruptedException {
         writeCondition.await();
     }
@@ -72,7 +65,39 @@ public class OffloadVersionControl {
         writeCondition.signal();
     }
 
-    public int readVersion(long timestamp) {
-        return tableRecord.content_.readPreValues(timestamp).getValues().get(1).getInt();
+    public long readVersion(long timestamp) {
+        REC_usefulStartTime();
+        tableRecord.content_.readPreValues(timestamp).getValues().get(1).getInt();
+        REC_usefulEndTime();
+        return usefulTimePerOperation;
+    }
+
+    public long writeVersion(VNFRequest request) {
+        int value = request.getValue();
+        long timestamp = request.getCreateTime();
+
+        REC_usefulStartTime();
+        SchemaRecord tempo_record = new SchemaRecord(tableRecord.content_.readPreValues(timestamp));
+        tempo_record.getValues().get(1).setInt(value);
+        tableRecord.content_.updateMultiValues(timestamp, timestamp, false, tempo_record);
+        UDF.executeUDF(request);
+        REC_usefulEndTime();
+
+        writeRequestQueue.poll();
+        lwm = writeRequestQueue.isEmpty() ? Long.MAX_VALUE : writeRequestQueue.peek().getTimestamp();
+
+        return usefulTimePerOperation;
+    }
+
+    private void REC_usefulStartTime() {
+        if (enableTimeBreakdown) {
+            usefulStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_usefulEndTime() {
+        if (enableTimeBreakdown) {
+            usefulTimePerOperation = System.nanoTime() - usefulStartTime;
+        }
     }
 }

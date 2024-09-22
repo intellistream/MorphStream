@@ -8,7 +8,6 @@ import intellistream.morphstream.transNFV.state_managers.OffloadMVCCStateManager
 import intellistream.morphstream.transNFV.state_managers.OffloadSVCCStateManager;
 import intellistream.morphstream.transNFV.common.Operation;
 import intellistream.morphstream.transNFV.common.Transaction;
-import intellistream.morphstream.transNFV.state_managers.TransNFVStateManager;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 
 import java.util.HashMap;
@@ -37,6 +36,12 @@ public class OffloadExecutor implements Runnable {
     private int currentGCBatchID = 0;
     private int globalCurrentGCBatchID = 0;
     private NonBlockingGCThread gcExecutorThread;
+
+    private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private long usefulStartTime = 0;
+    private long parsingStartTime = 0;
+    private long AGG_USEFUL_TIME = 0;
+    private long AGG_PARSING_TIME = 0;
 
     public OffloadExecutor(int offloadExecutorID, BlockingQueue<VNFRequest> inputQueue,
                            OffloadSVCCStateManager svccStateManager, OffloadMVCCStateManager mvccStateManager) {
@@ -82,40 +87,7 @@ public class OffloadExecutor implements Runnable {
 
                 } else if (doMVCC == 1) {
                     executeMVCCTransaction(request);
-
-                    // Each thread records the end timestamp of each batch
-                    if (writeCounter % gcBatchInterval == 0) {
-                        long lastBatchEndTimestamp = request.getCreateTime();
-                        batchToTimestamp.put(currentGCBatchID, lastBatchEndTimestamp);
-                        currentGCBatchID++;
-                    }
-
-                    // Thread 0 periodically checks for global finished batch ID and initiates GC
-                    if (writeCounter > 0 && writeCounter % gcCheckInterval == 0 && offloadExecutorID == 0) {
-                        int minCurrentBatchID = Integer.MAX_VALUE;
-
-                        // Find the minimum finished batch ID among all threads
-                        for (OffloadExecutor offloadExecutorThread : offloadExecutors.values()) {
-                            minCurrentBatchID = Math.min(minCurrentBatchID, offloadExecutorThread.getCurrentGCBatchID());
-                        }
-
-                        // If the global finished batch ID is updated, initiate GC
-                        if (minCurrentBatchID > globalCurrentGCBatchID) {
-                            globalCurrentGCBatchID = minCurrentBatchID;
-                            long minBatchEndTimestamp = Long.MAX_VALUE;
-
-                            for (OffloadExecutor offloadExecutorThread : offloadExecutors.values()) {
-                                minBatchEndTimestamp = Math.min(minBatchEndTimestamp, offloadExecutorThread.getLastBatchEndTimestamp(globalCurrentGCBatchID - 1));
-                            }
-
-                            System.out.println("Offload executor 0 initiates GC for batch " + (globalCurrentGCBatchID - 1) + " with end timestamp " + minBatchEndTimestamp);
-
-                            // Garbage collection
-                            for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
-                                garbageCollection(tupleID, minBatchEndTimestamp);
-                            }
-                        }
-                    }
+                    versionManagement(request);
 
                 } else {
                     throw new UnsupportedOperationException();
@@ -125,7 +97,9 @@ public class OffloadExecutor implements Runnable {
                 throw new RuntimeException(e);
             }
 
+            REC_parsingStartTime();
             VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
+            REC_parsingEndTime();
         }
     }
 
@@ -158,7 +132,9 @@ public class OffloadExecutor implements Runnable {
         }
 
         // Execute transaction
-        svccStateManager.executeTransaction(request);
+        REC_usefulStartTime();
+        svccStateManager.svccNonBlockingTxnExecution(request);
+        REC_usefulEndTime();
 
         // Phase 2: Release all locks
         for (int key : transaction.getAcquiredLocks()) {
@@ -175,12 +151,14 @@ public class OffloadExecutor implements Runnable {
 
         // Sequentially execute operations inside transaction
         for (Operation operation : transaction.getOperations()) {
+            long usefulTimePerOperation;
             if (operation.isWrite()) {
-                mvccStateManager.mvccWrite(request);
+                usefulTimePerOperation = mvccStateManager.mvccWrite(request);
 
             } else {
-                mvccStateManager.mvccRead(request);
+                usefulTimePerOperation = mvccStateManager.mvccRead(request);
             }
+            REC_incrementUsefulTime(usefulTimePerOperation);
         }
     }
 
@@ -195,6 +173,43 @@ public class OffloadExecutor implements Runnable {
             throw new UnsupportedOperationException("Unsupported operation type: " + type);
         }
         return transaction;
+    }
+
+
+    private void versionManagement(VNFRequest request) {
+        // Each thread records the end timestamp of each batch
+        if (writeCounter % gcBatchInterval == 0) {
+            long lastBatchEndTimestamp = request.getCreateTime();
+            batchToTimestamp.put(currentGCBatchID, lastBatchEndTimestamp);
+            currentGCBatchID++;
+        }
+
+        // Thread 0 periodically checks for global finished batch ID and initiates GC
+        if (writeCounter > 0 && writeCounter % gcCheckInterval == 0 && offloadExecutorID == 0) {
+            int minCurrentBatchID = Integer.MAX_VALUE;
+
+            // Find the minimum finished batch ID among all threads
+            for (OffloadExecutor offloadExecutorThread : offloadExecutors.values()) {
+                minCurrentBatchID = Math.min(minCurrentBatchID, offloadExecutorThread.getCurrentGCBatchID());
+            }
+
+            // If the global finished batch ID is updated, initiate GC
+            if (minCurrentBatchID > globalCurrentGCBatchID) {
+                globalCurrentGCBatchID = minCurrentBatchID;
+                long minBatchEndTimestamp = Long.MAX_VALUE;
+
+                for (OffloadExecutor offloadExecutorThread : offloadExecutors.values()) {
+                    minBatchEndTimestamp = Math.min(minBatchEndTimestamp, offloadExecutorThread.getLastBatchEndTimestamp(globalCurrentGCBatchID - 1));
+                }
+
+                System.out.println("Offload executor 0 initiates GC for batch " + (globalCurrentGCBatchID - 1) + " with end timestamp " + minBatchEndTimestamp);
+
+                // Garbage collection
+                for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
+                    garbageCollection(tupleID, minBatchEndTimestamp);
+                }
+            }
+        }
     }
 
 
@@ -220,6 +235,46 @@ public class OffloadExecutor implements Runnable {
         while (System.nanoTime() - startTime < waitTime) {
             // Busy-wait loop
         }
+    }
+
+
+
+    private void REC_usefulStartTime() {
+        if (enableTimeBreakdown) {
+            usefulStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_usefulEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
+        }
+    }
+
+    private void REC_incrementUsefulTime(long usefulTime) {
+        if (enableTimeBreakdown) {
+            AGG_USEFUL_TIME += usefulTime;
+        }
+    }
+
+    private void REC_parsingStartTime() {
+        if (enableTimeBreakdown) {
+            parsingStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_parsingEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_PARSING_TIME += System.nanoTime() - parsingStartTime;
+        }
+    }
+
+    public long getAGG_USEFUL_TIME() {
+        return AGG_USEFUL_TIME;
+    }
+
+    public long getAGG_PARSING_TIME() {
+        return AGG_PARSING_TIME;
     }
     
 }

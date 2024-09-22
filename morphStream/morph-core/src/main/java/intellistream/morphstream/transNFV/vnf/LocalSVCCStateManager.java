@@ -39,7 +39,7 @@ public class LocalSVCCStateManager {
         }
     }
 
-    public void executeTransaction(VNFRequest request) {
+    public void nonBlockingTxnExecution(VNFRequest request) {
         int tupleID = request.getTupleID();
         long timeStamp = request.getCreateTime();
         int value = request.getValue();

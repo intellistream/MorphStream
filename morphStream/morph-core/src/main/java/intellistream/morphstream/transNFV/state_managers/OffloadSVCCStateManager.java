@@ -2,10 +2,7 @@ package intellistream.morphstream.transNFV.state_managers;
 
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.engine.txn.db.DatabaseException;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
-import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.transNFV.common.S2PLLockObject;
 import intellistream.morphstream.transNFV.vnf.UDF;
 
@@ -39,9 +36,8 @@ public class OffloadSVCCStateManager {
         }
     }
 
-    public void executeTransaction(VNFRequest request) {
+    public void svccNonBlockingTxnExecution(VNFRequest request) {
         int tupleID = request.getTupleID();
-        long timeStamp = request.getCreateTime();
         String type = request.getType();
 
         if (Objects.equals(type,"Read")) {
@@ -52,27 +48,6 @@ public class OffloadSVCCStateManager {
         } else {
             throw new UnsupportedOperationException();
         }
-
-//        try {
-//            if (Objects.equals(type, "Read")) {
-//                storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.readPreValues(timeStamp).getValues().get(1).getInt();
-//            } else if (Objects.equals(type, "Write")) {
-//                TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-//                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-//                SchemaRecord tempo_record = new SchemaRecord(readRecord);
-//                tempo_record.getValues().get(1).setInt(-1);
-//                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-//
-//                UDF.executeUDF(request); // Simulated UDF execution
-//
-//            } else {
-//                throw new UnsupportedOperationException();
-//            }
-//
-//        } catch (DatabaseException | NullPointerException e) {
-//            System.out.println("Offload CC received error request with tupleID: " + request.getTupleID() + " and instanceID: " + request.getInstanceID());
-//            throw new RuntimeException(e);
-//        }
     }
 
 }

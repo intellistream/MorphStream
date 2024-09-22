@@ -1,7 +1,6 @@
 package intellistream.morphstream.transNFV.state_managers;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.transNFV.common.SyncData;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.transNFV.vnf.VNFInstance;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
@@ -9,7 +8,6 @@ import intellistream.morphstream.transNFV.vnf.VNFManager;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class PartitionStateManager implements Runnable {
@@ -19,6 +17,13 @@ public class PartitionStateManager implements Runnable {
     private final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private final int partitionRange = NUM_ITEMS / numInstances;
+
+    private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private long usefulStartTime = 0;
+    private long parsingStartTime = 0;
+    private long AGG_USEFUL_TIME = 0;
+    private long AGG_PARSING_TIME = 0;
+
 
     public PartitionStateManager(BlockingQueue<VNFRequest> operationQueue) {
         this.operationQueue = operationQueue;
@@ -50,15 +55,20 @@ public class PartitionStateManager implements Runnable {
                 break;
             }
 
+            // Cross-partition transaction execution
+            REC_usefulStartTime();
             int targetInstanceID = getPartitionInstance(request.getTupleID());
             VNFInstance targetInstance = VNFManager.getInstance(targetInstanceID);
-            targetInstance.getLocalSVCCStateManager().executeTransaction(request);
+            targetInstance.getLocalSVCCStateManager().nonBlockingTxnExecution(request);
+            REC_usefulEndTime();
 
+            REC_parsingStartTime();
             try {
                 VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
             } catch (NullPointerException e) {
                 throw new RuntimeException(e);
             }
+            REC_parsingEndTime();
 
         }
     }
@@ -67,6 +77,37 @@ public class PartitionStateManager implements Runnable {
         return tupleID / partitionRange;
     }
 
+    private void REC_usefulStartTime() {
+        if (enableTimeBreakdown) {
+            usefulStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_usefulEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
+        }
+    }
+
+    private void REC_parsingStartTime() {
+        if (enableTimeBreakdown) {
+            parsingStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_parsingEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_PARSING_TIME += System.nanoTime() - parsingStartTime;
+        }
+    }
+
+    public long getAGG_USEFUL_TIME() {
+        return AGG_USEFUL_TIME;
+    }
+
+    public long getAGG_PARSING_TIME() {
+        return AGG_PARSING_TIME;
+    }
 
     private void writeCSVTimestamps() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
