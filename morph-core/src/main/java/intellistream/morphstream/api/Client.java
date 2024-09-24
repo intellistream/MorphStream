@@ -32,6 +32,7 @@ public abstract class Client extends Thread {
     protected int msgCount = 0;
     private String driverHost;
     private int driverPort;
+    private int qps = 0;
     public abstract boolean transactionUDF(Function function);
     public abstract Result postUDF(long bid, String txnFlag, HashMap<String, Function> FunctionMap);
     public abstract void defineFunction();
@@ -49,11 +50,12 @@ public abstract class Client extends Thread {
     }
     public void initialize(int clientId, CountDownLatch latch) throws IOException {
         this.clientId = clientId;
+        this.qps = MorphStreamEnv.get().configuration().getInt("qps");
         LOG.info("Client " + clientId + " is initialized.");
         this.latch = latch;
     }
-    public void asyncInvokeFunction(String workerName, String function) {
-        getSocket(workerName).send(function.getBytes());
+    public void asyncInvokeFunction(String driverName, String function) {
+        getSocket(driverName).send(function.getBytes());
     }
     public void asyncReceiveFunctionOutput(String workerName) {
         for (int centitick = 0; centitick < 100; centitick++) {

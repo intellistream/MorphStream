@@ -34,7 +34,7 @@ public class RdmaChannelConf implements Serializable {
 
     private int portMaxRetries= 16;
 
-    private String cpuList ="";
+    private String cpuList = "";
 
     public boolean swFlowControl() {
         return swFlowControl;

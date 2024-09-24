@@ -1,50 +1,58 @@
 #!/bin/bash
-source ../dir.sh || exit
 Id=$1
 DAGName=$2
+number=$3
+batch=$4
+frontend=$5
+worker=$6
+thread=$7
 function ResetParameters() {
     #Cluster Configurations
     isDriver=0
+    isDatabase=0
     workerId=$Id
-    workerNum=2
-    tthread=10
-    clientNum=10
-    frontendNum=20
+    workerNum=$worker
+    tthread=$thread
+    clientNum=20
+    frontendNum=$frontend
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
-    driverHost="10.10.10.3"
-    driverPort=5570
-    workerHosts="10.10.10.1,10.10.10.2"
-    workerPorts="5550,5540"
+    driverHost="10.10.10.19"
+    driverPort=5590
+    databaseHost="10.10.10.19"
+    databasePort=5580
+    workerHosts="10.10.10.20,10.10.10.24,10.10.10.3,10.10.10.113"
+    workerPorts="5550,5540,5530,5520"
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr 50 \* $tthread \* $workerNum / $frontendNum`
-    totalBatch=4
-    returnResultPerExecutor=`expr 50 \* $frontendNum / $workerNum / $tthread`
+    sendMessagePerFrontend=`expr $number \* $tthread \* $workerNum / $frontendNum`
+    totalBatch=$batch
+    returnResultPerExecutor=`expr $number`
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
-    numberItemsForTables="1000000"
-    NUM_ITEMS=1000000
-    tableNames="accounts"
-    keyDataTypesForTables="String"
-    valueDataTypesForTables="string"
-    valueDataTypesForTables="128"
-    valueNamesForTables="value"
+    numberItemsForTables="10000;100000;100000"
+    NUM_ITEMS=100000
+    tableNames="user_pwd;movie_rating;movie_review"
+    keyDataTypesForTables="String;String;String"
+    valueDataTypesForTables="String;String;String"
+    valueDataSizeForTables="16;16;256"
+    valueNamesForTables="password;rate;review"
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
-    eventTypes=$DAGName
-    tableNameForEvents="accounts"
-    keyNumberForEvents="3"
-    valueNameForEvents="transferAmount"
-    eventRatio="100"
-    ratioOfMultiPartitionTransactionsForEvents="0"
-    stateAccessSkewnessForEvents="0"
-    abortRatioForEvents="0"
+    eventTypes="userLogin;ratingMovie;reviewMovie"
+    tableNameForEvents="user_pwd;movie_rating;movie_review"
+    keyNumberForEvents="1;1;1"
+    valueNameForEvents="password;rate;review"
+    valueSizeForEvents="16;16;256"
+    eventRatio="20;40;40"
+    ratioOfMultiPartitionTransactionsForEvents="0;0;0"
+    stateAccessSkewnessForEvents="0;0;0"
+    abortRatioForEvents="0;0;0"
     isCyclic=0
     isDynamic=0
     workloadType="default,unchanging,unchanging,unchanging"
@@ -62,6 +70,7 @@ function ResetParameters() {
 function runApplication() {
   echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
+      --isDatabase $isDatabase \
       --workerId $workerId \
       --workerNum $workerNum \
       --tthread $tthread \
@@ -71,6 +80,8 @@ function runApplication() {
       --isRDMA $isRDMA \
       --driverHost $driverHost \
       --driverPort $driverPort \
+      --databaseHost $databaseHost \
+      --databasePort $databasePort \
       --workerHosts $workerHosts \
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
@@ -88,12 +99,14 @@ function runApplication() {
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
       --valueNamesForTables $valueNamesForTables \
+      --valueDataSizeForTables $valueDataSizeForTables \
       --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
       --eventTypes $eventTypes \
       --tableNameForEvents $tableNameForEvents \
       --keyNumberForEvents $keyNumberForEvents \
       --valueNameForEvents $valueNameForEvents \
+      --valueSizeForEvents $valueSizeForEvents \
       --eventRatio $eventRatio \
       --ratioOfMultiPartitionTransactionsForEvents $ratioOfMultiPartitionTransactionsForEvents \
       --stateAccessSkewnessForEvents $stateAccessSkewnessForEvents \
@@ -110,8 +123,9 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
+  java -Xms48g -Xmx48g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar $JAR \
       --isDriver $isDriver \
+      --isDatabase $isDatabase \
       --workerId $workerId \
       --workerNum $workerNum \
       --tthread $tthread \
@@ -121,6 +135,8 @@ function runApplication() {
       --isRDMA $isRDMA \
       --driverHost $driverHost \
       --driverPort $driverPort \
+      --databaseHost $databaseHost \
+      --databasePort $databasePort \
       --workerHosts $workerHosts \
       --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
@@ -138,12 +154,14 @@ function runApplication() {
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
       --valueNamesForTables $valueNamesForTables \
+      --valueDataSizeForTables $valueDataSizeForTables \
       --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
       --eventTypes $eventTypes \
       --tableNameForEvents $tableNameForEvents \
       --keyNumberForEvents $keyNumberForEvents \
       --valueNameForEvents $valueNameForEvents \
+      --valueSizeForEvents $valueSizeForEvents \
       --eventRatio $eventRatio \
       --ratioOfMultiPartitionTransactionsForEvents $ratioOfMultiPartitionTransactionsForEvents \
       --stateAccessSkewnessForEvents $stateAccessSkewnessForEvents \
@@ -166,3 +184,4 @@ function application_runner() {
  runApplication
 }
 application_runner
+rm -rf ${RSTDIR}/inputs/client.$DAGName

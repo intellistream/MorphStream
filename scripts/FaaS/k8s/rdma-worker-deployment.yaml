@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rdma-worker-deployment
+spec:
+  replicas: 8  # 4 machines × 2 pods per machine
+  selector:
+    matchLabels:
+      app: rdma-worker
+  template:
+    metadata:
+      labels:
+        app: rdma-worker
+    spec:
+      hostNetwork: true
+      containers:
+        - name: worker-container
+          image: curryzhao/rtfaas
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: aws_secret_access_key
+          resources:
+            requests:
+              cpu: "4"
+              memory: "16Gi"
+            limits:
+              cpu: "4"
+              memory: "16Gi"
+          securityContext:
+            capabilities:
+              add: ["IPC_LOCK"]
+          volumeMounts:
+            - name: rdma-devices
+              mountPath: /dev/infiniband
+      volumes:
+        - name: rdma-devices
+          hostPath:
+            path: /dev/infiniband
+      nodeSelector:
+        rdma-capable: "true"

@@ -111,14 +111,11 @@ public class RdmaNode {
             // Add CPUs to the list while shuffling the order of the list,
             // so that multiple RdmaNodes on this machine will have a better change
             // to getRdmaBlockLocation different CPUs assigned to them
-            cpuArrayList.add(
-                    cpuArrayList.isEmpty() ? 0 : new Random().nextInt(cpuArrayList.size()),
-                    cpu);
+            cpuArrayList.add(cpuArrayList.isEmpty() ? 0 : new Random().nextInt(cpuArrayList.size()), cpu);
         };
 
         final int maxCpu = Runtime.getRuntime().availableProcessors() - 1;
-        final int maxUsableCpu = Math.min(Runtime.getRuntime().availableProcessors(),
-                listenerRdmaCmId.getVerbs().getNumCompVectors()) - 1;
+        final int maxUsableCpu = Math.min(Runtime.getRuntime().availableProcessors(), listenerRdmaCmId.getVerbs().getNumCompVectors()) - 1;
         if (maxUsableCpu < maxCpu - 1) {
             LOG.warn("IbvContext supports only " + (maxUsableCpu + 1) + " CPU cores, while there are" +
                     " " + (maxCpu + 1) + " CPU cores in the system. This may lead to under-utilization of the" +
@@ -145,13 +142,13 @@ public class RdmaNode {
                 break;
             }
 
-            for (int cpu = cpuStart; cpu <= Math.min(maxUsableCpu, cpuEnd); cpu++) {
+            for (int cpu = cpuStart; cpu <= Math.min(maxUsableCpu, cpuEnd); cpu ++) {
                 addCpuToList.accept(cpu);
             }
         }
 
         if (cpuArrayList.isEmpty()) {
-            for (int cpu = 0; cpu <= maxUsableCpu; cpu++) {
+            for (int cpu = 0; cpu <= maxUsableCpu; cpu ++) {
                 addCpuToList.accept(cpu);
             }
         }
@@ -159,7 +156,7 @@ public class RdmaNode {
         LOG.info("Using cpuList: {}", cpuArrayList);
     }
     private int getNextCpuVector() {
-        return cpuArrayList.get(cpuIndex++ % cpuArrayList.size());
+        return cpuArrayList.get(cpuIndex ++ % cpuArrayList.size());
     }
 
     public void bindConnectCompleteListener(final RdmaConnectionListener connectListener) {
