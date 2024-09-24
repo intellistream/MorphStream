@@ -20,5 +20,5 @@ ADD morph-clients/target/rtfaas-jar-with-dependencies.jar /rtfaas/jar/rtfaas-jar
 ADD morph-lib/lib/* /rtfaas/lib/
 ADD scripts/FaaS/driver.sh driver.sh
 
-ENTRYPOINT ["bash", "driver.sh"]
+#ENTRYPOINT ["bash", "driver.sh"]
 
