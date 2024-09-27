@@ -44,7 +44,7 @@ public class RdmaWorkerManager implements Serializable {
     private final int managerId;
     private final int workerNum;
     private final String[] workerHosts;
-    private final String[] workerPorts;
+    private final int workerPort;
     private final String driverHost;
     private final int driverPort;
     private final String databaseHost;
@@ -65,14 +65,19 @@ public class RdmaWorkerManager implements Serializable {
         this.conf = conf;
         this.totalFunctionExecutors = MorphStreamEnv.get().configuration().getInt("tthread");
         this.workerNum = MorphStreamEnv.get().configuration().getInt("workerNum", 1);
-        workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
-        workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
-        managerId = MorphStreamEnv.get().configuration().getInt("workerId", 0);
-        driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
+        String workerIndex = System.getenv("WORKER_INDEX"); // 当前worker的名称
+        managerId = Integer.parseInt(workerIndex.split("-")[2]); // 假设worker的格式是 "rtfaas-worker-set-0"
+        workerHosts = new String[this.workerNum];
+        for (int i = 0; i < this.workerNum; i++) {
+            String otherWorkerDns = "rtfaas-worker-set-" + i + ".rtfaas-worker-service";
+            workerHosts[i] = otherWorkerDns;
+        }
+        workerPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.workerPort");
+        driverHost = System.getenv("DRIVER_ADDRESS");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
-        databaseHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.databaseHost");
+        databaseHost = System.getenv("DATABASE_ADDRESS");
         databasePort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.databasePort");
-        rdmaNode = new RdmaNode(workerHosts[managerId],  Integer.parseInt(workerPorts[managerId]), conf.rdmaChannelConf, conf.rdmaChannelConf.getRdmaChannelType(), isDriver, false);
+        rdmaNode = new RdmaNode(workerHosts[managerId],  workerPort, conf.rdmaChannelConf, conf.rdmaChannelConf.getRdmaChannelType(), isDriver, false);
         rdmaBufferManager = (WorkerRdmaBufferManager) rdmaNode.getRdmaBufferManager();
         //PreAllocate message buffer
         rdmaBufferManager.perAllocateCircularRdmaBuffer(MorphStreamEnv.get().configuration().getInt("CircularBufferCapacity"), MorphStreamEnv.get().configuration().getInt("tthread"));
@@ -124,7 +129,7 @@ public class RdmaWorkerManager implements Serializable {
         //Connect to other workers
         for (int i = managerId + 1; i < workerNum; i++) {
             if (i != managerId) {
-                workerRdmaChannelMap.put(i, rdmaNode.getRdmaChannel(new InetSocketAddress(workerHosts[i], Integer.parseInt(workerPorts[i])), true, conf.rdmaChannelConf.getRdmaChannelType()));
+                workerRdmaChannelMap.put(i, rdmaNode.getRdmaChannel(new InetSocketAddress(workerHosts[i], workerPort), true, conf.rdmaChannelConf.getRdmaChannelType()));
                 workerRegionTokenMap.put(i, new WWRegionTokenGroup());
                 //Receive region token from target workers
                 workerRegionTokenMap.get(i).addRegionTokens(rdmaNode.getRemoteRegionToken(workerRdmaChannelMap.get(i)));

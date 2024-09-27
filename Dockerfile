@@ -4,8 +4,8 @@ RUN apt-get update && \
     apt-get install -y openjdk-8-jdk curl && \
     apt-get clean
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
-ENV PATH $JAVA_HOME/bin:$PATH
+ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
 
 WORKDIR /rtfaas
 ENV LIBDIR="/rtfaas/lib"
@@ -20,5 +20,7 @@ ADD morph-clients/target/rtfaas-jar-with-dependencies.jar /rtfaas/jar/rtfaas-jar
 ADD morph-lib/lib/* /rtfaas/lib/
 ADD scripts/FaaS/driver.sh driver.sh
 
-#ENTRYPOINT ["bash", "driver.sh"]
+ENTRYPOINT ["bash", "driver.sh"]
+#CMD ["tail", "-f", "/dev/null"]
+#sudo bash worker.sh 2 SocialNetwork 20 20 20 4 20 D 3
 

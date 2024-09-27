@@ -36,7 +36,6 @@ public class RdmaDriverManager {
     private final Statistic statistic;
     private final int punctuation_interval;
     private final String[] workerHosts;
-    private final String[] workerPorts;
     private final String[] tableNames;
     private final String driverHost;
     private final int driverPort;
@@ -55,10 +54,13 @@ public class RdmaDriverManager {
         this.conf = conf;
         this.statistic = statistic;
         this.punctuation_interval = MorphStreamEnv.get().configuration().getInt("totalBatch");
-        workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
-        workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
+        workerHosts = new String[MorphStreamEnv.get().configuration().getInt("workerNum", 1)];
+        for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("workerNum", 1); i++) {
+            String otherWorkerDns = "rtfaas-worker-set-" + i + ".rtfaas-worker-service";
+            workerHosts[i] = otherWorkerDns;
+        }
         tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(";");
-        driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
+        driverHost = System.getenv("DRIVER_ADDRESS");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
         rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, isDriver, false);
         rdmaBufferManager = (DriverRdmaBufferManager) rdmaNode.getRdmaBufferManager();

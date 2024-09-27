@@ -1,67 +1,60 @@
 #!/bin/bash
-DAGName=$1
-number=$2
-batch=$3
-frontend=$4
-worker=$5
-thread=$6
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
     isDatabase=1
     workerId=0
-    workerNum=$worker
-    tthread=$thread
-    clientNum=20
-    frontendNum=$frontend
+    workerNum=$workerNum
+    tthread=$threadNum
+    clientNum=$clientNum
+    frontendNum=$frontendNum
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
-    driverHost="10.10.10.19"
-    driverPort=5590
-    databaseHost="10.10.10.19"
-    databasePort=5580
-    workerHosts="10.10.10.20,10.10.10.24,10.10.10.3,10.10.10.113"
-    workerPorts="5550,5540,5530,5520"
+    driverPort=$driverPort
+    databasePort=$databasePort
+    workerPort=$workerPort
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
     RemoteOperationBufferCapacity=`expr 1024 \* 1024 \* 1024`
-    sendMessagePerFrontend=`expr $number \* $tthread \* $workerNum / $frontendNum`
+    sendMessagePerFrontend=`expr $number \* $threadNum \* $workerNum / $frontendNum`
     totalBatch=$batch
     returnResultPerExecutor=`expr $number`
-    shuffleType=3
+    shuffleType=$shuffleType
     #Database Configurations
-    isRemoteDB=1
-    numberItemsForTables="10000;100000;100000"
-    NUM_ITEMS=100000
-    tableNames="user_pwd;movie_rating;movie_review"
-    keyDataTypesForTables="String;String;String"
-    valueDataTypesForTables="String;String;String"
-    valueDataSizeForTables="16;16;256"
-    valueNamesForTables="password;rate;review"
+    isRemoteDB=$isRemoteDB
+    isDynamoDB=$isDynamoDB
+    r_w_capacity_unit=$r_w_capacity_unit
+    numberItemsForTables=$numberItemsForTables
+    NUM_ITEMS=$NUM_ITEMS
+    tableNames=$tableNames
+    keyDataTypesForTables=$keyDataTypesForTables
+    valueDataTypesForTables=$valueDataTypesForTables
+    valueDataSizeForTables=$valueDataSizeForTables
+    valueNamesForTables=$valueNamesForTables
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
-    eventTypes="userLogin;ratingMovie;reviewMovie"
-    tableNameForEvents="user_pwd;movie_rating;movie_review"
-    keyNumberForEvents="1;1;1"
-    valueNameForEvents="password;rate;review"
-    valueSizeForEvents="16;16;256"
-    eventRatio="20;40;40"
-    ratioOfMultiPartitionTransactionsForEvents="0;0;0"
-    stateAccessSkewnessForEvents="0;0;0"
-    abortRatioForEvents="0;0;0"
+    eventTypes=$eventTypes
+    tableNameForEvents=$tableNameForEvents
+    keyNumberForEvents=$keyNumberForEvents
+    valueNameForEvents=$valueNameForEvents
+    valueSizeForEvents=$valueSizeForEvents
+    eventRatio=$eventRatio
+    ratioOfMultiPartitionTransactionsForEvents=$ratioOfMultiPartitionTransactionsForEvents
+    stateAccessSkewnessForEvents=$stateAccessSkewnessForEvents
+    abortRatioForEvents=$abortRatioForEvents
     isCyclic=0
     isDynamic=0
     workloadType="default,unchanging,unchanging,unchanging"
     shiftRate=1
-    checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
+    checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $batch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
     #System Configurations
-    schedulerPool="DScheduler"
-    scheduler="DScheduler"
-    defaultScheduler="DScheduler"
+    schedulerPool=$schedulerPool
+    scheduler=$scheduler
+    defaultScheduler=$defaultScheduler
     CCOption=3 #TSTREAM
     complexity=0
 }
@@ -77,12 +70,9 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
-      --driverHost $driverHost \
       --driverPort $driverPort \
-      --databaseHost $databaseHost \
       --databasePort $databasePort \
-      --workerHosts $workerHosts \
-      --workerPorts $workerPorts \
+      --workerPort $workerPort \
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
       --CacheBufferCapacity $CacheBufferCapacity \
@@ -92,6 +82,8 @@ function runApplication() {
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --isRemoteDB $isRemoteDB \
+      --isDynamoDB $isDynamoDB \
+      --r_w_capacity_unit $r_w_capacity_unit \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \
       --tableNames $tableNames \
@@ -132,12 +124,9 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
-      --driverHost $driverHost \
       --driverPort $driverPort \
-      --databaseHost $databaseHost \
       --databasePort $databasePort \
-      --workerHosts $workerHosts \
-      --workerPorts $workerPorts \
+      --workerPort $workerPort \
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
       --CacheBufferCapacity $CacheBufferCapacity \
@@ -147,6 +136,8 @@ function runApplication() {
       --totalBatch $totalBatch \
       --shuffleType $shuffleType \
       --isRemoteDB $isRemoteDB \
+      --isDynamoDB $isDynamoDB \
+      --r_w_capacity_unit $r_w_capacity_unit \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \
       --tableNames $tableNames \

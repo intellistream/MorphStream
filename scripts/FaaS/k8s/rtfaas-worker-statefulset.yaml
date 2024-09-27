@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rtfaas-worker-set
+spec:
+  serviceName: "rtfaas-worker-service"  # 这个服务为worker提供DNS
+  replicas: 4  # 4个worker
+  selector:
+    matchLabels:
+      app: rtfaas-worker
+  template:
+    metadata:
+      labels:
+        app: rtfaas-worker
+    spec:
+      hostNetwork: true  # 开启主机网络，以支持 RDMA
+      containers:
+        - name: worker-container
+          image: rtfaas:latest
+          ports:
+            - containerPort: 9999
+          envFrom:
+            - configMapRef:
+                name: my-env-config
+          env:
+            - name: DRIVER_ADDRESS
+              value: "rtfaas-driver-0.rtfaas-driver-service"  # Driver的DNS名称
+            - name: WORKER_INDEX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name  # 获取worker的名称作为索引
+          securityContext:
+            capabilities:
+              add: ["IPC_LOCK"]
+          volumeMounts:
+            - name: rdma-devices
+              mountPath: /dev/infiniband
+      volumes:
+        - name: rdma-devices
+          hostPath:
+            path: /dev/infiniband

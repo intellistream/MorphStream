@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rtfaas-worker-service
+spec:
+  clusterIP: None  # Headless Service
+  selector:
+    app: rtfaas-worker
+  ports:
+    - name: worker-port
+      port: 9999
+      targetPort: 9999

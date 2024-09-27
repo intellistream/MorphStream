@@ -60,7 +60,7 @@ public class RdmaDatabaseManager {
     }
 
     public void initRDMADatabase (Configuration conf) throws Exception{
-        this.databaseHost = conf.getString("morphstream.rdma.databaseHost");
+        this.databaseHost = System.getenv("DATABASE_ADDRESS");
         this.databasePort = conf.getInt("morphstream.rdma.databasePort");
         workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
         rdmaNode = new RdmaNode(databaseHost ,databasePort , conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_RESPONDER, this.isDriver, true);

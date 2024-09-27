@@ -1,4 +1,5 @@
 #!/bin/bash
+source ../../dir.sh || exit
 Id=$1
 DAGName=$2
 number=$3
@@ -6,6 +7,8 @@ batch=$4
 frontend=$5
 worker=$6
 thread=$7
+s=$8
+c=$9
 function ResetParameters() {
     #Cluster Configurations
     isDriver=0
@@ -34,25 +37,25 @@ function ResetParameters() {
     shuffleType=3
     #Database Configurations
     isRemoteDB=1
-    numberItemsForTables="10000;100000;100000"
-    NUM_ITEMS=100000
-    tableNames="user_pwd;movie_rating;movie_review"
+    numberItemsForTables="10000;10000;20000"
+    NUM_ITEMS=20000
+    tableNames="user_pwd;user_profile;tweet"
     keyDataTypesForTables="String;String;String"
     valueDataTypesForTables="String;String;String"
-    valueDataSizeForTables="16;16;256"
-    valueNamesForTables="password;rate;review"
+    valueDataSizesForTables="16;64;64"
+    valueNamesForTables="password;profile;tweet"
     #Input Configurations
     rootFilePath="${RSTDIR}"
     inputFileType=0
-    eventTypes="userLogin;ratingMovie;reviewMovie"
-    tableNameForEvents="user_pwd;movie_rating;movie_review"
-    keyNumberForEvents="1;1;1"
-    valueNameForEvents="password;rate;review"
-    valueSizeForEvents="16;16;256"
-    eventRatio="20;40;40"
-    ratioOfMultiPartitionTransactionsForEvents="0;0;0"
-    stateAccessSkewnessForEvents="0;0;0"
-    abortRatioForEvents="0;0;0"
+    eventTypes="userLogin;userProfile;getTimeLine;postTweet"
+    tableNameForEvents="user_pwd;user_profile;tweet;tweet"
+    keyNumberForEvents="1;1;2;2"
+    valueNameForEvents="password;;;tweet1,tweet2"
+    valueSizeForEvents="16;0;0;64,64"
+    eventRatio="0;0;90;10"
+    ratioOfMultiPartitionTransactionsForEvents="0;0;0;0"
+    stateAccessSkewnessForEvents="0;0;0;0"
+    abortRatioForEvents="0;0;0;0"
     isCyclic=0
     isDynamic=0
     workloadType="default,unchanging,unchanging,unchanging"
@@ -60,15 +63,15 @@ function ResetParameters() {
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $totalBatch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
     #System Configurations
-    schedulerPool="DScheduler"
-    scheduler="DScheduler"
-    defaultScheduler="DScheduler"
-    CCOption=3 #TSTREAM
+    schedulerPool="${s}Scheduler"
+    scheduler="${s}Scheduler"
+    defaultScheduler="${s}Scheduler"
+    CCOption=$c #TSTREAM
     complexity=0
 }
 
 function runApplication() {
-  echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
+  echo "-Xms64g -Xmx64g -Xss100M -XX:+PrintGCDetails -Xmn60g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
       --isDatabase $isDatabase \
       --workerId $workerId \
@@ -98,19 +101,19 @@ function runApplication() {
       --tableNames $tableNames \
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
+      --valueDataSizeForTables $valueDataSizesForTables \
       --valueNamesForTables $valueNamesForTables \
-      --valueDataSizeForTables $valueDataSizeForTables \
-      --rootFilePath $rootFilePath \
+     --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
       --eventTypes $eventTypes \
       --tableNameForEvents $tableNameForEvents \
       --keyNumberForEvents $keyNumberForEvents \
       --valueNameForEvents $valueNameForEvents \
-      --valueSizeForEvents $valueSizeForEvents \
       --eventRatio $eventRatio \
       --ratioOfMultiPartitionTransactionsForEvents $ratioOfMultiPartitionTransactionsForEvents \
       --stateAccessSkewnessForEvents $stateAccessSkewnessForEvents \
       --abortRatioForEvents $abortRatioForEvents \
+      --valueSizeForEvents $valueSizeForEvents \
       --isCyclic $isCyclic \
       --isDynamic $isDynamic \
       --workloadType $workloadType \
@@ -153,8 +156,8 @@ function runApplication() {
       --tableNames $tableNames \
       --keyDataTypesForTables $keyDataTypesForTables \
       --valueDataTypesForTables $valueDataTypesForTables \
+      --valueDataSizeForTables $valueDataSizesForTables \
       --valueNamesForTables $valueNamesForTables \
-      --valueDataSizeForTables $valueDataSizeForTables \
       --rootFilePath $rootFilePath \
       --inputFileType $inputFileType \
       --eventTypes $eventTypes \
@@ -184,4 +187,4 @@ function application_runner() {
  runApplication
 }
 application_runner
-rm -rf ${RSTDIR}/inputs/client.$DAGName
+

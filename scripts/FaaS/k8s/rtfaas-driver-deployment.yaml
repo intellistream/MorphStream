@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rdma-driver
+spec:
+  replicas: 1  # 只有一个 driver
+  selector:
+    matchLabels:
+      app: rtfaas-driver
+  template:
+    metadata:
+      labels:
+        app: rtfaas-driver
+    spec:
+      hostNetwork: true  # 开启主机网络，以便支持 RDMA
+      containers:
+        - name: driver-container
+          image: rtfaas:latest
+          ports:
+            - containerPort: 9998  # Driver 监听的端口
+          envFrom:
+            - configMapRef:
+                name: my-env-config
+          env:
+            - name: DRIVER_ADDRESS
+              value: "rtfaas-driver-0.rtfaas-driver-service"  # Driver的DNS名称
+          securityContext:
+            capabilities:
+              add: ["IPC_LOCK"]
+          volumeMounts:
+            - name: rdma-devices
+              mountPath: /dev/infiniband
+      volumes:
+        - name: rdma-devices
+          hostPath:
+            path: /dev/infiniband
+
