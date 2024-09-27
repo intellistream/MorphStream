@@ -36,6 +36,7 @@ public class RdmaDriverManager {
     private final Statistic statistic;
     private final int punctuation_interval;
     private final String[] workerHosts;
+    private final String[] workerPorts;
     private final String[] tableNames;
     private final String driverHost;
     private final int driverPort;
@@ -54,14 +55,11 @@ public class RdmaDriverManager {
         this.conf = conf;
         this.statistic = statistic;
         this.punctuation_interval = MorphStreamEnv.get().configuration().getInt("totalBatch");
-        workerHosts = new String[MorphStreamEnv.get().configuration().getInt("workerNum", 1)];
-        for (int i = 0; i < MorphStreamEnv.get().configuration().getInt("workerNum", 1); i++) {
-            String otherWorkerDns = "rtfaas-worker-set-" + i + ".rtfaas-worker-service";
-            workerHosts[i] = otherWorkerDns;
-        }
-        tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(";");
-        driverHost = System.getenv("DRIVER_ADDRESS");
+        workerHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerHosts").split(",");
+        workerPorts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.workerPorts").split(",");
+        driverHost = MorphStreamEnv.get().configuration().getString("morphstream.rdma.driverHost");
         driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
+        tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(";");
         rdmaNode = new RdmaNode(driverHost, driverPort, conf.rdmaChannelConf, RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, isDriver, false);
         rdmaBufferManager = (DriverRdmaBufferManager) rdmaNode.getRdmaBufferManager();
         workerLatch = MorphStreamEnv.get().workerLatch();
@@ -123,7 +121,6 @@ public class RdmaDriverManager {
             frontendTotalMessageCountMap.put(workId, 0);
             return;
         }
-        int totalMessageCount = workerMessageBatchMap.get(workId).size();
         MessageBatch messageBatch = workerMessageBatchMap.get(workId);
         ByteBuffer byteBuffer = messageBatch.buffer();
         byteBuffer.flip();

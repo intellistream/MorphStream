@@ -22,8 +22,8 @@ spec:
             - configMapRef:
                 name: my-env-config
           env:
-            - name: DRIVER_ADDRESS
-              value: "rtfaas-driver-0.rtfaas-driver-service"  # Driver的DNS名称
+            - name: ETCD_ADDRESS
+              value: "etcd-service:2379"
           securityContext:
             capabilities:
               add: ["IPC_LOCK"]

@@ -36,6 +36,7 @@ public class MorphStreamEnv {
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     public boolean isDatabase;
     private boolean isDriver;
+    private boolean isClient;
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
     private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
@@ -78,6 +79,7 @@ public class MorphStreamEnv {
     public ZContext zContext() {return zContext;}
     public boolean isDriver() {return isDriver;}
     public boolean isDatabase() {return isDatabase;}
+    public boolean isClient() {return isClient;}
     public void LoadConfiguration(String configPath, String[] args) throws IOException, DatabaseException {
         if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
             LOG.info("Native order is little endian");
@@ -98,9 +100,9 @@ public class MorphStreamEnv {
         this.jCommanderHandler().initializeCfg(this.configuration());
         this.isDriver = this.configuration().getBoolean("isDriver", false);
         this.isDatabase = this.configuration().getBoolean("isDatabase", false);
-        if (isDriver) {
-            this.clientLatch = new CountDownLatch(this.configuration().getInt("clientNum", 1) + 1);// Client Number + MorphStreamDriver
-            this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));
+        this.isClient = this.configuration().getBoolean("isClient", false);
+        if (isClient) {
+            this.clientLatch = new CountDownLatch(this.configuration().getInt("clientNum", 1));
         } else {
             this.workerLatch = new CountDownLatch(this.configuration().getInt("workerNum", 1));
         }

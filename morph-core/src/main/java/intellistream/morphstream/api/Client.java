@@ -23,6 +23,7 @@ public abstract class Client extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private final Map<String, ZMQ.Socket> sockets = new HashMap<>();
     public HashMap<String, FunctionDAGDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
+    public boolean isRunning = true;
     protected final ZContext zContext = new ZContext();
     protected BlockingQueue<TransactionalEvent> inputQueue;
     protected int clientId;
@@ -39,11 +40,11 @@ public abstract class Client extends Thread {
     public ZMQ.Socket getSocket(String address) {
         return sockets.getOrDefault(address, null);
     }
-    public void connectFrontend(String address, int workerPort) {
+    public void connectFrontend(String address, int driverPort) {
         ZMQ.Socket socket = zContext.createSocket(SocketType.DEALER);
         clientIdentity = String.format("%04X-%04X", ThreadLocalRandom.current().nextInt(), ThreadLocalRandom.current().nextInt());
         socket.setIdentity(clientIdentity.getBytes(ZMQ.CHARSET));
-        socket.connect("tcp://" + address + ":" + workerPort);
+        socket.connect("tcp://" + address + ":" + driverPort);
         sockets.put(address, socket);
         poller = zContext.createPoller(1);
         poller.register(socket, ZMQ.Poller.POLLIN);
@@ -51,7 +52,7 @@ public abstract class Client extends Thread {
     public void initialize(int clientId, CountDownLatch latch) throws IOException {
         this.clientId = clientId;
         this.qps = MorphStreamEnv.get().configuration().getInt("qps");
-        LOG.info("Client " + clientId + " is initialized.");
+        LOG.info("Client {} is initialized.", clientId);
         this.latch = latch;
     }
     public void asyncInvokeFunction(String driverName, String function) {
@@ -91,6 +92,8 @@ public abstract class Client extends Thread {
             }
             //asyncReceiveFunctionOutput("localhost");
         }
+        this.close();
+        this.isRunning = false;
     }
     public void close() {
         for (ZMQ.Socket socket : sockets.values()) {

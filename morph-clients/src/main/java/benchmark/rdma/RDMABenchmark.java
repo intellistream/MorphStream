@@ -1,5 +1,6 @@
 package benchmark.rdma;
 
+import client.MorphStreamClient;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import worker.rdma.MorphStreamDatabase;
 import worker.rdma.MorphStreamDriver;
@@ -15,9 +16,12 @@ public class RDMABenchmark {
                 MorphStreamDriver driver = new MorphStreamDriver();
                 driver.initialize();
                 driver.start();
-                driver.startClient();
                 driver.MorphStreamDriverJoin();
-            }  else if (MorphStreamEnv.get().isDatabase()) {
+            } else if (MorphStreamEnv.get().isClient()) {
+                MorphStreamClient client = new MorphStreamClient();
+                client.initialize();
+                client.MorphStreamClientJoin();
+            }else if (MorphStreamEnv.get().isDatabase()) {
                 MorphStreamDatabase morphStreamDatabase = new MorphStreamDatabase();
                 morphStreamDatabase.start();
             } else {

@@ -228,6 +228,8 @@ public class JCommanderHandler {
     public int isDriver = 1;//
     @Parameter(names = {"--isDatabase"}, description = "isDatabase")
     public int isDatabase = 0;//
+    @Parameter(names = {"--isClient"}, description = "isClient")
+    public int isClient = 0;//
     @Parameter(names = {"--workerId"}, description = "workerId")
     public int workerId = 0;//
     @Parameter(names = {"--workerNum"}, description = "total workerNum in the cluster")
@@ -244,12 +246,18 @@ public class JCommanderHandler {
     //Network configuration
     @Parameter(names = {"--isRDMA"}, description = "whether is rdma connection")
     public int isRDMA = 0;
+    @Parameter(names = {"--driverHost"}, description = "morphstream driver host")
+    public String driverHost = "localhost";
     @Parameter(names = {"--driverPort"}, description = "morphstream driver port")
     public int driverPort = 5570;
+    @Parameter(names = {"--databaseHost"}, description = "morphstream database host")
+    public String databaseHost = "localhost";
     @Parameter(names = {"--databasePort"}, description = "morphstream database port")
     public int databasePort = 5570;
-    @Parameter(names = {"--workerPort"}, description = "morphstream worker port")
-    public int workerPort = 9999;
+    @Parameter(names = {"--workerHosts"}, description = "morphstream worker hosts")
+    public String workerHosts = "localhost,localhost,localhost";
+    @Parameter(names = {"--workerPorts"}, description = "morphstream worker ports")
+    public String workerPorts = "5540,5550,5580";
     @Parameter(names = {"--CircularBufferCapacity"}, description = "CircularBufferCapacity")
     public int CircularBufferCapacity = 1024 * 1024 * 1024;
     @Parameter(names = {"--TableBufferCapacity"}, description = "TableBufferCapacity")
@@ -340,16 +348,27 @@ public class JCommanderHandler {
         } else {
             config.put("isDatabase", false);
         }
+        if (isClient == 1) {
+            config.put("isClient", true);
+        } else {
+            config.put("isClient", false);
+        }
         if (isRDMA == 1) {
             config.put("isRDMA", true);
+            config.put("morphstream.rdma.driverHost", driverHost);
             config.put("morphstream.rdma.driverPort", driverPort);
+            config.put("morphstream.rdma.databaseHost", databaseHost);
             config.put("morphstream.rdma.databasePort", databasePort);
-            config.put("morphstream.rdma.workerPort", workerPort);
+            config.put("morphstream.rdma.workerPorts", workerPorts);
+            config.put("morphstream.rdma.workerHosts", workerHosts);
         } else {
             config.put("isRDMA", false);
+            config.put("morphstream.socket.driverHost", driverHost);
             config.put("morphstream.socket.driverPort", driverPort);
+            config.put("morphstream.rdma.databaseHost", databaseHost);
             config.put("morphstream.rdma.databasePort", databasePort);
-            config.put("morphstream.socket.workerPort", workerPort);
+            config.put("morphstream.socket.workerPorts", workerPorts);
+            config.put("morphstream.socket.workerHosts", workerHosts);
         }
         config.put("CircularBufferCapacity", CircularBufferCapacity);
         config.put("TableBufferCapacity", TableBufferCapacity);

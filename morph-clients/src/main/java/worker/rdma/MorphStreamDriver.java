@@ -41,9 +41,10 @@ public class MorphStreamDriver extends Thread {
             port = MorphStreamEnv.get().configuration().getInt("morphstream.socket.driverPort");
         }
         frontend.bind("tcp://"+ address +":" + port);
-        backend = zContext.createSocket(SocketType.DEALER); //  Backend socket talks to workers over inproc
+        backend = zContext.createSocket(SocketType.DEALER); // Backend socket talks to workers over inproc
         backend.bind("inproc://backend");
         statistic = new Statistic(MorphStreamEnv.get().configuration().getInt("workerNum",4), MorphStreamEnv.get().configuration().getInt("shuffleType", 0), MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(";"), this.numFrontend);
+
         rdmaDriverManager = new RdmaDriverManager(true, env.configuration(), statistic);
         workerLatch = MorphStreamEnv.get().workerLatch();
     }
@@ -52,7 +53,6 @@ public class MorphStreamDriver extends Thread {
         for (int i = 0; i < numFrontend; i++) {
             frontends.add(new MorphStreamFrontend(i, zContext, rdmaDriverManager, statistic));
         }
-        MorphStreamEnv.get().InputSourceInitialize();
     }
 
     @Override
@@ -66,26 +66,7 @@ public class MorphStreamDriver extends Thread {
             frontends.get(i).start();
             frontends.get(i).setSystemStartTime(System.nanoTime());
         }
-        MorphStreamEnv.get().clientLatch().countDown();
         ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
-    }
-    public void startClient() {
-        String clientName = MorphStreamEnv.get().configuration().getString("clientClassName");
-        int clientNum = MorphStreamEnv.get().configuration().getInt("clientNum");
-        List<Thread> threads = new ArrayList<>();
-        for (int threadNum = 0; threadNum < clientNum; threadNum++) {
-            try {
-                Class<?> clazz = Class.forName(clientName);
-                Object instance = clazz.getDeclaredConstructor().newInstance();
-                Client t = (Client) instance;
-                t.initialize(threadNum, MorphStreamEnv.get().clientLatch());
-                threads.add(t);
-                t.start();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException |
-                     InvocationTargetException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
     public void MorphStreamDriverJoin() {
         try {

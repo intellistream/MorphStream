@@ -11,9 +11,12 @@ function ResetParameters() {
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
+    driverHost=$driverHost
     driverPort=$driverPort
+    databaseHost=$databaseHost
     databasePort=$databasePort
-    workerPort=$workerPort
+    workerHosts=$workerHosts
+    workerPorts=$workerPorts
     CircularBufferCapacity=`expr 1024 \* 1024 \* 1024`
     TableBufferCapacity=`expr 1024 \* 1024 \* 1024`
     CacheBufferCapacity=`expr 1024 \* 1024 \* 1024`
@@ -70,9 +73,12 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
+      --driverHost $driverHost \
       --driverPort $driverPort \
+      --databaseHost $databaseHost \
       --databasePort $databasePort \
-      --workerPort $workerPort \
+      --workerHosts $workerHosts \
+      --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
       --CacheBufferCapacity $CacheBufferCapacity \
@@ -124,9 +130,12 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
+      --driverHost $driverHost \
       --driverPort $driverPort \
+      --databaseHost $databaseHost \
       --databasePort $databasePort \
-      --workerPort $workerPort \
+      --workerHosts $workerHosts \
+      --workerPorts $workerPorts \
       --CircularBufferCapacity $CircularBufferCapacity \
       --TableBufferCapacity $TableBufferCapacity \
       --CacheBufferCapacity $CacheBufferCapacity \
