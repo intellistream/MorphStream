@@ -56,6 +56,7 @@ function ResetParameters() {
     shiftRate=1
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $batch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
+    qps=$qps
     #System Configurations
     schedulerPool=$schedulerPool
     scheduler=$scheduler
@@ -116,6 +117,7 @@ function runApplication() {
       --workloadType $workloadType \
       --shiftRate $shiftRate \
       --totalEvents $totalEvents \
+      --qps $qps \
       --schedulerPool $schedulerPool \
       --checkpoint_interval $checkpointInterval \
       --scheduler $scheduler \
@@ -174,6 +176,7 @@ function runApplication() {
       --workloadType $workloadType \
       --shiftRate $shiftRate \
       --totalEvents $totalEvents \
+      --qps $qps \
       --schedulerPool $schedulerPool \
       --checkpoint_interval $checkpointInterval \
       --scheduler $scheduler \
