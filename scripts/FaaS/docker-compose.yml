@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  rtfaas:
+    image: rtfaas:1.0
+    network_mode: "host"
+    privileged: true
+    devices:
+      - /dev/infiniband/
+    env_file:
+      - Env/Cluster.env
+      - Env/System.env
+      - Env/SocialNetwork.env
+    stdin_open: true
+    tty: true

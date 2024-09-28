@@ -1,11 +1,14 @@
 # 检查传递的参数
 if [ "$1" = "driver" ]; then
     echo "Starting the driver"
-    /rtfaas/scripts/driver.sh
+    /rtfaas/driver.sh
 elif [ "$1" = "worker" ]; then
     echo "Starting the worker"
     /rtfaas/worker.sh $2
+elif [ "$1" = "client" ]; then
+    echo "Starting the clients"
+    /rtfaas/client.sh
 else
-    echo "No valid argument provided. Please pass 'script1' or 'script2'."
+    echo "No valid argument provided. Please pass 'driver' or 'worker' or 'client' ."
     exit 1
 fi

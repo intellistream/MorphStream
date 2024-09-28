@@ -195,6 +195,8 @@ public class JCommanderHandler {
     public String dataDirectory = "data/jobs";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 10000;
+    @Parameter(names = {"--qps"}, description = "QPS for the workload")
+    public int qps = 1000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default," +
             "Up_skew,Up_skew,Up_skew,Up_abort,Up_abort,Up_abort,Down_abort,Down_abort,Down_abort,Down_skew," +
@@ -510,6 +512,7 @@ public class JCommanderHandler {
         config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs") + OsUtils.OS_wrapper(clientClassName) + OsUtils.OS_wrapper("event.txt"));
         config.put("dataDirectory", rootPath + OsUtils.OS_wrapper("data") + OsUtils.OS_wrapper("jobs"));
         config.put("totalEvents", totalEvents);
+        config.put("qps", qps);
         config.put("workloadType", workloadType);
         config.put("eventTypes", eventTypes);
         String[] eventTypeString = eventTypes.split(";");

@@ -13,7 +13,7 @@ execute_remote() {
 echo "Deploying"
 # 在 driverHost 上执行 driver.sh
 scp -r Env driver.sh ${username}@${driverHost}:~/ && \
-execute_remote $driverHost "docker run --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env rtfaas:1.0 driver && rm -rf Env driver.sh"
+execute_remote $driverHost "docker run --network host --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env --privileged --device=/dev/infiniband/ -it rtfaas:1.0 driver && rm -rf Env driver.sh"
 # 在 databaseHost 上执行相应操作（示例：启动数据库）
 execute_remote $databaseHost "bash database.sh"
 
@@ -25,8 +25,9 @@ for i in "${!hosts[@]}"; do
   workerHost=${hosts[$i]}
   workerPort=${ports[$i]}
   scp -r Env worker.sh ${username}@${workerHost}:~/ && \
-  execute_remote $workerHost "docker --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env run rtfaas:1.0 worker $i && rm -rf Env worker.sh"
+  execute_remote $workerHost "docker run --network host --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env --privileged --device=/dev/infiniband/ -it rtfaas:1.0 worker $i && rm -rf Env worker.sh"
 done
 
-execute_remote $driverHost "bash client.sh"
+scp -r Env client.sh ${username}@${clientHost}:~/ && \
+execute_remote $clientHost "docker run --network host --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env --privileged --device=/dev/infiniband/ -it rtfaas:1.0 client && rm -rf Env driver.sh"
 

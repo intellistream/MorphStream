@@ -1,7 +1,13 @@
 FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk curl && \
+    apt-get install -y \
+    openjdk-8-jdk \
+    curl \
+    rdma-core \
+    librdmacm1 \
+    librdmacm-dev \
+    libibverbs-dev && \
     apt-get clean
 
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
@@ -21,7 +27,13 @@ ADD morph-lib/lib/* /rtfaas/lib/
 ADD scripts/FaaS/entrypoint.sh entrypoint.sh
 ADD scripts/FaaS/driver.sh driver.sh
 ADD scripts/FaaS/worker.sh worker.sh
+ADD scripts/FaaS/client.sh client.sh
 
-ENTRYPOINT ["bash", "-c", "/rtfaas/scripts/entrypoint.sh"]
-#CMD ["tail", "-f", "/dev/null"]
+RUN chmod +x /rtfaas/entrypoint.sh
+RUN chmod +x /rtfaas/driver.sh
+RUN chmod +x /rtfaas/worker.sh
+RUN chmod +x /rtfaas/client.sh
+
+#ENTRYPOINT ["bash", "/rtfaas/entrypoint.sh"]
+CMD ["tail", "-f", "/dev/null"]
 #sudo bash worker.sh 2 SocialNetwork 20 20 20 4 20 D 3
