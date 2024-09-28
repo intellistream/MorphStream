@@ -18,9 +18,10 @@ RUN mkdir -p /rtfaas/jar
 
 ADD morph-clients/target/rtfaas-jar-with-dependencies.jar /rtfaas/jar/rtfaas-jar-with-dependencies.jar
 ADD morph-lib/lib/* /rtfaas/lib/
+ADD scripts/FaaS/entrypoint.sh entrypoint.sh
 ADD scripts/FaaS/driver.sh driver.sh
+ADD scripts/FaaS/worker.sh worker.sh
 
-ENTRYPOINT ["bash", "driver.sh"]
+ENTRYPOINT ["bash", "-c", "/rtfaas/scripts/entrypoint.sh"]
 #CMD ["tail", "-f", "/dev/null"]
 #sudo bash worker.sh 2 SocialNetwork 20 20 20 4 20 D 3
-

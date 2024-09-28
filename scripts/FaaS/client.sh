@@ -1,11 +1,11 @@
 #!/bin/bash
-workerId=$1
+
 function ResetParameters() {
     #Cluster Configurations
     isDriver=0
     isDatabase=0
-    isClient=0
-    workerId=$workerId
+    isClient=1
+    workerId=0
     workerNum=$workerNum
     tthread=$threadNum
     clientNum=$clientNum

@@ -2,7 +2,8 @@
 function ResetParameters() {
     #Cluster Configurations
     isDriver=1
-    isDatabase=1
+    isDatabase=0
+    isClient=0
     workerId=0
     workerNum=$workerNum
     tthread=$threadNum
@@ -66,6 +67,7 @@ function runApplication() {
   echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
       --isDatabase $isDatabase \
+      --isClient $isClient \
       --workerId $workerId \
       --workerNum $workerNum \
       --tthread $tthread \
@@ -122,6 +124,7 @@ function runApplication() {
             "
   java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
+      --isClient $isClient \
       --isDatabase $isDatabase \
       --workerId $workerId \
       --workerNum $workerNum \
