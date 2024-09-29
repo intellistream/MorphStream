@@ -56,7 +56,7 @@ def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew,
 
 # Example usage
 puncInterval = 1000 # Used to normalize workload distribution among instances 
-expID = '5.5.2'
+expID = '5.6.2'
 vnfID = 11
 
 numPackets = 400000

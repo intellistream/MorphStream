@@ -276,31 +276,6 @@ def get_throughput_from_file(outputFilePath):
         print(f"Failed to read {outputFilePath}: {e}")
         return None
 
-
-def compute_latencies(csv_file_path):
-    latencies = []
-    with open(csv_file_path, 'r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            try:
-                latency = float(row[0])
-                if latency < 200:
-                    latencies.append(float(row[0]))
-            except ValueError:
-                print(f"Skipping invalid value: {row[0]}")
-    return latencies
-
-
-def downsample_data(data, max_points=1000):
-    """Downsamples the data to a maximum of max_points points."""
-    if len(data) > max_points:
-        indices = np.linspace(0, len(data) - 1, max_points, dtype=int)
-        return data[indices]
-    return data
-
-
-
-
 def draw_throughput_comparison_plot():
     workload_feature_combinations = get_workload_feature_phases()
     
@@ -341,13 +316,18 @@ def draw_throughput_comparison_plot():
     plt.yticks(fontsize=15)
     plt.xlabel('Dynamic Workload Phases', fontsize=18)
     plt.ylabel('Throughput (Million req/sec)', fontsize=18)
-    plt.legend(fontsize=16)
+    # plt.legend(fontsize=16)
+    plt.legend(bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
     ax = plt.gca()  
     yticks = ax.get_yticks()  # Automatically get y-axis tick positions
     ax.set_yticks(yticks) 
 
     plt.tight_layout()
+
+    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
+
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     figure_name = f'5.2.2_dynamicWorkload_range{numItems}_complexity{udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
@@ -360,6 +340,26 @@ def draw_throughput_comparison_plot():
     plt.savefig(os.path.join(local_figure_dir, figure_name))
 
 
+def read_latencies(csv_file_path):
+    latencies = []
+    with open(csv_file_path, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            try:
+                latency = float(row[0])
+                if latency < 200:
+                    latencies.append(float(row[0]))
+            except ValueError:
+                print(f"Skipping invalid value: {row[0]}")
+    return latencies
+
+
+def downsample_data(data, max_points=1000):
+    """Downsamples the data to a maximum of max_points points."""
+    if len(data) > max_points:
+        indices = np.linspace(0, len(data) - 1, max_points, dtype=int)
+        return data[indices]
+    return data
 
 
 def draw_latency_comparison_plot(max_points=1000):
@@ -379,7 +379,7 @@ def draw_latency_comparison_plot(max_points=1000):
 
         for ccStrategy in ["Partitioning", "Replication", "Offloading", "Proactive"]:
             latency_file = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy)
-            latencies = compute_latencies(latency_file)
+            latencies = read_latencies(latency_file)
             avg_latency = sum(latencies) / len(latencies) if latencies else float('inf')
             if avg_latency < min_avg_latency:
                 min_avg_latency = avg_latency
@@ -388,13 +388,13 @@ def draw_latency_comparison_plot(max_points=1000):
         system_latencies['TransNFV'].extend(transnfv_latencies)
 
         latency_file_opennf = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "OpenNF")
-        system_latencies['OpenNF'].extend(compute_latencies(latency_file_opennf))
+        system_latencies['OpenNF'].extend(read_latencies(latency_file_opennf))
 
         latency_file_chc = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "CHC")
-        system_latencies['CHC'].extend(compute_latencies(latency_file_chc))
+        system_latencies['CHC'].extend(read_latencies(latency_file_chc))
 
         latency_file_s6 = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "S6")
-        system_latencies['S6'].extend(compute_latencies(latency_file_s6))
+        system_latencies['S6'].extend(read_latencies(latency_file_s6))
 
     plt.figure(figsize=(7, 4.5))
 
@@ -412,12 +412,16 @@ def draw_latency_comparison_plot(max_points=1000):
     plt.yticks(fontsize=15)
     plt.xlabel('Latency (us)', fontsize=18)
     plt.ylabel('CDF', fontsize=18)
-    plt.legend(fontsize=16)
+    # plt.legend(fontsize=16)
+    plt.legend(bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
     plt.tight_layout()
+    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
+
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.2.2_dynamicWorkload_range{numItems}_complexity{udfComplexity}_latency.pdf'
+    figure_name = f'5.2.2_dynamicWorkload_range{numItems}_complexity{udfComplexity}_latency.png'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))
@@ -495,7 +499,7 @@ def get_workload_feature_phases():
         phase3_workload_combinations + phase4_workload_combinations
     )
     
-    return overall_workload_combinations
+    return overall_workload_combinations # Returns 16 tuples
 
 
 def phase1():
@@ -551,7 +555,6 @@ def plot_throughput_phase4():
 
 
 if __name__ == "__main__":
-    # Basic params
     # phase1()
     # plot_throughput_phase1()
 

@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class OffloadSVCCStateManager {
     private final Map<Integer, S2PLLockObject> lockTable = new ConcurrentHashMap<>();
-    private final HashMap<Integer, Integer> singleVersionStorage = new HashMap<>();
+    private final ConcurrentHashMap<Integer, Integer> singleVersionStorage = new ConcurrentHashMap<>();
     private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final int numExecutors = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
 //    private static final int numExecutors = 2;

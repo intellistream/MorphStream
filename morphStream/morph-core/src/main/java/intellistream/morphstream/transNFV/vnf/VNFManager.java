@@ -2,11 +2,11 @@ package intellistream.morphstream.transNFV.vnf;
 
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.transNFV.state_managers.ReplicationStateManager;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CyclicBarrier;
 
@@ -17,9 +17,7 @@ public class VNFManager implements Runnable {
     private static HashMap<Integer, LocalSVCCStateManager> instanceStateManagerMap = new HashMap<>();
 
     private final int instancePatternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
-    private static final int pattern = 4;
     private static final String inputWorkloadPath = MorphStreamEnv.get().configuration().getString("inputWorkloadPath");
-    private static final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private static final String nfvExperimentPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
 
     private static final String expID = MorphStreamEnv.get().configuration().getString("experimentID");
@@ -45,6 +43,8 @@ public class VNFManager implements Runnable {
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
+    private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
+    private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
 
     private static long initEndNanoTimestamp = -1;
     private static long processEndNanoTimestamp = -1;
@@ -52,16 +52,8 @@ public class VNFManager implements Runnable {
     private static double totalParseTimeMS = 0;
     private static double totalSyncTimeMS = 0;
     private static double totalUsefulTimeMS = 0;
-    private static double totalCCSwitchTimeMS = 0;
+    private static double totalSwitchTimeMS = 0;
     private static double totalTimeMS = 0;
-    private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
-    private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
-    private static HashMap<Integer, Double> puncThroughputMap = new HashMap<>(); //punctuationID -> punctuation overall throughput
-    private static HashMap<Integer, Double> throughputMap = new HashMap<>(); //instanceID -> instance's throughput
-    private static HashMap<Integer, Double> minLatencyMap = new HashMap<>(); //instanceID -> instance's min latency
-    private static HashMap<Integer, Double> maxLatencyMap = new HashMap<>(); //instanceID -> instance's max latency
-    private static HashMap<Integer, Double> avgLatencyMap = new HashMap<>(); //instanceID -> instance's avg latency
-    private static HashMap<Integer, Double> percentile95Map = new HashMap<>(); //instanceID -> instance's 95th percentile latency
 
     public VNFManager() {
         initInstances();
@@ -104,15 +96,9 @@ public class VNFManager implements Runnable {
 
         System.out.println("All VNF instances have completed processing.");
         System.out.println("Overall throughput: " + overallThroughput + " events/second");
+        String outputFileDir = getOutputFileDirectory();
 
-        String outputFileDir = String.format(nfvExperimentPath + "/results/%s/vnfID=%s/numPackets=%d/numInstances=%d/" +
-                        "numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d/numTPGThreads=%d/" +
-                        "numOffloadThreads=%d/puncInterval=%d/ccStrategy=%s/doMVCC=%d/udfComplexity=%d",
-                expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality,
-                scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity);
-
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        switch (experimentID) {
+        switch (expID) {
             case "5.1": // Dynamic workload, throughput, three existing strategies
                 writeCSVThroughput(outputFileDir, overallThroughput); //TODO: To be aligned
                 break;
@@ -126,19 +112,12 @@ public class VNFManager implements Runnable {
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 writeCSVLatency(outputFileDir);
                 break;
-            case "5.3.1_phase1": // Dynamic workload, Time breakdown
-            case "5.3.1_phase2":
-            case "5.3.1_phase3":
-            case "5.3.1_phase4":
+            case "5.3_phase1": // Dynamic workload, Time breakdown
+            case "5.3_phase2":
+            case "5.3_phase3":
+            case "5.3_phase4":
                 computeTimeBreakdown();
-                writeCSVBreakdown();
-                break;
-            case "5.3.2_phase1": // Dynamic workload, Mem utilization
-            case "5.3.2_phase2":
-            case "5.3.2_phase3":
-            case "5.3.2_phase4":
-                computeTimeBreakdown();
-                writeCSVBreakdown();
+                writeCSVBreakdown(outputFileDir);
                 break;
             case "5.4.1": // Static workload, throughput and latency
             case "5.4.2":
@@ -146,6 +125,8 @@ public class VNFManager implements Runnable {
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 writeCSVLatency(outputFileDir);
                 break;
+            case "5.5":
+                writeCSVThroughput(outputFileDir, overallThroughput);
             case "5.5.1": // Dynamic workload, throughput
             case "5.5.2":
                 writeCSVThroughput(outputFileDir, overallThroughput);
@@ -199,56 +180,53 @@ public class VNFManager implements Runnable {
 
 
     private void computeTimeBreakdown() {
-//        double aggInstanceParseTime = 0;
-//        double aggInstanceSyncTime = 0;
-//        double aggInstanceUsefulTime = 0;
-//        double aggManagerSyncTime = 0;
-//        double aggManagerUsefulTime = 0;
-//        double aggCCSwitchTime = 0;
-//        double aggTotalTime = 0;
-//
-//        /** Breakdown at instance level */
-//        for (int i = 0; i < numInstances; i++) {
-//            VNFInstance sender = senderMap.get(i);
-//            aggInstanceParseTime = (double) sender.getAggParsingTime() / 1E6; // Millisecond
-//            aggInstanceSyncTime = (double) sender.getAGG_SYNC_TIME() / 1E6;
-//            aggInstanceUsefulTime = (double) sender.getAGG_USEFUL_TIME() / 1E6;
-//            aggCCSwitchTime += (double) sender.getAggCCSwitchTime() / 1E6;
+        double aggInstanceParseTime = 0;
+        double aggInstanceSyncTime = 0;
+        double aggInstanceUsefulTime = 0;
+        double aggManagerParseTime = 0;
+        double aggManagerSyncTime = 0;
+        double aggManagerUsefulTime = 0;
+        double aggCCSwitchTime = 0;
+        double aggTotalTime = 0;
+
+        /** Breakdown at instance level */
+        for (int i = 0; i < numInstances; i++) {
+            VNFInstance instance = instanceMap.get(i);
+            aggInstanceParseTime += (double) instance.getAggParsingTime() / 1E6;
+            aggInstanceSyncTime += (double) instance.getAGG_SYNC_TIME() / 1E6;
+            aggInstanceUsefulTime += (double) instance.getAGG_USEFUL_TIME() / 1E6;
 //            for (VNFRequest request : latencyMap.get(i)) {
 //                aggTotalTime += (double) (request.getFinishTime() - request.getCreateTime()) / 1E6;
 //            }
-//        }
-//
-//        /** Breakdown at manager level */
-//        if (ccStrategy == 0) { // Partitioning
-//            aggManagerSyncTime = PartitionStateManager.getManagerEventSyncTime() / 1E6;
-//            aggManagerUsefulTime = PartitionStateManager.getManagerEventUsefulTime() / 1E6;
-//            // Caching time breakdown is done at instance level
-//        } else if (ccStrategy == 2) { // Offloading
-//            aggManagerUsefulTime = OffloadCCExecutorService.getAggUsefulTime().get() / 1E6;
-//            aggInstanceSyncTime -= aggManagerUsefulTime;
-//        } else if (ccStrategy == 3) {
-//            //TODO: Get time breakdown from TPG threads
-//        } else if (ccStrategy == 4) { // OpenNF
-//            aggManagerUsefulTime = OpenNFStateManager.getAggUsefulTime() / 1E6;
-//            aggInstanceSyncTime -= aggManagerUsefulTime;
-//        } else if (ccStrategy == 5) { // CHC
-//            aggManagerUsefulTime = CHCStateManager.getAggUsefulTime() / 1E6;
-//            aggInstanceSyncTime -= aggManagerUsefulTime;
-//        } else if (ccStrategy == 7) {
-//            aggManagerSyncTime += PartitionStateManager.getManagerEventSyncTime() / 1E6;
-//            aggManagerSyncTime += OffloadCCExecutorService.getAggSyncTime().get() / 1E6;
-//            //TODO: Get time breakdown from TPG threads
-//            aggManagerUsefulTime += PartitionStateManager.getManagerEventUsefulTime() / 1E6;
-//            aggManagerUsefulTime += OffloadCCExecutorService.getAggUsefulTime().get() / 1E6;
-//            //TODO: Get time breakdown from TPG threads
-//        }
-//
-//        totalParseTimeMS = aggInstanceParseTime;
-//        totalSyncTimeMS = aggInstanceSyncTime + aggManagerSyncTime;
-//        totalUsefulTimeMS = aggInstanceUsefulTime + aggManagerUsefulTime;
-//        totalCCSwitchTimeMS = aggCCSwitchTime;
-//        totalTimeMS = aggTotalTime;
+        }
+        aggInstanceParseTime /= numInstances;
+        aggInstanceSyncTime /= numInstances;
+        aggInstanceUsefulTime /= numInstances;
+
+        /** Breakdown at manager level */
+        if (Objects.equals(ccStrategy, "Partitioning")) {
+            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager().getAGG_PARSING_TIME() / 1E6;
+            aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager().getAGG_USEFUL_TIME() / 1E6;
+        } else if (Objects.equals(ccStrategy, "Replication")) {
+            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getReplicationStateManager().getAGG_PARSING_TIME() / 1E6;
+        } else if (Objects.equals(ccStrategy, "Offloading")) {
+            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getOffloadAvgAggParsingTime() / 1E6;
+            aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getOffloadAvgAggUsefulTime() / 1E6;
+        } else if (Objects.equals(ccStrategy, "Proactive")) {
+            //TODO: Get time breakdown from TPG threads
+        } else if (Objects.equals(ccStrategy, "OpenNF")) {
+            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getOpenNFStateManager().getAGG_PARSING_TIME() / 1E6;
+            aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getOpenNFStateManager().getAGG_USEFUL_TIME() / 1E6;
+        } else if (Objects.equals(ccStrategy, "CHC")) {
+            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getCHCStateManager().getAGG_PARSING_TIME() / 1E6;
+            aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getCHCStateManager().getAGG_USEFUL_TIME() / 1E6;
+        } else if (Objects.equals(ccStrategy, "S6")) {
+            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getS6StateManager().getAGG_PARSING_TIME() / 1E6;
+        }
+
+        totalParseTimeMS = aggManagerParseTime + aggInstanceParseTime;
+        totalUsefulTimeMS = aggManagerUsefulTime + aggInstanceUsefulTime;
+        totalSyncTimeMS = aggInstanceSyncTime - aggManagerParseTime - aggManagerUsefulTime;
     }
 
     private static void writeCSVThroughput(String outputDir, double throughput) {
@@ -270,12 +248,12 @@ public class VNFManager implements Runnable {
             }
         }
         try (FileWriter fileWriter = new FileWriter(file)) {
-            String lineToWrite = pattern + "," + ccStrategy + "," + throughput + "\n";
+            String lineToWrite = expID + "," + ccStrategy + "," + throughput + "\n";
             fileWriter.write(lineToWrite);
             System.out.println("Throughput data written to CSV file successfully.");
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -299,25 +277,21 @@ public class VNFManager implements Runnable {
         }
         try (FileWriter fileWriter = new FileWriter(file)) {
             for (double latency : instanceLatencyStats.getValues()) {
-                String lineToWrite = String.valueOf(latency) + "\n";
+                String lineToWrite = latency + "\n";
                 fileWriter.write(lineToWrite);
             }
             System.out.println("Latency data written to CSV file successfully.");
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
 
-    private static void writeCSVBreakdown() { //TODO: To be updated with correct output path
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "breakdown");
-        String directoryPath = String.format("%s/numInstance_%d/%s", baseDirectory, numInstances, "-1");
-        String filePath = String.format("%s/%s.csv", directoryPath, ccStrategy);
+    private static void writeCSVBreakdown(String outputDir) {
+        String filePath = String.format("%s/breakdown.csv", outputDir);
         System.out.println("Writing to " + filePath);
-        File dir = new File(directoryPath);
+        File dir = new File(outputDir);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
                 System.out.println("Failed to create the directory.");
@@ -334,12 +308,12 @@ public class VNFManager implements Runnable {
         }
         try (FileWriter fileWriter = new FileWriter(file)) {
 //            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "," + totalTimeMS + "\n";
-            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "\n";
+            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalSwitchTimeMS + "\n";
             fileWriter.write(lineToWrite);
-            System.out.println("Data written to CSV file successfully.");
+            System.out.println("Time breakdown data written to CSV file successfully.");
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -353,6 +327,14 @@ public class VNFManager implements Runnable {
             System.err.println("Error reading the file: " + e.getMessage());
         }
         return lineCount;
+    }
+
+    public static String getOutputFileDirectory() {
+        return String.format(nfvExperimentPath + "/results/%s/vnfID=%s/numPackets=%d/numInstances=%d/" +
+                        "numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d/numTPGThreads=%d/" +
+                        "numOffloadThreads=%d/puncInterval=%d/ccStrategy=%s/doMVCC=%d/udfComplexity=%d",
+                expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality,
+                scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity);
     }
 
 }

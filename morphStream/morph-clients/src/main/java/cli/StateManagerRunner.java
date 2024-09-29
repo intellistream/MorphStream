@@ -3,6 +3,7 @@ package cli;
 import intellistream.morphstream.api.Client;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.vnf.VNFManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,22 +99,22 @@ public class StateManagerRunner extends Client {
     }
 
     private static void writeFootprintToCsv() {
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
-        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "memory_footprint");
-        String filePath = String.format("%s/%s.csv", baseDirectory, toStringStrategy(ccStrategy));
-        File dir = new File(baseDirectory);
+        String outputDir = VNFManager.getOutputFileDirectory();
+        String filePath = String.format("%s/footprint.csv", outputDir);
+        System.out.println("Writing to " + filePath);
+        File dir = new File(outputDir);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
-                throw new RuntimeException("Failed to create the footprint directory.");
+                System.out.println("Failed to create the directory.");
+                return;
             }
         }
         File file = new File(filePath);
         if (file.exists()) {
             boolean isDeleted = file.delete();
             if (!isDeleted) {
-                throw new RuntimeException("Failed to delete existing file.");
+                System.out.println("Failed to delete existing file.");
+                return;
             }
         }
         try (FileWriter fw = new FileWriter(filePath, true);
@@ -121,18 +122,17 @@ public class StateManagerRunner extends Client {
             for (int i=0; i<memoryFootprint.size(); i++) {
                 pw.println(footprintTimestamps.get(i) + "," + memoryFootprint.get(i) + "," + gcFootprint.get(i));
             }
-
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("An error occurred while writing to the CSV file.", e);
         }
     }
 
     private static void writeStartTimeCSV() {
         String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
         String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        int ccStrategy = MorphStreamEnv.get().configuration().getInt("ccStrategy");
+        String ccStrategy = MorphStreamEnv.get().configuration().getString("ccStrategy");
         String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "start_times");
-        String filePath = String.format("%s/%s.csv", baseDirectory, toStringStrategy(ccStrategy));
+        String filePath = String.format("%s/%s.csv", baseDirectory, ccStrategy);
         File dir = new File(baseDirectory);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -155,47 +155,5 @@ public class StateManagerRunner extends Client {
         }
     }
 
-    public static String cleanupJson(String messyJson) {
-        // Step 1: Remove all newline characters and excessive spaces.
-        String cleaned = messyJson.replaceAll("\\s+", " ");
-
-        // Step 2: Attempt to concatenate broken strings correctly.
-        cleaned = cleaned.replace(" , ", ",");
-        cleaned = cleaned.replace(", ", ",");
-        cleaned = cleaned.replace(" ,", ",");
-
-        // Step 3: Handle misplaced quotation marks and commas.
-        cleaned = cleaned.replace("\" ,\"", "\",\"");
-        cleaned = cleaned.replace("\" , \"", "\",\"");
-
-        // Step 4: Remove leading and trailing spaces for all array and object brackets.
-        cleaned = cleaned.replace("[ ", "[");
-        cleaned = cleaned.replace(" ]", "]");
-        cleaned = cleaned.replace("{ ", "{");
-        cleaned = cleaned.replace(" }", "}");
-
-        return cleaned;
-    }
-
-    private static String toStringStrategy(int ccStrategy) {
-        if (ccStrategy == 0) {
-            return "Partitioning";
-        } else if (ccStrategy == 1) {
-            return "Replication";
-        } else if (ccStrategy == 2) {
-            return "Offloading";
-        } else if (ccStrategy == 3) {
-            return "Preemptive";
-        } else if (ccStrategy == 4) {
-            return "OpenNF";
-        } else if (ccStrategy == 5) {
-            return "CHC";
-        } else if (ccStrategy == 6) {
-            return "S6";
-        } else if (ccStrategy == 7) {
-            return "TransNFV";
-        } else {
-            return "Invalid";
-        }
-    }
 }
+

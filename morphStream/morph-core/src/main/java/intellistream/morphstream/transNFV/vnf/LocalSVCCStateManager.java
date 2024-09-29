@@ -60,7 +60,7 @@ public class LocalSVCCStateManager {
     }
 
     /** Warning: This is not thread-safe, need to be guarded with timeout or other sync mechanisms */
-    public void nullSafeStateUpdate(int key, int value) {
+    public void nonSafeLocalStateUpdate(int key, int value) {
         localSVCCDatastore.writeLocalState(key, value);
     }
 

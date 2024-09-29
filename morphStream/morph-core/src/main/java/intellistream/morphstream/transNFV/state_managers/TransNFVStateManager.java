@@ -228,6 +228,22 @@ public class TransNFVStateManager {
         return offloadExecutors;
     }
 
+    public long getOffloadAvgAggUsefulTime() {
+        long aggUsefulTime = 0;
+        for (int i = 0; i < numOffloadThreads; i++) {
+            aggUsefulTime += offloadExecutors.get(i).getAGG_USEFUL_TIME();
+        }
+        return aggUsefulTime / numOffloadThreads;
+    }
+
+    public long getOffloadAvgAggParsingTime() {
+        long aggParsingTime = 0;
+        for (int i = 0; i < numOffloadThreads; i++) {
+            aggParsingTime += offloadExecutors.get(i).getAGG_PARSING_TIME();
+        }
+        return aggParsingTime / numOffloadThreads;
+    }
+
     public OpenNFStateManager getOpenNFStateManager() {
         return openNFStateManager;
     }

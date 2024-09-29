@@ -165,7 +165,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     index = np.arange(len(keySkewList))
 
     # Plot the data
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(7, 4.5))
 
     displayedStrategyList = ["Passive Resolution", "Proactive Resolution"]
     for i, strategy in enumerate(ccStrategyList):
@@ -186,7 +186,8 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, displayedStrategyList)]
     ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=16)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     # Save the figure in the same directory as the script
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
@@ -260,11 +261,12 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     ax.set_xlabel('Key Skewness', fontsize=18)
 
     handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
-    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=17)
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=2, fontsize=17)
     plt.tight_layout()
+    plt.subplots_adjust(left=0.12, right=0.95, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.1_keySkew_range{numItems}_complexity{udfComplexity}_lat.pdf'
+    figure_name = f'5.4.1_keySkew_range{numItems}_complexity{udfComplexity}_lat.png'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure

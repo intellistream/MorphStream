@@ -9,9 +9,6 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
@@ -21,9 +18,15 @@ public class OpenNFStateManager implements Runnable {
     private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
-    private long aggUsefulTime = 0;
     private long initEndTime = -1;
     private long processEndTime = -1;
+
+    private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private long usefulStartTime = 0;
+    private long parsingStartTime = 0;
+    private long AGG_USEFUL_TIME = 0;
+    private long AGG_PARSING_TIME = 0;
+
 
     public OpenNFStateManager(BlockingQueue<VNFRequest> requestQueue) {
         this.requestQueue = requestQueue;
@@ -56,70 +59,68 @@ public class OpenNFStateManager implements Runnable {
                 int instanceID = request.getInstanceID();
                 int tupleID = request.getTupleID();
                 long timeStamp = request.getCreateTime();
-                long txnReqId = request.getReqID();
+                int readValue = -1;
 
-
-                TableRecord tableRecord;
-                tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                int readValue = readRecord.getValues().get(1).getInt();
-
-                long usefulStartTime = System.nanoTime();
-                UDF.executeUDF(request);
-                aggUsefulTime += System.nanoTime() - usefulStartTime;
-
-                SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                tempo_record.getValues().get(1).setInt(readValue);
-                tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+                REC_usefulStartTime();
+                {
+                    TableRecord tableRecord;
+                    tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                    SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                    readValue = readRecord.getValues().get(1).getInt();
+                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                    tempo_record.getValues().get(1).setInt(readValue);
+                    tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+                    UDF.executeUDF(request); //TODO: Separate read and write request handling
+                }
+                REC_usefulEndTime();
 
                 for (int i = 0; i < numInstances; i++) {
-                    VNFManager.getInstanceStateManager(i).nullSafeStateUpdate(tupleID, readValue);
+                    VNFManager.getInstanceStateManager(i).nonSafeLocalStateUpdate(tupleID, readValue);
                 }
 
-                //TODO: Here we should add lock to all instance, but since OpenNF only has a single controller thread, it is fine
+                REC_parsingStartTime();
                 VNFManager.getInstance(instanceID).submitFinishedRequest(request);
+                REC_parsingEndTime();
 
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | DatabaseException e) {
                 throw new RuntimeException(e);
-            } catch (DatabaseException e) {
-                e.printStackTrace();
             }
         }
     }
 
-    private void writeCSVTimestamps() {
-        String experimentID = MorphStreamEnv.get().configuration().getString("experimentID");
-        String rootPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
-        String baseDirectory = String.format("%s/%s/%s/%s", rootPath, "results", experimentID, "timestamps");
-        String filePath = String.format("%s/%s.csv", baseDirectory, "OpenNF");
-        System.out.println("Writing to " + filePath);
-        File dir = new File(baseDirectory);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                System.out.println("Failed to create the directory.");
-                return;
-            }
-        }
-        File file = new File(filePath);
-        if (file.exists()) {
-            boolean isDeleted = file.delete();
-            if (!isDeleted) {
-                System.out.println("Failed to delete existing file.");
-                return;
-            }
-        }
-        try (FileWriter fileWriter = new FileWriter(file)) {
-            String lineToWrite = initEndTime + "," + processEndTime + "\n";
-            fileWriter.write(lineToWrite);
-        } catch (IOException e) {
-            System.out.println("An error occurred while writing to the CSV file.");
-            e.printStackTrace();
+    private void REC_usefulStartTime() {
+        if (enableTimeBreakdown) {
+            usefulStartTime = System.nanoTime();
         }
     }
 
-    public long getAggUsefulTime() {
-        return aggUsefulTime;
+    private void REC_usefulEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
+        }
     }
+
+    private void REC_parsingStartTime() {
+        if (enableTimeBreakdown) {
+            parsingStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_parsingEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_PARSING_TIME += System.nanoTime() - parsingStartTime;
+        }
+    }
+
+    public long getAGG_USEFUL_TIME() {
+        return AGG_USEFUL_TIME;
+    }
+
+    public long getAGG_PARSING_TIME() {
+        return AGG_PARSING_TIME;
+    }
+
+
 }
 
 

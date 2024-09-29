@@ -22,9 +22,14 @@ public class CHCStateManager implements Runnable {
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private final ConcurrentHashMap<Integer, Integer> tupleOwnership = new ConcurrentHashMap<>();
-    private long aggUsefulTime = 0;
     private long initEndTime = -1;
     private long processEndTime = -1;
+
+    private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private long usefulStartTime = 0;
+    private long parsingStartTime = 0;
+    private long AGG_USEFUL_TIME = 0;
+    private long AGG_PARSING_TIME = 0;
 
     public CHCStateManager(BlockingQueue<VNFRequest> requestQueue) {
         this.requestQueue = requestQueue;
@@ -56,14 +61,16 @@ public class CHCStateManager implements Runnable {
                 int instanceID = request.getInstanceID();
                 int tupleID = request.getTupleID();
                 long timeStamp = request.getCreateTime();
-                long txnReqId = request.getReqID();
 
                 if (tupleOwnership.get(tupleID) == null) { // State ownership is not yet assigned, assign it to the current instance
                     long syncStartTime = System.nanoTime();
                     tupleOwnership.put(tupleID, instanceID);
+
+                    REC_usefulStartTime(); //TODO: Double check this mechanism
                     TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
                     SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                    VNFManager.getInstanceStateManager(instanceID).nullSafeStateUpdate(tupleID, readRecord.getValues().get(1).getInt());
+                    VNFManager.getInstanceStateManager(instanceID).nonSafeLocalStateUpdate(tupleID, readRecord.getValues().get(1).getInt());
+                    REC_usefulEndTime();
 
                 } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
                     //TODO: Simulate permission for instance to do local state access
@@ -73,26 +80,60 @@ public class CHCStateManager implements Runnable {
                     int currentOwner = tupleOwnership.get(tupleID);
                     int tupleValue = VNFManager.getInstanceStateManager(instanceID).nullSafeStateRead(tupleID);
 
-                    TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                    SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
-
-                    long usefulStartTime = System.nanoTime();
-                    UDF.executeUDF(request);
-                    aggUsefulTime += System.nanoTime() - usefulStartTime;
-
-                    tempo_record.getValues().get(1).setInt(tupleValue);
-                    tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+                    REC_usefulStartTime();
+                    {
+                        TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
+                        SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
+                        SchemaRecord tempo_record = new SchemaRecord(readRecord);
+                        tempo_record.getValues().get(1).setInt(tupleValue);
+                        tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
+                        UDF.executeUDF(request);
+                    }
+                    REC_usefulEndTime();
 
                 }
 
+                REC_parsingStartTime();
                 VNFManager.getInstance(instanceID).submitFinishedRequest(request);
+                REC_parsingEndTime();
 
             } catch (InterruptedException | DatabaseException | RuntimeException e) {
                 System.out.println("CHC Interrupted exception: " + e.getMessage());
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private void REC_usefulStartTime() {
+        if (enableTimeBreakdown) {
+            usefulStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_usefulEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
+        }
+    }
+
+    private void REC_parsingStartTime() {
+        if (enableTimeBreakdown) {
+            parsingStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_parsingEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_PARSING_TIME += System.nanoTime() - parsingStartTime;
+        }
+    }
+
+    public long getAGG_USEFUL_TIME() {
+        return AGG_USEFUL_TIME;
+    }
+
+    public long getAGG_PARSING_TIME() {
+        return AGG_PARSING_TIME;
     }
 
     private void writeCSVTimestamps() {
@@ -123,10 +164,6 @@ public class CHCStateManager implements Runnable {
             System.out.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();
         }
-    }
-
-    public long getAggUsefulTime() {
-        return aggUsefulTime;
     }
 
 }

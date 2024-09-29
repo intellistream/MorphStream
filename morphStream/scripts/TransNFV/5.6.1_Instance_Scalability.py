@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import csv
 
+
 def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
                          doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path):
@@ -78,10 +79,8 @@ function runTStream() {{
 
 function iterateExperiments() {{
   ResetParameters
-  for numThread in 1 2 4 8 16
+  for numInstances in 2 4 6 8 10
   do
-    numTPGThreads=$numThread
-    numOffloadThreads=$numThread
     for ccStrategy in Partitioning Replication Offloading Proactive
     do
       runTStream
@@ -131,40 +130,40 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                         expID, vnfID, numPackets, numItems, numInstances, 
                         numTPGThreads, numOffloadThreads, puncInterval, 
                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio,
-                        numThreadsList, ccStrategyList):
+                        numInstancesList, ccStrategyList):
     
     colors = ['white', 'white', 'white', 'white']
     hatches = ['\\\\\\', '////', '--', 'xxx']
     hatch_colors = ['#0060bf', '#8c0b0b', '#d97400', '#7812a1']
 
     # Prepare the structure to hold data
-    data = {keySkew: {} for keySkew in numThreadsList}
+    data = {keySkew: {} for keySkew in numInstancesList}
 
     # Iterate over the patterns and ccStrategies
-    for numThreadsIndex in numThreadsList:
+    for numInstanceIndex in numInstancesList:
         for ccStrategyIndex in ccStrategyList:
-            outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+            outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstanceIndex}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
-                 f"scopeRatio={scopeRatio}/numTPGThreads={numThreadsIndex}/numOffloadThreads={numThreadsIndex}/" \
+                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
                  "throughput.csv"
 
             # Read the CSV file
             try:
                 df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
-                data[numThreadsIndex][ccStrategyIndex] = df['Throughput'].iloc[0]
+                data[numInstanceIndex][ccStrategyIndex] = df['Throughput'].iloc[0]
             except Exception as e:
                 print(f"Failed to read {outputFilePath}: {e}")
-                data[numThreadsIndex][ccStrategyIndex] = None
+                data[numInstanceIndex][ccStrategyIndex] = None
 
     # Convert the data into a NumPy array and normalize by 10^6
-    throughput_data = np.array([[data[numThreads][ccStrategy] if data[numThreads][ccStrategy] is not None else 0
-                                 for ccStrategy in ccStrategyList] for numThreads in numThreadsList]) / 1e6
+    throughput_data = np.array([[data[keySkew][ccStrategy] if data[keySkew][ccStrategy] is not None else 0
+                                 for ccStrategy in ccStrategyList] for keySkew in numInstancesList]) / 1e6
     
     print(throughput_data)
     # Plotting parameters
     bar_width = 0.2
-    index = np.arange(len(numThreadsList))
+    index = np.arange(len(numInstancesList))
 
     # Plot the data
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -174,20 +173,21 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
         ax.bar(index + i * bar_width, throughput_data[:, i], color=colors[i], hatch=hatches[i],
                edgecolor=hatch_colors[i], width=bar_width, label=displayedStrategyList[i])
 
-    ax.set_xticks([r + bar_width for r in range(len(numThreadsList))])
-    ax.set_xticklabels(numThreadsList, fontsize=16)
+    ax.set_xticks([r + bar_width for r in range(len(numInstancesList))])
+    ax.set_xticklabels(numInstancesList, fontsize=16)
     ax.tick_params(axis='y', labelsize=14)
-    ax.set_xlabel('Number of Executor Threads', fontsize=18)
+    ax.set_xlabel('Number of Instances', fontsize=18)
     ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
 
     handles = [Patch(facecolor=color, edgecolor=hatchcolor, hatch=hatch, label=label)
                for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, displayedStrategyList)]
     ax.legend(handles=handles, bbox_to_anchor=(0.5, 1), loc='upper center', ncol=2, fontsize=16)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.5.2_numThre_range={numItems}_complexity={udfComplexity}.pdf'
+    figure_name = f'5.5.1_numInst_range={numItems}_complexity={udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
@@ -202,10 +202,10 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
 if __name__ == "__main__":
     # Basic params
     app = "nfv_test"
-    expID = "5.5.2"
+    expID = "5.5.1"
     vnfID = 11
-    numItems = 1600
-    numPackets = 400000
+    numItems = 1200
+    numPackets = 420000
     numInstances = 4
 
     # Workload chars
@@ -223,19 +223,19 @@ if __name__ == "__main__":
     doMVCC = 0
     udfComplexity = 10
     numInstances = 4
-    numThreadsList = [1, 2, 4, 8, 16]
+    numInstancesList = [2, 4, 6, 8, 10]
     ccStrategyList = ["Partitioning", "Replication", "Offloading", "Proactive"]
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
+    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
     
-    # execute_bash_script(shellScriptPath)
+    execute_bash_script(shellScriptPath)
 
-    plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
-                                   numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
-                                   keySkew, workloadSkew, readRatio, locality, scopeRatio, numThreadsList, ccStrategyList)
+    # plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
+    #                                numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
+    #                                keySkew, workloadSkew, readRatio, locality, scopeRatio, numInstancesList, ccStrategyList)
 

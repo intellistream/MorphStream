@@ -153,7 +153,7 @@ def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numI
 # Common Parameters
 puncInterval = 1000 # Used to normalize workload distribution among instances 
 vnfID = 11
-numPackets = 400000
+numPackets = 100000
 numInstances = 4
 numItems = 10000
 

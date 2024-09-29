@@ -25,7 +25,7 @@ def zipfian_distribution(num_keys, zipf_skewness, num_samples):
     return key_accesses
 
 
-def generate_workload_distribution(num_instances, total_requests, workload_skewness, punc_interval):
+def KeySkew_generate_workload_distribution(num_instances, total_requests, workload_skewness, punc_interval):
     workload_skewness = workload_skewness / 100
     """Distribute workload across instances based on a skewed distribution."""
     short_requests = int(total_requests / (punc_interval * num_instances))
@@ -41,7 +41,7 @@ def generate_workload_distribution(num_instances, total_requests, workload_skewn
     return large_requests_per_instance
 
 
-def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, prob_scope, vnfID):
+def KeySkew_generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, prob_scope, vnfID):
 
     key_skewness = key_skewness / 100
     prob_read_write = prob_read_write / 100
@@ -59,7 +59,7 @@ def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, 
     return lines
 
 
-def distribute_lines_among_instances(lines, instance_workloads, output_dir):
+def KeySkew_distribute_lines_among_instances(lines, instance_workloads, output_dir):
     """Distribute the generated lines among instances based on workload distribution."""
     os.makedirs(output_dir, exist_ok=True)
     
@@ -92,10 +92,10 @@ def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numIt
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
     workloadDir = f'{rootDir}/{workloadConfig}'
 
-    lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
+    lines = KeySkew_generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
 
-    instance_workloads = generate_workload_distribution(numInstances, numPackets, workloadSkew, puncInterval)
-    distribute_lines_among_instances(lines, instance_workloads, workloadDir)
+    instance_workloads = KeySkew_generate_workload_distribution(numInstances, numPackets, workloadSkew, puncInterval)
+    KeySkew_distribute_lines_among_instances(lines, instance_workloads, workloadDir)
     print(f'Generated {expID} workload for keySkew={keySkew}, workloadSkew={workloadSkew}, readRatio={readRatio}, scopeRatio={scopeRatio}, locality={locality}')
 
 
@@ -153,57 +153,37 @@ def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numI
 # Common Parameters
 puncInterval = 1000 # Used to normalize workload distribution among instances 
 vnfID = 11
-numPackets = 400000
+numPackets = 100000
 numInstances = 4
 numItems = 10000
 
 # Per-phase Parameters
 
 # Phase 1: Mostly per-flow, balanced / high skewness, read-write balanced
-Phase1_expID = '5.3.1_phase1'
-Phase1_keySkew = 0
-Phase1_workloadSkew = 0
-Phase1_readRatio = 50
-Phase1_localityList = [75, 80, 85, 90, 95, 100]
-Phase1_scopeRatio = 0
+Phase1_expID = '5.5'
+Phase1_keySkewList = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+Phase1_workloadSkewList = [0, 25, 50, 75, 100]
+Phase1_readRatioList = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+Phase1_localityList = 0
+Phase1_scopeRatioList = [0, 25, 50, 75, 100]
 
 # Phase 2: Mostly cross-partition, balanced / high skewness, mostly read-only
-Phase2_expID = '5.3.1_phase2'
-Phase2_keySkewList = [0, 25, 50, 75, 100, 150]
+Phase2_expID = '5.5'
+Phase2_keySkewList = 0
 Phase2_workloadSkew = 0
-Phase2_readRatioList = [75, 80, 85, 90, 95, 100]
-Phase2_locality = 0
-Phase2_scopeRatio = 0
-
-# Phase 3: Mostly cross-partition, balanced / high skewness, mostly write-only
-Phase3_expID = '5.3.1_phase3'
-Phase3_keySkewList = [0, 25, 50, 75, 100, 150]
-Phase3_workloadSkew = 0
-Phase3_readRatioList = [0, 5, 10, 15, 20, 25]
-Phase3_locality = 0
-Phase3_scopeRatio = 0
-
-# Phase 4: Mostly cross-partition, high skewness, read-write balanced
-Phase4_expID = '5.3.1_phase4'
-Phase4_keySkewList = [0, 25, 50, 75, 100, 150]
-Phase4_workloadSkew = 0
-Phase4_readRatioList = [0, 25, 50, 75, 100]
-Phase4_locality = 0
-Phase4_scopeRatio = 0
+Phase2_readRatioList = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+Phase2_localityList = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+Phase2_scopeRatio = [0, 25, 50, 75, 100]
 
 
-# Workload generation
-for Phase1_locality in Phase1_localityList:
-    generate_workload_with_locality(Phase1_expID, vnfID, numPackets, numInstances, numItems, Phase1_keySkew, Phase1_workloadSkew, Phase1_readRatio, Phase1_locality, Phase1_scopeRatio, puncInterval)
+for keySkew in Phase1_keySkewList:
+    for workloadSkew in Phase1_workloadSkewList:
+        for readRatio in Phase1_readRatioList:
+            for scopeRatio in Phase1_scopeRatioList:
+                generate_workload_with_keySkew(Phase1_expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, 0, scopeRatio, puncInterval)
 
-for Phase2_keySkew in Phase2_keySkewList:
-    for Phase2_readRatio in Phase2_readRatioList:
-        generate_workload_with_keySkew(Phase2_expID, vnfID, numPackets, numInstances, numItems, Phase2_keySkew, Phase2_workloadSkew, Phase2_readRatio, Phase2_locality, Phase2_scopeRatio, puncInterval)
 
-for Phase3_keySkew in Phase3_keySkewList:
-    for Phase3_readRatio in Phase3_readRatioList:
-        generate_workload_with_keySkew(Phase3_expID, vnfID, numPackets, numInstances, numItems, Phase3_keySkew, Phase3_workloadSkew, Phase3_readRatio, Phase3_locality, Phase3_scopeRatio, puncInterval)
-
-for Phase4_keySkew in Phase4_keySkewList:
-    for Phase4_readRatio in Phase4_readRatioList:
-        generate_workload_with_keySkew(Phase4_expID, vnfID, numPackets, numInstances, numItems, Phase4_keySkew, Phase4_workloadSkew, Phase4_readRatio, Phase4_locality, Phase4_scopeRatio, puncInterval)
+for readRatio in Phase2_readRatioList:
+    for locality in Phase2_localityList:
+        for scopeRatio in Phase2_scopeRatio:
+            generate_workload_with_locality(Phase2_expID, vnfID, numPackets, numInstances, numItems, 0, 0, readRatio, locality, scopeRatio, puncInterval)

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Properties;
 
 import static intellistream.morphstream.engine.txn.content.LVTStreamContent.LVTSTREAM_CONTENT;
@@ -279,7 +280,7 @@ public class JCommanderHandler {
      * TransNFV Specific configurations
      */
     @Parameter(names = {"--numPackets"}, description = "Total number of events to process.")
-    public int numPackets = 400000;
+    public int numPackets = 100000;
     @Parameter(names = {"--numTPGThreads"}, description = "total execution threads")
     public int numTPGThreads = 8;// default total execution threads
     @Parameter(names = {"--puncInterval"}, description = "checkpoint interval (#tuples)")
@@ -293,27 +294,27 @@ public class JCommanderHandler {
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
 //    public String ccStrategy = "Partitioning";
 //    public String ccStrategy = "Replication";
-//    public String ccStrategy = "Offloading";
+    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "OpenNF";
 //    public String ccStrategy = "CHC";
-    public String ccStrategy = "S6";
+//    public String ccStrategy = "S6";
 //    public String ccStrategy = "Adaptive";
-    @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
-    public int enableTimeBreakdown = 0;
     @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
     public int instancePatternPunctuation = 25000;
     @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
     public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.4.2";
+    public String expID = "5.5";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
+    @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
+    public int enableTimeBreakdown = 1;
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
-    public int enableMemoryFootprint = 0;
+    public int enableMemoryFootprint = 1;
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
-//    public int doMVCC = 0;
-    public int doMVCC = 1;
+    public int doMVCC = 0;
+//    public int doMVCC = 1;
     @Parameter(names = {"--udfComplexity"}, description = "Simulated UDF complexity in microseconds")
     public int udfComplexity = 10;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
@@ -328,7 +329,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--workloadSkew"})
     public int workloadSkew = 0;
     @Parameter(names = {"--readRatio"})
-    public int readRatio = 50;
+    public int readRatio = 0;
     @Parameter(names = {"--locality"})
     public int locality = 0;
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")

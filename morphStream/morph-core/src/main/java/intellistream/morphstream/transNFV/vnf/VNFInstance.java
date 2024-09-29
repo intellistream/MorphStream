@@ -282,38 +282,40 @@ public class VNFInstance implements Runnable {
 //            }
 
         } else if (Objects.equals(tupleCC, "Proactive")) { // Preemptive
+            REC_syncStartTime();
             tpgInputQueues.get(tpgRequestCount % numTPGThreads).offer(new ProactiveVNFRequest(request));
             tpgRequestCount++;
+            REC_syncEndTime();
 
         } else if (Objects.equals(tupleCC, "OpenNF")) { // OpenNF
             openNFStateManager.submitOpenNFReq(request);
+            REC_syncStartTime();
             while (true) {
                 VNFRequest lastFinishedReq = blockingFinishedReqs.take();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                     break;
                 }
             }
+            REC_syncEndTime();
 
         } else if (Objects.equals(tupleCC, "CHC")) { // CHC
             chcStateManager.submitCHCReq(request);
+            REC_syncStartTime();
             while (true) {
                 VNFRequest lastFinishedReq = blockingFinishedReqs.take();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                     break;
                 }
             }
+            REC_syncEndTime();
 
         } else if (Objects.equals(tupleCC, "S6")) { // S6
-            if (Objects.equals(type, "Read")) { // read
-                if (!pendingStateSyncs.isEmpty()) {
-                    applyStateSync();
-                }
-                executeUDF(request);
-                submitFinishedRequest(request);
+            REC_usefulStartTime();
+            localSVCCStateManager.nonBlockingTxnExecution(request);
+            REC_usefulEndTime();
 
-            } else if (involveWrite) { // write
-                //TODO: Remove replication manager. This instance should wait for all other instances' ACK before proceeding
-                executeUDF(request);
+            REC_syncStartTime();
+            if (involveWrite) {
                 s6StateManager.submitS6Request(request);
                 while (true) {
                     VNFRequest lastFinishedReq = blockingFinishedReqs.take();
@@ -321,7 +323,13 @@ public class VNFInstance implements Runnable {
                         break;
                     }
                 }
+            } else {
+                if (!pendingStateSyncs.isEmpty()) {
+                    applyStateSync();
+                }
+                submitFinishedRequest(request);
             }
+            REC_syncEndTime();
 
         } else {
             throw new UnsupportedOperationException("Unsupported CC strategy: " + tupleCC);
@@ -333,7 +341,7 @@ public class VNFInstance implements Runnable {
             SyncData data = pendingStateSyncs.take();  // Block if necessary until an item is available
             int tupleID = data.getTupleID();
             int value = data.getValue();
-            localSVCCStateManager.nullSafeStateUpdate(tupleID, value);
+            localSVCCStateManager.nonSafeLocalStateUpdate(tupleID, value);
         }
     }
 
