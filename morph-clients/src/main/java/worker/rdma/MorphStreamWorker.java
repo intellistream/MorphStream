@@ -62,7 +62,7 @@ public class MorphStreamWorker extends Thread {
         try {
             runTopologyLocally();
             this.RdmaWorkerManagerJoin();
-            LOG.info("MorphStreamWorker: " + env.configuration().getInt("workerId", 0) +" is finished");
+            LOG.info("MorphStreamWorker: {} is finished", env.configuration().getInt("workerId", 0));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

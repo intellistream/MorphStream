@@ -24,16 +24,16 @@ RUN mkdir -p /rtfaas/jar
 
 ADD morph-clients/target/rtfaas-jar-with-dependencies.jar /rtfaas/jar/rtfaas-jar-with-dependencies.jar
 ADD morph-lib/lib/* /rtfaas/lib/
-ADD scripts/FaaS/entrypoint.sh entrypoint.sh
-ADD scripts/FaaS/driver.sh driver.sh
-ADD scripts/FaaS/worker.sh worker.sh
-ADD scripts/FaaS/client.sh client.sh
+ADD scripts/FaaS/DockerFiles/entrypoint.sh entrypoint.sh
+ADD scripts/FaaS/DockerFiles/driver.sh driver.sh
+ADD scripts/FaaS/DockerFiles/worker.sh worker.sh
+ADD scripts/FaaS/DockerFiles/client.sh client.sh
 
 RUN chmod +x /rtfaas/entrypoint.sh
 RUN chmod +x /rtfaas/driver.sh
 RUN chmod +x /rtfaas/worker.sh
 RUN chmod +x /rtfaas/client.sh
 
-#ENTRYPOINT ["bash", "/rtfaas/entrypoint.sh"]
-CMD ["tail", "-f", "/dev/null"]
+ENTRYPOINT ["bash", "/rtfaas/entrypoint.sh"]
+#CMD ["tail", "-f", "/dev/null"]
 #sudo bash worker.sh 2 SocialNetwork 20 20 20 4 20 D 3

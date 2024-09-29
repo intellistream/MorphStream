@@ -248,6 +248,10 @@ public class JCommanderHandler {
     //Network configuration
     @Parameter(names = {"--isRDMA"}, description = "whether is rdma connection")
     public int isRDMA = 0;
+    @Parameter(names = {"--gatewayHost"}, description = "rtfaas gateway host")
+    public String gatewayHost = "localhost";
+    @Parameter(names = {"--gatewayPort"}, description = "rtfaas gateway port")
+    public int gatewayPort = 5580;
     @Parameter(names = {"--driverHost"}, description = "morphstream driver host")
     public String driverHost = "localhost";
     @Parameter(names = {"--driverPort"}, description = "morphstream driver port")
@@ -355,6 +359,8 @@ public class JCommanderHandler {
         } else {
             config.put("isClient", false);
         }
+        config.put("gatewayHost", gatewayHost);
+        config.put("gatewayPort", gatewayPort);
         if (isRDMA == 1) {
             config.put("isRDMA", true);
             config.put("morphstream.rdma.driverHost", driverHost);

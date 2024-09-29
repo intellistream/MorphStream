@@ -1,10 +1,9 @@
 #!/bin/bash
-
 function ResetParameters() {
     #Cluster Configurations
-    isDriver=0
+    isDriver=1
     isDatabase=0
-    isClient=1
+    isClient=0
     workerId=0
     workerNum=$workerNum
     tthread=$threadNum
@@ -13,6 +12,8 @@ function ResetParameters() {
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
+    gatewayHost=$gatewayHost
+    gatewayPort=$gatewayPort
     driverHost=$driverHost
     driverPort=$driverPort
     databaseHost=$databaseHost
@@ -56,7 +57,6 @@ function ResetParameters() {
     shiftRate=1
     checkpointInterval=`expr $sendMessagePerFrontend \* $frontendNum \* $batch`
     totalEvents=`expr $checkpointInterval \* $shiftRate \* 1`
-    qps=$qps
     #System Configurations
     schedulerPool=$schedulerPool
     scheduler=$scheduler
@@ -77,6 +77,8 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
+      --gatewayHost $gatewayHost \
+      --gatewayPort $gatewayPort \
       --driverHost $driverHost \
       --driverPort $driverPort \
       --databaseHost $databaseHost \
@@ -117,7 +119,6 @@ function runApplication() {
       --workloadType $workloadType \
       --shiftRate $shiftRate \
       --totalEvents $totalEvents \
-      --qps $qps \
       --schedulerPool $schedulerPool \
       --checkpoint_interval $checkpointInterval \
       --scheduler $scheduler \
@@ -136,6 +137,8 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
+      --gatewayHost $gatewayHost \
+      --gatewayPort $gatewayPort \
       --driverHost $driverHost \
       --driverPort $driverPort \
       --databaseHost $databaseHost \
@@ -176,7 +179,6 @@ function runApplication() {
       --workloadType $workloadType \
       --shiftRate $shiftRate \
       --totalEvents $totalEvents \
-      --qps $qps \
       --schedulerPool $schedulerPool \
       --checkpoint_interval $checkpointInterval \
       --scheduler $scheduler \

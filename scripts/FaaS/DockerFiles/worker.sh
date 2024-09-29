@@ -13,6 +13,8 @@ function ResetParameters() {
     clientClassName="client.$DAGName"
     #Network Configurations
     isRDMA=1
+    gatewayHost=$gatewayHost
+    gatewayPort=$gatewayPort
     driverHost=$driverHost
     driverPort=$driverPort
     databaseHost=$databaseHost
@@ -76,6 +78,8 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
+      --gatewayHost $gatewayHost \
+      --gatewayPort $gatewayPort \
       --driverHost $driverHost \
       --driverPort $driverPort \
       --databaseHost $databaseHost \
@@ -134,6 +138,8 @@ function runApplication() {
       --frontendNum $frontendNum \
       --clientClassName $clientClassName \
       --isRDMA $isRDMA \
+      --gatewayHost $gatewayHost \
+      --gatewayPort $gatewayPort \
       --driverHost $driverHost \
       --driverPort $driverPort \
       --databaseHost $databaseHost \

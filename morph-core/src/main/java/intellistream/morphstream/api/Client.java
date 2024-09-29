@@ -31,8 +31,8 @@ public abstract class Client extends Thread {
     protected ZMQ.Poller poller;
     protected CountDownLatch latch;
     protected int msgCount = 0;
-    private String driverHost;
-    private int driverPort;
+    private String gatewayHost;
+    private int gatewayPort;
     private int qps = 0;
     public abstract boolean transactionUDF(Function function);
     public abstract Result postUDF(long bid, String txnFlag, HashMap<String, Function> FunctionMap);
@@ -48,6 +48,7 @@ public abstract class Client extends Thread {
         sockets.put(address, socket);
         poller = zContext.createPoller(1);
         poller.register(socket, ZMQ.Poller.POLLIN);
+        LOG.info("Client {} connects gateway.", clientId);
     }
     public void initialize(int clientId, CountDownLatch latch) throws IOException {
         this.clientId = clientId;
@@ -72,20 +73,17 @@ public abstract class Client extends Thread {
 
     @Override
     public void run() {
+        this.inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(clientId);
+        gatewayHost = MorphStreamEnv.get().configuration().getString("gatewayHost");
+        gatewayPort = MorphStreamEnv.get().configuration().getInt("gatewayPort");
+
+        connectFrontend(gatewayHost, gatewayPort);
         latch.countDown();
         try {
             latch.await();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        this.inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(clientId);
-        driverHost = "localhost";
-        if (MorphStreamEnv.get().configuration().getBoolean("isRDMA")) {
-            driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.driverPort");
-        } else {
-            driverPort = MorphStreamEnv.get().configuration().getInt("morphstream.socket.driverPort");
-        }
-        connectFrontend(driverHost, driverPort);
         while (!Thread.currentThread().isInterrupted()) {
             if (!inputQueue.isEmpty()) {
                 asyncInvokeFunction("localhost", inputQueue.poll().toString());
