@@ -280,7 +280,7 @@ public class JCommanderHandler {
      * TransNFV Specific configurations
      */
     @Parameter(names = {"--numPackets"}, description = "Total number of events to process.")
-    public int numPackets = 100000;
+    public int numPackets = 400000;
     @Parameter(names = {"--numTPGThreads"}, description = "total execution threads")
     public int numTPGThreads = 8;// default total execution threads
     @Parameter(names = {"--puncInterval"}, description = "checkpoint interval (#tuples)")
@@ -300,12 +300,8 @@ public class JCommanderHandler {
 //    public String ccStrategy = "CHC";
 //    public String ccStrategy = "S6";
 //    public String ccStrategy = "Adaptive";
-    @Parameter(names = {"--instancePatternPunctuation"}, description = "For hardcoded instance-level punctuation control & cc switch")
-    public int instancePatternPunctuation = 25000;
-    @Parameter(names = {"--managerPatternPunctuation"}, description = "For manager-level punctuation control & cc switch")
-    public int managerPatternPunctuation = 10000;
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.5";
+    public String expID = "5.2.3";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -537,8 +533,6 @@ public class JCommanderHandler {
         config.put("numOffloadThreads", numOffloadThreads);
         config.put("ccStrategy", ccStrategy);
         config.put("enableTimeBreakdown", enableTimeBreakdown);
-        config.put("instancePatternPunctuation", instancePatternPunctuation);
-        config.put("managerPatternPunctuation", managerPatternPunctuation);
         config.put("experimentID", expID);
         config.put("vnfID", vnfID);
         config.put("enableMemoryFootprint", enableMemoryFootprint);

@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
-import static intellistream.morphstream.transNFV.vnf.UDF.executeUDF;
 
 public class VNFInstance implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(VNFInstance.class);
@@ -60,7 +59,6 @@ public class VNFInstance implements Runnable {
     private long overallEndTime;
     private final int expectedRequestCount;
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
-    private final int patternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
 
     private long parsingStartTime = 0; // Create txn request
     private long syncStartTime = 0; // Ordering, conflict resolution, broadcasting sync
@@ -85,8 +83,11 @@ public class VNFInstance implements Runnable {
         this.expectedRequestCount = expectedRequestCount;
         this.localSVCCStateManager = stateManager;
         if (Objects.equals(ccStrategy, "Adaptive")) { // Adaptive CC started from default CC strategy - Partitioning
-            for (int i = 0; i <= stateRange; i++) {
+            for (int i = 0; i < stateRange/2; i++) {
                 tupleCCMap.put(i, "Partitioning");
+            }
+            for (int i = stateRange/2; i <= stateRange; i++) {
+                tupleCCMap.put(i, "Offloading");
             }
 
         } else { // Static CC are fixed throughout the runtime
@@ -497,7 +498,10 @@ public class VNFInstance implements Runnable {
         } else if (Objects.equals(ccStrategy, "S6")) {
             s6StateManager.submitS6Request(stopSignal);
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
-            throw new UnsupportedOperationException("Adaptive CC strategy not supported yet");
+            partitionStateManager.submitPartitioningRequest(stopSignal);
+            for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
+                offloadingQueues.get(offloadQueueIndex).offer(stopSignal);
+            }
         } else {
             throw new UnsupportedOperationException("Unsupported CC strategy: " + ccStrategy);
         }

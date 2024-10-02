@@ -3,7 +3,7 @@ package intellistream.morphstream.transNFV.state_managers;
 import intellistream.morphstream.transNFV.adaptation.PerformanceModel;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.input.TransactionalEvent;
-import intellistream.morphstream.transNFV.adaptation.BatchWorkloadMonitor;
+import intellistream.morphstream.transNFV.adaptation.IterativeWorkloadMonitor;
 import intellistream.morphstream.transNFV.common.PatternData;
 import intellistream.morphstream.transNFV.executors.OffloadExecutor;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class TransNFVStateManager {
-    private BatchWorkloadMonitor batchWorkloadMonitor;
+    private IterativeWorkloadMonitor workloadMonitor;
     private Thread batchWorkloadMonitorThread;
 
     private PartitionStateManager partitionStateManager;
@@ -60,8 +60,8 @@ public class TransNFVStateManager {
     }
 
     public void prepareBatchWorkloadMonitor() {
-        batchWorkloadMonitor = new BatchWorkloadMonitor(monitorQueue);
-        batchWorkloadMonitorThread = new Thread(batchWorkloadMonitor);
+        workloadMonitor = new IterativeWorkloadMonitor(monitorQueue);
+        batchWorkloadMonitorThread = new Thread(workloadMonitor);
     }
 
     public void preparePartitionStateManager() {
@@ -109,30 +109,39 @@ public class TransNFVStateManager {
     }
 
     public void prepareAdaptiveCC() {
-        throw new UnsupportedOperationException("Adaptive state management to be updated");
+        //TODO: Currently we only prepare the partitioning and offloading managers.
+        partitionStateManager = new PartitionStateManager(partitioningQueue);
+        partitionStateManagerThread = new Thread(partitionStateManager);
+
+        for (int i = 0; i < numOffloadThreads; i++) {
+            BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
+            offloadInputQueues.put(i, inputQueue);
+            OffloadExecutor offloadExecutor = new OffloadExecutor(i, inputQueue, svccStateManager, mvccStateManager);
+            offloadExecutors.put(i, offloadExecutor);
+            Thread offloadExecutorThread = new Thread(offloadExecutor);
+            offloadExecutorThreads.put(i, offloadExecutorThread);
+        }
     }
 
     public void startAdaptiveCC() {
-        throw new UnsupportedOperationException("Adaptive state management to be updated");
-//        monitorThread.start();
-//        replicationCCThread.start();
-//        for (int i = 0; i < numOffloadThreads; i++) {
-//            offloadThreads.get(i).start();
-//        }
-//        System.out.println("CC123 and Monitor started");
+        partitionStateManagerThread.start();
+        System.out.println("Partitioning controller started");
+
+        for (int i = 0; i < numOffloadThreads; i++) {
+            offloadExecutorThreads.get(i).start();
+        }
+        System.out.println("Offload executors started");
     }
 
     public void joinAdaptiveCC() {
-        throw new UnsupportedOperationException("Adaptive state management to be updated");
-//        try {
-//            monitorThread.join();
-//            replicationCCThread.join();
-//            for (int i = 0; i < numOffloadThreads; i++) {
-//                offloadThreads.get(i).join();
-//            }
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
+        try {
+            partitionStateManagerThread.join();
+            for (int i = 0; i < numOffloadThreads; i++) {
+                offloadExecutorThreads.get(i).join();
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void startBatchWorkloadMonitor() {
@@ -262,8 +271,8 @@ public class TransNFVStateManager {
         return s6StateManager;
     }
 
-    public BatchWorkloadMonitor getBatchWorkloadMonitor() {
-        return batchWorkloadMonitor;
+    public IterativeWorkloadMonitor getWorkloadMonitor() {
+        return workloadMonitor;
     }
 
     public BlockingQueue<TransactionalEvent> getTPGInputQueue(int spoutId) {

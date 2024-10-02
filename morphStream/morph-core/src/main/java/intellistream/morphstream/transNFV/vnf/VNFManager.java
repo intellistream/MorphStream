@@ -16,7 +16,6 @@ public class VNFManager implements Runnable {
     private static HashMap<Integer, Thread> instanceThreadMap = new HashMap<>();
     private static HashMap<Integer, LocalSVCCStateManager> instanceStateManagerMap = new HashMap<>();
 
-    private final int instancePatternPunctuation = MorphStreamEnv.get().configuration().getInt("instancePatternPunctuation");
     private static final String inputWorkloadPath = MorphStreamEnv.get().configuration().getString("inputWorkloadPath");
     private static final String nfvExperimentPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
 

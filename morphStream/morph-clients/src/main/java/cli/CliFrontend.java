@@ -70,8 +70,8 @@ public class CliFrontend {
         } else if (Objects.equals(ccStrategy, "S6")) {
             env.getTransNFVStateManager().prepareS6StateManager();
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
-            //TODO: Prepare adaptive state manager
-            env.getTransNFVStateManager().prepareBatchWorkloadMonitor();
+            env.getTransNFVStateManager().prepareAdaptiveCC();
+//            env.getTransNFVStateManager().prepareBatchWorkloadMonitor();
         } else {
             if (enable_log) LOG.error("Unknown CC strategy: " + ccStrategy);
         }
@@ -151,7 +151,7 @@ public class CliFrontend {
             env.getTransNFVStateManager().joinS6StateManager();
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
             env.getTransNFVStateManager().startAdaptiveCC();
-            runTopologyLocally();
+            startVNF();
             env.getTransNFVStateManager().joinAdaptiveCC();
         } else {
             if (enable_log) LOG.error("Unknown CC strategy: " + ccStrategy);

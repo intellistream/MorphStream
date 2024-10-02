@@ -172,7 +172,7 @@ combinedWorkloadPath = f'{rootDir}/{expID}/vnfID={vnfID}/numPackets={numPackets}
 # Group 1 workload
 Group1_expID = "5.2.3_Group1"
 Group1_keyStart = 0
-Group1_keyEnd = 4999
+Group1_keyEnd = 7999
 Group1_numPackets = 200000
 Group1_keySkew = 0
 Group1_workloadSkew = 0
@@ -183,16 +183,17 @@ Group1_workloadFilePath = f'{rootDir}/{Group1_expID}/vnfID={vnfID}/numPackets={G
 
 # Group 2 workload
 Group2_expID = "5.2.3_Group2"
-Group2_keyStart = 5000
+Group2_keyStart = 8000
 Group2_keyEnd = 9999
 Group2_numPackets = 200000
-Group2_keySkew = 50
+Group2_keySkew = 0
 Group2_workloadSkew = 0
 Group2_readRatio = 0
-Group2_locality = 0
+Group2_locality = 100
 Group2_scopeRatio = 0
 Group2_workloadFilePath = f'{rootDir}/{Group2_expID}/vnfID={vnfID}/numPackets={Group2_numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={Group2_keySkew}/workloadSkew={Group2_workloadSkew}/readRatio={Group2_readRatio}/locality={Group2_locality}/scopeRatio={Group2_scopeRatio}'
 
 generate_workload_with_locality(Group1_expID, vnfID, Group1_numPackets, numInstances, numItems, Group1_keySkew, Group1_workloadSkew, Group1_readRatio, Group1_locality, Group1_scopeRatio, puncInterval)
+# generate_workload_with_locality(Group2_expID, vnfID, Group2_numPackets, numInstances, numItems, Group2_keySkew, Group2_workloadSkew, Group2_readRatio, Group2_locality, Group2_scopeRatio, puncInterval)
 generate_workload_with_keySkew(Group2_expID, vnfID, Group2_numPackets, numInstances, numItems, Group2_keySkew, Group2_workloadSkew, Group2_readRatio, Group2_locality, Group2_scopeRatio, puncInterval)
 combine_csv_randomly()

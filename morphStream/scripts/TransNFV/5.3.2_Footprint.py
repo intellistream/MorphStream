@@ -11,7 +11,7 @@ def generate_bash_script(app, checkpointInterval, numTPGThreads, scheduler, NUM_
                          communicationChoice, numInstances, numOffloadThreads, offloadLockNum,
                          ccStrategy, workloadPattern, enableTimeBreakdown, expID, script_path,
                          enableHardcodeCCSwitch, enableMemoryFootprint, memoryIntervalMS,
-                         instancePatternPunctuation):
+                         ):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -31,7 +31,6 @@ function ResetParameters() {{
   enableTimeBreakdown={enableTimeBreakdown}
   expID="{expID}"
   enableHardcodeCCSwitch="{enableHardcodeCCSwitch}"
-  instancePatternPunctuation={instancePatternPunctuation}
   enableMemoryFootprint={enableMemoryFootprint}
   memoryIntervalMS={memoryIntervalMS}
 }}
@@ -54,7 +53,6 @@ function runTStream() {{
           --enableTimeBreakdown $enableTimeBreakdown \\
           --expID $expID \\
           --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
-          --instancePatternPunctuation $instancePatternPunctuation \\
           --enableMemoryFootprint $enableMemoryFootprint \\
           --memoryIntervalMS $memoryIntervalMS
           "
@@ -75,7 +73,6 @@ function runTStream() {{
     --enableTimeBreakdown $enableTimeBreakdown \\
     --expID $expID \\
     --enableHardcodeCCSwitch $enableHardcodeCCSwitch \\
-    --instancePatternPunctuation $instancePatternPunctuation \\
     --enableMemoryFootprint $enableMemoryFootprint \\
     --memoryIntervalMS $memoryIntervalMS
 }}
@@ -297,13 +294,12 @@ if __name__ == "__main__":
     enableHardcodeCCSwitch = 1
     enableMemoryFootprint = 1
     memoryIntervalMS = 10
-    instancePatternPunctuation = 25000
     script_path = "/home/shuhao/DB4NFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
     generate_bash_script(app, checkpointInterval, numTPGThreads, scheduler, NUM_ITEMS, totalEvents, nfvExperimentPath,
                          communicationChoice, numInstances, numOffloadThreads, offloadLockNum, ccStrategy,
                          workloadPattern, enableTimeBreakdown, expID, script_path, enableHardcodeCCSwitch,
-                         enableMemoryFootprint, memoryIntervalMS, instancePatternPunctuation)
+                         enableMemoryFootprint, memoryIntervalMS)
     execute_bash_script(script_path)
 
     draw_footprint_plot()
