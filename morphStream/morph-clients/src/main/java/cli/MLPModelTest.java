@@ -2,7 +2,6 @@ package cli;
 
 import intellistream.morphstream.transNFV.adaptation.PerformanceModel;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
-import org.jpmml.evaluator.ModelEvaluator;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
@@ -23,7 +22,7 @@ public class MLPModelTest {
         for (double skew : keySkew) {
             for (double read : readRatio) {
                 long startTime = System.nanoTime();
-                String prediction = PerformanceModel.testUsage(skew, workloadSkew, read, locality, scopeRatio);
+                String prediction = PerformanceModel.predictOptimalStrategy(skew, workloadSkew, read, locality, scopeRatio);
                 long latency = System.nanoTime() - startTime;
                 latencyInNS.addValue(latency);
                 System.out.println("Predicted optimal strategy: " + prediction);

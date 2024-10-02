@@ -16,7 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class TransNFVStateManager {
     private IterativeWorkloadMonitor workloadMonitor;
-    private Thread batchWorkloadMonitorThread;
+    private Thread WorkloadMonitorThread;
 
     private PartitionStateManager partitionStateManager;
     private Thread partitionStateManagerThread;
@@ -59,9 +59,9 @@ public class TransNFVStateManager {
         modelEvaluator = PerformanceModel.loadPMMLModel(pmmlFilePath);
     }
 
-    public void prepareBatchWorkloadMonitor() {
+    public void prepareWorkloadMonitor() {
         workloadMonitor = new IterativeWorkloadMonitor(monitorQueue);
-        batchWorkloadMonitorThread = new Thread(workloadMonitor);
+        WorkloadMonitorThread = new Thread(workloadMonitor);
     }
 
     public void preparePartitionStateManager() {
@@ -131,6 +131,9 @@ public class TransNFVStateManager {
             offloadExecutorThreads.get(i).start();
         }
         System.out.println("Offload executors started");
+
+        WorkloadMonitorThread.start();
+        System.out.println("Batch workload monitor started");
     }
 
     public void joinAdaptiveCC() {
@@ -139,19 +142,7 @@ public class TransNFVStateManager {
             for (int i = 0; i < numOffloadThreads; i++) {
                 offloadExecutorThreads.get(i).join();
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void startBatchWorkloadMonitor() {
-        batchWorkloadMonitorThread.start();
-        System.out.println("Batch workload monitor started");
-    }
-
-    public void joinBatchWorkloadMonitor() {
-        try {
-            batchWorkloadMonitorThread.join();
+            WorkloadMonitorThread.join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

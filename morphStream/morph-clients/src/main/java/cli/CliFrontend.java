@@ -70,6 +70,7 @@ public class CliFrontend {
         } else if (Objects.equals(ccStrategy, "S6")) {
             env.getTransNFVStateManager().prepareS6StateManager();
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
+            env.getTransNFVStateManager().prepareWorkloadMonitor();
             env.getTransNFVStateManager().prepareAdaptiveCC();
 //            env.getTransNFVStateManager().prepareBatchWorkloadMonitor();
         } else {

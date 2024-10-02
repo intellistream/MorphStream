@@ -17,6 +17,7 @@ public class VNFManager implements Runnable {
     private static HashMap<Integer, LocalSVCCStateManager> instanceStateManagerMap = new HashMap<>();
 
     private static final String inputWorkloadPath = MorphStreamEnv.get().configuration().getString("inputWorkloadPath");
+    private static final String inputMonitorWorkloadPath = MorphStreamEnv.get().configuration().getString("inputMonitorWorkloadPath");
     private static final String nfvExperimentPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
 
     private static final String expID = MorphStreamEnv.get().configuration().getString("experimentID");
@@ -37,6 +38,8 @@ public class VNFManager implements Runnable {
     private static final String ccStrategy = MorphStreamEnv.get().configuration().getString("ccStrategy");
     private static final int doMVCC = MorphStreamEnv.get().configuration().getInt("doMVCC");
     private static final int udfComplexity = MorphStreamEnv.get().configuration().getInt("udfComplexity");
+    private static final int workloadInterval = MorphStreamEnv.get().configuration().getInt("workloadInterval");
+    private static final int monitorWindowSize = MorphStreamEnv.get().configuration().getInt("monitorWindowSize");
 
     private static int partitionGap = numItems / numInstances;
     private int totalRequestCounter = 0;
@@ -60,18 +63,34 @@ public class VNFManager implements Runnable {
 
     private void initInstances() {
         CyclicBarrier finishBarrier = new CyclicBarrier(numInstances);
-        for (int i = 0; i < numInstances; i++) {
-            String csvFilePath;
-            csvFilePath = String.format(inputWorkloadPath + "/instance_%d.csv", i);
-            int instanceExpRequestCount = countLinesInCSV(csvFilePath);
-            LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
-            instanceStateManagerMap.put(i, localSVCCStateManager);
-            VNFInstance instance = new VNFInstance(i,
-                    stateStartID + i * partitionGap, stateStartID + (i + 1) * partitionGap, numItems,
-                    ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
-            Thread senderThread = new Thread(instance);
-            instanceMap.put(i, instance);
-            instanceThreadMap.put(i, senderThread);
+        if (expID.equals("5.6.2")) {
+            for (int i = 0; i < numInstances; i++) {
+                String csvFilePath;
+                csvFilePath = String.format(inputMonitorWorkloadPath + "/instance_%d.csv", i);
+                int instanceExpRequestCount = countLinesInCSV(csvFilePath);
+                LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
+                instanceStateManagerMap.put(i, localSVCCStateManager);
+                VNFInstance instance = new VNFInstance(i,
+                        stateStartID + i * partitionGap, stateStartID + (i + 1) * partitionGap, numItems,
+                        ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
+                Thread senderThread = new Thread(instance);
+                instanceMap.put(i, instance);
+                instanceThreadMap.put(i, senderThread);
+            }
+        } else {
+            for (int i = 0; i < numInstances; i++) {
+                String csvFilePath;
+                csvFilePath = String.format(inputWorkloadPath + "/instance_%d.csv", i);
+                int instanceExpRequestCount = countLinesInCSV(csvFilePath);
+                LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
+                instanceStateManagerMap.put(i, localSVCCStateManager);
+                VNFInstance instance = new VNFInstance(i,
+                        stateStartID + i * partitionGap, stateStartID + (i + 1) * partitionGap, numItems,
+                        ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
+                Thread senderThread = new Thread(instance);
+                instanceMap.put(i, instance);
+                instanceThreadMap.put(i, senderThread);
+            }
         }
     }
 
@@ -96,6 +115,7 @@ public class VNFManager implements Runnable {
         System.out.println("All VNF instances have completed processing.");
         System.out.println("Overall throughput: " + overallThroughput + " events/second");
         String outputFileDir = getOutputFileDirectory();
+        String outputFileDirMonitor = getOutputFileDirectoryMonitor();
 
         switch (expID) {
             case "5.1": // Dynamic workload, throughput, three existing strategies
@@ -131,8 +151,10 @@ public class VNFManager implements Runnable {
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 break;
             case "5.6.1": // Dynamic workload, throughput
-            case "5.6.2":
                 writeCSVThroughput(outputFileDir, overallThroughput);
+                break;
+            case "5.6.2":
+                writeCSVThroughputMonitor(outputFileDirMonitor, overallThroughput);
                 break;
         }
     }
@@ -260,6 +282,34 @@ public class VNFManager implements Runnable {
         }
     }
 
+    private static void writeCSVThroughputMonitor(String outputDir, double throughput) {
+        String filePath = String.format("%s/throughput.csv", outputDir);
+        System.out.println("Writing to " + filePath);
+        File dir = new File(outputDir);
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.out.println("Failed to create the directory.");
+                return;
+            }
+        }
+        File file = new File(filePath);
+        if (file.exists()) {
+            boolean isDeleted = file.delete();
+            if (!isDeleted) {
+                System.out.println("Failed to delete existing file.");
+                return;
+            }
+        }
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String lineToWrite = expID + "," + ccStrategy + "," + throughput + "\n";
+            fileWriter.write(lineToWrite);
+            System.out.println("Throughput data written to CSV file successfully.");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the CSV file.");
+            throw new RuntimeException(e);
+        }
+    }
+
     private static void writeCSVLatency(String outputDir) {
         String filePath = String.format("%s/latency.csv", outputDir);
         System.out.println("Writing to " + filePath);
@@ -338,6 +388,14 @@ public class VNFManager implements Runnable {
                         "numOffloadThreads=%d/puncInterval=%d/ccStrategy=%s/doMVCC=%d/udfComplexity=%d",
                 expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality,
                 scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity);
+    }
+
+    public static String getOutputFileDirectoryMonitor() {
+        return String.format(nfvExperimentPath + "/results/%s/vnfID=%s/numPackets=%d/numInstances=%d/" +
+                        "numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d/numTPGThreads=%d/" +
+                        "numOffloadThreads=%d/puncInterval=%d/ccStrategy=%s/doMVCC=%d/udfComplexity=%d/workloadInterval=%d/monitorWindowSize=%d",
+                expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality,
+                scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, workloadInterval, monitorWindowSize);
     }
 
 }

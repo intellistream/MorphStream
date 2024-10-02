@@ -43,7 +43,7 @@ public class PerformanceModel {
         System.out.println("Output fields: " + outputFields);
     }
 
-    public static String testUsage(double keySkew, double workloadSkew, double readRatio, double locality, double scopeRatio) throws JAXBException, IOException, SAXException {
+    public static String predictOptimalStrategy(double keySkew, double workloadSkew, double readRatio, double locality, double scopeRatio) throws JAXBException, IOException, SAXException {
         // Prepare input fields (5-tuple)
         Map<FieldName, Object> arguments = new LinkedHashMap<>();
         arguments.put(FieldName.create("keySkew"), keySkew);

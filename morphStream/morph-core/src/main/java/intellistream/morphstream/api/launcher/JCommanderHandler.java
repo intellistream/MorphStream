@@ -294,14 +294,14 @@ public class JCommanderHandler {
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
 //    public String ccStrategy = "Partitioning";
 //    public String ccStrategy = "Replication";
-    public String ccStrategy = "Offloading";
+//    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "OpenNF";
 //    public String ccStrategy = "CHC";
 //    public String ccStrategy = "S6";
-//    public String ccStrategy = "Adaptive";
+    public String ccStrategy = "Adaptive";
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.2.3";
+    public String expID = "5.6.2";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -319,6 +319,11 @@ public class JCommanderHandler {
     public int gcCheckInterval = 100;
     @Parameter(names = {"--gcBatchInterval"}, description = "Do GC after the entire batch of transactions has been processed")
     public int gcBatchInterval = 10000;
+    @Parameter(names = {"--monitorWindowSize"}, description = "Do GC after the entire batch of transactions has been processed")
+    public int monitorWindowSize = 1000;
+    @Parameter(names = {"--workloadInterval"}, description = "Interval for workload shift")
+    public int workloadInterval = 10000;
+
     /** Parameters controls which csv file to read */
     @Parameter(names = {"--keySkew"})
     public int keySkew = 0;
@@ -541,6 +546,8 @@ public class JCommanderHandler {
         config.put("memoryIntervalMS", memoryIntervalMS);
         config.put("gcCheckInterval", gcCheckInterval);
         config.put("gcBatchInterval", gcBatchInterval);
+        config.put("monitorWindowSize", monitorWindowSize);
+        config.put("workloadInterval", workloadInterval);
         config.put("keySkew", keySkew);
         config.put("workloadSkew", workloadSkew);
         config.put("readRatio", readRatio);
@@ -549,6 +556,9 @@ public class JCommanderHandler {
         String inputWorkloadPath = String.format(nfvExperimentPath + "/workload/%s/vnfID=%s/numPackets=%d/numInstances=%d/numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d",
                 expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio);
         config.put("inputWorkloadPath", inputWorkloadPath);
+        String inputMonitorWorkloadPath = String.format(nfvExperimentPath + "/workload/%s/vnfID=%s/numPackets=%d/numInstances=%d/numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d/interval=%d",
+                expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, workloadInterval);
+        config.put("inputMonitorWorkloadPath", inputMonitorWorkloadPath);
         configSystem(config);
     }
 

@@ -1,5 +1,6 @@
 package intellistream.morphstream.transNFV.vnf;
 
+import intellistream.morphstream.transNFV.adaptation.IterativeWorkloadMonitor;
 import intellistream.morphstream.transNFV.common.Transaction;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.input.TransactionalEvent;
@@ -13,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
@@ -43,10 +43,9 @@ public class VNFInstance implements Runnable {
     private final BlockingQueue<VNFRequest> blockingFinishedReqs = new LinkedBlockingQueue<>(); //TODO: Waiting for manager's ACK for state update broadcast finish
     private final ConcurrentLinkedDeque<VNFRequest> finishedReqStorage = new ConcurrentLinkedDeque<>(); //Permanent storage of finished requests
 
-    private final ConcurrentHashMap<Integer, Integer> tupleUnderCCSwitch = new ConcurrentHashMap<>(); // Affected tupleID -> new CC
+    private final IterativeWorkloadMonitor workloadMonitor = MorphStreamEnv.get().getTransNFVStateManager().getWorkloadMonitor();
+    private final ConcurrentHashMap<Integer, String> tupleUnderCCSwitch = new ConcurrentHashMap<>(); // Tuples under CC switch, buffer its future requests to txn buffer
     private final ConcurrentHashMap<Integer, ConcurrentLinkedQueue<VNFRequest>> tupleBufferReqMap = new ConcurrentHashMap<>();
-    private final HashMap<Integer, Long> bufferReqStartTimeMap = new HashMap<>();
-//    private final BlockingQueue<Integer> monitorMsgQueue = new LinkedBlockingQueue<>(); //Workload monitor controls instance punctuation barriers
 
     private String ccStrategy;
     private int instancePuncID = 1; //Start from 1
@@ -109,21 +108,13 @@ public class VNFInstance implements Runnable {
     }
 
 
-    public void addTupleCCSwitch(int tupleID, int newCC) {
+    public void startTupleCCSwitch(int tupleID, String newCC) {
         tupleUnderCCSwitch.put(tupleID, newCC);
     }
 
-//    public void notifyNextPuncStart(int nextPuncID) {
-//        try {
-////            monitorMsgQueue.put(nextPuncID);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-
     public void endTupleCCSwitch(int tupleID, String newCC) {
+//        tupleCCMap.put(tupleID, newCC);
         tupleUnderCCSwitch.remove(tupleID);
-        tupleCCMap.put(tupleID, newCC);
     }
 
 
@@ -141,29 +132,24 @@ public class VNFInstance implements Runnable {
                 VNFRequest request = createRequest(line);
                 REC_parsingEndTime();
 
-                TXN_PROCESS(request); // Main method for txn processing
+                if (ccStrategy.equals("Adaptive")) {
+                    int tupleID = request.getTupleID();
+                    if (!isUnderSwitch(tupleID)) {
+                        processBufferedRequests(request.getTupleID());
+                        TXN_PROCESS(request); // Main method for txn processing
+                    } else {
+                        tupleBufferReqMap.computeIfAbsent(request.getTupleID(), k -> new ConcurrentLinkedQueue<>()).add(request);
+                    }
+
+                } else {
+                    TXN_PROCESS(request); // Main method for txn processing
+                }
             }
 
-            System.out.println("Instance " + instanceID + " finished parsing " + inputLineCounter + " requests.");
-            assert inputLineCounter == expectedRequestCount;
-            while (finishedReqStorage.size() < expectedRequestCount) {
-                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000));  // Sleep for 1 second
-            }
-
-            // Compute instance local performance
-            assert finishedReqStorage.peekLast() != null;
-            overallEndTime = finishedReqStorage.peekLast().getFinishTime();
-            long overallDuration = overallEndTime - overallStartTime;
-            System.out.println("Instance " + instanceID + " processed all " + expectedRequestCount + " requests, Throughput " + (expectedRequestCount / (overallDuration / 1E9)) + " events/sec");
-
-            int arrivedIndex = finishBarrier.await(); // Wait for other instances to finish
-            if (arrivedIndex == 0) {
-                System.out.println("All instances have finished, sending stop signals to StateManager...");
-                sendStopSignals();
-            }
+            waitForTxnFinish();
 
         } catch (IOException | InterruptedException | BrokenBarrierException e) {
-            System.err.println("Error reading from file: " + e.getMessage());
+            throw new RuntimeException(e);
 
         } finally {
             try {
@@ -185,8 +171,27 @@ public class VNFInstance implements Runnable {
         int vnfID = Integer.parseInt(parts[2]);
         String type = parts[3]; // Read, Write or Read-Write
         String scope = parts[4]; // Per-flow or Cross-flow
-        int saID = 0; //TODO: Hardcoded saID
+        int saID = 0;
         return new VNFRequest(reqID, instanceID, tupleID, 0, scope, type, vnfID, saID, packetStartTime, instancePuncID);
+    }
+
+
+    private boolean isUnderSwitch(int tupleID) {
+        return tupleUnderCCSwitch.containsKey(tupleID);
+    }
+
+    private void processBufferedRequests(int tupleID) {
+        ConcurrentLinkedQueue<VNFRequest> bufferQueue = tupleBufferReqMap.get(tupleID);
+        if (bufferQueue != null) {
+            while (!bufferQueue.isEmpty()) {
+                VNFRequest bufferedRequest = bufferQueue.poll();
+                try {
+                    TXN_PROCESS(bufferedRequest);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
 
@@ -197,6 +202,10 @@ public class VNFInstance implements Runnable {
         String scope = request.getScope();
         String tupleCC = tupleCCMap.get(tupleID);
         boolean involveWrite = Objects.equals(type, "Write") || Objects.equals(type, "Read-Write");
+
+        if (ccStrategy.equals("Adaptive")) {
+            workloadMonitor.submitMetadata(tupleID, instanceID, type, scope);
+        }
 
         if (Objects.equals(scope, "Per-flow")) { // Per-flow operations, no need to acquire lock. CANNOT be executed together with cross-flow operations
             REC_usefulStartTime();
@@ -476,6 +485,26 @@ public class VNFInstance implements Runnable {
         }
     }
 
+    private void waitForTxnFinish() throws BrokenBarrierException, InterruptedException {
+        System.out.println("Instance " + instanceID + " finished parsing " + inputLineCounter + " requests.");
+        assert inputLineCounter == expectedRequestCount;
+        while (finishedReqStorage.size() < expectedRequestCount) {
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000));  // Sleep for 1 second
+        }
+
+        // Compute instance local performance
+        assert finishedReqStorage.peekLast() != null;
+        overallEndTime = finishedReqStorage.peekLast().getFinishTime();
+        long overallDuration = overallEndTime - overallStartTime;
+        System.out.println("Instance " + instanceID + " processed all " + expectedRequestCount + " requests, Throughput " + (expectedRequestCount / (overallDuration / 1E9)) + " events/sec");
+
+        int arrivedIndex = finishBarrier.await(); // Wait for other instances to finish
+        if (arrivedIndex == 0) {
+            System.out.println("All instances have finished, sending stop signals to StateManager...");
+            sendStopSignals();
+        }
+    }
+
     private void sendStopSignals() {
         VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, "-1", "-1", -1, -1, -1, -1);
 
@@ -502,6 +531,8 @@ public class VNFInstance implements Runnable {
             for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
                 offloadingQueues.get(offloadQueueIndex).offer(stopSignal);
             }
+            workloadMonitor.submitMetadata(-1, -1, "-1", "-1");
+
         } else {
             throw new UnsupportedOperationException("Unsupported CC strategy: " + ccStrategy);
         }
