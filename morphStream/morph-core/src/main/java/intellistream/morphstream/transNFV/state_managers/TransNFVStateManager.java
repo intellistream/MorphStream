@@ -1,11 +1,13 @@
 package intellistream.morphstream.transNFV.state_managers;
 
+import intellistream.morphstream.transNFV.adaptation.PerformanceModel;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.transNFV.adaptation.BatchWorkloadMonitor;
 import intellistream.morphstream.transNFV.common.PatternData;
 import intellistream.morphstream.transNFV.executors.OffloadExecutor;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import org.jpmml.evaluator.ModelEvaluator;
 
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
@@ -45,12 +47,16 @@ public class TransNFVStateManager {
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
 
+    private ModelEvaluator<?> modelEvaluator;
+
 
     public TransNFVStateManager() {
         int partitionGap = tableSize / numInstances;
         for (int i = 0; i < tableSize; i++) {
             partitionOwnership.put(i, i / partitionGap); //TODO: Refine this
         }
+        String pmmlFilePath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/training_data/mlp_model.pmml";
+        modelEvaluator = PerformanceModel.loadPMMLModel(pmmlFilePath);
     }
 
     public void prepareBatchWorkloadMonitor() {
@@ -266,5 +272,9 @@ public class TransNFVStateManager {
 
     public BlockingQueue<VNFRequest> getOffloadingInputQueue(int offloadingId) {
         return offloadInputQueues.get(offloadingId);
+    }
+
+    public ModelEvaluator<?> getModelEvaluator() {
+        return modelEvaluator;
     }
 }

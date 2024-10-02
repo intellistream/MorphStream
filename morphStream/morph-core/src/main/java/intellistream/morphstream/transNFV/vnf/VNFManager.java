@@ -109,6 +109,7 @@ public class VNFManager implements Runnable {
             case "5.2.2_phase2":
             case "5.2.2_phase3":
             case "5.2.2_phase4":
+            case "5.2.3":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 writeCSVLatency(outputFileDir);
                 break;
@@ -126,9 +127,12 @@ public class VNFManager implements Runnable {
                 writeCSVLatency(outputFileDir);
                 break;
             case "5.5":
+            case "5.5_Evaluation":
+            case "5.5_Inference":
                 writeCSVThroughput(outputFileDir, overallThroughput);
-            case "5.5.1": // Dynamic workload, throughput
-            case "5.5.2":
+                break;
+            case "5.6.1": // Dynamic workload, throughput
+            case "5.6.2":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 break;
         }

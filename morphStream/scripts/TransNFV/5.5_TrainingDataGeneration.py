@@ -153,6 +153,52 @@ def execute_bash_script(script_path):
         print(f"Bash script completed successfully.")
 
 
+def get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy):
+    return f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/" \
+                  f"locality={locality}/scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/" \
+                  f"numOffloadThreads={numOffloadThreads}/puncInterval={puncInterval}/ccStrategy={ccStrategy}/" \
+                  f"doMVCC={doMVCC}/udfComplexity={udfComplexity}/throughput.csv"
+
+
+def optimal_strategy_labeling(expID, workloadID, rootDir, ccStrategyList, keySkewList, workloadSkewList, readRatioList, localityList, scopeRatioList):
+    # Define output path for the CSV file
+    output_csv_path = f"{rootDir}/training_data/{expID}/{workloadID}/optimal_strategies.csv"
+    output_dir = os.path.dirname(output_csv_path)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    if os.path.exists(output_csv_path):
+        os.remove(output_csv_path)
+        print(f"Existing file {output_csv_path} has been removed.")
+
+    for keySkew in keySkewList:
+        for workloadSkew in workloadSkewList:
+            for readRatio in readRatioList:
+                for locality in localityList:
+                    for scopeRatio in scopeRatioList:
+                        optimal_results = []
+                        
+                        for strategy in ccStrategyList:
+                            throughput_file_path = get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, strategy)
+                            try:
+                                df = pd.read_csv(throughput_file_path, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
+                                throughput = df['Throughput'].iloc[0]
+                            except Exception as e:
+                                print(f"Error reading file {throughput_file_path}: {e}")
+                                continue
+                            
+                            optimal_results.append((strategy, throughput))
+
+                        if optimal_results:
+                            optimal_strategy = max(optimal_results, key=lambda x: x[1])[0]
+                            with open(output_csv_path, mode='a', newline='') as csv_file:
+                                writer = csv.writer(csv_file)
+                                writer.writerow([keySkew, workloadSkew, readRatio, locality, scopeRatio, optimal_strategy])
+                        else:
+                            print(f"No valid throughput data found for workload: {keySkew, workloadSkew, readRatio, locality, scopeRatio}")
+
 
 # Common Parameters
 puncInterval = 1000 # Used to normalize workload distribution among instances 
@@ -175,26 +221,21 @@ rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
 
 # Phase 1: Mostly per-flow, balanced / high skewness, read-write balanced
 Phase1_expID = '5.5'
+Phase1_workloadID = "keySkewWorkload"
 Phase1_keySkewList = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-Phase1_workloadSkewList = [0, 25, 50, 75, 100]
+Phase1_workloadSkewList = [0]
 Phase1_readRatioList = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 Phase1_localityList = [0]
 Phase1_scopeRatioList = [0]
 
-# Phase1_expID = '5.5'
-# Phase1_keySkewList = [0]
-# Phase1_workloadSkewList = [0]
-# Phase1_readRatioList = [0]
-# Phase1_localityList = [0]
-# Phase1_scopeRatioList = [0]
-
 # Phase 2: Mostly cross-partition, balanced / high skewness, mostly read-only
 Phase2_expID = '5.5'
+Phase2_workloadID = "localityWorkload"
 Phase2_keySkewList = [0]
-Phase2_workloadSkew = [0]
+Phase2_workloadSkewList = [0]
 Phase2_readRatioList = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 Phase2_localityList = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-Phase2_scopeRatio = [0]
+Phase2_scopeRatioList = [0]
 
 
 
@@ -214,14 +255,47 @@ def localityExp():
 
     generate_bash_script(app, Phase2_expID, vnfID, rootDir, numPackets, numItems, numInstances,
                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity,
-                        Phase2_keySkewList, Phase2_workloadSkew, Phase2_readRatioList, Phase2_localityList, Phase2_scopeRatio,
+                        Phase2_keySkewList, Phase2_workloadSkewList, Phase2_readRatioList, Phase2_localityList, Phase2_scopeRatioList,
                         shellScriptPath)
     
     execute_bash_script(shellScriptPath)
 
 
+def labelKeySkew():
+    optimal_strategy_labeling(Phase1_expID, Phase1_workloadID, rootDir, ccStrategyList, Phase1_keySkewList, Phase1_workloadSkewList, Phase1_readRatioList, Phase1_localityList, Phase1_scopeRatioList)
+
+def labelLocality():
+    optimal_strategy_labeling(Phase2_expID, Phase2_workloadID, rootDir, ccStrategyList, Phase2_keySkewList, Phase2_workloadSkewList, Phase2_readRatioList, Phase2_localityList, Phase2_scopeRatioList)
+
+
+
+def combineWorkload():
+    keySkewDataPath = f"{rootDir}/training_data/{Phase1_expID}/{Phase1_workloadID}/optimal_strategies.csv"
+    localityDataPath = f"{rootDir}/training_data/{Phase2_expID}/{Phase2_workloadID}/optimal_strategies.csv"
+    combinedDataPath = f"{rootDir}/training_data/combined_optimal_strategies.csv"
+    
+    if os.path.exists(combinedDataPath):
+        os.remove(combinedDataPath)
+        print(f"Existing file {combinedDataPath} has been removed.")
+    
+    with open(combinedDataPath, 'w') as outfile:
+        with open(keySkewDataPath, 'r') as infile1:
+            for line in infile1:
+                outfile.write(line)
+        
+        with open(localityDataPath, 'r') as infile2:
+            next(infile2)  # Skip the header line if the two files share the same header
+            for line in infile2:
+                outfile.write(line)
+    
+    print(f"Combined data saved to {combinedDataPath}")
 
 if __name__ == "__main__":
-    keySkewExp()
+    # keySkewExp()
     # localityExp()
+
+    labelKeySkew()
+    labelLocality()
+    combineWorkload()
+
     print("Done")

@@ -167,7 +167,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     # Plot the data
     fig, ax = plt.subplots(figsize=(7, 4.5))
 
-    displayedStrategyList = ["Passive Resolution", "Proactive Resolution"]
+    displayedStrategyList = ["Immediate Resolution", "Batch Resolution"]
     for i, strategy in enumerate(ccStrategyList):
         ax.bar(index + i * bar_width, throughput_data[:, i], color=colors[i], hatch=hatches[i],
                edgecolor=hatch_colors[i], width=bar_width, label=displayedStrategyList[i])
@@ -231,7 +231,7 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     boxplot_data = []
     boxplot_labels = []  # This will hold unique keySkew values
     colors = ['#0060bf', '#8c0b0b']  # Different colors for different ccStrategies
-    displayedStrategyList = ["Passive Resolution", "Proactive Resolution"]
+    displayedStrategyList = ["Immediate Resolution", "Batch Resolution"]
     
     positions = []  # Will store x-axis positions for the box plots
     num_cc_strategies = len(ccStrategyList)
