@@ -31,6 +31,7 @@ function ResetParameters() {
     #Database Configurations
     isRemoteDB=$isRemoteDB
     isDynamoDB=$isDynamoDB
+    isTiKV=$isTiKV
     r_w_capacity_unit=$r_w_capacity_unit
     numberItemsForTables=$numberItemsForTables
     NUM_ITEMS=$NUM_ITEMS
@@ -66,7 +67,7 @@ function ResetParameters() {
 }
 
 function runApplication() {
-  echo "-Xms60g -Xmx60g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
+  echo "-Xms32g -Xmx32g -Xss100M -XX:+PrintGCDetails -Xmn40g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
       --isDatabase $isDatabase \
       --isClient $isClient \
@@ -95,6 +96,7 @@ function runApplication() {
       --shuffleType $shuffleType \
       --isRemoteDB $isRemoteDB \
       --isDynamoDB $isDynamoDB \
+      --isTiKV $isTiKV \
       --r_w_capacity_unit $r_w_capacity_unit \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \
@@ -126,7 +128,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms100g -Xmx100g -Xss100M -XX:+PrintGCDetails -Xmn80g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
+  java -Xms32g -Xmx32g -Xss100M -XX:+PrintGCDetails -Xmn32g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
       --isClient $isClient \
       --isDatabase $isDatabase \
@@ -155,6 +157,7 @@ function runApplication() {
       --shuffleType $shuffleType \
       --isRemoteDB $isRemoteDB \
       --isDynamoDB $isDynamoDB \
+      --isTiKV $isTiKV \
       --r_w_capacity_unit $r_w_capacity_unit \
       --numberItemsForTables $numberItemsForTables \
       --NUM_ITEMS $NUM_ITEMS \

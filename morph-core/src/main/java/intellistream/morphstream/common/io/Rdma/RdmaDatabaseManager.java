@@ -7,13 +7,19 @@ import intellistream.morphstream.common.io.Rdma.Listener.RdmaConnectionListener;
 import intellistream.morphstream.common.io.Rdma.Memory.Manager.DatabaseBufferManager;
 import intellistream.morphstream.common.io.Rdma.Msg.DBWRegionTokenGroup;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.util.FixedLengthRandomString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tikv.common.TiConfiguration;
+import org.tikv.common.TiSession;
+import org.tikv.raw.RawKVClient;
+import org.tikv.shade.com.google.protobuf.ByteString;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +54,8 @@ public class RdmaDatabaseManager {
         }
         if (conf.getBoolean("isDynamoDB")) {
             initDynamoDatabase();
+        } else if (conf.getBoolean("isTiKV")) {
+            initTiKVDatabase();
         } else {
             initRDMADatabase(conf);
         }
@@ -56,6 +64,23 @@ public class RdmaDatabaseManager {
         dynamoDBClient = DynamoDbClient.builder().region(Region.US_EAST_2).build();
         for (int i = 0; i < tableNames.length; i++) {
             createAndInitTableForDynamoDB(tableNames[i], numItems[i], tableNameToValueName.get(tableNames[i]));
+        }
+    }
+    public void initTiKVDatabase() {
+        String[] pdHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.databaseHost").split(",");
+        int port = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.databasePort");
+        StringBuilder pdAddress = new StringBuilder();
+        for (String pdHost : pdHosts) {
+            pdAddress.append(pdHost).append(":").append(port).append(",");
+        }
+        pdAddress.deleteCharAt(pdAddress.length() - 1);
+        TiConfiguration tiConfiguration = TiConfiguration.createRawDefault(pdAddress.toString());
+        TiSession tiSession = TiSession.create(tiConfiguration);
+        RawKVClient rawKVClient = tiSession.createRawClient();
+        for (int i = 0; i < tableNames.length; i++) {
+            for (int j = 0; j < numItems[i]; j++) {
+                rawKVClient.put(ByteString.copyFromUtf8(tableNames[i] + "_" + j), ByteString.copyFrom(FixedLengthRandomString.generateRandomFixedLengthString(valueSize[i]).getBytes(StandardCharsets.UTF_8)));
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import intellistream.morphstream.engine.db.Database;
 import intellistream.morphstream.engine.db.exception.DatabaseException;
 import intellistream.morphstream.engine.db.storage.impl.DynamoDBStorageManager;
 import intellistream.morphstream.engine.db.storage.impl.RemoteStorageManager;
+import intellistream.morphstream.engine.db.storage.impl.TiKVStorageManager;
 import intellistream.morphstream.engine.db.storage.record.TableRecord;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
@@ -18,6 +19,8 @@ public class RemoteDatabase extends Database {
     public RemoteDatabase(Configuration configuration) {
         if (configuration.getBoolean("isDynamoDB")) {
             this.storageManager = new DynamoDBStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
+        } else if (configuration.getBoolean("isTiKV")){
+            this.storageManager = new TiKVStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
         } else {
             this.storageManager = new RemoteStorageManager(MorphStreamEnv.get().rdmaWorkerManager().getCacheBuffer(), configuration.getInt("workerNum"), configuration.getInt("tthread"));
         }

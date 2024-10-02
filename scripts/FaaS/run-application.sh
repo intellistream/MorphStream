@@ -14,8 +14,8 @@ echo "Deploying"
 # 在 driverHost 上执行 driver.sh
 scp -r FaaS ${username}@${driverHost}:~/ && \
 execute_remote $driverHost "bash FaaS/service_start.sh driver $appName"
-# 在 databaseHost 上执行相应操作（示例：启动数据库）
-execute_remote $databaseHost "bash database.sh"
+## 在 databaseHost 上执行相应操作（示例：启动数据库）
+#execute_remote $databaseHost "bash database.sh"
 
 # 遍历 workerHosts，在每个 worker 上执行 worker.sh
 IFS=',' read -r -a hosts <<< "$workerHosts"
@@ -25,9 +25,9 @@ for i in "${!hosts[@]}"; do
   workerHost=${hosts[$i]}
   workerPort=${ports[$i]}
   scp -r FaaS ${username}@${workerHost}:~/ && \
-  execute_remote $workerHost "bash service_start.sh worker $appName $i"
+  execute_remote $workerHost "bash FaaS/service_start.sh worker $appName $i"
 done
 
 scp -r FaaS ${username}@${clientHost}:~/ && \
-execute_remote $clientHost "bash service_start.sh client $appName"
+execute_remote $clientHost "bash FaaS/service_start.sh client $appName"
 

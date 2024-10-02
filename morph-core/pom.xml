@@ -246,6 +246,11 @@
             <artifactId>jetcd-core</artifactId>
             <version>0.5.9</version>
         </dependency>
+        <dependency>
+            <groupId>org.tikv</groupId>
+            <artifactId>tikv-client-java</artifactId>
+            <version>3.3.0</version>
+        </dependency>
     </dependencies>
 
 </project>

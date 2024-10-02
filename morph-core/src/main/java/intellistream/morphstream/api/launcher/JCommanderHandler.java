@@ -157,6 +157,8 @@ public class JCommanderHandler {
     public int isRemoteDB = 0;// 0: local, 1: remote
     @Parameter(names = {"--isDynamoDB"}, description = "isDynamoDB.")
     public int isDynamoDB = 0;
+    @Parameter(names = {"--isTiKV"}, description = "isTiKV.")
+    public int isTiKV = 0;
     @Parameter(names = {"--r_w_capacity_unit"}, description = "r_w_capacity_unit.")
     public long r_w_capacity_unit = 10L;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
@@ -498,6 +500,11 @@ public class JCommanderHandler {
             config.put("isDynamoDB", false);
         } else {
             config.put("isDynamoDB", true);
+        }
+        if (isTiKV == 0) {
+            config.put("isTiKV", false);
+        } else {
+            config.put("isTiKV", true);
         }
         config.put("NUM_ITEMS", NUM_ITEMS);
         config.put("loadDBThreadNum", tthread);

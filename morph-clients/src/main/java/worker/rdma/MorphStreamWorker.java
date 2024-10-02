@@ -91,7 +91,6 @@ public class MorphStreamWorker extends Thread {
         if (MorphStreamEnv.get().configuration().getBoolean("isRemoteDB") && !MorphStreamEnv.get().configuration().getBoolean("isDynamoDB")) {
             this.rdmaWorkerManager.connectDatabase();
         }
-        this.rdmaWorkerManager.connectDatabase();
         this.rdmaWorkerManager.connectDriver();
         env.OM().start();
     }
