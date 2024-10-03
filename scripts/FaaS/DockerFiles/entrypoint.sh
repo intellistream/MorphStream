@@ -12,6 +12,6 @@ elif [ "$1" = "database" ]; then
     echo "Init the database"
     /rtfaas/database.sh
 else
-    echo "No valid argument provided. Please pass 'driver' or 'worker' or 'client' ."
+    echo "No valid argument provided. Please pass 'driver' or 'worker' or 'client' or 'database' ."
     exit 1
-database
+fi
