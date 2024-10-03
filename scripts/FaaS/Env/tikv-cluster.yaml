@@ -1,0 +1,27 @@
+global:
+  user: "jjzhao"
+  ssh_port: 22
+  deploy_dir: "/tidb-deploy"
+  data_dir: "/tidb-data"
+
+pd_servers:
+  - host: 10.192.168.110
+    client_port: 2379
+    peer_port: 2380
+  - host: 10.192.168.120
+    client_port: 2379
+    peer_port: 2380
+  - host: 10.192.168.122
+    client_port: 2379
+    peer_port: 2380
+
+tikv_servers:
+  - host: 10.192.168.110
+    port: 2381
+    status_port: 2382
+  - host: 10.192.168.120
+    port: 2381
+    status_port: 2382
+  - host: 10.192.168.122
+    port: 2381
+    status_port: 2382

@@ -28,11 +28,13 @@ ADD scripts/FaaS/DockerFiles/entrypoint.sh entrypoint.sh
 ADD scripts/FaaS/DockerFiles/driver.sh driver.sh
 ADD scripts/FaaS/DockerFiles/worker.sh worker.sh
 ADD scripts/FaaS/DockerFiles/client.sh client.sh
+ADD scripts/FaaS/DockerFiles/database.sh database.sh
 
 RUN chmod +x /rtfaas/entrypoint.sh
 RUN chmod +x /rtfaas/driver.sh
 RUN chmod +x /rtfaas/worker.sh
 RUN chmod +x /rtfaas/client.sh
+RUN chmod +x /rtfaas/database.sh
 
 ENTRYPOINT ["bash", "/rtfaas/entrypoint.sh"]
 #CMD ["tail", "-f", "/dev/null"]

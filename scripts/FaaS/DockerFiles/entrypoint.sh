@@ -8,7 +8,10 @@ elif [ "$1" = "worker" ]; then
 elif [ "$1" = "client" ]; then
     echo "Starting the clients"
     /rtfaas/client.sh
+elif [ "$1" = "database" ]; then
+    echo "Init the database"
+    /rtfaas/database.sh
 else
     echo "No valid argument provided. Please pass 'driver' or 'worker' or 'client' ."
     exit 1
-fi
+database

@@ -11,6 +11,8 @@ elif [ "$serviceName" = "worker" ]; then
     docker run --rm --network host --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env --env-file Env/Database.env --privileged --device=/dev/infiniband/ -it rtfaas:1.0 worker $workerId
 elif [ "$serviceName" = "client" ]; then
     docker run --rm --network host --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env --env-file Env/Database.env --privileged --device=/dev/infiniband/ -it rtfaas:1.0 client
+elif [ "$serviceName" = "database" ]; then
+    docker run --rm --network host --env-file Env/Cluster.env --env-file Env/System.env --env-file Env/$appName.env --env-file Env/Database.env --privileged --device=/dev/infiniband/ -it rtfaas:1.0 database
 else
     echo "No valid argument provided. Please pass 'driver' or 'worker' or 'client' ."
     exit 1
