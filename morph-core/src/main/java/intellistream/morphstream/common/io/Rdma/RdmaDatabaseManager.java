@@ -8,6 +8,7 @@ import intellistream.morphstream.common.io.Rdma.Memory.Manager.DatabaseBufferMan
 import intellistream.morphstream.common.io.Rdma.Msg.DBWRegionTokenGroup;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.util.FixedLengthRandomString;
+import org.tikv.common.TiConfiguration.ApiVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tikv.common.TiConfiguration;
@@ -75,6 +76,7 @@ public class RdmaDatabaseManager {
         }
         pdAddress.deleteCharAt(pdAddress.length() - 1);
         TiConfiguration tiConfiguration = TiConfiguration.createRawDefault(pdAddress.toString());
+        tiConfiguration.setApiVersion(ApiVersion.V2);
         TiSession tiSession = TiSession.create(tiConfiguration);
         RawKVClient rawKVClient = tiSession.createRawClient();
         for (int i = 0; i < tableNames.length; i++) {

@@ -96,7 +96,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>18.0</version>
+            <version>30.1.1-jre</version>
         </dependency>
         <dependency>
             <groupId>com.github.wendykierp</groupId>
@@ -249,7 +249,7 @@
         <dependency>
             <groupId>org.tikv</groupId>
             <artifactId>tikv-client-java</artifactId>
-            <version>3.3.0</version>
+            <version>3.3.5</version>
         </dependency>
     </dependencies>
 

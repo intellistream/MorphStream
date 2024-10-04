@@ -1,27 +1,37 @@
 global:
   user: "jjzhao"
   ssh_port: 22
-  deploy_dir: "/tidb-deploy"
-  data_dir: "/tidb-data"
 
 pd_servers:
   - host: 10.192.168.110
     client_port: 2379
     peer_port: 2380
+    deploy_dir: "/workspace1/pd-deploy"
+    data_dir: "/workspace1/pd-data"
   - host: 10.192.168.120
     client_port: 2379
     peer_port: 2380
+    deploy_dir: "/home/jjzhao/db/pd-deploy"
+    data_dir: "/home/jjzhao/db/pd-data"
   - host: 10.192.168.122
     client_port: 2379
     peer_port: 2380
+    deploy_dir: "/mnt/pmem0/pd-deploy"
+    data_dir: "/mnt/pmem0/pd-data"
 
 tikv_servers:
   - host: 10.192.168.110
     port: 2381
     status_port: 2382
+    deploy_dir: "/workspace1/tidb-deploy"
+    data_dir: "/workspace1/tidb-data"
   - host: 10.192.168.120
     port: 2381
     status_port: 2382
+    data_dir: "/home/jjzhao/db/tidb-data"
+    deploy_dir: "/home/jjzhao/db/tidb-deploy"
   - host: 10.192.168.122
     port: 2381
     status_port: 2382
+    data_dir: "/mnt/pmem0/tidb-data"
+    deploy_dir: "/mnt/pmem0/tidb-deploy"
