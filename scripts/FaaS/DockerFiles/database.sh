@@ -124,7 +124,7 @@ function runApplication() {
       --CCOption $CCOption \
       --complexity $complexity \
             "
-  java -Xms32g -Xmx32g -Xss100M -XX:+PrintGCDetails -Xmn32g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
+  java -Xms64g -Xmx64g -Xss100M -XX:+PrintGCDetails -Xmn64g -XX:+UseG1GC -Djava.library.path=$LIBDIR -jar -d64 $JAR \
       --isDriver $isDriver \
       --isClient $isClient \
       --isDatabase $isDatabase \

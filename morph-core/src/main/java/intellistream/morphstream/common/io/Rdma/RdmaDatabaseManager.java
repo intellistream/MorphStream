@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ public class RdmaDatabaseManager {
             createAndInitTableForDynamoDB(tableNames[i], numItems[i], tableNameToValueName.get(tableNames[i]));
         }
     }
-    public void initTiKVDatabase() {
+    public void initTiKVDatabase() throws Exception {
         String[] pdHosts = MorphStreamEnv.get().configuration().getString("morphstream.rdma.databaseHost").split(",");
         int port = MorphStreamEnv.get().configuration().getInt("morphstream.rdma.databasePort");
         StringBuilder pdAddress = new StringBuilder();
@@ -76,14 +77,29 @@ public class RdmaDatabaseManager {
         }
         pdAddress.deleteCharAt(pdAddress.length() - 1);
         TiConfiguration tiConfiguration = TiConfiguration.createRawDefault(pdAddress.toString());
-        tiConfiguration.setApiVersion(ApiVersion.V2);
+        tiConfiguration.setEnableAtomicForCAS(true);
+        //tiConfiguration.setApiVersion(ApiVersion.V2);
         TiSession tiSession = TiSession.create(tiConfiguration);
         RawKVClient rawKVClient = tiSession.createRawClient();
         for (int i = 0; i < tableNames.length; i++) {
+            byte[] value = FixedLengthRandomString.generateRandomFixedLengthString(valueSize[i]).getBytes(StandardCharsets.UTF_8);
+            ByteString valueByteString = ByteString.copyFrom(value);
+            String tableNamePrefix = tableNames[i] + "_";
+            ByteBuffer keyBuffer = ByteBuffer.allocate(tableNamePrefix.length() + 10); // 假设 10 足够放下数字部分
+            keyBuffer.put(tableNamePrefix.getBytes(StandardCharsets.UTF_8));
             for (int j = 0; j < numItems[i]; j++) {
-                rawKVClient.put(ByteString.copyFromUtf8(tableNames[i] + "_" + j), ByteString.copyFrom(FixedLengthRandomString.generateRandomFixedLengthString(valueSize[i]).getBytes(StandardCharsets.UTF_8)));
+                // 清理数字部分，只更新 j
+                keyBuffer.position(tableNamePrefix.length());  // 仅更新数字部分
+                keyBuffer.put(Integer.toString(j).getBytes(StandardCharsets.UTF_8));
+                // 生成 ByteString，并调用 put
+                ByteString keyByteString = ByteString.copyFrom(keyBuffer.array(), 0, keyBuffer.position());
+                rawKVClient.put(keyByteString, valueByteString);
             }
+
         }
+        rawKVClient.close();
+        tiSession.close();
+        LOG.info("TiKV database initialized successfully.");
     }
 
     public void initRDMADatabase (Configuration conf) throws Exception{

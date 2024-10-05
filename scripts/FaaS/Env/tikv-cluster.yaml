@@ -30,8 +30,8 @@ tikv_servers:
     status_port: 2384
     data_dir: "/home/jjzhao/db/tidb-data"
     deploy_dir: "/home/jjzhao/db/tidb-deploy"
-  - host: 10.192.168.122
-    port: 2383
-    status_port: 2384
-    data_dir: "/mnt/pmem0/tidb-data"
-    deploy_dir: "/mnt/pmem0/tidb-deploy"
+#  - host: 10.192.168.122
+#    port: 2383
+#    status_port: 2384
+#    data_dir: "/mnt/pmem0/tidb-data"
+#    deploy_dir: "/mnt/pmem0/tidb-deploy"
