@@ -163,20 +163,33 @@ def combine_and_randomize_csv(csv_file_list, output_file):
 
 def combine_csv_randomly():
     for workloadInterval in workloadIntervalList:
-        perIntervalPath = f'{combinedWorkloadPath}/interval={workloadInterval}'
+        perIntervalPath = f'{combinedWorkloadPath}/interval={workloadInterval}' # Each interval has its own file
         os.makedirs(perIntervalPath, exist_ok=True)
         
         for instanceID in range(numInstances):
             per_interval_per_instance_file_path = f'{perIntervalPath}/instance_{instanceID}.csv'
             if os.path.exists(per_interval_per_instance_file_path):
                 os.remove(per_interval_per_instance_file_path)
+
             per_interval_per_instance_files = []
             num_phases = numPackets // workloadInterval
+
             for phaseID in range(num_phases):
                 expID = f'5.6.2_Interval{workloadInterval}_Phase{phaseID}'
-                workloadFilePath = f'{rootDir}/temporary/{expID}/vnfID={vnfID}/numPackets={workloadInterval}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
+                workloadFilePath = ''
+
+                if phaseID % 2 == 0:
+                    workloadFilePath = f'{rootDir}/temporary/{expID}/vnfID={vnfID}/numPackets={workloadInterval}/' \
+                    f'numInstances={numInstances}/numItems={numItems}/keySkew={Partition_keySkew}/workloadSkew={Partition_workloadSkew}/' \
+                    f'readRatio={Partition_readRatio}/locality={Partition_locality}/scopeRatio={Partition_scopeRatio}'
+                else:
+                    workloadFilePath = f'{rootDir}/temporary/{expID}/vnfID={vnfID}/numPackets={workloadInterval}/' \
+                    f'numInstances={numInstances}/numItems={numItems}/keySkew={Offloading_keySkew}/workloadSkew={Offloading_workloadSkew}/' \
+                    f'readRatio={Offloading_readRatio}/locality={Offloading_locality}/scopeRatio={Offloading_scopeRatio}'
+                
                 file_path = os.path.join(workloadFilePath, f'instance_{instanceID}.csv')
                 per_interval_per_instance_files.append(file_path)
+
             combine_and_randomize_csv(per_interval_per_instance_files, per_interval_per_instance_file_path)
 
 
@@ -187,32 +200,48 @@ numPackets = 400000
 workloadIntervalList = [10000, 20000, 50000, 100000, 200000]
 numInstances = 4
 numItems = 10000
+
+defaultKeySkew = 0
+defaultWorkloadSkew = 0
+defaultReadRatio = 0
+defaultLocality = 0
+defaultScopeRatio = 0
+
 expID = '5.6.2'
 rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
-combinedWorkloadPath = f'{rootDir}/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={0}/workloadSkew={0}/readRatio={0}/locality={0}/scopeRatio={0}'
+combinedWorkloadPath = f'{rootDir}/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/' \
+                        f'keySkew={defaultKeySkew}/workloadSkew={defaultWorkloadSkew}/readRatio={defaultReadRatio}/locality={defaultLocality}/scopeRatio={defaultScopeRatio}'
+
+Partition_keySkew = 0
+Partition_workloadSkew = 0
+Partition_readRatio = 0
+Partition_locality = 100
+Partition_scopeRatio = 0
+
+Offloading_keySkew = 50
+Offloading_workloadSkew = 0
+Offloading_readRatio = 50
+Offloading_locality = 0
+Offloading_scopeRatio = 0
 
 for workloadInterval in workloadIntervalList:
     num_phases = numPackets // workloadInterval
     for phase in range(num_phases):
         if (phase % 2 == 0):
-            keyStart = 0
-            keyEnd = 7999
-            keySkew = 0
-            workloadSkew = 0
-            readRatio = 0
-            locality = 100
-            scopeRatio = 0
+            
             expID = f'5.6.2_Interval{workloadInterval}_Phase{phase}'
-            generate_workload_with_locality(expID, vnfID, workloadInterval, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval)
+            generate_workload_with_locality(expID, vnfID, workloadInterval, numInstances, numItems, Partition_keySkew, Partition_workloadSkew, 
+                                            Partition_readRatio, Partition_locality, Partition_scopeRatio, puncInterval)
+            # generate_workload_with_keySkew(expID, vnfID, workloadInterval, numInstances, numItems, Partition_keySkew, Partition_workloadSkew, 
+            #                                 Partition_readRatio, Partition_locality, Partition_scopeRatio, puncInterval)
+
         else:
-            keyStart = 8000
-            keyEnd = 9999
-            keySkew = 0
-            workloadSkew = 0
-            readRatio = 0
-            locality = 100
-            scopeRatio = 0
+           
             expID = f'5.6.2_Interval{workloadInterval}_Phase{phase}'
-            generate_workload_with_locality(expID, vnfID, workloadInterval, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval)
+            # generate_workload_with_locality(expID, vnfID, workloadInterval, numInstances, numItems, Offloading_keySkew, Offloading_workloadSkew, 
+            #                                 Offloading_readRatio, Offloading_locality, Offloading_scopeRatio, puncInterval)
+            generate_workload_with_keySkew(expID, vnfID, workloadInterval, numInstances, numItems, Offloading_keySkew, Offloading_workloadSkew, 
+                                            Offloading_readRatio, Offloading_locality, Offloading_scopeRatio, puncInterval)
+
 
 combine_csv_randomly()

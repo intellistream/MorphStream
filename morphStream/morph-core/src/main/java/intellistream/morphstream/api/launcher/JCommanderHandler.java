@@ -191,24 +191,6 @@ public class JCommanderHandler {
 
 
     /**
-     * Database configurations
-     */
-    @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
-    public int numItems = 10000;//number of records in each table
-    @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "testTable";
-    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = String.valueOf(numItems);
-    @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
-    public String keyDataTypesForTables = "string";
-    @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
-    public String valueDataTypesForTables = "int";
-    @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
-    public String valueNamesForTables = "vnfValue";
-
-
-
-    /**
      * Input configurations
      */
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
@@ -282,7 +264,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--numPackets"}, description = "Total number of events to process.")
     public int numPackets = 400000;
     @Parameter(names = {"--numTPGThreads"}, description = "total execution threads")
-    public int numTPGThreads = 8;// default total execution threads
+    public int numTPGThreads = 4;// default total execution threads
     @Parameter(names = {"--puncInterval"}, description = "checkpoint interval (#tuples)")
     public int puncInterval = 1000;//checkpoint per thread.
     @Parameter(names = {"--nfvExperimentPath"}, description = "The simulated input data path")
@@ -320,9 +302,11 @@ public class JCommanderHandler {
     @Parameter(names = {"--gcBatchInterval"}, description = "Do GC after the entire batch of transactions has been processed")
     public int gcBatchInterval = 10000;
     @Parameter(names = {"--monitorWindowSize"}, description = "Do GC after the entire batch of transactions has been processed")
-    public int monitorWindowSize = 1000;
+    public int monitorWindowSize = 10000;
     @Parameter(names = {"--workloadInterval"}, description = "Interval for workload shift")
     public int workloadInterval = 10000;
+    @Parameter(names = {"--hardcodeSwitch"}, description = "Hardcode the optimal strategy switching sequence in VNF instances")
+    public int hardcodeSwitch = 0;
 
     /** Parameters controls which csv file to read */
     @Parameter(names = {"--keySkew"})
@@ -336,12 +320,23 @@ public class JCommanderHandler {
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
     public int scopeRatio = 0;
 
+    /**
+     * Database configurations
+     */
+    @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
+    public int numItems = 100;//number of records in each table
+    @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
+    public String tableNames = "testTable";
+    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
+    public String numberItemsForTables = String.valueOf(numItems);
+    @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
+    public String keyDataTypesForTables = "string";
+    @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
+    public String valueDataTypesForTables = "int";
+    @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
+    public String valueNamesForTables = "vnfValue";
 
-    // Input path = "expID / workloadConfig", agreed by Generator scripts and TransNFV input
-    // 5.4 workloadConfig = "vnfID / numPackets / numInstances / numItems / keySkew / workloadSkew / readRatio / locality / scopeRatio"
 
-    // Output path = "expID / workloadConfig / systemConfig", agreed by both TransNFV output and Plot scripts
-    // System config = "ccStrategy / doMVCC / udfComplexity / puncInterval / numTPGThread / numOffloadThread"
 
     public JCommanderHandler() {}
 
@@ -548,6 +543,7 @@ public class JCommanderHandler {
         config.put("gcBatchInterval", gcBatchInterval);
         config.put("monitorWindowSize", monitorWindowSize);
         config.put("workloadInterval", workloadInterval);
+        config.put("hardcodeSwitch", hardcodeSwitch);
         config.put("keySkew", keySkew);
         config.put("workloadSkew", workloadSkew);
         config.put("readRatio", readRatio);

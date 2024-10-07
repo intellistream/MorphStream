@@ -133,14 +133,11 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio,
                         numThreadsList, ccStrategyList):
     
-    markers = ['o', 's', 'D', '^']  # Define different markers for each strategy
-    colors = ['#0060bf', '#8c0b0b', '#d97400', '#7812a1']  # Use the hatch colors for the lines
-    linestyles = ['-', '--', '-.', ':']  # Different line styles for each strategy
-
-    # Prepare the structure to hold data
+    markers = ['o', 's', 'D', '^']
+    colors = ['#0060bf', '#8c0b0b', '#d97400', '#7812a1']
+    linestyles = ['-', '--', '-.', ':']
     data = {keySkew: {} for keySkew in numThreadsList}
 
-    # Iterate over the patterns and ccStrategies
     for numThreadsIndex in numThreadsList:
         for ccStrategyIndex in ccStrategyList:
             outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numThreadsIndex}/" \
@@ -149,7 +146,6 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
                  "throughput.csv"
 
-            # Read the CSV file
             try:
                 df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
                 data[numThreadsIndex][ccStrategyIndex] = df['Throughput'].iloc[0]
@@ -157,7 +153,6 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[numThreadsIndex][ccStrategyIndex] = None
 
-    # Convert the data into a NumPy array and normalize by 10^6
     throughput_data = np.array([[data[numThreads][ccStrategy] if data[numThreads][ccStrategy] is not None else 0
                                  for ccStrategy in ccStrategyList] for numThreads in numThreadsList]) / 1e6
     
@@ -179,7 +174,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     ax.set_xlabel('Number of Parallel Executors', fontsize=18)
     ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
 
-    plt.legend(bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
+    plt.legend(bbox_to_anchor=(0.5, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
     plt.tight_layout()

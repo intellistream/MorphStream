@@ -40,6 +40,7 @@ public class VNFManager implements Runnable {
     private static final int udfComplexity = MorphStreamEnv.get().configuration().getInt("udfComplexity");
     private static final int workloadInterval = MorphStreamEnv.get().configuration().getInt("workloadInterval");
     private static final int monitorWindowSize = MorphStreamEnv.get().configuration().getInt("monitorWindowSize");
+    private static final int hardcodeSwitch = MorphStreamEnv.get().configuration().getInt("hardcodeSwitch");
 
     private static int partitionGap = numItems / numInstances;
     private int totalRequestCounter = 0;
@@ -155,6 +156,8 @@ public class VNFManager implements Runnable {
                 break;
             case "5.6.2":
                 writeCSVThroughputMonitor(outputFileDirMonitor, overallThroughput);
+                computeTimeBreakdown();
+                writeCSVBreakdown(outputFileDirMonitor);
                 break;
         }
     }
@@ -212,6 +215,7 @@ public class VNFManager implements Runnable {
         double aggManagerSyncTime = 0;
         double aggManagerUsefulTime = 0;
         double aggCCSwitchTime = 0;
+        double aggMetaDataTime = 0;
         double aggTotalTime = 0;
 
         /** Breakdown at instance level */
@@ -220,6 +224,8 @@ public class VNFManager implements Runnable {
             aggInstanceParseTime += (double) instance.getAggParsingTime() / 1E6;
             aggInstanceSyncTime += (double) instance.getAGG_SYNC_TIME() / 1E6;
             aggInstanceUsefulTime += (double) instance.getAGG_USEFUL_TIME() / 1E6;
+            aggCCSwitchTime += (double) instance.getAGG_CC_SWITCH_TIME() / 1E6;
+            aggMetaDataTime += (double) instance.getAGG_METADATA_TIME() / 1E6;
 //            for (VNFRequest request : latencyMap.get(i)) {
 //                aggTotalTime += (double) (request.getFinishTime() - request.getCreateTime()) / 1E6;
 //            }
@@ -227,6 +233,8 @@ public class VNFManager implements Runnable {
         aggInstanceParseTime /= numInstances;
         aggInstanceSyncTime /= numInstances;
         aggInstanceUsefulTime /= numInstances;
+        aggCCSwitchTime /= numInstances;
+        aggMetaDataTime /= numInstances;
 
         /** Breakdown at manager level */
         if (Objects.equals(ccStrategy, "Partitioning")) {
@@ -247,11 +255,14 @@ public class VNFManager implements Runnable {
             aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getCHCStateManager().getAGG_USEFUL_TIME() / 1E6;
         } else if (Objects.equals(ccStrategy, "S6")) {
             aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getS6StateManager().getAGG_PARSING_TIME() / 1E6;
+        } else if (Objects.equals(ccStrategy, "Adaptive")) {
+            //TODO: Get time breakdown from AdaptiveCC
         }
 
         totalParseTimeMS = aggManagerParseTime + aggInstanceParseTime;
         totalUsefulTimeMS = aggManagerUsefulTime + aggInstanceUsefulTime;
         totalSyncTimeMS = aggInstanceSyncTime - aggManagerParseTime - aggManagerUsefulTime;
+        totalSwitchTimeMS = aggCCSwitchTime + aggMetaDataTime;
     }
 
     private static void writeCSVThroughput(String outputDir, double throughput) {
@@ -393,9 +404,9 @@ public class VNFManager implements Runnable {
     public static String getOutputFileDirectoryMonitor() {
         return String.format(nfvExperimentPath + "/results/%s/vnfID=%s/numPackets=%d/numInstances=%d/" +
                         "numItems=%d/keySkew=%d/workloadSkew=%d/readRatio=%d/locality=%s/scopeRatio=%d/numTPGThreads=%d/" +
-                        "numOffloadThreads=%d/puncInterval=%d/ccStrategy=%s/doMVCC=%d/udfComplexity=%d/workloadInterval=%d/monitorWindowSize=%d",
+                        "numOffloadThreads=%d/puncInterval=%d/ccStrategy=%s/doMVCC=%d/udfComplexity=%d/workloadInterval=%d/monitorWindowSize=%d/hardcodeSwitch=%d",
                 expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality,
-                scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, workloadInterval, monitorWindowSize);
+                scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, workloadInterval, monitorWindowSize, hardcodeSwitch);
     }
 
 }

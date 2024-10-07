@@ -22,14 +22,17 @@ public class IterativeWorkloadMonitor implements Runnable {
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private final int numItems = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final int monitorWindowSize = MorphStreamEnv.get().configuration().getInt("monitorWindowSize");
-//    private final int outstandingKeyInterval = MorphStreamEnv.get().configuration().getInt("outstandingKeyInterval");
+    private final int numPackets = MorphStreamEnv.get().configuration().getInt("totalEvents");
+    private final boolean hardcodeSwitch = (MorphStreamEnv.get().configuration().getInt("hardcodeSwitch") == 1);
+
+    private final int workloadInterval = MorphStreamEnv.get().configuration().getInt("workloadInterval");
+    private final int numIntervals = numPackets / workloadInterval;
     private final int partitionSize = numItems / numInstances;
 
     private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, Integer> statePartitionMap = MorphStreamEnv.get().stateInstanceMap();
 
     private BlockingQueue<PatternData> patternDataQueue;
-    private AtomicInteger txnCounter = new AtomicInteger(0);
     private int nextPunctuationID = 1; // The next punctuation ID that instances can begin, start from 1
 
     private final ConcurrentHashMap<Integer, Integer> keyReadCounterMap = new ConcurrentHashMap<>();
@@ -63,10 +66,17 @@ public class IterativeWorkloadMonitor implements Runnable {
     }
 
     public void submitMetadata(int key, int instanceID, String accessType, String scope) {
-        txnCounter.incrementAndGet(); //TODO: This could slow down the performance
         instanceReqCounterMap.compute(key, (k, v) -> (v == null) ? 1 : v + 1);
         patternDataQueue.add(new PatternData(key, instanceID, accessType));
         //TODO: Complete the logic for workload char update
+    }
+
+    private int getTotalRequests() { // A rough estimation of total requests
+        int totalRequests = 0;
+        for (int i = 0; i < numInstances; i++) {
+            totalRequests += instanceReqCounterMap.get(i);
+        }
+        return totalRequests;
     }
 
     @Override
@@ -74,33 +84,41 @@ public class IterativeWorkloadMonitor implements Runnable {
         while (true) {
             PatternData patternData = null;
             try {
+                if (hardcodeSwitch) { // Instances perform optimal strategy switching by themselves
+                    break;
+                }
+
                 patternData = patternDataQueue.take();
                 if (patternData.getTupleID() == -1) {
                     System.out.println("Monitor thread received stop signal");
                     break;
                 }
+//                int key = patternData.getTupleID();
+//                double keySkew = 0;
+//                double workloadSkew = 0;
+//                double readRatio = 0;
+//                double locality = 0;
+//                double scopeRatio = 0;
+//                String predictedOptimalStrategy = PerformanceModel.predictOptimalStrategy(keySkew, workloadSkew, readRatio, locality, scopeRatio);
 
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+                int totalRequests = getTotalRequests();
 
-            try {
-                int key = patternData.getTupleID();
-                // TODO: Perform workload char analysis for the key
-                double keySkew = 0;
-                double workloadSkew = 0;
-                double readRatio = 0;
-                double locality = 0;
-                double scopeRatio = 0;
+                if (totalRequests % monitorWindowSize == 0) {
+                    int currentInterval = totalRequests / workloadInterval; // Actual interval ID of the workload, starting from 0
+                    String optimalStrategy = "";
+                    if (currentInterval % 2 == 0) { //TODO: This simulates the prediction of optimal strategy from MLP model
+                        optimalStrategy = "Partitioning";
+                    } else {
+                        optimalStrategy = "Offloading";
+                    }
 
-                String predictedOptimalStrategy = PerformanceModel.predictOptimalStrategy(keySkew, workloadSkew, readRatio, locality, scopeRatio);
-
-                if (txnCounter.get() % monitorWindowSize == 0) {
                     for (VNFInstance instance : VNFManager.getAllInstances().values()) {
-                        instance.startTupleCCSwitch(key, "Invalid"); //TODO: Update the correct CC type, so that instance can switch to optimal CC
-                        TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(key)); //TODO: Simulated state synchronization
-                        int value = tableRecord.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getInt();
-                        instance.endTupleCCSwitch(key, "Invalid");
+                        for (int key = 0; key < numItems; key++) {
+                            instance.startTupleCCSwitch(key, optimalStrategy);
+                            TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(key));
+                            int value = tableRecord.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getInt();
+                            instance.endTupleCCSwitch(key, optimalStrategy);
+                        }
                     }
                 }
 

@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
@@ -46,9 +47,11 @@ public class VNFInstance implements Runnable {
     private final IterativeWorkloadMonitor workloadMonitor = MorphStreamEnv.get().getTransNFVStateManager().getWorkloadMonitor();
     private final ConcurrentHashMap<Integer, String> tupleUnderCCSwitch = new ConcurrentHashMap<>(); // Tuples under CC switch, buffer its future requests to txn buffer
     private final ConcurrentHashMap<Integer, ConcurrentLinkedQueue<VNFRequest>> tupleBufferReqMap = new ConcurrentHashMap<>();
+    private final HashMap<Long, Long> requestBufferStartTimeMap = new HashMap<>();
 
     private String ccStrategy;
     private int instancePuncID = 1; //Start from 1
+    private int stateRange;
     private final int numTPGThreads;
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private int tpgRequestCount = 0;
@@ -58,15 +61,19 @@ public class VNFInstance implements Runnable {
     private long overallEndTime;
     private final int expectedRequestCount;
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
+    private final boolean hardcodeSwitch = (MorphStreamEnv.get().configuration().getInt("hardcodeSwitch") == 1);
+    private final int workloadInterval = MorphStreamEnv.get().configuration().getInt("workloadInterval");
+    private final int perInstanceWorkloadInterval = workloadInterval / MorphStreamEnv.get().configuration().getInt("numInstances");
 
     private long parsingStartTime = 0; // Create txn request
     private long syncStartTime = 0; // Ordering, conflict resolution, broadcasting sync
     private long usefulStartTime = 0; // Actual state access and transaction UDF
-    private long switchStartTime = 0; // Strategy switching time in TransNFV
+    private long metadataStartTime = 0; // Metadata collection for adaptive CC
 
     private long AGG_PARSE_TIME = 0; // ccID -> total parsing time
     private long AGG_SYNC_TIME = 0; // ccID -> total sync time at instance, for CC with local sync
     private long AGG_USEFUL_TIME = 0; // ccID -> total useful time at instance, for CC with local RW
+    private long AGG_METADATA_TIME = 0; // ccID -> total metadata collection time for adaptive CC
     private long AGG_SWITCH_TIME = 0; // ccID -> total time for CC switch
 
 
@@ -74,6 +81,7 @@ public class VNFInstance implements Runnable {
                           String csvFilePath, LocalSVCCStateManager stateManager, CyclicBarrier finishBarrier, int expectedRequestCount) {
         this.instanceID = instanceID;
         this.ccStrategy = ccStrategy;
+        this.stateRange = stateRange;
         this.statePartitionStart = statePartitionStart;
         this.statePartitionEnd = statePartitionEnd;
         this.numTPGThreads = numTPGThreads;
@@ -82,11 +90,17 @@ public class VNFInstance implements Runnable {
         this.expectedRequestCount = expectedRequestCount;
         this.localSVCCStateManager = stateManager;
         if (Objects.equals(ccStrategy, "Adaptive")) { // Adaptive CC started from default CC strategy - Partitioning
-            for (int i = 0; i < stateRange/2; i++) {
-                tupleCCMap.put(i, "Partitioning");
-            }
-            for (int i = stateRange/2; i <= stateRange; i++) {
-                tupleCCMap.put(i, "Offloading");
+            if (!hardcodeSwitch) {
+                for (int i = 0; i < stateRange/2; i++) {
+                    tupleCCMap.put(i, "Partitioning");
+                }
+                for (int i = stateRange/2; i <= stateRange; i++) {
+                    tupleCCMap.put(i, "Offloading");
+                }
+            } else {
+                for (int i = 0; i <= stateRange; i++) {
+                    tupleCCMap.put(i, "Partitioning");
+                }
             }
 
         } else { // Static CC are fixed throughout the runtime
@@ -113,7 +127,7 @@ public class VNFInstance implements Runnable {
     }
 
     public void endTupleCCSwitch(int tupleID, String newCC) {
-//        tupleCCMap.put(tupleID, newCC);
+        tupleCCMap.put(tupleID, newCC);
         tupleUnderCCSwitch.remove(tupleID);
     }
 
@@ -128,17 +142,27 @@ public class VNFInstance implements Runnable {
             while ((line = reader.readLine()) != null) {
                 inputLineCounter++;
 
+                if (ccStrategy.equals("Adaptive") && hardcodeSwitch && (inputLineCounter % perInstanceWorkloadInterval == 0)) {
+                    for (int i = 0; i <= stateRange; i++) {
+                        if (tupleCCMap.get(i).equals("Partitioning")) {
+                            tupleCCMap.put(i, "Offloading");
+                        } else if (tupleCCMap.get(i).equals("Offloading")) {
+                            tupleCCMap.put(i, "Partitioning");
+                        }
+                    }
+                }
+
                 REC_parsingStartTime();
                 VNFRequest request = createRequest(line);
                 REC_parsingEndTime();
 
                 if (ccStrategy.equals("Adaptive")) {
                     int tupleID = request.getTupleID();
-                    if (!isUnderSwitch(tupleID)) {
+                    if (isUnderSwitch(tupleID)) {
+                        bufferRequest(request);
+                    } else {
                         processBufferedRequests(request.getTupleID());
                         TXN_PROCESS(request); // Main method for txn processing
-                    } else {
-                        tupleBufferReqMap.computeIfAbsent(request.getTupleID(), k -> new ConcurrentLinkedQueue<>()).add(request);
                     }
 
                 } else {
@@ -180,13 +204,20 @@ public class VNFInstance implements Runnable {
         return tupleUnderCCSwitch.containsKey(tupleID);
     }
 
+    private void bufferRequest(VNFRequest request) {
+        tupleBufferReqMap.computeIfAbsent(request.getTupleID(), k -> new ConcurrentLinkedQueue<>()).add(request);
+        requestBufferStartTimeMap.put(request.getCreateTime(), System.nanoTime());
+    }
+
     private void processBufferedRequests(int tupleID) {
         ConcurrentLinkedQueue<VNFRequest> bufferQueue = tupleBufferReqMap.get(tupleID);
         if (bufferQueue != null) {
             while (!bufferQueue.isEmpty()) {
                 VNFRequest bufferedRequest = bufferQueue.poll();
                 try {
+                    AGG_SWITCH_TIME += System.nanoTime() - requestBufferStartTimeMap.get(bufferedRequest.getCreateTime());
                     TXN_PROCESS(bufferedRequest);
+
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -204,7 +235,9 @@ public class VNFInstance implements Runnable {
         boolean involveWrite = Objects.equals(type, "Write") || Objects.equals(type, "Read-Write");
 
         if (ccStrategy.equals("Adaptive")) {
+            REC_metadataStartTime();
             workloadMonitor.submitMetadata(tupleID, instanceID, type, scope);
+            REC_metadataEndTime();
         }
 
         if (Objects.equals(scope, "Per-flow")) { // Per-flow operations, no need to acquire lock. CANNOT be executed together with cross-flow operations
@@ -418,15 +451,15 @@ public class VNFInstance implements Runnable {
         }
     }
 
-    private void REC_switchStartTime() {
+    private void REC_metadataStartTime() {
         if (enableTimeBreakdown) {
-            switchStartTime = System.nanoTime();
+            metadataStartTime = System.nanoTime();
         }
     }
 
-    private void REC_switchEndTime() {
+    private void REC_metadataEndTime() {
         if (enableTimeBreakdown) {
-            AGG_SWITCH_TIME += System.nanoTime() - switchStartTime;
+            AGG_METADATA_TIME += System.nanoTime() - metadataStartTime;
         }
     }
 
@@ -470,8 +503,11 @@ public class VNFInstance implements Runnable {
     public Long getAGG_USEFUL_TIME() {
         return AGG_USEFUL_TIME;
     }
-    public long getAggCCSwitchTime() {
+    public long getAGG_CC_SWITCH_TIME() {
         return AGG_SWITCH_TIME;
+    }
+    public long getAGG_METADATA_TIME() {
+        return AGG_METADATA_TIME;
     }
 
     public LocalSVCCStateManager getLocalSVCCStateManager() {
