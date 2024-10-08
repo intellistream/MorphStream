@@ -14,8 +14,11 @@ def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numIn
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
                          doMVCC, udfComplexity, 
                          keySkew, workloadSkew, readRatio, locality, scopeRatio, 
-                         monitorWindowSize, workloadInterval, hardcodeSwitch,
+                         monitorWindowSizeList, workloadIntervalList, hardcodeSwitch,
                          script_path):
+    monitorWindowList_str = " ".join(map(str, monitorWindowSizeList))
+    workloadIntervalList_str = " ".join(map(str, workloadIntervalList))
+
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -37,8 +40,8 @@ function ResetParameters() {{
   readRatio={readRatio}
   locality={locality}
   scopeRatio={scopeRatio}
-  monitorWindowSize={monitorWindowSize}
-  workloadInterval={workloadInterval}
+  monitorWindowSize=0
+  workloadInterval=0
   hardcodeSwitch={hardcodeSwitch}
 }}
 
@@ -92,9 +95,12 @@ function runTStream() {{
 
 function Per_Phase_Experiment() {{
     ResetParameters
-    for workloadInterval in 10000 20000 50000 100000 200000
+    monitorWindowList=({monitorWindowList_str})
+    workloadIntervalList=({workloadIntervalList_str})
+
+    for workloadInterval in "${{workloadIntervalList[@]}}"
     do
-        for monitorWindowSize in 10000 20000 50000 100000
+        for monitorWindowSize in "${{monitorWindowList[@]}}"
         do
             runTStream
         done
@@ -138,6 +144,9 @@ def execute_bash_script(script_path):
 
 def plot_complex_study():
     throughput_data_max_raw = {workloadInterval: 0 for workloadInterval in workloadIntervalList}
+    throughput_data_raw = {workloadInterval: {} for workloadInterval in workloadIntervalList}
+    throughput_data_delta = np.zeros((len(workloadIntervalList), len(monitorWindowSizeList)))
+
     for workloadInterval in workloadIntervalList:
         outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
@@ -155,10 +164,6 @@ def plot_complex_study():
 
     throughput_data_max = np.array([throughput_data_max_raw[workloadInterval] if throughput_data_max_raw[workloadInterval] is not None else 0
                                   for workloadInterval in workloadIntervalList]) / 1e6
-
-
-    throughput_data_raw = {workloadInterval: {} for workloadInterval in workloadIntervalList}
-    throughput_data_delta = {workloadInterval: {} for workloadInterval in workloadIntervalList}
 
     for workloadInterval in workloadIntervalList:
         for monitorWindowSize in monitorWindowSizeList:
@@ -180,12 +185,15 @@ def plot_complex_study():
     throughput_data = np.array([[throughput_data_raw[workloadInterval][monitorWindowSize] if throughput_data_raw[workloadInterval][monitorWindowSize] is not None else 0
                                  for monitorWindowSize in monitorWindowSizeList] for workloadInterval in workloadIntervalList]) / 1e6
     
-    # Compute the delta throughput
     for i, workloadInterval in enumerate(workloadIntervalList):
         for j, monitorWindowSize in enumerate(monitorWindowSizeList):
-            throughput_data_delta[workloadInterval][monitorWindowSize] = throughput_data_max[i] - throughput_data[i][j]
+            throughput_data_delta[i, j] = throughput_data_max[i] - throughput_data[i, j]
 
-
+    print(throughput_data_max)
+    print("\n")
+    print(throughput_data)
+    print("\n")
+    print(throughput_data_delta)
     
 
 
@@ -212,7 +220,7 @@ def plot_complex_study():
 
     bar_width = 0.2
     x = np.arange(len(workloadIntervalList))
-    colors = ['#0060bf', '#8c0b0b', '#d97400', '#7812a1']
+    colors = ['#0060bf', '#db2525', '#d97400', '#7812a1']
     hatches = ['////', '---', '\\\\', 'xxx']
     markers = ['o', 's', 'D', '^']
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 4.5), sharex=True)
@@ -230,13 +238,11 @@ def plot_complex_study():
 
     ax2.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
-    # Plotting line chart for delta throughput
     for i, window in enumerate(monitorWindowSizeList):
-        ax1.plot(x + bar_width * 1.5, throughput_data[:, i], marker=markers[i], label=f'W = {window // 1000}K', 
-                color=colors[i], markersize=8, linewidth=2)
+        ax1.plot(x + bar_width * 1.5, throughput_data_delta[:, i], marker=markers[i], 
+             label=f'W = {window // 1000}K', color=colors[i], markersize=8, linewidth=2)
 
-        
-    ax1.set_ylabel('Throughput (M Req/s)\n[Optimal-Actual]', color='black', fontsize=15)
+    ax1.set_ylabel('Throughput Diff\n[Opt-Act] (M Req/s)', color='black', fontsize=15)
     ax1.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
     ax1.tick_params(axis='y', labelsize=13)
@@ -270,12 +276,14 @@ def plot_complex_study():
 
 vnfID = 11
 numItems = 100
-numPackets = 400000
+numPackets = 800000
 numInstances = 4
 app = "nfv_test"
-defaultWindowSize = 10000
-workloadIntervalList  = [10000, 20000, 50000, 100000, 200000]
-monitorWindowSizeList = [10000, 20000, 50000, 100000]
+defaultWindowSize = 20000
+# workloadIntervalList  = [10000, 20000, 50000, 100000, 200000]
+# monitorWindowSizeList = [10000, 20000, 50000, 100000]
+workloadIntervalList  = [20000, 40000, 100000, 200000]
+monitorWindowSizeList = [20000, 40000, 100000, 200000]
 
 # System params
 numTPGThreads = 4
@@ -293,15 +301,13 @@ workloadSkew = 0
 readRatio = 0
 locality = 0
 scopeRatio = 0
-monitorWindowSize = 1000
-workloadInterval = 10000
 
 
 def runHardcodeSwitch():
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
     generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
-                         keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSize, workloadInterval, 1,
+                         keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSizeList, workloadIntervalList, 1,
                          shellScriptPath)
     
     execute_bash_script(shellScriptPath)
@@ -311,12 +317,10 @@ def runNoHardcodeSwitch():
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
     generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
-                         keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSize, workloadInterval, 0,
+                         keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSizeList, workloadIntervalList, 0,
                          shellScriptPath)
     
     execute_bash_script(shellScriptPath)
-
-
 
 
 if __name__ == "__main__":

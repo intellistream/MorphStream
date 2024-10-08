@@ -196,10 +196,12 @@ def combine_csv_randomly():
 # Common Parameters
 puncInterval = 1000 # Used to normalize workload distribution among instances 
 vnfID = 11
-numPackets = 400000
-workloadIntervalList = [10000, 20000, 50000, 100000, 200000]
+# numPackets = 800000
+# workloadIntervalList = [10000, 20000, 50000, 100000, 200000]
+numPackets = 800000
+workloadIntervalList = [20000, 40000, 100000, 200000, 400000]
 numInstances = 4
-numItems = 10000
+numItems = 100
 
 defaultKeySkew = 0
 defaultWorkloadSkew = 0

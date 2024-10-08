@@ -120,6 +120,8 @@ public class IterativeWorkloadMonitor implements Runnable {
                             instance.endTupleCCSwitch(key, optimalStrategy);
                         }
                     }
+
+                    LOG.info("Workload interval: " + currentInterval + ", Curr window: " + totalRequests / monitorWindowSize + ", Switching to: " + optimalStrategy);
                 }
 
             } catch (Exception e) {

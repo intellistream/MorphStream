@@ -111,26 +111,6 @@ public class VNFInstance implements Runnable {
     }
 
 
-    public void submitFinishedRequest(VNFRequest request) {
-        try {
-            request.setFinishTime(System.nanoTime());
-            finishedReqStorage.add(request);
-            blockingFinishedReqs.put(request); // This is dynamically pushed and polled
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    public void startTupleCCSwitch(int tupleID, String newCC) {
-        tupleUnderCCSwitch.put(tupleID, newCC);
-    }
-
-    public void endTupleCCSwitch(int tupleID, String newCC) {
-        tupleCCMap.put(tupleID, newCC);
-        tupleUnderCCSwitch.remove(tupleID);
-    }
-
 
     @Override
     public void run() {
@@ -149,6 +129,9 @@ public class VNFInstance implements Runnable {
                         } else if (tupleCCMap.get(i).equals("Offloading")) {
                             tupleCCMap.put(i, "Partitioning");
                         }
+                    }
+                    if (instanceID == 0) {
+                        LOG.info("Instance 0, current workload interval: " + (inputLineCounter / perInstanceWorkloadInterval) + ", switching to: " + tupleCCMap.get(0) + ", total req processed: " + inputLineCounter);
                     }
                 }
 
@@ -197,6 +180,27 @@ public class VNFInstance implements Runnable {
         String scope = parts[4]; // Per-flow or Cross-flow
         int saID = 0;
         return new VNFRequest(reqID, instanceID, tupleID, 0, scope, type, vnfID, saID, packetStartTime, instancePuncID);
+    }
+
+
+    public void submitFinishedRequest(VNFRequest request) {
+        try {
+            request.setFinishTime(System.nanoTime());
+            finishedReqStorage.add(request);
+            blockingFinishedReqs.put(request); // This is dynamically pushed and polled
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public void startTupleCCSwitch(int tupleID, String newCC) {
+        tupleUnderCCSwitch.put(tupleID, newCC);
+    }
+
+    public void endTupleCCSwitch(int tupleID, String newCC) {
+        tupleCCMap.put(tupleID, newCC);
+        tupleUnderCCSwitch.remove(tupleID);
     }
 
 

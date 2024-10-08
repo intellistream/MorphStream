@@ -134,7 +134,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                         numThreadsList, ccStrategyList):
     
     markers = ['o', 's', 'D', '^']
-    colors = ['#0060bf', '#8c0b0b', '#d97400', '#7812a1']
+    colors = ['#0060bf', '#db2525', '#d97400', '#7812a1']
     linestyles = ['-', '--', '-.', ':']
     data = {keySkew: {} for keySkew in numThreadsList}
 

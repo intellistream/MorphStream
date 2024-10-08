@@ -304,9 +304,10 @@ public class JCommanderHandler {
     @Parameter(names = {"--monitorWindowSize"}, description = "Do GC after the entire batch of transactions has been processed")
     public int monitorWindowSize = 10000;
     @Parameter(names = {"--workloadInterval"}, description = "Interval for workload shift")
-    public int workloadInterval = 10000;
+    public int workloadInterval = 50000;
     @Parameter(names = {"--hardcodeSwitch"}, description = "Hardcode the optimal strategy switching sequence in VNF instances")
-    public int hardcodeSwitch = 0;
+//    public int hardcodeSwitch = 0;
+    public int hardcodeSwitch = 1;
 
     /** Parameters controls which csv file to read */
     @Parameter(names = {"--keySkew"})
