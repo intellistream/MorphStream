@@ -270,20 +270,20 @@ public class JCommanderHandler {
     @Parameter(names = {"--nfvExperimentPath"}, description = "The simulated input data path")
     public String nfvExperimentPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV";
     @Parameter(names = {"--numInstances"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
-    public int numInstances = 4;
+    public int numInstances = 8;
     @Parameter(names = {"--numOffloadThreads"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int numOffloadThreads = 4;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-//    public String ccStrategy = "Partitioning";
+    public String ccStrategy = "Partitioning";
 //    public String ccStrategy = "Replication";
 //    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "OpenNF";
 //    public String ccStrategy = "CHC";
 //    public String ccStrategy = "S6";
-    public String ccStrategy = "Adaptive";
+//    public String ccStrategy = "Adaptive";
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.6.2";
+    public String expID = "5.4.3";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -315,7 +315,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--workloadSkew"})
     public int workloadSkew = 0;
     @Parameter(names = {"--readRatio"})
-    public int readRatio = 0;
+    public int readRatio = 50;
     @Parameter(names = {"--locality"})
     public int locality = 0;
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
@@ -325,7 +325,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
-    public int numItems = 100;//number of records in each table
+    public int numItems = 1000;//number of records in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "testTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")

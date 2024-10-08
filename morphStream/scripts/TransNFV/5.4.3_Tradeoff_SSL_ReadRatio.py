@@ -247,7 +247,7 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
         patch.set_facecolor(color)
 
     for median in bplot['medians']:
-        median.set(linewidth=2.5) # Set the median line width
+        median.set(color='black', linewidth=2.5) # Set the median line width
 
     ax.set_xticks([i * (num_cc_strategies + 1) + num_cc_strategies / 2 - 0.5 for i in range(len(readRatioList))])
     ax.set_xticklabels(boxplot_labels, fontsize=16)
@@ -305,18 +305,18 @@ if __name__ == "__main__":
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
+    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
+    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
     
-    execute_bash_script(shellScriptPath)
+    # execute_bash_script(shellScriptPath)
 
     
 
-    plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
-                                   numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
-                                   keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy, 
-                                   readRatioList, ccStrategyList)
+    # plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
+    #                                numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
+    #                                keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy, 
+    #                                readRatioList, ccStrategyList)
     
     plot_keyskew_latency_boxplot(rootDir,
                                  expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 

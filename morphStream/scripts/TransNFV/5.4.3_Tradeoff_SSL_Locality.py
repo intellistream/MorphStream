@@ -246,7 +246,7 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
         patch.set_facecolor(color)
 
     for median in bplot['medians']:
-        median.set(linewidth=2.5) # Set the median line width
+        median.set(color='black', linewidth=2.5) # Set the median line width
 
     ax.set_xticks([i * (num_cc_strategies + 1) + num_cc_strategies / 2 - 0.5 for i in range(len(localityList))])
     ax.set_xticklabels(boxplot_labels, fontsize=16)

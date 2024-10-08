@@ -14,8 +14,11 @@ def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numIn
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
                          doMVCC, udfComplexity, 
                          keySkew, workloadSkew, readRatio, locality, scopeRatio, 
-                         monitorWindowSize, workloadInterval,
+                         monitorWindowSizeList, workloadIntervalList, hardcodeSwitch,
                          script_path):
+    monitorWindowList_str = " ".join(map(str, monitorWindowSizeList))
+    workloadIntervalList_str = " ".join(map(str, workloadIntervalList))
+
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -37,8 +40,9 @@ function ResetParameters() {{
   readRatio={readRatio}
   locality={locality}
   scopeRatio={scopeRatio}
-  monitorWindowSize={monitorWindowSize}
-  workloadInterval={workloadInterval}
+  monitorWindowSize=0
+  workloadInterval=0
+  hardcodeSwitch={hardcodeSwitch}
 }}
 
 function runTStream() {{
@@ -62,7 +66,8 @@ function runTStream() {{
           --locality $locality \\
           --scopeRatio $scopeRatio \\
           --monitorWindowSize $monitorWindowSize \\
-          --workloadInterval $workloadInterval
+          --workloadInterval $workloadInterval \\
+          --hardcodeSwitch $hardcodeSwitch
           "
   java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
@@ -84,17 +89,19 @@ function runTStream() {{
     --locality $locality \\
     --scopeRatio $scopeRatio \\
     --monitorWindowSize $monitorWindowSize \\
-    --workloadInterval $workloadInterval
+    --workloadInterval $workloadInterval \\
+    --hardcodeSwitch $hardcodeSwitch
 }}
 
 function Per_Phase_Experiment() {{
     ResetParameters
-    for workloadInterval in 10000 20000 50000 100000 200000
+    monitorWindowList=({monitorWindowList_str})
+    workloadIntervalList=({workloadIntervalList_str})
+
+    for workloadInterval in "${{workloadIntervalList[@]}}"
     do
-        for monitorWindowSize in 1000 2000 5000 10000
+        for monitorWindowSize in "${{monitorWindowList[@]}}"
         do
-            monitorWindowSize = $monitorWindowSize
-            workloadInterval = $workloadInterval
             runTStream
         done
     done
@@ -132,101 +139,151 @@ def execute_bash_script(script_path):
         print(f"Bash script completed successfully.")
 
 
-def get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy, workloadInterval, monitorWindowSize):
-    return f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
-                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/" \
-                  f"locality={locality}/scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/" \
-                  f"numOffloadThreads={numOffloadThreads}/puncInterval={puncInterval}/ccStrategy={ccStrategy}/" \
-                  f"doMVCC={doMVCC}/udfComplexity={udfComplexity}/workloadInterval={workloadInterval}/monitorWindowSize={monitorWindowSize}/throughput.csv"
-
-def get_throughput_from_file(outputFilePath):
-    try:
-        df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
-        return df['Throughput'].iloc[0]
-    except Exception as e:
-        print(f"Failed to read {outputFilePath}: {e}")
-        return None
 
 
 
+def plot_complex_study():
+    throughput_data_max_raw = {workloadInterval: 0 for workloadInterval in workloadIntervalList}
+    throughput_data_raw = {workloadInterval: {} for workloadInterval in workloadIntervalList}
+    throughput_data_delta = np.zeros((len(workloadIntervalList), len(monitorWindowSizeList)))
 
+    for workloadInterval in workloadIntervalList:
+        outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
+                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
+                 f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
+                 f"workloadInterval={workloadInterval}/monitorWindowSize={defaultWindowSize}/hardcodeSwitch=1/" \
+                 "throughput.csv"
+        # Read the CSV file
+        try:
+            df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
+            throughput_data_max_raw[workloadInterval] = df['Throughput'].iloc[0]
+        except Exception as e:
+            print(f"Failed to read {outputFilePath}: {e}")
+            throughput_data_max_raw[workloadInterval] = None
 
+    throughput_data_max = np.array([throughput_data_max_raw[workloadInterval] if throughput_data_max_raw[workloadInterval] is not None else 0
+                                  for workloadInterval in workloadIntervalList]) / 1e6
 
-
-def plot_keyskew_throughput_figure():
-    
-    markers = ['o', 's', 'D', '^']  # Define different markers for each strategy
-    colors = ['#0060bf', '#8c0b0b', '#d97400', '#7812a1']  # Use the hatch colors for the lines
-    linestyles = ['-', '--', '-.', ':']  # Different line styles for each strategy
-
-    # Prepare the structure to hold data
-    data = {workloadInterval: {} for workloadInterval in workloadIntervalList}
-
-    # Iterate over the patterns and ccStrategies
     for workloadInterval in workloadIntervalList:
         for monitorWindowSize in monitorWindowSizeList:
             outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
                  f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
-                 f"workloadInterval={workloadInterval}/monitorWindowSize={monitorWindowSize}/" \
+                 f"workloadInterval={workloadInterval}/monitorWindowSize={monitorWindowSize}/hardcodeSwitch=0/" \
                  "throughput.csv"
 
             # Read the CSV file
             try:
                 df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
-                data[workloadInterval][monitorWindowSize] = df['Throughput'].iloc[0]
+                throughput_data_raw[workloadInterval][monitorWindowSize] = df['Throughput'].iloc[0]
             except Exception as e:
                 print(f"Failed to read {outputFilePath}: {e}")
-                data[workloadInterval][monitorWindowSize] = None
+                throughput_data_raw[workloadInterval][monitorWindowSize] = None
 
-    # Convert the data into a NumPy array and normalize by 10^6
-    throughput_data = np.array([[data[numThreads][ccStrategy] if data[numThreads][ccStrategy] is not None else 0
-                                 for ccStrategy in monitorWindowSizeList] for numThreads in workloadIntervalList]) / 1e6
+    throughput_data = np.array([[throughput_data_raw[workloadInterval][monitorWindowSize] if throughput_data_raw[workloadInterval][monitorWindowSize] is not None else 0
+                                 for monitorWindowSize in monitorWindowSizeList] for workloadInterval in workloadIntervalList]) / 1e6
     
+    for i, workloadInterval in enumerate(workloadIntervalList):
+        for j, monitorWindowSize in enumerate(monitorWindowSizeList):
+            throughput_data_delta[i, j] = throughput_data_max[i] - throughput_data[i, j]
+
+    print(throughput_data_max)
+    print("\n")
     print(throughput_data)
+    print("\n")
+    print(throughput_data_delta)
+    
 
-    # Plot the data as a line chart
-    fig, ax = plt.subplots(figsize=(7, 4.5))
 
-    indices = range(len(workloadIntervalList))  # Use indices for evenly spaced x-axis
+    switch_data = {workloadInterval: {} for workloadInterval in workloadIntervalList}
 
-    for i, strategy in enumerate(monitorWindowSizeList):
-        ax.plot(indices, throughput_data[:, i], marker=markers[i], color=colors[i], linestyle=linestyles[i], 
-                label=f"{monitorWindowSizeList[i]//1000} K", markersize=8, linewidth=2)
+    for workloadInterval in workloadIntervalList:
+        for monitorWindowSize in monitorWindowSizeList:
+            outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
+                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
+                 f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
+                 f"workloadInterval={workloadInterval}/monitorWindowSize={monitorWindowSize}/hardcodeSwitch=0/" \
+                 "breakdown.csv"
 
-    ax.set_xticks(indices)  # Set the ticks to the indices
-    ax.set_xticklabels([x // 1000 for x in workloadIntervalList], fontsize=16)  # Divide x-axis values by 1000
-    ax.tick_params(axis='y', labelsize=14)
-    ax.set_xlabel('Workload Interval Length (K Packets)', fontsize=18)
-    ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
+            # Read the CSV file
+            try:
+                df = pd.read_csv(outputFilePath, header=None, names=['Parse', 'Sync', 'Useful', 'Switch'])
+                switch_data[workloadInterval][monitorWindowSize] = df['Switch'].iloc[0]
+            except Exception as e:
+                print(f"Failed to read {outputFilePath}: {e}")
+                switch_data[workloadInterval][monitorWindowSize] = None
 
-    plt.legend(bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
-    plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
+    print(switch_data)
 
-    plt.tight_layout()
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
+    bar_width = 0.2
+    x = np.arange(len(workloadIntervalList))
+    colors = ['#0060bf', '#db2525', '#d97400', '#7812a1']
+    hatches = ['////', '---', '\\\\', 'xxx']
+    markers = ['o', 's', 'D', '^']
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 4.5), sharex=True)
+
+    for i, window in enumerate(monitorWindowSizeList):
+        ax2.bar(x + i * bar_width, [switch_data[interval][window] for interval in workloadIntervalList], 
+                width=bar_width, label=f'W = {window // 1000}K', color=colors[i], hatch=hatches[i])
+
+
+
+    ax2.set_ylabel('Overhead\n(ms)', color='black', fontsize=15)
+    ax2.set_xticks(x + bar_width * 1.5)
+    # ax2.set_xticklabels(workloadIntervalList, fontsize=16)
+    ax2.set_xticklabels([f'{interval // 1000}K' for interval in workloadIntervalList], fontsize=16)
+
+    ax2.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
+
+    for i, window in enumerate(monitorWindowSizeList):
+        ax1.plot(x + bar_width * 1.5, throughput_data_delta[:, i], marker=markers[i], 
+             label=f'W = {window // 1000}K', color=colors[i], markersize=8, linewidth=2)
+
+    ax1.set_ylabel('Throughput Diff\n[Opt-Act] (M Req/s)', color='black', fontsize=15)
+    ax1.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
+
+    ax1.tick_params(axis='y', labelsize=13)
+    ax2.tick_params(axis='y', labelsize=13)
+
+    ax1.get_yaxis().set_label_coords(-0.1, 0.65)
+    ax2.get_yaxis().set_label_coords(-0.1, 0.4)
+
+    plt.xlabel('Workload Intervals',fontsize=18, labelpad=6)
+    handles, labels = ax1.get_legend_handles_labels()  # Get legend from ax1
+    fig.legend(handles, labels, bbox_to_anchor=(0.54, 1), loc='upper center', ncol=4, fontsize=14, columnspacing=0.5)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.subplots_adjust(left=0.15, right=0.98, top=0.85, bottom=0.15)
+    
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.6.2_windowSize_range={numItems}_complexity={udfComplexity}.pdf'
+    figure_name = f'5.6.2_windowSizeComplex_range={numItems}_complexity={udfComplexity}.pdf'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
+    plt.savefig(os.path.join(figure_dir, figure_name))
 
     local_script_dir = "/home/zhonghao/图片"
     local_figure_dir = os.path.join(local_script_dir, 'Figures')
     os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))  # Save the figure
+    plt.savefig(os.path.join(local_figure_dir, figure_name))
+
+
+
     
 
 vnfID = 11
-numItems = 10000
-numPackets = 400000
+numItems = 100
+numPackets = 800000
 numInstances = 4
 app = "nfv_test"
-workloadIntervalList  = [10000, 20000, 50000, 100000, 200000]
-monitorWindowSizeList = [1000, 2000, 5000, 10000]
+defaultWindowSize = 20000
+# workloadIntervalList  = [10000, 20000, 50000, 100000, 200000]
+# monitorWindowSizeList = [10000, 20000, 50000, 100000]
+workloadIntervalList  = [20000, 40000, 100000, 200000]
+monitorWindowSizeList = [20000, 40000, 100000, 200000]
 
 # System params
 numTPGThreads = 4
@@ -239,29 +296,36 @@ rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
 
 # Workload chars
 expID = "5.6.2"
-keySkew = 0
+keySkew = 0 # Default parameters. The actual workload variation are embedded in the shared dynamic workload file
 workloadSkew = 0
 readRatio = 0
 locality = 0
 scopeRatio = 0
-monitorWindowSize = 1000
-workloadInterval = 10000
 
 
-def exp():
+def runHardcodeSwitch():
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
     generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
-                         keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSize, workloadInterval,
+                         keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSizeList, workloadIntervalList, 1,
                          shellScriptPath)
     
     execute_bash_script(shellScriptPath)
 
 
+def runNoHardcodeSwitch():
+    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
+    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
+                         keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSizeList, workloadIntervalList, 0,
+                         shellScriptPath)
+    
+    execute_bash_script(shellScriptPath)
 
 
 if __name__ == "__main__":
-    # exp()
-
-    plot_keyskew_throughput_figure()
+    # runHardcodeSwitch()
+    # runNoHardcodeSwitch()
+    plot_complex_study()
+    # plot_keyskew_throughput_figure()
     print("Done")
