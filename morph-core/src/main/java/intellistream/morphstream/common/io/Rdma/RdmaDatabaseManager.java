@@ -76,31 +76,44 @@ public class RdmaDatabaseManager {
             pdAddress.append(pdHost).append(":").append(port).append(",");
         }
         pdAddress.deleteCharAt(pdAddress.length() - 1);
+
         TiConfiguration tiConfiguration = TiConfiguration.createRawDefault(pdAddress.toString());
         tiConfiguration.setEnableAtomicForCAS(true);
-        //tiConfiguration.setApiVersion(ApiVersion.V2);
         TiSession tiSession = TiSession.create(tiConfiguration);
         RawKVClient rawKVClient = tiSession.createRawClient();
+
         for (int i = 0; i < tableNames.length; i++) {
             byte[] value = FixedLengthRandomString.generateRandomFixedLengthString(valueSize[i]).getBytes(StandardCharsets.UTF_8);
             ByteString valueByteString = ByteString.copyFrom(value);
             String tableNamePrefix = tableNames[i] + "_";
-            ByteBuffer keyBuffer = ByteBuffer.allocate(tableNamePrefix.length() + 10); // 假设 10 足够放下数字部分
-            keyBuffer.put(tableNamePrefix.getBytes(StandardCharsets.UTF_8));
+
+            // 创建一个批量数据 Map
+            Map<ByteString, ByteString> batchData = new HashMap<>();
+
             for (int j = 0; j < numItems[i]; j++) {
-                // 清理数字部分，只更新 j
-                keyBuffer.position(tableNamePrefix.length());  // 仅更新数字部分
-                keyBuffer.put(Integer.toString(j).getBytes(StandardCharsets.UTF_8));
-                // 生成 ByteString，并调用 put
-                ByteString keyByteString = ByteString.copyFrom(keyBuffer.array(), 0, keyBuffer.position());
-                rawKVClient.put(keyByteString, valueByteString);
+                ByteString keyByteString = ByteString.copyFrom(tableNamePrefix + j, StandardCharsets.UTF_8);
+                batchData.put(keyByteString, valueByteString);
+
+                // 批量大小可以在这里进行限制，例如每 1000 条提交一次
+                if (batchData.size() >= 1000) {
+                    rawKVClient.batchPut(batchData);
+                    batchData.clear();  // 清空 batchData 准备下一批数据
+                }
             }
 
+            // 提交最后一批数据
+            if (!batchData.isEmpty()) {
+                rawKVClient.batchPut(batchData);
+            }
+
+            LOG.info("Table " + tableNames[i] + " created successfully.");
         }
+
         rawKVClient.close();
         tiSession.close();
         LOG.info("TiKV database initialized successfully.");
     }
+
 
     public void initRDMADatabase (Configuration conf) throws Exception{
         this.databaseHost = conf.getString("morphstream.rdma.databaseHost");

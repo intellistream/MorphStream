@@ -65,7 +65,7 @@ function ResetParameters() {
 }
 
 function runApplication() {
-  echo "-Xms32g -Xmx32g -Xss100M -XX:+PrintGCDetails -Xmn32g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
+  echo "-Xms64g -Xmx64g -Xss100M -XX:+PrintGCDetails -Xmn32g -XX:+UseG1GC -jar -d64 ${JAR} -Djava.library.path=${LIBDIR} \
       --isDriver $isDriver \
       --isDatabase $isDatabase \
       --isClient $isClient \
