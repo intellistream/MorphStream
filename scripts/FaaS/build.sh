@@ -14,4 +14,4 @@ docker save -o rtfaas.tar rtfaas:1.0
 docker rmi rtfaas:1.0
 cd ../../
 scp -r FaaS nvmtrans@node8:/home/nvmtrans/jjzhao@node26
-ssh nvmtrans@node8
+ssh nvmtrans@node8 bash /home/nvmtrans/jjzhao@node26/updateFaaSToCluster.sh

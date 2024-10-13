@@ -67,7 +67,7 @@ public class MorphStreamWorker extends Thread {
             throw new RuntimeException(e);
         }
     }
-    public void RdmaWorkerManagerJoin() throws InterruptedException {
+    public void RdmaWorkerManagerJoin() throws InterruptedException, IOException {
         MorphStreamEnv.get().OM().getEM().ThreadMap.get(0).join();
         boolean allFinished = false;
         while (!allFinished) {
@@ -81,6 +81,7 @@ public class MorphStreamWorker extends Thread {
             Thread.sleep(1000);
         }
         MorphStreamEnv.get().rdmaWorkerManager().close();
+        MorphStreamEnv.get().database().close();
         MeasureTools.WORKER_METRICS_REPORT(numTasks, MorphStreamEnv.get().configuration().getString("scheduler"));
         System.exit(0);
     }

@@ -51,7 +51,7 @@ public class MorphStreamEnv {
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
     //Clients need to wait for MorphStreamDriver to initialize
-    private CountDownLatch clientLatch;//The number of clients + MorphStreamDriver
+    private CountDownLatch clientLatch;//The number of clients
     //MorphStreamDriver needs to wait for all workers to initialize
     private CountDownLatch workerLatch;//The number of workers
     public static MorphStreamEnv get() {
@@ -110,6 +110,7 @@ public class MorphStreamEnv {
     public void DatabaseInitialize() throws DatabaseException {
         if (configuration().getBoolean("isRemoteDB", false)) {
             this.database = new RemoteDatabase(configuration);
+            this.databaseInitializer.configure_db();
         } else {
             this.database = new CavaliaDatabase(configuration);
             this.databaseInitializer.creates_Table();

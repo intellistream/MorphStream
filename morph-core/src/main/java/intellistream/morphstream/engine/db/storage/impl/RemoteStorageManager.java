@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RemoteStorageManager extends StorageManager {
     private static final Logger LOG = LoggerFactory.getLogger(RemoteStorageManager.class);
-    private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
+    //private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
     protected final String[] tableNames;
     protected final ConcurrentHashMap<String, Integer> tableNameToLength;
     public ConcurrentHashMap<String, Integer> tableNameToItemNumber = new ConcurrentHashMap<>();
@@ -381,7 +381,7 @@ public class RemoteStorageManager extends StorageManager {
 
     @Override
     public void createTable(RecordSchema tableSchema, String tableName, int partitionNum, int numItems) {
-        remoteCallLibrary.init();
+       // remoteCallLibrary.init();
     }
     @Override
     public void InsertRecord(String table, TableRecord record, int partitionId) throws DatabaseException {

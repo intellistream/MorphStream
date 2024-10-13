@@ -126,7 +126,7 @@ public class RdmaWorkerManager implements Serializable {
         //Connect to other workers
         for (int i = managerId + 1; i < workerNum; i++) {
             if (i != managerId) {
-                workerRdmaChannelMap.put(i, rdmaNode.getRdmaChannel(new InetSocketAddress(workerHosts[i], Integer.parseInt(workerPorts[managerId])), true, conf.rdmaChannelConf.getRdmaChannelType()));
+                workerRdmaChannelMap.put(i, rdmaNode.getRdmaChannel(new InetSocketAddress(workerHosts[i], Integer.parseInt(workerPorts[i])), true, conf.rdmaChannelConf.getRdmaChannelType()));
                 workerRegionTokenMap.put(i, new WWRegionTokenGroup());
                 //Receive region token from target workers
                 workerRegionTokenMap.get(i).addRegionTokens(rdmaNode.getRemoteRegionToken(workerRdmaChannelMap.get(i)));
