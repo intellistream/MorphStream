@@ -36,7 +36,7 @@ public class TiKVStorageManager extends RemoteStorageManager{
         tiConfiguration.setEnableAtomicForCAS(true);
         //tiConfiguration.setApiVersion(TiConfiguration.ApiVersion.V2);
         tiSession = TiSession.create(tiConfiguration);
-        for (int i = 0; i < totalWorker; i++) {
+        for (int i = 0; i < totalThread; i++) {
             rawKVClientList.add(tiSession.createRawClient());
         }
     }
@@ -57,7 +57,7 @@ public class TiKVStorageManager extends RemoteStorageManager{
             HashMap<String, Integer> keyToIndex = new HashMap<>();
             for (int i = start; i < end; i++) {
                 groupKeys.add(ByteString.copyFromUtf8(tableName + "_" + keys.get(i)));
-                keyToIndex.put(keys.get(i), i);
+                keyToIndex.put(tableName + "_" + keys.get(i), i);
             }
             processBatchGetItem(this.rawKVClientList.get(context.thisThreadId), tableName, groupKeys, keyToIndex);
             this.workerSideOwnershipTables.get(tableName).getTotalKeys().addAndGet(end - start);

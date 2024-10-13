@@ -84,19 +84,20 @@ public abstract class Client extends Thread {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        while (!Thread.currentThread().isInterrupted()) {
-            if (!inputQueue.isEmpty()) {
-                asyncInvokeFunction("localhost", inputQueue.poll().toString());
-            }
+        while (!inputQueue.isEmpty()) {
+            asyncInvokeFunction("localhost", inputQueue.poll().toString());
             //asyncReceiveFunctionOutput("localhost");
         }
         this.close();
+        LOG.info("Client {} is closed.", clientId);
         this.isRunning = false;
     }
+
     public void close() {
         for (ZMQ.Socket socket : sockets.values()) {
             socket.close();
         }
         zContext.close();
     }
+
 }
