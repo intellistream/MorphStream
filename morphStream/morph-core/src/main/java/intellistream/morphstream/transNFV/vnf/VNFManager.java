@@ -2,19 +2,28 @@ package intellistream.morphstream.transNFV.vnf;
 
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.transNFV.executors.LocalExecutor;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class VNFManager implements Runnable {
     private int stateStartID = 0;
     private static HashMap<Integer, VNFInstance> instanceMap = new HashMap<>();
     private static HashMap<Integer, Thread> instanceThreadMap = new HashMap<>();
     private static HashMap<Integer, LocalSVCCStateManager> instanceStateManagerMap = new HashMap<>();
+    private static HashMap<Integer, LocalExecutor> localExecutorMap = new HashMap<>();
+    private final HashMap<Integer, Thread> localExecutorThreadMap = new HashMap<>();
+    private static HashMap<Integer, BlockingQueue<VNFRequest>> localExecutorInputQueueMap = new HashMap<>();
+    private static HashMap<Integer, List<Integer>> instanceToLocalExecutorsMap = new HashMap<>();
 
     private static final String inputWorkloadPath = MorphStreamEnv.get().configuration().getString("inputWorkloadPath");
     private static final String inputMonitorWorkloadPath = MorphStreamEnv.get().configuration().getString("inputMonitorWorkloadPath");
@@ -24,6 +33,7 @@ public class VNFManager implements Runnable {
     private static final String vnfID = MorphStreamEnv.get().configuration().getString("vnfID");
     private static final int numPackets = MorphStreamEnv.get().configuration().getInt("totalEvents");
     private static final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
+    private static final int numLocalThreads = MorphStreamEnv.get().configuration().getInt("numLocalThreads");
     private static final int numItems = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
 
     private static final int keySkew = MorphStreamEnv.get().configuration().getInt("keySkew");
@@ -46,6 +56,8 @@ public class VNFManager implements Runnable {
     private int totalRequestCounter = 0;
     private long overallStartTime = Long.MAX_VALUE;
     private long overallEndTime = Long.MIN_VALUE;
+    private static final HashMap<Integer, Integer> instancePartitionStartMap = new HashMap<>();
+    private static final HashMap<Integer, Integer> instancePartitionEndMap = new HashMap<>();
     private static HashMap<Integer, ConcurrentLinkedDeque<VNFRequest>> latencyMap = new HashMap<>(); //instanceID -> instance's latency list
     private static SynchronizedDescriptiveStatistics instanceLatencyStats = new SynchronizedDescriptiveStatistics();
 
@@ -63,36 +75,57 @@ public class VNFManager implements Runnable {
     }
 
     private void initInstances() {
-        CyclicBarrier finishBarrier = new CyclicBarrier(numInstances);
+        String universalInputPath;
         if (expID.equals("5.6.2")) {
-            for (int i = 0; i < numInstances; i++) {
-                String csvFilePath;
-                csvFilePath = String.format(inputMonitorWorkloadPath + "/instance_%d.csv", i);
-                int instanceExpRequestCount = countLinesInCSV(csvFilePath);
-                LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
-                instanceStateManagerMap.put(i, localSVCCStateManager);
-                VNFInstance instance = new VNFInstance(i,
-                        stateStartID + i * partitionGap, stateStartID + (i + 1) * partitionGap, numItems,
-                        ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
-                Thread senderThread = new Thread(instance);
-                instanceMap.put(i, instance);
-                instanceThreadMap.put(i, senderThread);
-            }
+            universalInputPath = inputMonitorWorkloadPath;
         } else {
-            for (int i = 0; i < numInstances; i++) {
-                String csvFilePath;
-                csvFilePath = String.format(inputWorkloadPath + "/instance_%d.csv", i);
-                int instanceExpRequestCount = countLinesInCSV(csvFilePath);
-                LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
-                instanceStateManagerMap.put(i, localSVCCStateManager);
-                VNFInstance instance = new VNFInstance(i,
-                        stateStartID + i * partitionGap, stateStartID + (i + 1) * partitionGap, numItems,
-                        ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
-                Thread senderThread = new Thread(instance);
-                instanceMap.put(i, instance);
-                instanceThreadMap.put(i, senderThread);
-            }
+            universalInputPath = inputWorkloadPath;
         }
+
+        CyclicBarrier finishBarrier = new CyclicBarrier(numInstances);
+        for (int i = 0; i < numInstances; i++) {
+            String csvFilePath;
+            csvFilePath = String.format(universalInputPath + "/instance_%d.csv", i);
+            int instanceExpRequestCount = countLinesInCSV(csvFilePath);
+            LocalSVCCStateManager localSVCCStateManager = new LocalSVCCStateManager(i);
+            instanceStateManagerMap.put(i, localSVCCStateManager);
+            int partitionStart = stateStartID + i * partitionGap;
+            int partitionEnd = stateStartID + (i + 1) * partitionGap;
+            VNFInstance instance = new VNFInstance(i,
+                    partitionStart, partitionEnd, numItems,
+                    ccStrategy, numTPGThreads, csvFilePath, localSVCCStateManager, finishBarrier, instanceExpRequestCount);
+            Thread senderThread = new Thread(instance);
+            instanceMap.put(i, instance);
+            instanceThreadMap.put(i, senderThread);
+            instancePartitionStartMap.put(i, partitionStart);
+            instancePartitionEndMap.put(i, partitionEnd);
+            instanceToLocalExecutorsMap.put(i, new ArrayList<>());
+        }
+
+        for (int i = 0; i < numLocalThreads; i++) {
+            /** Prepare local executors for Partitioning, Replication, OpenNF, CHC and S6 */
+            BlockingQueue<VNFRequest> localExecutorInputQueue = new LinkedBlockingQueue<>();
+            localExecutorInputQueueMap.put(i, localExecutorInputQueue);
+
+            LocalExecutor localExecutor = new LocalExecutor(i, localExecutorInputQueue,
+                    instancePartitionStartMap, instancePartitionEndMap);
+            localExecutorMap.put(i, localExecutor);
+
+            Thread localExecutorThread = new Thread(localExecutor);
+            localExecutorThreadMap.put(i, localExecutorThread);
+        }
+
+//        for (int i=0; i<numLocalThreads; i++) {
+//            int instanceID = i % numInstances;
+//            instanceToLocalExecutorsMap.get(instanceID).add(i);
+//        }
+
+        for (int i=0; i<numInstances; i++) {
+            int localExecutorID = i % numLocalThreads;
+            instanceToLocalExecutorsMap.get(i).add(localExecutorID); //TODO: Assume numLocalThreads always less than numInstances
+        }
+//        System.out.println("All instances and local executors have been initialized.");
+
     }
 
     public static VNFInstance getInstance(int id) {
@@ -106,6 +139,18 @@ public class VNFManager implements Runnable {
     }
     public static int getPartitionedInstanceID(int tupleID) {
         return tupleID / partitionGap;
+    }
+    public static void submitLocalExecutorRequest(VNFRequest request) {
+        int instanceID = request.getInstanceID();
+        //TODO: Implement iterative request submission when numLocalExecutor > numInstances
+        int localExecutorID = instanceToLocalExecutorsMap.get(instanceID).get(0);
+        localExecutorInputQueueMap.get(localExecutorID).offer(request);
+    }
+    public static void stopLocalExecutors() {
+        VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, "-1", "-1", -1, -1, -1, -1);
+        for (int i = 0; i < numLocalThreads; i++) {
+            localExecutorInputQueueMap.get(i).offer(stopSignal);
+        }
     }
 
     @Override
@@ -163,6 +208,12 @@ public class VNFManager implements Runnable {
     }
 
     public void startVNFInstances() {
+        if (! (ccStrategy.equals("Proactive") || ccStrategy.equals("Offloading")) ) {
+            for (int i = 0; i < numLocalThreads; i++) {
+                localExecutorThreadMap.get(i).start();
+            }
+        }
+
         for (int i = 0; i < numInstances; i++) {
             instanceThreadMap.get(i).start();
         }
@@ -176,6 +227,16 @@ public class VNFManager implements Runnable {
                 overallStartTime = Math.min(overallStartTime, instanceMap.get(i).getOverallStartTime());
                 overallEndTime = Math.max(overallEndTime, instanceMap.get(i).getOverallEndTime());
                 latencyMap.put(i, instanceMap.get(i).getFinishedReqStorage());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (! (ccStrategy.equals("Proactive") || ccStrategy.equals("Offloading")) ) { //TODO: Messy thread management, to be optimized
+            try {
+                for (int i = 0; i < numLocalThreads; i++) {
+                    localExecutorThreadMap.get(i).join();
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -211,6 +272,11 @@ public class VNFManager implements Runnable {
         double aggInstanceParseTime = 0;
         double aggInstanceSyncTime = 0;
         double aggInstanceUsefulTime = 0;
+
+        double aggLocalExecutorParseTime = 0;
+        double aggLocalExecutorSyncTime = 0;
+        double aggLocalExecutorUsefulTime = 0;
+
         double aggManagerParseTime = 0;
         double aggManagerSyncTime = 0;
         double aggManagerUsefulTime = 0;
@@ -230,11 +296,23 @@ public class VNFManager implements Runnable {
 //                aggTotalTime += (double) (request.getFinishTime() - request.getCreateTime()) / 1E6;
 //            }
         }
+
+        for (int i = 0; i < numLocalThreads; i++) {
+            LocalExecutor localExecutor = localExecutorMap.get(i);
+            aggLocalExecutorParseTime += (double) localExecutor.getAGG_PARSING_TIME() / 1E6;
+            aggLocalExecutorSyncTime += (double) localExecutor.getAGG_SYNC_TIME() / 1E6;
+            aggLocalExecutorUsefulTime += (double) localExecutor.getAGG_USEFUL_TIME() / 1E6;
+        }
+
         aggInstanceParseTime /= numInstances;
         aggInstanceSyncTime /= numInstances;
         aggInstanceUsefulTime /= numInstances;
         aggCCSwitchTime /= numInstances;
         aggMetaDataTime /= numInstances;
+
+        aggLocalExecutorParseTime /= numInstances;
+        aggLocalExecutorSyncTime /= numInstances;
+        aggLocalExecutorUsefulTime /= numInstances;
 
         /** Breakdown at manager level */
         if (Objects.equals(ccStrategy, "Partitioning")) {
@@ -259,9 +337,10 @@ public class VNFManager implements Runnable {
             //TODO: Get time breakdown from AdaptiveCC
         }
 
-        totalParseTimeMS = aggManagerParseTime + aggInstanceParseTime;
-        totalUsefulTimeMS = aggManagerUsefulTime + aggInstanceUsefulTime;
-        totalSyncTimeMS = aggInstanceSyncTime - aggManagerParseTime - aggManagerUsefulTime;
+        //TODO: Double-check the time breakdown analysis
+        totalParseTimeMS = aggManagerParseTime + aggInstanceParseTime + aggLocalExecutorParseTime;
+        totalUsefulTimeMS = aggManagerUsefulTime + aggInstanceUsefulTime + aggLocalExecutorUsefulTime;
+        totalSyncTimeMS = aggInstanceSyncTime - aggManagerParseTime - aggManagerUsefulTime - aggLocalExecutorParseTime - aggLocalExecutorUsefulTime;
         totalSwitchTimeMS = aggCCSwitchTime + aggMetaDataTime;
     }
 

@@ -49,14 +49,10 @@ public class LocalSVCCStateManager {
             localSVCCDatastore.readLocalState(tupleID);
         } else if (Objects.equals(type, "Write")) {
             localSVCCDatastore.writeLocalState(tupleID, value);
-        } else if (Objects.equals(type, "Read-Write")) {
-            localSVCCDatastore.readLocalState(tupleID);
-            localSVCCDatastore.writeLocalState(tupleID, value);
+            UDF.executeUDF(request); // Simulated UDF execution
         } else {
             throw new UnsupportedOperationException();
         }
-
-        UDF.executeUDF(request); // Simulated UDF execution
     }
 
     /** Warning: This is not thread-safe, need to be guarded with timeout or other sync mechanisms */
