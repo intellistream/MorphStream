@@ -94,6 +94,7 @@ public class CHCStateManager implements Runnable {
                 }
 
                 REC_parsingStartTime();
+                VNFManager.getInstance(instanceID).submitACK(request);
                 VNFManager.getInstance(instanceID).submitFinishedRequest(request);
                 REC_parsingEndTime();
 

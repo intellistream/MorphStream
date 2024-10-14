@@ -159,7 +159,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     print(throughput_data)
 
     # Plot the data as a line chart
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     displayedStrategyList = ["TransNFV", "OpenNF", "S6", "CHC"]
     indices = range(len(numThreadsList))  # Use indices for evenly spaced x-axis
@@ -174,11 +174,10 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     ax.set_xlabel('Number of Parallel Executors', fontsize=18)
     ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
 
-    plt.legend(bbox_to_anchor=(0.5, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
+    plt.legend(bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
     plt.tight_layout()
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"

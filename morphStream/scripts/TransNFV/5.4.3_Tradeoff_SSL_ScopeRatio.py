@@ -129,8 +129,8 @@ def plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, 
                                    scopeRatioList, strategyInstanceMap, strategyOffloadExecutorMap):
     
     colors = ['white', 'white', 'white']
-    hatches = ['\\\\\\', '////', '--']
-    hatch_colors = ['#8c0b0b', '#0060bf', '#d97400']
+    hatches = ['\\\\\\', '////', 'xxx']
+    hatch_colors = ['#8c0b0b', '#0060bf', '#129c03']
 
     data = {readRatioIndex: {} for readRatioIndex in scopeRatioList}
 
@@ -157,7 +157,7 @@ def plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, 
 
     bar_width = 0.2
     index = np.arange(len(scopeRatioList))
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     displayedStrategyList = ["Partitioned", "Replicated", "Global"]
     for i, strategy in enumerate(ccStrategyListFull):
@@ -172,9 +172,8 @@ def plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, 
     handles = [Patch(facecolor=color, edgecolor=hatchcolor, hatch=hatch, label=label)
                for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, displayedStrategyList)]
     ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=3, fontsize=16)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    # plt.tight_layout()
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     figure_name = f'{expID}_scopeRatio_range={numItems}_complexity={udfComplexity}.pdf'
@@ -214,11 +213,11 @@ def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, nu
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[scopeRatioIndex][ccStrategyIndex] = []
 
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     boxplot_data = []
     boxplot_labels = []  # This will hold unique keySkew values
-    colors = ['#8c0b0b', '#0060bf', '#d97400']
+    colors = ['#8c0b0b', '#0060bf', '#129c03']
     displayedStrategyList = ["Partitioned", "Replicated", "Global"]
     
     positions = []  # Will store x-axis positions for the box plots
@@ -239,7 +238,7 @@ def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, nu
         patch.set_facecolor(color)
 
     for median in bplot['medians']:
-        median.set(color='black', linewidth=2.5) # Set the median line width
+        median.set(linewidth=2.5) # Set the median line width
 
     ax.set_xticks([i * (num_cc_strategies + 1) + num_cc_strategies / 2 - 0.5 for i in range(len(scopeRatioList))])
     ax.set_xticklabels(boxplot_labels, fontsize=16)
@@ -249,23 +248,20 @@ def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, nu
     ax.set_xlabel('Ratio of Per-flow State Access', fontsize=18)
 
     handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
-    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=3, fontsize=17)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    # plt.tight_layout()
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=3, fontsize=16)
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     figure_name = f'5.4.3_scopeRatio_range{numItems}_complexity{udfComplexity}_lat.pdf'
     figure_name_png = f'5.4.3_scopeRatio_range{numItems}_complexity{udfComplexity}_lat.png'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
-    # plt.savefig(os.path.join(figure_dir, figure_name))
     plt.savefig(os.path.join(figure_dir, figure_name_png))
 
     local_script_dir = "/home/zhonghao/图片"
     local_figure_dir = os.path.join(local_script_dir, 'Figures')
     os.makedirs(local_figure_dir, exist_ok=True)
-    # plt.savefig(os.path.join(local_figure_dir, figure_name))
     plt.savefig(os.path.join(local_figure_dir, figure_name_png))
 
 
@@ -320,12 +316,22 @@ rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
 shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
 ccStrategyListFull = ["Partitioning", "Replication", "Offloading"]
+# strategyInstanceMap = {
+#     "Offloading": 2,
+#     "Partitioning": 4,
+#     "Replication": 4,
+# }
+# strategyOffloadExecutorMap = {
+#     "Offloading": 2,
+#     "Partitioning": 0,
+#     "Replication": 0,
+# }
+
 strategyInstanceMap = {
     "Offloading": 4,
     "Partitioning": 8,
     "Replication": 8,
 }
-
 strategyOffloadExecutorMap = {
     "Offloading": 4,
     "Partitioning": 0,
@@ -333,8 +339,8 @@ strategyOffloadExecutorMap = {
 }
 
 if __name__ == "__main__":
-    # runOffloading()
-    # runPATandREP()
+    runOffloading()
+    runPATandREP()
 
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
@@ -345,4 +351,6 @@ if __name__ == "__main__":
                                 numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity, 
                                 keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategyListFull,
                                 scopeRatioList, strategyInstanceMap, strategyOffloadExecutorMap)
+
+    print("Done")
 

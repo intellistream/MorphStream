@@ -14,10 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -91,6 +89,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     protected void Transaction_Post_Process() {
         for (ProactiveVNFRequest event : eventQueue) {
+//            VNFManager.getInstance(event.getVnfRequest().getInstanceID()).submitACK(event.getVnfRequest());
             VNFManager.getInstance(event.getVnfRequest().getInstanceID()).submitFinishedRequest(event.getVnfRequest());
             requestCounter++;
         }

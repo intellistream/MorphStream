@@ -7,6 +7,7 @@ import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.ProactiveVNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.common.SyncData;
+import intellistream.morphstream.transNFV.executors.LocalExecutor;
 import intellistream.morphstream.transNFV.state_managers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ public class VNFInstance implements Runnable {
 
 
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, String ccStrategy, int numTPGThreads,
-                          String csvFilePath, LocalSVCCStateManager stateManager, CyclicBarrier finishBarrier, int expectedRequestCount) {
+                       String csvFilePath, LocalSVCCStateManager stateManager, CyclicBarrier finishBarrier, int expectedRequestCount) {
         this.instanceID = instanceID;
         this.ccStrategy = ccStrategy;
         this.stateRange = stateRange;
@@ -184,10 +185,21 @@ public class VNFInstance implements Runnable {
 
 
     public void submitFinishedRequest(VNFRequest request) {
+        request.setFinishTime(System.nanoTime());
+        finishedReqStorage.add(request);
+    }
+
+    public void submitACK(VNFRequest request) {
         try {
-            request.setFinishTime(System.nanoTime());
-            finishedReqStorage.add(request);
-            blockingFinishedReqs.put(request); // This is dynamically pushed and polled
+            blockingFinishedReqs.put(request);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public VNFRequest checkACK() {
+        try {
+            return blockingFinishedReqs.take();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -256,77 +268,21 @@ public class VNFInstance implements Runnable {
         }
 
         if (Objects.equals(tupleCC, "Partitioning")) {
-            if (statePartitionStart <= tupleID && tupleID <= statePartitionEnd) {
-                REC_usefulStartTime();
-                localSVCCStateManager.nonBlockingTxnExecution(request);
-                REC_usefulEndTime();
-
-                REC_parsingStartTime();
-                submitFinishedRequest(request);
-                REC_parsingEndTime();
-            }
-            else {
-                REC_syncStartTime();
-                partitionStateManager.submitPartitioningRequest(request);
-                while (true) {
-                    VNFRequest lastFinishedReq = blockingFinishedReqs.take();
-                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                        break;
-                    }
-                }
-                REC_syncEndTime();
-            }
-//            else {
-//                int targetInstanceID = VNFManager.getPartitionedInstanceID(tupleID);
-//                LocalSVCCStateManager remoteStateManager = VNFManager.getInstanceStateManager(targetInstanceID);
-//                executeSVCCTransaction(remoteStateManager, request); // Direct R/W to remote instance
-//            }
-//            submitFinishedRequest(request);
-
-        } else if (Objects.equals(tupleCC, "Replication")) { // Replication: async read, sync write
-            REC_usefulStartTime();
-            localSVCCStateManager.nonBlockingTxnExecution(request);
-            REC_usefulEndTime();
-
             REC_syncStartTime();
-            if (involveWrite) {
-                replicationStateManager.submitReplicationRequest(request);
-                while (true) {
-                    VNFRequest lastFinishedReq = blockingFinishedReqs.take();
-                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                        break;
-                    }
-                }
-            } else {
-                if (!pendingStateSyncs.isEmpty()) {
-                    applyStateSync();
-                }
-                submitFinishedRequest(request);
-            }
+            VNFManager.submitLocalExecutorRequest(request);
             REC_syncEndTime();
 
-//            if (involveWrite) { // hasWrite: broadcast updates to all other instances
-//                for (int targetInstanceID=0; targetInstanceID<numInstances; targetInstanceID++) {
-//                    if (targetInstanceID != instanceID) {
-//                        LocalSVCCStateManager remoteStateManager = VNFManager.getInstanceStateManager(targetInstanceID);
-//                        syncSVCCStateUpdate(remoteStateManager, request);
-//                    }
-//                }
-//            }
+        } else if (Objects.equals(tupleCC, "Replication")) { // Replication: async read, sync write
+            REC_syncStartTime();
+            VNFManager.submitLocalExecutorRequest(request);
+            REC_syncEndTime();
         }
 
         else if (Objects.equals(tupleCC, "Offloading")) {
-//            BlockingQueue<Integer> responseQueue = new ArrayBlockingQueue<>(1);
-//            request.setTxnACKQueue(responseQueue);
             REC_syncStartTime();
             offloadingQueues.get(offloadRequestCount % numOffloadThreads).offer(request);
             offloadRequestCount++;
             REC_syncEndTime();
-//            if (!Objects.equals(request.getType(), "Write")) { //Simply continue with the next request without waiting for ACK
-//                while (responseQueue.isEmpty()) {
-//                    //Wait for manager's ack
-//                }
-//            }
 
         } else if (Objects.equals(tupleCC, "Proactive")) { // Preemptive
             REC_syncStartTime();
@@ -338,7 +294,7 @@ public class VNFInstance implements Runnable {
             openNFStateManager.submitOpenNFReq(request);
             REC_syncStartTime();
             while (true) {
-                VNFRequest lastFinishedReq = blockingFinishedReqs.take();
+                VNFRequest lastFinishedReq = checkACK();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                     break;
                 }
@@ -349,7 +305,7 @@ public class VNFInstance implements Runnable {
             chcStateManager.submitCHCReq(request);
             REC_syncStartTime();
             while (true) {
-                VNFRequest lastFinishedReq = blockingFinishedReqs.take();
+                VNFRequest lastFinishedReq = checkACK();
                 if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                     break;
                 }
@@ -365,15 +321,13 @@ public class VNFInstance implements Runnable {
             if (involveWrite) {
                 s6StateManager.submitS6Request(request);
                 while (true) {
-                    VNFRequest lastFinishedReq = blockingFinishedReqs.take();
+                    VNFRequest lastFinishedReq = checkACK();
                     if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
                         break;
                     }
                 }
             } else {
-                if (!pendingStateSyncs.isEmpty()) {
-                    applyStateSync();
-                }
+                applyStateSync();
                 submitFinishedRequest(request);
             }
             REC_syncEndTime();
@@ -383,7 +337,7 @@ public class VNFInstance implements Runnable {
         }
     }
 
-    private void applyStateSync() throws InterruptedException {
+    public void applyStateSync() throws InterruptedException {
         while (!pendingStateSyncs.isEmpty()) {
             SyncData data = pendingStateSyncs.take();  // Block if necessary until an item is available
             int tupleID = data.getTupleID();
@@ -549,9 +503,13 @@ public class VNFInstance implements Runnable {
         VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, "-1", "-1", -1, -1, -1, -1);
 
         if (Objects.equals(ccStrategy, "Partitioning")) {
+            VNFManager.stopLocalExecutors();
             partitionStateManager.submitPartitioningRequest(stopSignal);
+
         } else if (Objects.equals(ccStrategy, "Replication")) {
+            VNFManager.stopLocalExecutors();
             replicationStateManager.submitReplicationRequest(stopSignal);
+
         } else if (Objects.equals(ccStrategy, "Offloading")) {
             for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
                 offloadingQueues.get(offloadQueueIndex).offer(stopSignal);

@@ -63,7 +63,7 @@ public class S6StateManager implements Runnable {
 
             REC_parsingStartTime();
             try {
-                VNFManager.getInstance(request.getInstanceID()).submitFinishedRequest(request);
+                VNFManager.getInstance(request.getInstanceID()).submitACK(request);
             } catch (NullPointerException e) {
                 throw new RuntimeException(e);
             }

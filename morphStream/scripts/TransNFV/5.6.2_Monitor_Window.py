@@ -223,7 +223,7 @@ def plot_complex_study():
     colors = ['#0060bf', '#db2525', '#d97400', '#7812a1']
     hatches = ['////', '---', '\\\\', 'xxx']
     markers = ['o', 's', 'D', '^']
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 4.5), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 4), sharex=True)
 
     for i, window in enumerate(monitorWindowSizeList):
         ax2.bar(x + i * bar_width, [switch_data[interval][window] for interval in workloadIntervalList], 
@@ -255,7 +255,7 @@ def plot_complex_study():
     handles, labels = ax1.get_legend_handles_labels()  # Get legend from ax1
     fig.legend(handles, labels, bbox_to_anchor=(0.54, 1), loc='upper center', ncol=4, fontsize=14, columnspacing=0.5)
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout()
     plt.subplots_adjust(left=0.15, right=0.98, top=0.85, bottom=0.15)
     
 

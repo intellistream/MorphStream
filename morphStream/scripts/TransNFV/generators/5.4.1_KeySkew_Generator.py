@@ -124,9 +124,9 @@ vnfID = 11
 
 numPackets = 400000
 numInstances = 4
-numItems = 1000
+numItems = 10000
 
-keySkewList = [0, 25, 50, 75, 100]
+keySkewList = [0, 50, 100, 150, 200, 250]
 workloadSkew = 0
 readRatioList = [0, 25, 50, 75, 100]
 scopeRatio = 0

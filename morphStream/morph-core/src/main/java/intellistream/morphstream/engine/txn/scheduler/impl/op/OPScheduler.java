@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
@@ -97,7 +98,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             return;
         }
 
-        UDF.executeUDF(operation.vnfRequest);
+        VNFRequest vnfRequest = operation.vnfRequest;
+        String type = vnfRequest.getType();
+        if (Objects.equals(type, "Write")) {
+            UDF.executeUDF(operation.vnfRequest);
+        }
 
         commitLog(operation);
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;

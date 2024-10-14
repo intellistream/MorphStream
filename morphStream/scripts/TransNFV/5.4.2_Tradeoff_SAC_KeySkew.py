@@ -159,7 +159,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
 
     bar_width = 0.2
     index = np.arange(len(keySkewList))
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     displayedStrategyList = ["SVCC", "MVCC"]
     for i, strategy in enumerate(sacList):
@@ -216,7 +216,7 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[keySkewIndex][doMVCCIndex] = []
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     boxplot_data = []
     boxplot_labels = []  # This will hold unique keySkew values
@@ -251,9 +251,9 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     ax.set_xlabel('Key Skewness', fontsize=18)
 
     handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
-    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=2, fontsize=17)
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=17)
     plt.tight_layout()
-    plt.subplots_adjust(left=0.12, right=0.95, top=0.85, bottom=0.15)
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     figure_name = f'5.4.2_key_range{numItems}_comp{udfComplexity}_read{readRatio}_lat.pdf'
@@ -300,12 +300,12 @@ if __name__ == "__main__":
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath,
-                         gcCheckInterval, gcBatchInterval)
-    
-    execute_bash_script(shellScriptPath)
+    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath,
+    #                      gcCheckInterval, gcBatchInterval)
+    #
+    # execute_bash_script(shellScriptPath)
     
     keySkewList = [0, 50, 100, 150, 200, 250]
     sacList = [0, 1]
@@ -319,3 +319,5 @@ if __name__ == "__main__":
                                  numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity, 
                                  keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy,
                                  keySkewList, sacList)
+
+    print("Done")

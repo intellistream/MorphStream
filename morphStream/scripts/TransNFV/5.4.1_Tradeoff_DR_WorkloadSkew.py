@@ -11,7 +11,8 @@ import csv
 
 def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path):
+                         doMVCC, udfComplexity, keySkew, workloadSkewList, readRatio, locality, scopeRatio, script_path):
+    workloadSkewList_str = " ".join(map(str, workloadSkewList))
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -29,7 +30,7 @@ function ResetParameters() {{
   doMVCC={doMVCC}
   udfComplexity={udfComplexity}
   keySkew={keySkew}
-  workloadSkew={workloadSkew}
+  workloadSkew=0
   readRatio={readRatio}
   locality={locality}
   scopeRatio={scopeRatio}
@@ -79,7 +80,8 @@ function runTStream() {{
 
 function iterateExperiments() {{
   ResetParameters
-  for workloadSkew in 0 25 50 75 100
+  workloadSkewList=({workloadSkewList_str})
+  for workloadSkew in "${{workloadSkewList[@]}}"
   do
     for ccStrategy in Offloading Proactive
     do
@@ -165,7 +167,7 @@ def plot_throughput_figure(nfvExperimentPath,
     index = np.arange(len(workloadSkewList))
 
     # Plot the data
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     displayedStrategyList = ["Immediate Resolution", "Batch Resolution"]
     for i, strategy in enumerate(ccStrategyList):
@@ -186,8 +188,8 @@ def plot_throughput_figure(nfvExperimentPath,
                for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, displayedStrategyList)]
     ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=16)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     # Save the figure in the same directory as the script
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
@@ -226,7 +228,7 @@ def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, nu
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[workloadSkewIndex][ccStrategyIndex] = []
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     boxplot_data = []
     boxplot_labels = []  # This will hold unique keySkew values
@@ -261,9 +263,9 @@ def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, nu
     ax.set_xlabel('Workload Skewness', fontsize=18)
 
     handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
-    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=2, fontsize=17)
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=16)
     plt.tight_layout()
-    plt.subplots_adjust(left=0.12, right=0.95, top=0.85, bottom=0.15)
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     figure_name = f'5.4.1_workloadSkew_range{numItems}_complexity{udfComplexity}_lat.png'
@@ -283,7 +285,7 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.1"
     vnfID = 11
-    numItems = 5000
+    numItems = 10000
     numPackets = 400000
     numInstances = 4
 
@@ -300,18 +302,18 @@ if __name__ == "__main__":
     puncInterval = 1000
     ccStrategy = "Partitioning"
     doMVCC = 0
-    udfComplexity = 0
-    workloadSkewList = [0, 25, 50, 75, 100]
+    udfComplexity = 10
+    workloadSkewList = [0, 50, 100, 150, 200, 250]
     ccStrategyList = ["Offloading", "Proactive"]
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
-    
+    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+    #                      doMVCC, udfComplexity, keySkew, workloadSkewList, readRatio, locality, scopeRatio, shellScriptPath)
+    #
     # execute_bash_script(shellScriptPath)
 
     plot_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
@@ -323,4 +325,6 @@ if __name__ == "__main__":
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
                                    keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy, 
                                    workloadSkewList, ccStrategyList)
+
+    print("Done")
 

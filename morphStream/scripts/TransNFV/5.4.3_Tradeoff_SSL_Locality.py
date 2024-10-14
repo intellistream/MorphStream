@@ -133,13 +133,10 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                         localityList, ccStrategyList):
     
     colors = ['white', 'white', 'white']
-    hatches = ['\\\\\\', '////', '--']
-    hatch_colors = ['#8c0b0b', '#0060bf', '#d97400']
-
-    # Prepare the structure to hold data
+    hatches = ['\\\\\\', '////', 'xxx']
+    hatch_colors = ['#8c0b0b', '#0060bf', '#129c03']
     data = {readRatioIndex: {} for readRatioIndex in localityList}
 
-    # Iterate over the patterns and ccStrategies
     for localityIndex in localityList:
         for ccStrategyIndex in ccStrategyList:
             outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
@@ -147,8 +144,6 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                  f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
                  "throughput.csv"
-
-            # Read the CSV file
             try:
                 df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
                 data[localityIndex][ccStrategyIndex] = df['Throughput'].iloc[0]
@@ -156,24 +151,18 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[localityIndex][ccStrategyIndex] = None
 
-    # print(data)
-    # Convert the data into a NumPy array and normalize by 10^6
     throughput_data = np.array([[data[localityIndex][ccStrategyIndex] if data[localityIndex][ccStrategyIndex] is not None else 0
                                  for ccStrategyIndex in ccStrategyList] for localityIndex in localityList]) / 1e6
 
-    # Plotting parameters
     bar_width = 0.2
     index = np.arange(len(localityList))
-
-    # Plot the data
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     displayedStrategyList = ["Partitioned", "Replicated", "Global"]
     for i, strategy in enumerate(ccStrategyList):
         ax.bar(index + i * bar_width, throughput_data[:, i], color=colors[i], hatch=hatches[i],
                edgecolor=hatch_colors[i], width=bar_width, label=displayedStrategyList[i])
 
-    # Set x-axis labels and positions
     ax.set_xticks([r + bar_width for r in range(len(localityList))])
     ax.set_xticklabels(localityList, fontsize=16)
     ax.tick_params(axis='y', labelsize=14)
@@ -221,11 +210,11 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[localityIndex][ccStrategyIndex] = []
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     boxplot_data = []
     boxplot_labels = []  # This will hold unique keySkew values
-    colors = ['#8c0b0b', '#0060bf', '#d97400']
+    colors = ['#8c0b0b', '#0060bf', '#129c03']
     displayedStrategyList = ["Partitioned", "Replicated", "Global"]
     
     positions = []  # Will store x-axis positions for the box plots
@@ -246,7 +235,7 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
         patch.set_facecolor(color)
 
     for median in bplot['medians']:
-        median.set(color='black', linewidth=2.5) # Set the median line width
+        median.set(linewidth=2.5) # Set the median line width
 
     ax.set_xticks([i * (num_cc_strategies + 1) + num_cc_strategies / 2 - 0.5 for i in range(len(localityList))])
     ax.set_xticklabels(boxplot_labels, fontsize=16)
@@ -256,22 +245,19 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     ax.set_xlabel('Key-Instance Locality', fontsize=18)
 
     handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
-    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=3, fontsize=17)
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=3, fontsize=16)
     plt.tight_layout()
-    plt.subplots_adjust(left=0.12, right=0.95, top=0.85, bottom=0.15)
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.3_locality_range{numItems}_complexity{udfComplexity}_lat.pdf'
     figure_name_png = f'5.4.3_locality_range{numItems}_complexity{udfComplexity}_lat.png'
     figure_dir = os.path.join(script_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
-    # plt.savefig(os.path.join(figure_dir, figure_name))
     plt.savefig(os.path.join(figure_dir, figure_name_png))
 
     local_script_dir = "/home/zhonghao/图片"
     local_figure_dir = os.path.join(local_script_dir, 'Figures')
     os.makedirs(local_figure_dir, exist_ok=True)
-    # plt.savefig(os.path.join(local_figure_dir, figure_name))
     plt.savefig(os.path.join(local_figure_dir, figure_name_png))
 
 
@@ -305,11 +291,11 @@ if __name__ == "__main__":
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
-    
-    # execute_bash_script(shellScriptPath)
+    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
+
+    execute_bash_script(shellScriptPath)
 
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
@@ -321,4 +307,6 @@ if __name__ == "__main__":
                                  puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
                                  scopeRatio, ccStrategy,
                                  localityList, ccStrategyList)
+
+    print("Done")
 

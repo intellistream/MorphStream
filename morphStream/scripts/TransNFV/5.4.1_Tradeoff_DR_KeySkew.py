@@ -79,7 +79,7 @@ function runTStream() {{
 
 function iterateExperiments() {{
   ResetParameters
-  for keySkew in 0 25 50 75 100
+  for keySkew in 0 50 100 150 200 250
   do
     for ccStrategy in Offloading Proactive
     do
@@ -165,7 +165,7 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     index = np.arange(len(keySkewList))
 
     # Plot the data
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     displayedStrategyList = ["Immediate Resolution", "Batch Resolution"]
     for i, strategy in enumerate(ccStrategyList):
@@ -226,7 +226,7 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[keySkew][ccStrategy] = []
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     boxplot_data = []
     boxplot_labels = []  # This will hold unique keySkew values
@@ -261,9 +261,9 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     ax.set_xlabel('Key Skewness', fontsize=18)
 
     handles = [plt.Line2D([0], [0], color=color, lw=10) for color in colors]
-    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=2, fontsize=17)
+    ax.legend(handles=handles, labels=displayedStrategyList, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=16)
     plt.tight_layout()
-    plt.subplots_adjust(left=0.12, right=0.95, top=0.85, bottom=0.15)
+    plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     figure_name = f'5.4.1_keySkew_range{numItems}_complexity{udfComplexity}_lat.png'
@@ -285,12 +285,12 @@ if __name__ == "__main__":
     app = "nfv_test"
     expID = "5.4.1"
     vnfID = 11
-    numItems = 1000
+    numItems = 10000
     numPackets = 400000
     numInstances = 4
 
     # Workload chars
-    keySkew = 75
+    keySkew = 0
     workloadSkew = 0
     readRatio = 50
     locality = 0
@@ -303,17 +303,17 @@ if __name__ == "__main__":
     ccStrategy = "Partitioning"
     doMVCC = 0
     udfComplexity = 10
-    keySkewList = [0, 25, 50, 75, 100]
+    keySkewList = [0, 50, 100, 150, 200, 250]
     ccStrategyList = ["Offloading", "Proactive"]
 
     rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
     indicatorPath = f"{rootDir}/indicators/{expID}.txt"
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
+    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
     #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
-    
+    #
     # execute_bash_script(shellScriptPath)
 
     plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
@@ -323,4 +323,5 @@ if __name__ == "__main__":
     plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
                                    workloadSkew, readRatio, locality, scopeRatio, keySkewList, ccStrategyList)
+    print("Done")
 

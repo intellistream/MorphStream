@@ -60,7 +60,7 @@ expID = '5.4.3'
 vnfID = 11
 
 numPackets = 400000
-numInstances = 8
+numInstances = 2
 numItems = 1000
 
 keySkew = 0

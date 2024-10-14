@@ -124,15 +124,16 @@ vnfID = 11
 
 numPackets = 400000
 numInstances = 4
-numItems = 1000
+numItems = 10000
 
-keySkew = 0
+keySkewList = [160, 170, 180, 190]
 workloadSkewList = [0, 25, 50, 75, 100]
-readRatioList = [0, 25, 50, 75, 100]
+readRatioList = [50]
 scopeRatio = 0
 locality = 0
 
-for workloadSkew in workloadSkewList:
-    for readRatio in readRatioList:
-        generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval)
-        print(f'Generated {expID} workload for workloadSkew={workloadSkew}, readRatio={readRatio}')
+for keySkew in keySkewList:
+    for workloadSkew in workloadSkewList:
+        for readRatio in readRatioList:
+            generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval)
+            print(f'Generated {expID} workload for workloadSkew={workloadSkew}, readRatio={readRatio}')
