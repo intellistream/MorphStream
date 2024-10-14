@@ -46,9 +46,9 @@ public class MorphStreamFrontend extends Thread{
     private ZMsg tempZmsg;
     public MorphStreamFrontend(int threadId, ZContext zContext, RdmaDriverManager rdmaDriverManager, Statistic statistic) {
         this.frontend = zContext.createSocket(SocketType.DEALER);
+        frontend.connect("inproc://backend");
         this.totalEventToSend = MorphStreamEnv.get().configuration().getInt("totalEvents") / MorphStreamEnv.get().configuration().getInt("frontendNum");
         this.receiveCount = MorphStreamEnv.get().configuration().getInt("totalBatch") * MorphStreamEnv.get().configuration().getInt("workerNum");
-        frontend.connect("inproc://backend");
         this.rdmaDriverManager = rdmaDriverManager;
         workerIdToCircularRdmaBufferMap = rdmaDriverManager.getRdmaBufferManager().getResultBufferMap();
         this.statistic = statistic;
