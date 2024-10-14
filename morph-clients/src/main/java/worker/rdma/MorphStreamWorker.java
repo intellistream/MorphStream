@@ -49,7 +49,7 @@ public class MorphStreamWorker extends Thread {
                  InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-        MorphStreamEnv.get().DatabaseInitialize();
+        MorphStreamEnv.get().DatabaseParameterInitialize();
         MeasureTools.Initialize(MorphStreamEnv.get().configuration());
     }
     public void registerFunction(HashMap<String, FunctionDAGDescription> functions) {
@@ -88,6 +88,7 @@ public class MorphStreamWorker extends Thread {
 
     private void runTopologyLocally() throws Exception {
         Topology topology = env.createTopology();
+        MorphStreamEnv.get().DatabaseInitialize();
         env.submitTopology(topology);
         if (MorphStreamEnv.get().configuration().getBoolean("isRemoteDB") && !MorphStreamEnv.get().configuration().getBoolean("isDynamoDB") && !MorphStreamEnv.get().configuration().getBoolean("isTiKV")) {
             this.rdmaWorkerManager.connectDatabase();

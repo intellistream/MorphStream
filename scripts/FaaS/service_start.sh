@@ -20,4 +20,4 @@ fi
 
 cd -
 #rm -rf FaaS
-docker rmi rtfaas:1.0
+#docker rmi rtfaas:1.0

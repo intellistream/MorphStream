@@ -33,6 +33,8 @@ public class TiKVStorageManager extends RemoteStorageManager{
         }
         pdAddress.deleteCharAt(pdAddress.length() - 1);
         tiConfiguration = TiConfiguration.createDefault(pdAddress.toString());
+        tiConfiguration.setKeepaliveTime(100000);
+        tiConfiguration.setKeepaliveTimeout(100000);
         tiConfiguration.setEnableAtomicForCAS(true);
         //tiConfiguration.setApiVersion(TiConfiguration.ApiVersion.V2);
         tiSession = TiSession.create(tiConfiguration);

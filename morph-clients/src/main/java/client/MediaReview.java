@@ -46,26 +46,40 @@ public class MediaReview extends Client {
 
     @Override
     public void defineFunction() {
-        FunctionDAGDescription userLogin = new FunctionDAGDescription("userLogin");
+        FunctionDAGDescription mediaReview = new FunctionDAGDescription("mediaReview");
         FunctionDescription login = new FunctionDescription("login", MetaTypes.AccessType.READ);
         login.addStateObjectDescription("password", MetaTypes.AccessType.READ, "user_pwd", "password", 0);
         login.addParaName("password");
-        userLogin.addFunctionDescription("login", login);
-
-        FunctionDAGDescription ratingMovie = new FunctionDAGDescription("ratingMovie");
+        mediaReview.addFunctionDescription("login", login);
         FunctionDescription rate = new FunctionDescription("rate", MetaTypes.AccessType.WRITE);
         rate.addStateObjectDescription("rate", MetaTypes.AccessType.WRITE, "movie_rating", "rate", 0);
         rate.addParaName("rate");
-        ratingMovie.addFunctionDescription("rate", rate);
-
-        FunctionDAGDescription reviewMovie = new FunctionDAGDescription("reviewMovie");
+        mediaReview.addFunctionDescription("rate", rate);
         FunctionDescription review = new FunctionDescription("review", MetaTypes.AccessType.WRITE);
         review.addStateObjectDescription("review", MetaTypes.AccessType.WRITE, "movie_review", "review", 0);
         review.addParaName("review");
-        reviewMovie.addFunctionDescription("review", review);
-
-        this.txnDescriptions.put("userLogin", userLogin);
-        this.txnDescriptions.put("ratingMovie", ratingMovie);
-        this.txnDescriptions.put("reviewMovie", reviewMovie);
+        mediaReview.addFunctionDescription("review", review);
+        this.txnDescriptions.put("mediaReview", mediaReview);
+//        FunctionDAGDescription userLogin = new FunctionDAGDescription("userLogin");
+//        FunctionDescription login = new FunctionDescription("login", MetaTypes.AccessType.READ);
+//        login.addStateObjectDescription("password", MetaTypes.AccessType.READ, "user_pwd", "password", 0);
+//        login.addParaName("password");
+//        userLogin.addFunctionDescription("login", login);
+//
+//        FunctionDAGDescription ratingMovie = new FunctionDAGDescription("ratingMovie");
+//        FunctionDescription rate = new FunctionDescription("rate", MetaTypes.AccessType.WRITE);
+//        rate.addStateObjectDescription("rate", MetaTypes.AccessType.WRITE, "movie_rating", "rate", 0);
+//        rate.addParaName("rate");
+//        ratingMovie.addFunctionDescription("rate", rate);
+//
+//        FunctionDAGDescription reviewMovie = new FunctionDAGDescription("reviewMovie");
+//        FunctionDescription review = new FunctionDescription("review", MetaTypes.AccessType.WRITE);
+//        review.addStateObjectDescription("review", MetaTypes.AccessType.WRITE, "movie_review", "review", 0);
+//        review.addParaName("review");
+//        reviewMovie.addFunctionDescription("review", review);
+//
+//        this.txnDescriptions.put("userLogin", userLogin);
+//        this.txnDescriptions.put("ratingMovie", ratingMovie);
+//        this.txnDescriptions.put("reviewMovie", reviewMovie);
     }
 }

@@ -5,6 +5,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.Function;
 import intellistream.morphstream.engine.txn.transaction.FunctionDAGDescription;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
@@ -26,14 +27,19 @@ public abstract class Client extends Thread {
     public boolean isRunning = true;
     protected final ZContext zContext = new ZContext();
     protected BlockingQueue<TransactionalEvent> inputQueue;
+    protected HashMap<Long, Long> bidToEventTime = new HashMap<>();
+    public DescriptiveStatistics latencyStats = new DescriptiveStatistics();
+    public long startTime;
+    public double throughput;
     protected int clientId;
     protected String clientIdentity;
     protected ZMQ.Poller poller;
     protected CountDownLatch latch;
-    protected int msgCount = 0;
+    protected int msgToReceived = 0;
     private String gatewayHost;
     private int gatewayPort;
     private int qps = 0;
+    private long interval = 0;
     public abstract boolean transactionUDF(Function function);
     public abstract Result postUDF(long bid, String txnFlag, HashMap<String, Function> FunctionMap);
     public abstract void defineFunction();
@@ -43,6 +49,8 @@ public abstract class Client extends Thread {
     public void connectFrontend(String address, int driverPort) {
         ZMQ.Socket socket = zContext.createSocket(SocketType.DEALER);
         clientIdentity = String.format("%04X-%04X", ThreadLocalRandom.current().nextInt(), ThreadLocalRandom.current().nextInt());
+        this.qps = MorphStreamEnv.get().configuration().getInt("qps") / MorphStreamEnv.get().configuration().getInt("clientNum");
+        this.interval = 1000_000_000L / qps;//ns
         socket.setIdentity(clientIdentity.getBytes(ZMQ.CHARSET));
         socket.connect("tcp://" + address + ":" + driverPort);
         sockets.put(address, socket);
@@ -56,24 +64,25 @@ public abstract class Client extends Thread {
         LOG.info("Client {} is initialized.", clientId);
         this.latch = latch;
     }
-    public void asyncInvokeFunction(String driverName, String function) {
+    public void asyncInvokeFunction(String driverName, String function, long bid) {
         getSocket(driverName).send(function.getBytes());
+        this.bidToEventTime.put(bid, System.nanoTime());
     }
     public void asyncReceiveFunctionOutput(String workerName) {
-        for (int centitick = 0; centitick < 100; centitick++) {
-            poller.poll(0);
-            if (poller.pollin(0)) {
-                ZMsg msg = ZMsg.recvMsg(getSocket(workerName));
-                LOG.info("Receive: " + msg.popString());
-                msgCount ++;
-                msg.destroy();
-            }
+        poller.poll(interval / 1_000_000 / 2);
+        if (poller.pollin(0)) {
+            ZMsg msg = ZMsg.recvMsg(getSocket(workerName));
+            long bid = Long.parseLong(msg.popString());
+            this.latencyStats.addValue((double) (System.nanoTime() - this.bidToEventTime.get(bid)) / 1_000_000);
+            msgToReceived --;
+            msg.destroy();
         }
     }
 
     @Override
     public void run() {
         this.inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(clientId);
+        this.msgToReceived = this.inputQueue.size();
         gatewayHost = MorphStreamEnv.get().configuration().getString("gatewayHost");
         gatewayPort = MorphStreamEnv.get().configuration().getInt("gatewayPort");
 
@@ -84,12 +93,19 @@ public abstract class Client extends Thread {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        while (!Thread.currentThread().isInterrupted()) {
-            if (!inputQueue.isEmpty()) {
-                asyncInvokeFunction("localhost", inputQueue.poll().toString());
+        long lastSentTime = System.nanoTime();
+        long startTime = System.nanoTime();
+        while (msgToReceived > 0) {
+            asyncReceiveFunctionOutput("localhost");
+            if (System.nanoTime() - lastSentTime > interval) {
+                if (!inputQueue.isEmpty()) {
+                    lastSentTime = System.nanoTime();
+                    TransactionalEvent event = inputQueue.poll();
+                    asyncInvokeFunction("localhost", event.toString(), event.getBid());
+                }
             }
-            //asyncReceiveFunctionOutput("localhost");
         }
+        throughput = (double) this.latencyStats.getN() / (System.nanoTime() - startTime) * 1_000_000_000;
         this.close();
         LOG.info("Client {} is closed.", clientId);
         this.isRunning = false;

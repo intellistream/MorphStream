@@ -48,6 +48,19 @@ public class MorphStreamClient {
             }
             Thread.sleep(1000);
         }
+        double throughput = 0;
+        for (Client client : clients) {
+            throughput += client.throughput;
+        }
+        double averageLatency = 0;
+        double PercentileLatency = 0;
+        for (Client client : clients) {
+            averageLatency += client.latencyStats.getMean();
+            PercentileLatency += client.latencyStats.getPercentile(99);
+        }
+        LOG.info("Throughput: " + throughput + " records/sec");
+        LOG.info("Average Latency: " + averageLatency / clientNum + " ms");
+        LOG.info("99th Percentile Latency: " + PercentileLatency / clientNum + " ms");
         System.exit(0);
     }
 }

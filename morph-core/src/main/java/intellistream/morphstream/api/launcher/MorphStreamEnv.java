@@ -110,7 +110,6 @@ public class MorphStreamEnv {
     public void DatabaseInitialize() throws DatabaseException {
         if (configuration().getBoolean("isRemoteDB", false)) {
             this.database = new RemoteDatabase(configuration);
-            this.databaseInitializer.configure_db();
         } else {
             this.database = new CavaliaDatabase(configuration);
             this.databaseInitializer.creates_Table();
@@ -120,6 +119,9 @@ public class MorphStreamEnv {
                 PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
             }
         }
+    }
+    public void DatabaseParameterInitialize() {
+        this.databaseInitializer.configure_db();
     }
     public void InputSourceInitialize() throws IOException {
         if (configuration().getInt("inputSourceType", 0) == 0) { //read input as string

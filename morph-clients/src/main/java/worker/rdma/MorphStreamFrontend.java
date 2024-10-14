@@ -11,10 +11,7 @@ import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zeromq.SocketType;
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
+import org.zeromq.*;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -31,6 +28,7 @@ public class MorphStreamFrontend extends Thread{
     public boolean isSending = true;
     private int threadId;
     private ZMQ.Socket frontend;// Frontend socket talks to Driver over TCP
+    private ZMQ.Poller poller;
     private RdmaDriverManager rdmaDriverManager;
     private List<Integer> workIdList = new ArrayList<>();
     protected int sendEventCount = 0;
@@ -47,6 +45,8 @@ public class MorphStreamFrontend extends Thread{
     public MorphStreamFrontend(int threadId, ZContext zContext, RdmaDriverManager rdmaDriverManager, Statistic statistic) {
         this.frontend = zContext.createSocket(SocketType.DEALER);
         frontend.connect("inproc://backend");
+        poller = zContext.createPoller(1);
+        poller.register(frontend, ZMQ.Poller.POLLIN);
         this.totalEventToSend = MorphStreamEnv.get().configuration().getInt("totalEvents") / MorphStreamEnv.get().configuration().getInt("frontendNum");
         this.receiveCount = MorphStreamEnv.get().configuration().getInt("totalBatch") * MorphStreamEnv.get().configuration().getInt("workerNum");
         this.rdmaDriverManager = rdmaDriverManager;
@@ -83,6 +83,10 @@ public class MorphStreamFrontend extends Thread{
                 results.get(bytes);
                 String result = new String(bytes);
                 this.statistic.addLatency(Long.parseLong(result), System.nanoTime());
+                ZMsg returnMsg = new ZMsg();
+                returnMsg.add(this.statistic.getFrame(Long.parseLong(result)));
+                returnMsg.add(result);
+                returnMsg.send(frontend);
                 receiveEventCount ++;
                 MeasureTools.DriverFinishEndTime(this.threadId);
             }
@@ -91,12 +95,15 @@ public class MorphStreamFrontend extends Thread{
         }
     }
     private void invokeFunctionToWorker(){
-        tempZmsg = ZMsg.recvMsg(frontend, false);
-        if (tempZmsg != null) {
+        int events = poller.poll(100);
+        if (events > 0 && poller.pollin(0)) {
+            tempZmsg = ZMsg.recvMsg(frontend, false);
             try {
                 MeasureTools.DriverPrepareStartTime(this.threadId);
+                ZFrame frame = tempZmsg.getFirst();
                 tempInput = tempZmsg.getLast().toString();
                 tempEvent = InputSource.inputFromStringToTxnEvent(tempInput);
+                this.statistic.addFrame(tempEvent.getBid(), frame);
                 rdmaDriverManager.send(this.threadId, getWorkId(tempEvent.getKeyMap()), new FunctionMessage(tempInput));
                 this.statistic.addStartTimestamp(tempEvent.getBid(), System.nanoTime());
                 sendEventCount ++;

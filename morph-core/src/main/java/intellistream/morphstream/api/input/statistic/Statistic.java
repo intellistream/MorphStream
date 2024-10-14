@@ -3,6 +3,7 @@ package intellistream.morphstream.api.input.statistic;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import lombok.Getter;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.zeromq.ZFrame;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,6 +23,7 @@ public class Statistic {
     @Getter
     private final DescriptiveStatistics latencyStatistics = new DescriptiveStatistics();
     private final ConcurrentHashMap<Long, Long> bidToStartTimestamp = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ZFrame> bidToFrame = new ConcurrentHashMap<>();
     public HashMap<Integer, InputStatistic> workerIdToInputStatisticMap = new HashMap<>();
     private final ConcurrentHashMap<Integer, List<Integer>> tempVotes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Map<Integer, Integer>> tempVoteCount = new ConcurrentHashMap<>();
@@ -190,6 +192,12 @@ public class Statistic {
     }
     public void addStartTimestamp(long bid, long startTimestamp) {
         bidToStartTimestamp.put(bid, startTimestamp);
+    }
+    public void addFrame(long bid, ZFrame frame) {
+        bidToFrame.put(bid, frame);
+    }
+    public ZFrame getFrame(long bid) {
+        return bidToFrame.get(bid);
     }
     public void addLatency(long bid, long endTimestamp) {
         long startTimestamp = bidToStartTimestamp.get(bid);
