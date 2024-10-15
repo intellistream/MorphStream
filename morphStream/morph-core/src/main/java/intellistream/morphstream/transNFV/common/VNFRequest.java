@@ -14,7 +14,7 @@ public class VNFRequest {
     private final int instancePuncID; // Punctuation ID of the request
     private final int vnfID;
     private final int saID;
-    private BlockingQueue<Integer> txnACKQueue;
+    private boolean chcEnableLocalExecution = false;
 
     public VNFRequest(int reqID, int instanceID, int key, int value, String scope, String type, int vnfID, int saID, long createTime, int instancePuncID) {
         this.reqID = reqID;
@@ -27,20 +27,6 @@ public class VNFRequest {
         this.value = value;
         this.vnfID = vnfID;
         this.saID = saID;
-    }
-
-    public VNFRequest(int reqID, int instanceID, int key, int value, String scope, String type, int vnfID, int saID, long createTime, int instancePuncID, BlockingQueue<Integer> txnACKQueue) {
-        this.reqID = reqID;
-        this.instanceID = instanceID;
-        this.tupleID = key;
-        this.type = type;
-        this.scope = scope;
-        this.createTime = createTime;
-        this.instancePuncID = instancePuncID;
-        this.value = value;
-        this.vnfID = vnfID;
-        this.saID = saID;
-        this.txnACKQueue = txnACKQueue;
     }
 
     //reqID, tupleID, instanceID, value, saID, type, instancePuncID, pktStartTime, pktEndTime, (responseQueue)
@@ -80,12 +66,11 @@ public class VNFRequest {
     public String getScope() {
         return scope;
     }
-
-    public BlockingQueue<Integer> getTxnACKQueue() {
-        return txnACKQueue;
+    public void enableCHCLocalExecution() {
+        chcEnableLocalExecution = true;
+    }
+    public boolean proceedCHCLocalExecution() {
+        return chcEnableLocalExecution;
     }
 
-    public void setTxnACKQueue(BlockingQueue<Integer> txnACKQueue) {
-        this.txnACKQueue = txnACKQueue;
-    }
 }

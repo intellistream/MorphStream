@@ -272,20 +272,20 @@ public class JCommanderHandler {
     @Parameter(names = {"--numInstances"}, description = "Number of socket listener to handle VNF instances, each for one VNF socket")
     public int numInstances = 4;
     @Parameter(names = {"--numOffloadThreads"}, description = "Number of threads in Offloading CC's executor service thread pool")
-    public int numOffloadThreads = 8;
+    public int numOffloadThreads = 4;
     @Parameter(names = {"--numLocalThreads"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int numLocalThreads = 4;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
 //    public String ccStrategy = "Partitioning";
 //    public String ccStrategy = "Replication";
-    public String ccStrategy = "Offloading";
+//    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
-//    public String ccStrategy = "OpenNF";
-//    public String ccStrategy = "CHC";
+    public String ccStrategy = "OpenNF";
 //    public String ccStrategy = "S6";
+//    public String ccStrategy = "CHC";
 //    public String ccStrategy = "Adaptive";
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.4.3";
+    public String expID = "5.2.2_phase3";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -320,9 +320,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--workloadSkew"})
     public int workloadSkew = 0;
     @Parameter(names = {"--readRatio"})
-    public int readRatio = 50;
+    public int readRatio = 25;
     @Parameter(names = {"--locality"})
-    public int locality = 100;
+    public int locality = 0;
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
     public int scopeRatio = 0;
 
@@ -330,7 +330,7 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
-    public int numItems = 1000;//number of records in each table
+    public int numItems = 10000;//number of records in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "testTable";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")

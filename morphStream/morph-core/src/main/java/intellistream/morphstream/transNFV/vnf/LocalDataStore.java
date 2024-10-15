@@ -4,11 +4,11 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 
 import java.util.HashMap;
 
-public class LocalSVCCDatastore {
+public class LocalDataStore {
     private final String tableName;
     private final HashMap<Integer, Integer> dataStore = new HashMap<>();
 
-    public LocalSVCCDatastore(String tableName) {
+    public LocalDataStore(String tableName) {
         this.tableName = tableName;
         int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
         for (int i = 0; i < NUM_ITEMS; i++) {

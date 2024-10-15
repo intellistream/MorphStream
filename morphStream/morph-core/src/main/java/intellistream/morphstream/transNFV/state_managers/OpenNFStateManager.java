@@ -2,6 +2,7 @@ package intellistream.morphstream.transNFV.state_managers;
 
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.transNFV.vnf.UDF;
+import intellistream.morphstream.transNFV.vnf.VNFInstance;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -10,10 +11,10 @@ import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.*;
 
 public class OpenNFStateManager implements Runnable {
-    // TODO: Add partitionable-state performance study later, each state-partition should be handled by one queue
     private BlockingQueue<VNFRequest> requestQueue; // Assume all states are sharing by all instances
     private final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private final HashMap<Integer, String> saTableNameMap = MorphStreamEnv.get().getSaTableNameMap();
@@ -58,32 +59,26 @@ public class OpenNFStateManager implements Runnable {
                 }
                 int instanceID = request.getInstanceID();
                 int tupleID = request.getTupleID();
-                long timeStamp = request.getCreateTime();
+                String type = request.getType();
                 int readValue = -1;
 
                 REC_usefulStartTime();
-                {
-                    TableRecord tableRecord;
-                    tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                    SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                    readValue = readRecord.getValues().get(1).getInt();
-                    SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                    tempo_record.getValues().get(1).setInt(readValue);
-                    tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-                    UDF.executeUDF(request); //TODO: Separate read and write request handling
-                }
+                VNFInstance targetInstance = VNFManager.getInstance(instanceID);
+                targetInstance.getLocalSVCCStateManager().nonBlockingTxnExecution(request);
                 REC_usefulEndTime();
 
-                for (int i = 0; i < numInstances; i++) {
-                    VNFManager.getInstanceStateManager(i).nonSafeLocalStateUpdate(tupleID, readValue);
+                if (Objects.equals(type, "Write")) {
+                    for (int i = 0; i < numInstances; i++) {
+                        // This simulates a broadcasting of state update results to all instances
+                        VNFManager.getInstanceStateManager(i).nonSafeLocalStateUpdate(tupleID, readValue);
+                    }
                 }
 
                 REC_parsingStartTime();
                 VNFManager.getInstance(instanceID).submitACK(request);
-                VNFManager.getInstance(instanceID).submitFinishedRequest(request);
                 REC_parsingEndTime();
 
-            } catch (InterruptedException | DatabaseException e) {
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }

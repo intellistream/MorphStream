@@ -2,6 +2,7 @@ package intellistream.morphstream.transNFV.state_managers;
 
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.transNFV.vnf.UDF;
+import intellistream.morphstream.transNFV.vnf.VNFInstance;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -63,42 +64,34 @@ public class CHCStateManager implements Runnable {
                 long timeStamp = request.getCreateTime();
 
                 if (tupleOwnership.get(tupleID) == null) { // State ownership is not yet assigned, assign it to the current instance
-                    long syncStartTime = System.nanoTime();
                     tupleOwnership.put(tupleID, instanceID);
 
-                    REC_usefulStartTime(); //TODO: Double check this mechanism
-                    TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                    SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                    VNFManager.getInstanceStateManager(instanceID).nonSafeLocalStateUpdate(tupleID, readRecord.getValues().get(1).getInt());
-                    REC_usefulEndTime();
+                    request.enableCHCLocalExecution();
+                    REC_parsingStartTime();
+                    VNFManager.getInstance(instanceID).submitACK(request);
+                    REC_parsingEndTime();
 
                 } else if (tupleOwnership.get(tupleID) == instanceID) { // State ownership is still the same, allow instance to perform local RW
-                    //TODO: Simulate permission for instance to do local state access
-//                        VNFRunner.getSender(instanceID).permitLocalStateAccess(tupleID);
+                    request.enableCHCLocalExecution();
+                    REC_parsingStartTime();
+                    VNFManager.getInstance(instanceID).submitACK(request);
+                    REC_parsingEndTime();
 
-                } else { // State ownership has changed, fetch state from the current owner and perform RW centrally
-                    int currentOwner = tupleOwnership.get(tupleID);
+                } else { // State ownership has changed, fetch state from the previous owner instance, and perform state access centrally
+                    tupleOwnership.put(tupleID, instanceID);
                     int tupleValue = VNFManager.getInstanceStateManager(instanceID).nullSafeStateRead(tupleID);
 
                     REC_usefulStartTime();
-                    {
-                        TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID));
-                        SchemaRecord readRecord = tableRecord.content_.readPreValues(timeStamp);
-                        SchemaRecord tempo_record = new SchemaRecord(readRecord);
-                        tempo_record.getValues().get(1).setInt(tupleValue);
-                        tableRecord.content_.updateMultiValues(timeStamp, timeStamp, false, tempo_record);
-                        UDF.executeUDF(request);
-                    }
+                    VNFInstance targetInstance = VNFManager.getInstance(instanceID);
+                    targetInstance.getLocalSVCCStateManager().nonBlockingTxnExecution(request);
                     REC_usefulEndTime();
 
+                    REC_parsingStartTime();
+                    VNFManager.getInstance(instanceID).submitACK(request);
+                    REC_parsingEndTime();
                 }
 
-                REC_parsingStartTime();
-                VNFManager.getInstance(instanceID).submitACK(request);
-                VNFManager.getInstance(instanceID).submitFinishedRequest(request);
-                REC_parsingEndTime();
-
-            } catch (InterruptedException | DatabaseException | RuntimeException e) {
+            } catch (InterruptedException | RuntimeException e) {
                 System.out.println("CHC Interrupted exception: " + e.getMessage());
                 throw new RuntimeException(e);
             }

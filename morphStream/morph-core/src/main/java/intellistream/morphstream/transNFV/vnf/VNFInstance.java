@@ -79,7 +79,7 @@ public class VNFInstance implements Runnable {
 
 
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, String ccStrategy, int numTPGThreads,
-                       String csvFilePath, LocalSVCCStateManager stateManager, CyclicBarrier finishBarrier, int expectedRequestCount) {
+                       String csvFilePath, LocalSVCCStateManager localStateManager, CyclicBarrier finishBarrier, int expectedRequestCount) {
         this.instanceID = instanceID;
         this.ccStrategy = ccStrategy;
         this.stateRange = stateRange;
@@ -89,7 +89,7 @@ public class VNFInstance implements Runnable {
         this.csvFilePath = csvFilePath;
         this.finishBarrier = finishBarrier;
         this.expectedRequestCount = expectedRequestCount;
-        this.localSVCCStateManager = stateManager;
+        this.localSVCCStateManager = localStateManager;
         if (Objects.equals(ccStrategy, "Adaptive")) { // Adaptive CC started from default CC strategy - Partitioning
             if (!hardcodeSwitch) {
                 for (int i = 0; i < stateRange/2; i++) {
@@ -291,46 +291,13 @@ public class VNFInstance implements Runnable {
             REC_syncEndTime();
 
         } else if (Objects.equals(tupleCC, "OpenNF")) { // OpenNF
-            openNFStateManager.submitOpenNFReq(request);
-            REC_syncStartTime();
-            while (true) {
-                VNFRequest lastFinishedReq = checkACK();
-                if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                    break;
-                }
-            }
-            REC_syncEndTime();
+            VNFManager.submitLocalExecutorRequest(request);
 
         } else if (Objects.equals(tupleCC, "CHC")) { // CHC
-            chcStateManager.submitCHCReq(request);
-            REC_syncStartTime();
-            while (true) {
-                VNFRequest lastFinishedReq = checkACK();
-                if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                    break;
-                }
-            }
-            REC_syncEndTime();
+            VNFManager.submitLocalExecutorRequest(request);
 
         } else if (Objects.equals(tupleCC, "S6")) { // S6
-            REC_usefulStartTime();
-            localSVCCStateManager.nonBlockingTxnExecution(request);
-            REC_usefulEndTime();
-
-            REC_syncStartTime();
-            if (involveWrite) {
-                s6StateManager.submitS6Request(request);
-                while (true) {
-                    VNFRequest lastFinishedReq = checkACK();
-                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
-                        break;
-                    }
-                }
-            } else {
-                applyStateSync();
-                submitFinishedRequest(request);
-            }
-            REC_syncEndTime();
+            VNFManager.submitLocalExecutorRequest(request);
 
         } else {
             throw new UnsupportedOperationException("Unsupported CC strategy: " + tupleCC);
@@ -519,12 +486,16 @@ public class VNFInstance implements Runnable {
                 tpgInputQueues.get(tpgQueueIndex).offer(new ProactiveVNFRequest(stopSignal));
             }
         } else if (Objects.equals(ccStrategy, "OpenNF")) {
+            VNFManager.stopLocalExecutors();
             openNFStateManager.submitOpenNFReq(stopSignal);
         } else if (Objects.equals(ccStrategy, "CHC")) {
+            VNFManager.stopLocalExecutors();
             chcStateManager.submitCHCReq(stopSignal);
         } else if (Objects.equals(ccStrategy, "S6")) {
+            VNFManager.stopLocalExecutors();
             s6StateManager.submitS6Request(stopSignal);
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
+            VNFManager.stopLocalExecutors();
             partitionStateManager.submitPartitioningRequest(stopSignal);
             for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
                 offloadingQueues.get(offloadQueueIndex).offer(stopSignal);

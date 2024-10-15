@@ -3,8 +3,7 @@ package intellistream.morphstream.transNFV.executors;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.common.Transaction;
-import intellistream.morphstream.transNFV.state_managers.PartitionStateManager;
-import intellistream.morphstream.transNFV.state_managers.ReplicationStateManager;
+import intellistream.morphstream.transNFV.state_managers.*;
 import intellistream.morphstream.transNFV.vnf.LocalSVCCStateManager;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 
@@ -21,6 +20,9 @@ public class LocalExecutor implements Runnable {
 
     private final PartitionStateManager partitionStateManager = MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager();
     private final ReplicationStateManager replicationStateManager = MorphStreamEnv.get().getTransNFVStateManager().getReplicationStateManager();
+    private final OpenNFStateManager openNFStateManager = MorphStreamEnv.get().getTransNFVStateManager().getOpenNFStateManager();
+    private final CHCStateManager chcStateManager = MorphStreamEnv.get().getTransNFVStateManager().getCHCStateManager();
+    private final S6StateManager s6StateManager = MorphStreamEnv.get().getTransNFVStateManager().getS6StateManager();
 
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private long usefulStartTime = 0;
@@ -116,6 +118,61 @@ public class LocalExecutor implements Runnable {
                     VNFManager.getInstance(instanceID).submitFinishedRequest(request);
                 }
                 REC_syncEndTime();
+
+            } else if (Objects.equals(ccStrategy, "OpenNF")) { // OpenNF
+                openNFStateManager.submitOpenNFReq(request);
+                REC_syncStartTime();
+                while (true) {
+                    VNFRequest lastFinishedReq = VNFManager.getInstance(instanceID).checkACK();
+                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                        break;
+                    }
+                }
+                REC_syncEndTime();
+                VNFManager.getInstance(instanceID).submitFinishedRequest(request);
+
+            } else if (Objects.equals(ccStrategy, "S6")) { // S6, always adapts to the replication strategy
+                REC_usefulStartTime();
+                VNFManager.getInstanceStateManager(instanceID).nonBlockingTxnExecution(request);
+                REC_usefulEndTime();
+
+                REC_syncStartTime();
+                if (involveWrite) {
+                    s6StateManager.submitS6Request(request);
+                    while (true) {
+                        VNFRequest lastFinishedReq = VNFManager.getInstance(instanceID).checkACK();
+                        if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                            break;
+                        }
+                    }
+                    VNFManager.getInstance(instanceID).submitFinishedRequest(request);
+                } else {
+                    try {
+                        VNFManager.getInstance(instanceID).applyStateSync();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    VNFManager.getInstance(instanceID).submitFinishedRequest(request);
+                }
+                REC_syncEndTime();
+
+            } else if (Objects.equals(ccStrategy, "CHC")) { // CHC
+                chcStateManager.submitCHCReq(request);
+                REC_syncStartTime();
+                while (true) {
+                    VNFRequest lastFinishedReq = VNFManager.getInstance(instanceID).checkACK();
+                    if (lastFinishedReq.getReqID() == reqID) { // Wait for txn_finish from StateManager
+                        break;
+                    }
+                }
+                if (request.proceedCHCLocalExecution()) { // Do local txn execution if CHC Manager allows, otherwise txn is done by CHC Manager already
+                    REC_usefulStartTime();
+                    VNFManager.getInstanceStateManager(instanceID).nonBlockingTxnExecution(request);
+                    REC_usefulEndTime();
+                }
+                VNFManager.getInstance(instanceID).submitFinishedRequest(request);
+                REC_syncEndTime();
+
             }
         }
     }

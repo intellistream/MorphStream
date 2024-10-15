@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LocalSVCCStateManager {
     private final int instanceID;
     private final Map<Integer, S2PLLockObject> lockTable = new ConcurrentHashMap<>();
-    private final LocalSVCCDatastore localSVCCDatastore = new LocalSVCCDatastore("testTable");
+    private final LocalDataStore localDataStore = new LocalDataStore("testTable");
     private final int numExecutors = MorphStreamEnv.get().configuration().getInt("numInstances");
 //    private static final int numExecutors = 2;
 
@@ -46,9 +46,9 @@ public class LocalSVCCStateManager {
         String type = request.getType();
 
         if (Objects.equals(type, "Read")) {
-            localSVCCDatastore.readLocalState(tupleID);
+            localDataStore.readLocalState(tupleID);
         } else if (Objects.equals(type, "Write")) {
-            localSVCCDatastore.writeLocalState(tupleID, value);
+            localDataStore.writeLocalState(tupleID, value);
             UDF.executeUDF(request); // Simulated UDF execution
         } else {
             throw new UnsupportedOperationException();
@@ -57,15 +57,15 @@ public class LocalSVCCStateManager {
 
     /** Warning: This is not thread-safe, need to be guarded with timeout or other sync mechanisms */
     public void nonSafeLocalStateUpdate(int key, int value) {
-        localSVCCDatastore.writeLocalState(key, value);
+        localDataStore.writeLocalState(key, value);
     }
 
     /** Warning: This is not thread-safe, need to be guarded with timeout or other sync mechanisms */
     public int nullSafeStateRead(int key) {
-        return localSVCCDatastore.readLocalState(key);
+        return localDataStore.readLocalState(key);
     }
 
-    public LocalSVCCDatastore getLocalSVCCDatastore() {
-        return localSVCCDatastore;
+    public LocalDataStore getLocalSVCCDatastore() {
+        return localDataStore;
     }
 }
