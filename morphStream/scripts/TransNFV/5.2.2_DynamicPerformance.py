@@ -13,13 +13,8 @@ import itertools
 def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
                          doMVCC, udfComplexity, 
-                         keySkewList, workloadSkew, readRatioList, localityList, scopeRatio, 
+                         keySkew, workloadSkew, readRatio, locality, scopeRatio,
                          script_path):
-    
-    keySkewList_str = " ".join(map(str, keySkewList))
-    readRatioList_str = " ".join(map(str, readRatioList))
-    localityList_str = " ".join(map(str, localityList))
-    
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
@@ -36,10 +31,10 @@ function ResetParameters() {{
   ccStrategy="{ccStrategy}"
   doMVCC={doMVCC}
   udfComplexity={udfComplexity}
-  keySkew=0  # Default value, will be updated in loop
+  keySkew={keySkew}
   workloadSkew={workloadSkew}
-  readRatio=0  # Default value, will be updated in loop
-  locality=0  # Default value, will be updated in loop
+  readRatio={readRatio}
+  locality={locality}
   scopeRatio={scopeRatio}
 }}
 
@@ -86,29 +81,11 @@ function runTStream() {{
 }}
 
 function Per_Phase_Experiment() {{
-  ResetParameters
-  keySkewList=({keySkewList_str})
-  readRatioList=({readRatioList_str})
-  localityList=({localityList_str})
-
-  for keySkew in "${{keySkewList[@]}}"
-  do
-    for readRatio in "${{readRatioList[@]}}"
+    ResetParameters
+    for ccStrategy in Partitioning Replication Offloading Proactive OpenNF CHC S6
     do
-      for locality in "${{localityList[@]}}"
-      do
-        for ccStrategy in Partitioning Replication Offloading Proactive OpenNF CHC S6
-        do
-          keySkew=$keySkew
-          readRatio=$readRatio
-          locality=$locality
-          ccStrategy=$ccStrategy
-
-          runTStream
-        done
-      done
+      runTStream
     done
-  done
 }}
 
 Per_Phase_Experiment
@@ -277,15 +254,13 @@ def get_throughput_from_file(outputFilePath):
         return None
 
 def draw_throughput_comparison_plot():
-    workload_feature_combinations = get_workload_feature_phases()
-    
     systems = ['TransNFV', 'OpenNF', 'CHC', 'S6']
     colors = ['#AE48C8', '#F44040', '#15DB3F', '#E9AA18']
     markers = ['o', 's', '^', 'D']
     system_data = {system: [] for system in systems}
 
-    for workload in workload_feature_combinations:
-        expID, keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
+    for workload in workloadList:
+        keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
         
         transnfv_throughputs = []
         for ccStrategy in ["Partitioning", "Replication", "Offloading", "Proactive"]:
@@ -305,8 +280,8 @@ def draw_throughput_comparison_plot():
         system_data['S6'].append(get_throughput_from_file(outputFilePath_s6) / 1e6 or 0)
 
     plt.figure(figsize=(7, 4.5))
-    x_labels = [f"{i+1}" for i in range(len(workload_feature_combinations))]
-    x_positions = np.arange(len(workload_feature_combinations))
+    x_labels = [f"{i+1}" for i in range(len(workloadList))]
+    x_positions = np.arange(len(workloadList))
     
     for i, system in enumerate(systems):
         plt.plot(x_positions, system_data[system], marker=markers[i], color=colors[i], label=system, markersize=8, 
@@ -316,16 +291,13 @@ def draw_throughput_comparison_plot():
     plt.yticks(fontsize=15)
     plt.xlabel('Dynamic Workload Phases', fontsize=18)
     plt.ylabel('Throughput (Million req/sec)', fontsize=18)
-    # plt.legend(fontsize=16)
-    plt.legend(bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
+    plt.legend(bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
     ax = plt.gca()  
     yticks = ax.get_yticks()  # Automatically get y-axis tick positions
-    ax.set_yticks(yticks) 
+    ax.set_yticks(yticks)
 
     plt.tight_layout()
-
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
@@ -346,9 +318,7 @@ def read_latencies(csv_file_path):
         reader = csv.reader(file)
         for row in reader:
             try:
-                latency = float(row[0])
-                if latency < 200:
-                    latencies.append(float(row[0]))
+                latencies.append(float(row[0]) / 1000000)
             except ValueError:
                 print(f"Skipping invalid value: {row[0]}")
     return latencies
@@ -363,15 +333,13 @@ def downsample_data(data, max_points=1000):
 
 
 def draw_latency_comparison_plot(max_points=1000):
-    workload_feature_combinations = get_workload_feature_phases()
-    
     systems = ['TransNFV', 'OpenNF', 'CHC', 'S6']
     colors = ['#AE48C8', '#F44040', '#15DB3F', '#E9AA18']
     markers = ['o', 's', '^', 'D']
     system_latencies = {system: [] for system in systems}
 
-    for workload in workload_feature_combinations:
-        expID, keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
+    for workload in workloadList:
+        keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
         
         transnfv_latencies = []
         min_avg_latency = float('inf')
@@ -399,25 +367,23 @@ def draw_latency_comparison_plot(max_points=1000):
     plt.figure(figsize=(7, 4.5))
 
     for i, system in enumerate(systems):
+
         sorted_latencies = np.sort(system_latencies[system])
         downsampled_latencies = downsample_data(sorted_latencies, max_points)
         cdf = np.arange(1, len(downsampled_latencies) + 1) / len(downsampled_latencies)
-        # plt.plot(downsampled_latencies, cdf, marker=markers[i], color=colors[i], label=system, markersize=6, markeredgecolor='black', markeredgewidth=1.5, markevery=100)
-        if system == 'TransNFV':
-            plt.plot(downsampled_latencies, cdf, marker=markers[i], color=colors[i], label=system, markersize=6, markeredgecolor='black', markeredgewidth=1.5, markevery=(50, 100))
-        else:
-            plt.plot(downsampled_latencies, cdf, marker=markers[i], color=colors[i], label=system, markersize=6, markeredgecolor='black', markeredgewidth=1.5, markevery=100)
+        marker_positions = list(range(0, 1000, 100)) + [999]
+        plt.plot(downsampled_latencies, cdf, marker=markers[i], color=colors[i], label=system, markersize=8,
+                 markeredgecolor='black', markeredgewidth=1.5, markevery=marker_positions)
 
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    plt.xlabel('Latency (us)', fontsize=18)
-    plt.ylabel('CDF', fontsize=18)
+    plt.xlabel('Latency (s)', fontsize=18)
+    plt.ylabel('Cumulative Percent (%)', fontsize=18)
     # plt.legend(fontsize=16)
-    plt.legend(bbox_to_anchor=(0.45, 1.23), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
+    plt.legend(bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=4, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
     plt.tight_layout()
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
@@ -438,135 +404,94 @@ numItems = 10000
 numPackets = 400000
 numInstances = 4
 app = "nfv_test"
+expID = "5.2.2"
 
 # System params
 numTPGThreads = 4
 numOffloadThreads = 4
 puncInterval = 1000
 ccStrategy = "Offloading"
-doMVCC = 0
+doMVCC = 1
 udfComplexity = 10
 ccStrategyList = ["Partitioning", "Replication", "Offloading", "Proactive", "OpenNF", "CHC", "S6"]
 rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
 
-# Workload chars
-Phase1_expID = "5.2.2_phase1"
-Phase1_keySkewList = [0]
-Phase1_workloadSkewList = [0]
-Phase1_readRatioList = [50]
-Phase1_localityList = [75, 80, 90, 100]
-Phase1_scopeRatioList = [0]
 
-Phase2_expID = "5.2.2_phase2"
-Phase2_keySkewList = [0, 50]
-Phase2_workloadSkewList = [0]
-Phase2_readRatioList = [75, 100]
-Phase2_localityList = [0]
-Phase2_scopeRatioList = [0]
+# KeySkew, WorkloadSkew, ReadRatio, Locality, ScopeRatio
 
-Phase3_expID = '5.2.2_phase3'
-Phase3_keySkewList = [0, 50]
-Phase3_workloadSkewList = [0]
-Phase3_readRatioList = [0, 25]
-Phase3_localityList = [0]
-Phase3_scopeRatioList = [0]
+# Phase 1, decreasing locality
+workload1 = [0, 0, 20, 100, 0]
+workload2 = [0, 0, 20, 90, 0]
+workload3 = [0, 0, 20, 80, 0]
+workload4 = [0, 0, 20, 70, 0]
 
-Phase4_expID = "5.2.2_phase4"
-Phase4_keySkewList = [0, 50]
-Phase4_workloadSkewList = [0]
-Phase4_readRatioList = [25, 75]
-Phase4_localityList = [0]
-Phase4_scopeRatioList = [0]
+# Phase 2, increasing read ratio, increasing key skew
+workload5 = [0, 0, 30, 0, 0]
+workload6 = [0, 0, 40, 0, 0]
+workload7 = [50, 0, 50, 0, 0]
+workload8 = [50, 0, 60, 0, 0]
 
+# Phase 3, increasing write ratio, increasing key skew
+workload9 = [50, 0, 15, 0, 0]
+workload10 = [50, 10, 10, 0, 0]
+workload11 = [60, 20, 5, 0, 0]
+workload12 = [60, 30, 0, 0, 0]
 
-def get_workload_feature_phases():
-    # Generate combinations of workload features for each phase
-    phase1_workload_combinations = [(Phase1_expID, *combination) for combination in itertools.product(
-        Phase1_keySkewList, Phase1_workloadSkewList, Phase1_readRatioList, Phase1_localityList, Phase1_scopeRatioList)]
-    
-    phase2_workload_combinations = [(Phase2_expID, *combination) for combination in itertools.product(
-        Phase2_keySkewList, Phase2_workloadSkewList, Phase2_readRatioList, Phase2_localityList, Phase2_scopeRatioList)]
-    
-    phase3_workload_combinations = [(Phase3_expID, *combination) for combination in itertools.product(
-        Phase3_keySkewList, Phase3_workloadSkewList, Phase3_readRatioList, Phase3_localityList, Phase3_scopeRatioList)]
-    
-    phase4_workload_combinations = [(Phase4_expID, *combination) for combination in itertools.product(
-        Phase4_keySkewList, Phase4_workloadSkewList, Phase4_readRatioList, Phase4_localityList, Phase4_scopeRatioList)]
-    
-    # Combine all phases into one list
-    overall_workload_combinations = (
-        phase1_workload_combinations + phase2_workload_combinations + 
-        phase3_workload_combinations + phase4_workload_combinations
-    )
-    
-    return overall_workload_combinations # Returns 16 tuples
+# Phase 4, balanced read ratio, increasing key skew, increasing workload skew
+workload13 = [70, 50, 0, 0, 0]
+workload14 = [100, 40, 0, 0, 0]
+workload15 = [125, 30, 0, 0, 0]
+workload16 = [150, 20, 0, 0, 0]
+
+# Combine all the workloads into one parent list
+workloadList = [
+    workload1, workload2, workload3, workload4,
+    workload5, workload6, workload7, workload8,
+    workload9, workload10, workload11, workload12,
+    workload13, workload14, workload15, workload16
+]
 
 
-def phase1():
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % Phase1_expID
-    generate_bash_script(app, Phase1_expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
-                         Phase1_keySkewList, Phase1_workloadSkewList[0], Phase1_readRatioList, Phase1_localityList, Phase1_scopeRatioList[0], 
+def run_dynamic_workload():
+    for workload in workloadList:
+        keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
+        shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
+        generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+                             numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity,
+                             keySkew, workloadSkew, readRatio, locality, scopeRatio,
+                             shellScriptPath)
+        execute_bash_script(shellScriptPath)
+
+def run_single_workload(index):
+    keySkew, workloadSkew, readRatio, locality, scopeRatio = workloadList[index]
+    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
+    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity,
+                         keySkew, workloadSkew, readRatio, locality, scopeRatio,
                          shellScriptPath)
-    
     execute_bash_script(shellScriptPath)
-
-def plot_throughput_phase1():
-    draw_throughput_plot_phase_1(Phase1_expID, Phase1_keySkewList[0], Phase1_workloadSkewList[0], Phase1_readRatioList[0], Phase1_localityList, Phase1_scopeRatioList[0])
-
-def phase2():
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % Phase2_expID
-    generate_bash_script(app, Phase2_expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
-                         Phase2_keySkewList, Phase2_workloadSkewList[0], Phase2_readRatioList, Phase2_localityList, Phase2_scopeRatioList[0], 
-                         shellScriptPath)
-    
-    execute_bash_script(shellScriptPath)
-
-def plot_throughput_phase2():
-    draw_throughput_plot_phase_234(Phase2_expID, Phase2_keySkewList, Phase2_workloadSkewList[0], Phase2_readRatioList, Phase2_localityList[0], Phase2_scopeRatioList[0])
-
-def phase3():
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % Phase3_expID
-    generate_bash_script(app, Phase3_expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
-                         Phase3_keySkewList, Phase3_workloadSkewList[0], Phase3_readRatioList, Phase3_localityList, Phase3_scopeRatioList[0], 
-                         shellScriptPath)
-    
-    execute_bash_script(shellScriptPath)
-
-def plot_throughput_phase3():
-    draw_throughput_plot_phase_234(Phase3_expID, Phase3_keySkewList, Phase3_workloadSkewList[0], Phase3_readRatioList, Phase3_localityList[0], Phase3_scopeRatioList[0])
-
-
-def phase4():
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % Phase4_expID
-    generate_bash_script(app, Phase4_expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
-                         Phase4_keySkewList, Phase4_workloadSkewList[0], Phase4_readRatioList, Phase4_localityList, Phase4_scopeRatioList[0], 
-                         shellScriptPath)
-    
-    execute_bash_script(shellScriptPath)
-
-def plot_throughput_phase4():
-    draw_throughput_plot_phase_234(Phase4_expID, Phase4_keySkewList, Phase4_workloadSkewList[0], Phase4_readRatioList, Phase4_localityList[0], Phase4_scopeRatioList[0])
-
-
 
 
 if __name__ == "__main__":
-    # phase1()
-    # plot_throughput_phase1()
+    # run_dynamic_workload()
 
-    # phase2()
-    # plot_throughput_phase2()
+    # run_single_workload(0)
+    # run_single_workload(1)
+    # run_single_workload(2)
+    # run_single_workload(3)
+    # run_single_workload(4)
+    # run_single_workload(5)
+    # run_single_workload(6)
+    # run_single_workload(7)
+    # run_single_workload(8)
+    # run_single_workload(9)
+    # run_single_workload(10)
+    # run_single_workload(11)
+    # run_single_workload(12)
+    # run_single_workload(13)
+    # run_single_workload(14)
+    # run_single_workload(15)
 
-    # phase3()
-    # plot_throughput_phase3()
-
-    # phase4()
-    # plot_throughput_phase4()
-
-    draw_throughput_comparison_plot()
+    # draw_throughput_comparison_plot()
     draw_latency_comparison_plot()
     print("Done")

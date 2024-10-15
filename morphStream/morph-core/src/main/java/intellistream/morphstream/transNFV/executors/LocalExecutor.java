@@ -47,6 +47,8 @@ public class LocalExecutor implements Runnable {
     @Override
     public void run() {
 
+        System.out.println("Local executor " + localExecutorID + " started");
+
         while (!Thread.currentThread().isInterrupted()) {
             VNFRequest request;
             try {
@@ -64,11 +66,11 @@ public class LocalExecutor implements Runnable {
             int reqID = request.getReqID();
             int tupleID = request.getTupleID();
             String type = request.getType();
-            String scope = request.getScope();
+            String tupleCC = request.getTupleCC();
             int instanceID = request.getInstanceID();
             boolean involveWrite = Objects.equals(type, "Write") || Objects.equals(type, "Read-Write");
 
-            if (Objects.equals(ccStrategy, "Partitioning")) {
+            if (Objects.equals(tupleCC, "Partitioning")) {
                 if (instancePartitionStartMap.get(instanceID) <= tupleID && tupleID <= instancePartitionEndMap.get(instanceID)) {
                     REC_usefulStartTime();
                     VNFManager.getInstanceStateManager(instanceID).nonBlockingTxnExecution(request);
@@ -94,7 +96,7 @@ public class LocalExecutor implements Runnable {
                     REC_parsingEndTime();
                 }
 
-            } else if (Objects.equals(ccStrategy, "Replication")) { // Replication: async read, sync write
+            } else if (Objects.equals(tupleCC, "Replication")) { // Replication: async read, sync write
                 REC_usefulStartTime();
                 VNFManager.getInstanceStateManager(instanceID).nonBlockingTxnExecution(request);
                 REC_usefulEndTime();
@@ -119,7 +121,7 @@ public class LocalExecutor implements Runnable {
                 }
                 REC_syncEndTime();
 
-            } else if (Objects.equals(ccStrategy, "OpenNF")) { // OpenNF
+            } else if (Objects.equals(tupleCC, "OpenNF")) { // OpenNF
                 openNFStateManager.submitOpenNFReq(request);
                 REC_syncStartTime();
                 while (true) {
@@ -131,7 +133,7 @@ public class LocalExecutor implements Runnable {
                 REC_syncEndTime();
                 VNFManager.getInstance(instanceID).submitFinishedRequest(request);
 
-            } else if (Objects.equals(ccStrategy, "S6")) { // S6, always adapts to the replication strategy
+            } else if (Objects.equals(tupleCC, "S6")) { // S6, always adapts to the replication strategy
                 REC_usefulStartTime();
                 VNFManager.getInstanceStateManager(instanceID).nonBlockingTxnExecution(request);
                 REC_usefulEndTime();
@@ -156,7 +158,7 @@ public class LocalExecutor implements Runnable {
                 }
                 REC_syncEndTime();
 
-            } else if (Objects.equals(ccStrategy, "CHC")) { // CHC
+            } else if (Objects.equals(tupleCC, "CHC")) { // CHC
                 chcStateManager.submitCHCReq(request);
                 REC_syncStartTime();
                 while (true) {
@@ -244,5 +246,9 @@ public class LocalExecutor implements Runnable {
 
     public long getAGG_SYNC_TIME() {
         return AGG_SYNC_TIME;
+    }
+
+    public int getFinishedReqCount() {
+        return requestCounter;
     }
 }

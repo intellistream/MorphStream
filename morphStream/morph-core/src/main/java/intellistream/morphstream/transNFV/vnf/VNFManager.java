@@ -103,7 +103,7 @@ public class VNFManager implements Runnable {
         }
 
         for (int i = 0; i < numLocalThreads; i++) {
-            /** Prepare local executors for Partitioning, Replication, OpenNF, CHC and S6 */
+            /** Prepare local executors for Partitioning, Replication, OpenNF, CHC, S6 and Adaptive */
             BlockingQueue<VNFRequest> localExecutorInputQueue = new LinkedBlockingQueue<>();
             localExecutorInputQueueMap.put(i, localExecutorInputQueue);
 
@@ -166,22 +166,24 @@ public class VNFManager implements Runnable {
         switch (expID) {
             case "5.1": // Dynamic workload, throughput, three existing strategies
                 writeCSVThroughput(outputFileDir, overallThroughput); //TODO: To be aligned
+                writeCSVLatency(outputFileDir);
                 break;
             case "5.2.1": // Static workload, throughput and latency
                 writeCSVThroughput(outputFileDir, overallThroughput); //TODO: To be aligned
+                writeCSVLatency(outputFileDir);
                 break;
-            case "5.2.2_phase1": // Dynamic workload, throughput and latency
-            case "5.2.2_phase2":
-            case "5.2.2_phase3":
-            case "5.2.2_phase4":
+            case "5.2.2":
             case "5.2.3":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 writeCSVLatency(outputFileDir);
                 break;
+            case "5.3":
             case "5.3_phase1": // Dynamic workload, Time breakdown
             case "5.3_phase2":
             case "5.3_phase3":
             case "5.3_phase4":
+                writeCSVThroughput(outputFileDir, overallThroughput);
+                writeCSVLatency(outputFileDir);
                 computeTimeBreakdown();
                 writeCSVBreakdown(outputFileDir);
                 break;
@@ -488,4 +490,7 @@ public class VNFManager implements Runnable {
                 scopeRatio, numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, workloadInterval, monitorWindowSize, hardcodeSwitch);
     }
 
+    public static HashMap<Integer, LocalExecutor> getLocalExecutorMap() {
+        return localExecutorMap;
+    }
 }

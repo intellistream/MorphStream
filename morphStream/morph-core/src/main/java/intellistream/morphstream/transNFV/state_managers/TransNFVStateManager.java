@@ -46,6 +46,8 @@ public class TransNFVStateManager {
     private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
+    private final boolean hardcodeSwitch = (MorphStreamEnv.get().configuration().getInt("hardcodeSwitch") == 1);
+
 
     private ModelEvaluator<?> modelEvaluator;
 
@@ -132,8 +134,10 @@ public class TransNFVStateManager {
         }
         System.out.println("Offload executors started");
 
-        WorkloadMonitorThread.start();
-        System.out.println("Batch workload monitor started");
+        if (!hardcodeSwitch) {
+            WorkloadMonitorThread.start();
+            System.out.println("Batch workload monitor started");
+        }
     }
 
     public void joinAdaptiveCC() {
@@ -142,7 +146,9 @@ public class TransNFVStateManager {
             for (int i = 0; i < numOffloadThreads; i++) {
                 offloadExecutorThreads.get(i).join();
             }
-            WorkloadMonitorThread.join();
+            if (!hardcodeSwitch) {
+                WorkloadMonitorThread.join();
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

@@ -174,7 +174,7 @@ def draw_throughput_comparison_plot():
     plt.xlabel('State Management Strategies', fontsize=18)
     plt.ylabel('Throughput (Million req/sec)', fontsize=18)
     # plt.legend(fontsize=16)
-    plt.legend(bbox_to_anchor=(0.45, 1.29), loc='upper center', ncol=3, fontsize=16, columnspacing=0.5)
+    plt.legend(bbox_to_anchor=(0.5, 1.29), loc='upper center', ncol=3, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
     ax = plt.gca()  
     yticks = ax.get_yticks()  # Automatically get y-axis tick positions
@@ -203,9 +203,7 @@ def read_latencies(csv_file_path):
         reader = csv.reader(file)
         for row in reader:
             try:
-                latency = float(row[0])
-                if latency < 100:
-                    latencies.append(float(row[0]))
+                latencies.append(float(row[0]) / 1000000)
             except ValueError:
                 print(f"Skipping invalid value: {row[0]}")
     return latencies
@@ -236,21 +234,18 @@ def draw_latency_comparison_plot(max_points=1000):
         sorted_latencies = np.sort(system_latencies[i])
         downsampled_latencies = downsample_data(sorted_latencies, max_points)
         cdf = np.arange(1, len(downsampled_latencies) + 1) / len(downsampled_latencies)
-        if system == 'TransNFV':
-            plt.plot(downsampled_latencies, cdf, marker=markers[i], color=colors[i], label=system_to_show[i], markersize=6, markeredgecolor='black', markeredgewidth=1.5, markevery=(50, 100))
-        else:
-            plt.plot(downsampled_latencies, cdf, marker=markers[i], color=colors[i], label=system_to_show[i], markersize=6, markeredgecolor='black', markeredgewidth=1.5, markevery=100)
+        marker_positions = list(range(0, 1000, 100)) + [999]
+        plt.plot(downsampled_latencies, cdf, marker=markers[i], color=colors[i], label=system_to_show[i], markersize=8,
+                 markeredgecolor='black', markeredgewidth=1.5, markevery=marker_positions)
 
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    plt.xlabel('Latency (us)', fontsize=18)
-    plt.ylabel('CDF', fontsize=18)
-    # plt.legend(fontsize=16)
-    plt.legend(bbox_to_anchor=(0.45, 1.29), loc='upper center', ncol=3, fontsize=16, columnspacing=0.5)
+    plt.xlabel('Latency (s)', fontsize=18)
+    plt.ylabel('Cumulative Percent (%)', fontsize=18)
+    plt.legend(bbox_to_anchor=(0.5, 1.29), loc='upper center', ncol=3, fontsize=16, columnspacing=0.5)
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
     plt.tight_layout()
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
     plt.subplots_adjust(left=0.12, right=0.98, top=0.82, bottom=0.15)
 
     script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
@@ -291,8 +286,6 @@ locality = 0
 scopeRatio = 0
 
 
-
-
 def exp():
     shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
     generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
@@ -301,8 +294,6 @@ def exp():
                          shellScriptPath)
     
     execute_bash_script(shellScriptPath)
-
-
 
 
 if __name__ == "__main__":

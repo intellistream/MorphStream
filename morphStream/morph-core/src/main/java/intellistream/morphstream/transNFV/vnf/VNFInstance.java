@@ -8,6 +8,7 @@ import intellistream.morphstream.api.input.ProactiveVNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.common.SyncData;
 import intellistream.morphstream.transNFV.executors.LocalExecutor;
+import intellistream.morphstream.transNFV.executors.OffloadExecutor;
 import intellistream.morphstream.transNFV.state_managers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +92,7 @@ public class VNFInstance implements Runnable {
         this.expectedRequestCount = expectedRequestCount;
         this.localSVCCStateManager = localStateManager;
         if (Objects.equals(ccStrategy, "Adaptive")) { // Adaptive CC started from default CC strategy - Partitioning
-            if (!hardcodeSwitch) {
+            if (hardcodeSwitch) {
                 for (int i = 0; i < stateRange/2; i++) {
                     tupleCCMap.put(i, "Partitioning");
                 }
@@ -123,7 +124,7 @@ public class VNFInstance implements Runnable {
             while ((line = reader.readLine()) != null) {
                 inputLineCounter++;
 
-                if (ccStrategy.equals("Adaptive") && hardcodeSwitch && (inputLineCounter % perInstanceWorkloadInterval == 0)) {
+                if (ccStrategy.equals("Adaptive") && (!hardcodeSwitch) && (inputLineCounter % perInstanceWorkloadInterval == 0)) {
                     for (int i = 0; i <= stateRange; i++) {
                         if (tupleCCMap.get(i).equals("Partitioning")) {
                             tupleCCMap.put(i, "Offloading");
@@ -140,7 +141,7 @@ public class VNFInstance implements Runnable {
                 VNFRequest request = createRequest(line);
                 REC_parsingEndTime();
 
-                if (ccStrategy.equals("Adaptive")) {
+                if (ccStrategy.equals("Adaptive") && !hardcodeSwitch) {
                     int tupleID = request.getTupleID();
                     if (isUnderSwitch(tupleID)) {
                         bufferRequest(request);
@@ -248,9 +249,10 @@ public class VNFInstance implements Runnable {
         String type = request.getType();
         String scope = request.getScope();
         String tupleCC = tupleCCMap.get(tupleID);
+        request.setTupleCC(tupleCC);
         boolean involveWrite = Objects.equals(type, "Write") || Objects.equals(type, "Read-Write");
 
-        if (ccStrategy.equals("Adaptive")) {
+        if (ccStrategy.equals("Adaptive") && (!hardcodeSwitch)) {
             REC_metadataStartTime();
             workloadMonitor.submitMetadata(tupleID, instanceID, type, scope);
             REC_metadataEndTime();
@@ -276,9 +278,7 @@ public class VNFInstance implements Runnable {
             REC_syncStartTime();
             VNFManager.submitLocalExecutorRequest(request);
             REC_syncEndTime();
-        }
-
-        else if (Objects.equals(tupleCC, "Offloading")) {
+        } else if (Objects.equals(tupleCC, "Offloading")) {
             REC_syncStartTime();
             offloadingQueues.get(offloadRequestCount % numOffloadThreads).offer(request);
             offloadRequestCount++;
@@ -447,10 +447,27 @@ public class VNFInstance implements Runnable {
     }
 
     private void waitForTxnFinish() throws BrokenBarrierException, InterruptedException {
-        System.out.println("Instance " + instanceID + " finished parsing " + inputLineCounter + " requests.");
+        System.out.println("Instance " + instanceID + " finished parsing " + inputLineCounter + " requests");
         assert inputLineCounter == expectedRequestCount;
         while (finishedReqStorage.size() < expectedRequestCount) {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000));  // Sleep for 1 second
+//            if (instanceID == 0) {
+//                int offloadReqCount = 0;
+//                for (OffloadExecutor offloadExecutor : MorphStreamEnv.get().getTransNFVStateManager().getOffloadExecutors().values()) {
+//                    offloadReqCount += offloadExecutor.getOffloadFinishedRequests();
+//                }
+//                int localReqCount = 0;
+//                for (LocalExecutor localExecutor : VNFManager.getLocalExecutorMap().values()) {
+//                    localReqCount += localExecutor.getFinishedReqCount();
+//                }
+//                int totalFinishedReqCount = 0;
+//                for (VNFInstance instance : VNFManager.getAllInstances().values()) {
+//                    totalFinishedReqCount += instance.getFinishedRequestCount();
+//                }
+//                System.out.println("Total finished requests: " + totalFinishedReqCount);
+//                System.out.println("OFF: " + offloadReqCount + ", LOCAL: " + localReqCount);
+//
+//            }
         }
 
         // Compute instance local performance
@@ -506,4 +523,5 @@ public class VNFInstance implements Runnable {
             throw new UnsupportedOperationException("Unsupported CC strategy: " + ccStrategy);
         }
     }
+
 }

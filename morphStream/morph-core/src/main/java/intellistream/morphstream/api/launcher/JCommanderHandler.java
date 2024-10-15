@@ -276,16 +276,16 @@ public class JCommanderHandler {
     @Parameter(names = {"--numLocalThreads"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int numLocalThreads = 4;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-//    public String ccStrategy = "Partitioning";
+    public String ccStrategy = "Partitioning";
 //    public String ccStrategy = "Replication";
 //    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
-    public String ccStrategy = "OpenNF";
+//    public String ccStrategy = "OpenNF";
 //    public String ccStrategy = "S6";
 //    public String ccStrategy = "CHC";
 //    public String ccStrategy = "Adaptive";
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.2.2_phase3";
+    public String expID = "5.2.3";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -310,9 +310,6 @@ public class JCommanderHandler {
     @Parameter(names = {"--hardcodeSwitch"}, description = "Hardcode the optimal strategy switching sequence in VNF instances")
 //    public int hardcodeSwitch = 0;
     public int hardcodeSwitch = 1;
-    @Parameter(names = {"--txnOrdering"}, description = "Do txn ordering for not TPG-based strategies before execution")
-//    public int txnOrdering = 0;
-    public int txnOrdering = 1;
 
     /** Parameters controls which csv file to read */
     @Parameter(names = {"--keySkew"})
@@ -320,7 +317,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--workloadSkew"})
     public int workloadSkew = 0;
     @Parameter(names = {"--readRatio"})
-    public int readRatio = 25;
+    public int readRatio = 0;
     @Parameter(names = {"--locality"})
     public int locality = 0;
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
@@ -551,7 +548,6 @@ public class JCommanderHandler {
         config.put("monitorWindowSize", monitorWindowSize);
         config.put("workloadInterval", workloadInterval);
         config.put("hardcodeSwitch", hardcodeSwitch);
-        config.put("txnOrdering", txnOrdering);
         config.put("keySkew", keySkew);
         config.put("workloadSkew", workloadSkew);
         config.put("readRatio", readRatio);

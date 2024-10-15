@@ -14,7 +14,11 @@ public class VNFRequest {
     private final int instancePuncID; // Punctuation ID of the request
     private final int vnfID;
     private final int saID;
+
+    // Optionally used for CHC
     private boolean chcEnableLocalExecution = false;
+    // Optionally used for passing tuple CC to local executor
+    private String assignedTupleCC = null;
 
     public VNFRequest(int reqID, int instanceID, int key, int value, String scope, String type, int vnfID, int saID, long createTime, int instancePuncID) {
         this.reqID = reqID;
@@ -71,6 +75,12 @@ public class VNFRequest {
     }
     public boolean proceedCHCLocalExecution() {
         return chcEnableLocalExecution;
+    }
+    public void setTupleCC(String cc) {
+        assignedTupleCC = cc;
+    }
+    public String getTupleCC() {
+        return assignedTupleCC;
     }
 
 }

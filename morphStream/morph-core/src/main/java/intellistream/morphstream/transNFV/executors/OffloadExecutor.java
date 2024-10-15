@@ -59,6 +59,8 @@ public class OffloadExecutor implements Runnable {
 //            gcThread.start();
         }
 
+        System.out.println("Offload executor " + offloadExecutorID + " started");
+
         while (!Thread.currentThread().isInterrupted()) {
             VNFRequest request;
             try {
@@ -276,5 +278,8 @@ public class OffloadExecutor implements Runnable {
     public long getAGG_PARSING_TIME() {
         return AGG_PARSING_TIME;
     }
-    
+
+    public int getOffloadFinishedRequests() {
+        return requestCounter;
+    }
 }
