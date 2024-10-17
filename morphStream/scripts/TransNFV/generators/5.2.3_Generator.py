@@ -1,3 +1,4 @@
+import argparse
 import csv
 import random
 import os
@@ -75,10 +76,10 @@ def update_workload_file_path(indicator_path, workload_path):
         file.write(workload_path)
 
 
-def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval, exp_dir):
+    exp_dir = f'{exp_dir}/workload'
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
 
@@ -87,18 +88,16 @@ def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numIt
     print(f'Generated {expID} workload for keySkew={keySkew}, workloadSkew={workloadSkew}, readRatio={readRatio}, scopeRatio={scopeRatio}, locality={locality}')
 
 
-
-
 def subtract_ranges(a, b, N):
     full_range = set(range(0, N))
     subtract_range = set(range(a, b))
     result = sorted(full_range - subtract_range)
     return result
 
-def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval, exp_dir):
+    exp_dir = f'{exp_dir}/workload'
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     readRatio = readRatio / 100
     locality = locality / 100
@@ -139,7 +138,7 @@ def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numI
         print(f'Generated file: {file_path}')
 
 
-def combine_csv_randomly():
+def combine_csv_randomly(combinedWorkloadPath, Group1_workloadFilePath, Group2_workloadFilePath):
     os.makedirs(combinedWorkloadPath, exist_ok=True)
     for instanceID in range(numInstances):
         file1 = f'{Group1_workloadFilePath}/instance_{instanceID}.csv'
@@ -160,14 +159,12 @@ def combine_csv_randomly():
 
 
 # Common Parameters
-puncInterval = 1000 # Used to normalize workload distribution among instances 
+puncInterval = 1000 # Used to normalize workload distribution among instances
 vnfID = 11
 numPackets = 400000
 numInstances = 4
 numItems = 10000
 expID = '5.2.3'
-rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
-combinedWorkloadPath = f'{rootDir}/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={0}/workloadSkew={0}/readRatio={0}/locality={0}/scopeRatio={0}'
 
 # Group 1 workload
 Group1_expID = "5.2.3_Group1"
@@ -179,7 +176,6 @@ Group1_workloadSkew = 0
 Group1_readRatio = 0
 Group1_locality = 100
 Group1_scopeRatio = 0
-Group1_workloadFilePath = f'{rootDir}/{Group1_expID}/vnfID={vnfID}/numPackets={Group1_numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={Group1_keySkew}/workloadSkew={Group1_workloadSkew}/readRatio={Group1_readRatio}/locality={Group1_locality}/scopeRatio={Group1_scopeRatio}'
 
 # Group 2 workload
 Group2_expID = "5.2.3_Group2"
@@ -191,8 +187,35 @@ Group2_workloadSkew = 0
 Group2_readRatio = 0
 Group2_locality = 0
 Group2_scopeRatio = 0
-Group2_workloadFilePath = f'{rootDir}/{Group2_expID}/vnfID={vnfID}/numPackets={Group2_numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={Group2_keySkew}/workloadSkew={Group2_workloadSkew}/readRatio={Group2_readRatio}/locality={Group2_locality}/scopeRatio={Group2_scopeRatio}'
 
-generate_workload_with_locality(Group1_expID, vnfID, Group1_numPackets, numInstances, numItems, Group1_keySkew, Group1_workloadSkew, Group1_readRatio, Group1_locality, Group1_scopeRatio, puncInterval)
-generate_workload_with_keySkew(Group2_expID, vnfID, Group2_numPackets, numInstances, numItems, Group2_keySkew, Group2_workloadSkew, Group2_readRatio, Group2_locality, Group2_scopeRatio, puncInterval)
-combine_csv_randomly()
+
+
+def generate(exp_dir):
+
+    combinedWorkloadPath = f'{exp_dir}/workload/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={0}/workloadSkew={0}/readRatio={0}/locality={0}/scopeRatio={0}'
+    Group1_workloadFilePath = f'{exp_dir}/workload/{Group1_expID}/vnfID={vnfID}/numPackets={Group1_numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={Group1_keySkew}/workloadSkew={Group1_workloadSkew}/readRatio={Group1_readRatio}/locality={Group1_locality}/scopeRatio={Group1_scopeRatio}'
+    Group2_workloadFilePath = f'{exp_dir}/workload/{Group2_expID}/vnfID={vnfID}/numPackets={Group2_numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={Group2_keySkew}/workloadSkew={Group2_workloadSkew}/readRatio={Group2_readRatio}/locality={Group2_locality}/scopeRatio={Group2_scopeRatio}'
+
+    generate_workload_with_locality(Group1_expID, vnfID, Group1_numPackets, numInstances, numItems, Group1_keySkew,
+                                    Group1_workloadSkew, Group1_readRatio, Group1_locality, Group1_scopeRatio,
+                                    puncInterval, exp_dir)
+    generate_workload_with_keySkew(Group2_expID, vnfID, Group2_numPackets, numInstances, numItems, Group2_keySkew,
+                                   Group2_workloadSkew, Group2_readRatio, Group2_locality, Group2_scopeRatio,
+                                   puncInterval, exp_dir)
+    combine_csv_randomly(combinedWorkloadPath, Group1_workloadFilePath, Group2_workloadFilePath)
+
+
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    generate(exp_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

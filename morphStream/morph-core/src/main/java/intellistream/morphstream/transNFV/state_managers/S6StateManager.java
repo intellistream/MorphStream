@@ -20,7 +20,9 @@ public class S6StateManager implements Runnable {
     private long processEndTime = -1;
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private long parsingStartTime = 0;
+    private long syncStartTime = 0;
     private long AGG_PARSING_TIME = 0;
+    private long AGG_SYNC_TIME = 0;
 
     public S6StateManager(BlockingQueue<VNFRequest> operationQueue) {
         this.operationQueue = operationQueue;
@@ -53,6 +55,7 @@ public class S6StateManager implements Runnable {
                 break;
             }
 
+//            REC_syncStartTime();
             // Simulating state update synchronization to other instances
             for (Map.Entry<Integer, VNFInstance> entry : VNFManager.getAllInstances().entrySet()) {
                 if (entry.getKey() != request.getInstanceID()) {
@@ -60,14 +63,15 @@ public class S6StateManager implements Runnable {
                     entry.getValue().addStateSync(syncData);
                 }
             }
+//            REC_syncEndTime();
 
-            REC_parsingStartTime();
+//            REC_parsingStartTime();
             try {
                 VNFManager.getInstance(request.getInstanceID()).submitACK(request);
             } catch (NullPointerException e) {
                 throw new RuntimeException(e);
             }
-            REC_parsingEndTime();
+//            REC_parsingEndTime();
         }
     }
 
@@ -75,6 +79,18 @@ public class S6StateManager implements Runnable {
     private void REC_parsingStartTime() {
         if (enableTimeBreakdown) {
             parsingStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_syncStartTime() {
+        if (enableTimeBreakdown) {
+            syncStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_syncEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
         }
     }
 
@@ -86,6 +102,10 @@ public class S6StateManager implements Runnable {
 
     public long getAGG_PARSING_TIME() {
         return AGG_PARSING_TIME;
+    }
+
+    public long getAGG_SYNC_TIME() {
+        return AGG_SYNC_TIME;
     }
 
     private void writeCSVTimestamps() {

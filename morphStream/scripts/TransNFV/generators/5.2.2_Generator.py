@@ -1,3 +1,4 @@
+import argparse
 import csv
 import random
 import os
@@ -87,10 +88,10 @@ def update_workload_file_path(indicator_path, workload_path):
         file.write(workload_path)
 
 
-def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval, exp_dir):
+    exp_dir = f'{exp_dir}/workload'
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
 
@@ -107,10 +108,10 @@ def subtract_ranges(a, b, N):
     result = sorted(full_range - subtract_range)
     return result
 
-def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval, exp_dir):
+    exp_dir = f'{exp_dir}/workload'
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     readRatio = readRatio / 100
     locality = locality / 100
@@ -191,12 +192,29 @@ workloadList = [
     workload13, workload14, workload15, workload16
 ]
 
-for i in range(0,4):
-    workload = workloadList[i]
-    keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
-    generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval)
+def generate(exp_dir):
+    for i in range(0,4):
+        workload = workloadList[i]
+        keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
+        generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval, exp_dir)
 
-for i in range(4, 16):
-    workload = workloadList[i]
-    keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
-    generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval)
+    for i in range(4, 16):
+        workload = workloadList[i]
+        keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
+        generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval, exp_dir)
+
+
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    generate(exp_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

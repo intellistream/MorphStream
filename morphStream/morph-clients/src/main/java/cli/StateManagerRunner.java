@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class StateManagerRunner extends Client {
     private static final Logger log = LoggerFactory.getLogger(StateManagerRunner.class);
     private static ScheduledExecutorService memoryFootprintExecutor = Executors.newScheduledThreadPool(1);
-    private static List<Long> memoryFootprint = new ArrayList<>();
+    private static List<Double> memoryFootprint = new ArrayList<>();
     private static List<Long> gcFootprint = new ArrayList<>();
     private static List<Long> footprintTimestamps = new ArrayList<>();
     private static long managerStartTime = -1;
@@ -74,6 +74,10 @@ public class StateManagerRunner extends Client {
 
         @Override
         public void run() {
+            if (MorphStreamEnv.get().vnfExecutionFinished) {
+                stopMemoryMonitoring();
+                return;
+            }
             // Memory Usage
             MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
             MemoryUsage nonHeapMemoryUsage = memoryMXBean.getNonHeapMemoryUsage();
@@ -81,6 +85,7 @@ public class StateManagerRunner extends Client {
             long heapUsed = heapMemoryUsage.getUsed();
             long nonHeapUsed = nonHeapMemoryUsage.getUsed();
             long totalUsed = heapUsed + nonHeapUsed;
+            double totalUsedGB = totalUsed / 1073741824.0;
 
             // Garbage Collection
             long totalGcCount = 0;
@@ -92,7 +97,7 @@ public class StateManagerRunner extends Client {
             if (memoryFootprint.size() == 0) {
                 managerStartTime = System.nanoTime();
             }
-            memoryFootprint.add(totalUsed);
+            memoryFootprint.add(totalUsedGB);
             gcFootprint.add(totalGcTime);
             footprintTimestamps.add(System.nanoTime());
         }
@@ -120,7 +125,7 @@ public class StateManagerRunner extends Client {
         try (FileWriter fw = new FileWriter(filePath, true);
              PrintWriter pw = new PrintWriter(fw)) {
             for (int i=0; i<memoryFootprint.size(); i++) {
-                pw.println(footprintTimestamps.get(i) + "," + memoryFootprint.get(i) + "," + gcFootprint.get(i));
+                pw.println(footprintTimestamps.get(i) - managerStartTime + "," + memoryFootprint.get(i) + "," + gcFootprint.get(i));
             }
         } catch (IOException e) {
             throw new RuntimeException("An error occurred while writing to the CSV file.", e);

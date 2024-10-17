@@ -21,8 +21,10 @@ public class PartitionStateManager implements Runnable {
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private long usefulStartTime = 0;
     private long parsingStartTime = 0;
+    private long syncStartTime = 0;
     private long AGG_USEFUL_TIME = 0;
     private long AGG_PARSING_TIME = 0;
+    private long AGG_SYNC_TIME = 0;
 
 
     public PartitionStateManager(BlockingQueue<VNFRequest> operationQueue) {
@@ -57,19 +59,17 @@ public class PartitionStateManager implements Runnable {
 
             // Cross-partition transaction execution
             REC_usefulStartTime();
-            int targetInstanceID = getPartitionInstance(request.getTupleID());
-            VNFInstance targetInstance = VNFManager.getInstance(targetInstanceID);
+            VNFInstance targetInstance = VNFManager.getInstance(getPartitionInstance(request.getTupleID()));
             targetInstance.getLocalSVCCStateManager().nonBlockingTxnExecution(request);
             REC_usefulEndTime();
 
-            REC_parsingStartTime();
+//            REC_parsingStartTime();
             try {
                 VNFManager.getInstance(request.getInstanceID()).submitACK(request);
             } catch (NullPointerException e) {
                 throw new RuntimeException(e);
             }
-            REC_parsingEndTime();
-
+//            REC_parsingEndTime();
         }
     }
 
@@ -87,6 +87,22 @@ public class PartitionStateManager implements Runnable {
         if (enableTimeBreakdown) {
             AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
         }
+    }
+
+    private void REC_syncStartTime() {
+        if (enableTimeBreakdown) {
+            syncStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_syncEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
+        }
+    }
+
+    public long getAGG_SYNC_TIME() {
+        return AGG_SYNC_TIME;
     }
 
     private void REC_parsingStartTime() {

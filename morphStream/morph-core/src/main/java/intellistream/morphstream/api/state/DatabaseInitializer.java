@@ -52,7 +52,7 @@ public class DatabaseInitializer {
                 _key = String.valueOf(key);
                 insertRecord(tableName, _key, pid, spinLocks, pid);
             }
-//            LOG.info("Thread " + threadId + " loaded " + (right_bound - left_bound) + " records into table " + tableName);
+            LOG.info("Thread " + threadId + " loaded " + (right_bound - left_bound) + " records into table " + tableName);
         }
     }
     public void loadDB(int threadId, boolean isPartition) {//TODO: loadDB should be called by other CCs as well
@@ -66,8 +66,14 @@ public class DatabaseInitializer {
         tableNames = configuration.getString("tableNames","table1,table2").split(",");
         totalThreads = configuration.getInt("tthread", 4);
         spinlock = new SpinLock[totalThreads];
+
+        int numItems = configuration.getInt("NUM_ITEMS", 1000000);
+        System.out.println("NUM_ITEMS: " + numItems);
+
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
+            System.out.println(tableName + "_num_items: " + numItemMaps.get(tableName));
+
             keyDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_key_data_types","string")));
             valuesDataTypeMap.put(tableName, getDataTypes(configuration.getString(tableName + "_value_data_types","int")));
             fieldNamesMap.put(tableName, configuration.getString(tableName + "_value_names","value").split(","));

@@ -1,21 +1,18 @@
+import argparse
 import subprocess
 import os
-import time
 import threading
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-import csv
-import itertools
 
 
-def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, 
-                         keySkew, workloadSkew, readRatio, locality, scopeRatio, 
+def generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+                         doMVCC, udfComplexity,
+                         keySkew, workloadSkew, readRatio, locality, scopeRatio,
                          monitorWindowSizeList, workloadIntervalList, hardcodeSwitch,
-                         script_path):
+                         script_path, root_dir):
     monitorWindowList_str = " ".join(map(str, monitorWindowSizeList))
     workloadIntervalList_str = " ".join(map(str, workloadIntervalList))
 
@@ -25,7 +22,7 @@ function ResetParameters() {{
   app="{app}"
   expID="{expID}"
   vnfID="{vnfID}"
-  nfvExperimentPath="{rootDir}"
+  nfvExperimentPath="{exp_dir}"
   numPackets={numPackets}
   numItems={numItems}
   numInstances={numInstances}
@@ -46,7 +43,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --expID $expID \\
           --vnfID $vnfID \\
@@ -69,7 +66,7 @@ function runTStream() {{
           --workloadInterval $workloadInterval \\
           --hardcodeSwitch $hardcodeSwitch
           "
-  java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --expID $expID \\
     --vnfID $vnfID \\
@@ -142,13 +139,13 @@ def execute_bash_script(script_path):
 
 
 
-def plot_complex_study():
+def plot_complex_study(exp_dir):
     throughput_data_max_raw = {workloadInterval: 0 for workloadInterval in workloadIntervalList}
     throughput_data_raw = {workloadInterval: {} for workloadInterval in workloadIntervalList}
     throughput_data_delta = np.zeros((len(workloadIntervalList), len(monitorWindowSizeList)))
 
     for workloadInterval in workloadIntervalList:
-        outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+        outputFilePath = f"{exp_dir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
                  f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
@@ -167,7 +164,7 @@ def plot_complex_study():
 
     for workloadInterval in workloadIntervalList:
         for monitorWindowSize in monitorWindowSizeList:
-            outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+            outputFilePath = f"{exp_dir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
                  f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
@@ -201,7 +198,7 @@ def plot_complex_study():
 
     for workloadInterval in workloadIntervalList:
         for monitorWindowSize in monitorWindowSizeList:
-            outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+            outputFilePath = f"{exp_dir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
                  f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
@@ -258,19 +255,10 @@ def plot_complex_study():
     plt.tight_layout()
     plt.subplots_adjust(left=0.15, right=0.98, top=0.85, bottom=0.15)
     
-
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.6.2_windowSizeComplex_range={numItems}_complexity={udfComplexity}.pdf'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name = f'5.5.2_windowSizeComplex.pdf'
+    figure_dir = os.path.join(exp_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))
-
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))
-
-
 
     
 
@@ -292,10 +280,9 @@ puncInterval = 1000
 ccStrategy = "Adaptive"
 doMVCC = 0
 udfComplexity = 10
-rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
 
 # Workload chars
-expID = "5.6.2"
+expID = "5.5.2"
 keySkew = 0 # Default parameters. The actual workload variation are embedded in the shared dynamic workload file
 workloadSkew = 0
 readRatio = 0
@@ -303,29 +290,42 @@ locality = 0
 scopeRatio = 0
 
 
-def runHardcodeSwitch():
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+def runHardcodeSwitch(root_dir, exp_dir):
+    shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+    print(f"Shell script path: {shellScriptPath}")
+    generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
                          keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSizeList, workloadIntervalList, 1,
-                         shellScriptPath)
+                         shellScriptPath, root_dir)
     
     execute_bash_script(shellScriptPath)
 
 
-def runNoHardcodeSwitch():
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+def runNoHardcodeSwitch(root_dir, exp_dir):
+    shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+    print(f"Shell script path: {shellScriptPath}")
+    generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity, 
                          keySkew, workloadSkew, readRatio, locality, scopeRatio, monitorWindowSizeList, workloadIntervalList, 0,
-                         shellScriptPath)
+                         shellScriptPath, root_dir)
     
     execute_bash_script(shellScriptPath)
+
+
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    runHardcodeSwitch(root_dir, exp_dir)
+    runNoHardcodeSwitch(root_dir, exp_dir)
+
+    plot_complex_study(exp_dir)
 
 
 if __name__ == "__main__":
-    # runHardcodeSwitch()
-    # runNoHardcodeSwitch()
-    plot_complex_study()
-    # plot_keyskew_throughput_figure()
-    print("Done")
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

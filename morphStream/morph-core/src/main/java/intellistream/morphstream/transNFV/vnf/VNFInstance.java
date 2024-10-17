@@ -1,14 +1,11 @@
 package intellistream.morphstream.transNFV.vnf;
 
 import intellistream.morphstream.transNFV.adaptation.IterativeWorkloadMonitor;
-import intellistream.morphstream.transNFV.common.Transaction;
 import intellistream.morphstream.transNFV.common.VNFRequest;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.input.ProactiveVNFRequest;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.transNFV.common.SyncData;
-import intellistream.morphstream.transNFV.executors.LocalExecutor;
-import intellistream.morphstream.transNFV.executors.OffloadExecutor;
 import intellistream.morphstream.transNFV.state_managers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
@@ -37,19 +33,17 @@ public class VNFInstance implements Runnable {
     private final S6StateManager s6StateManager = MorphStreamEnv.get().getTransNFVStateManager().getS6StateManager();
 
     private final LocalSVCCStateManager localSVCCStateManager;
-    private final ConcurrentHashMap<Integer, String> tupleCCMap = new ConcurrentHashMap<>();
+
 
     private final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = MorphStreamEnv.get().getTransNFVStateManager().tpgInputQueues;
     private final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadingQueues = MorphStreamEnv.get().getTransNFVStateManager().offloadInputQueues;
 
-    private final BlockingQueue<SyncData> pendingStateSyncs = new LinkedBlockingQueue<>(); //TODO: Pending state updates from other replications
-    private final BlockingQueue<VNFRequest> blockingFinishedReqs = new LinkedBlockingQueue<>(); //TODO: Waiting for manager's ACK for state update broadcast finish
+    private final BlockingQueue<SyncData> pendingStateSyncs = new LinkedBlockingQueue<>(); //Pending state updates from other replications
+    private final BlockingQueue<VNFRequest> blockingFinishedReqs = new LinkedBlockingQueue<>(); //Waiting for manager's ACK for state update broadcast finish
     private final ConcurrentLinkedDeque<VNFRequest> finishedReqStorage = new ConcurrentLinkedDeque<>(); //Permanent storage of finished requests
 
     private final IterativeWorkloadMonitor workloadMonitor = MorphStreamEnv.get().getTransNFVStateManager().getWorkloadMonitor();
-    private final ConcurrentHashMap<Integer, String> tupleUnderCCSwitch = new ConcurrentHashMap<>(); // Tuples under CC switch, buffer its future requests to txn buffer
-    private final ConcurrentHashMap<Integer, ConcurrentLinkedQueue<VNFRequest>> tupleBufferReqMap = new ConcurrentHashMap<>();
-    private final HashMap<Long, Long> requestBufferStartTimeMap = new HashMap<>();
+    private final ConcurrentHashMap<Integer, String> tupleCCMap = new ConcurrentHashMap<>();
 
     private String ccStrategy;
     private int instancePuncID = 1; //Start from 1
@@ -68,15 +62,10 @@ public class VNFInstance implements Runnable {
     private final int perInstanceWorkloadInterval = workloadInterval / MorphStreamEnv.get().configuration().getInt("numInstances");
 
     private long parsingStartTime = 0; // Create txn request
-    private long syncStartTime = 0; // Ordering, conflict resolution, broadcasting sync
-    private long usefulStartTime = 0; // Actual state access and transaction UDF
-    private long metadataStartTime = 0; // Metadata collection for adaptive CC
-
     private long AGG_PARSE_TIME = 0; // ccID -> total parsing time
     private long AGG_SYNC_TIME = 0; // ccID -> total sync time at instance, for CC with local sync
     private long AGG_USEFUL_TIME = 0; // ccID -> total useful time at instance, for CC with local RW
-    private long AGG_METADATA_TIME = 0; // ccID -> total metadata collection time for adaptive CC
-    private long AGG_SWITCH_TIME = 0; // ccID -> total time for CC switch
+
 
 
     public VNFInstance(int instanceID, int statePartitionStart, int statePartitionEnd, int stateRange, String ccStrategy, int numTPGThreads,
@@ -91,18 +80,17 @@ public class VNFInstance implements Runnable {
         this.finishBarrier = finishBarrier;
         this.expectedRequestCount = expectedRequestCount;
         this.localSVCCStateManager = localStateManager;
-        if (Objects.equals(ccStrategy, "Adaptive")) { // Adaptive CC started from default CC strategy - Partitioning
-            if (hardcodeSwitch) {
-                for (int i = 0; i < stateRange/2; i++) {
-                    tupleCCMap.put(i, "Partitioning");
-                }
-                for (int i = stateRange/2; i <= stateRange; i++) {
-                    tupleCCMap.put(i, "Offloading");
-                }
-            } else {
-                for (int i = 0; i <= stateRange; i++) {
-                    tupleCCMap.put(i, "Partitioning");
-                }
+        if (Objects.equals(ccStrategy, "Adaptive")) {
+            for (int i = 0; i <= stateRange; i++) {
+                tupleCCMap.put(i, "Partitioning");
+            }
+
+        } else if (Objects.equals(ccStrategy, "Nested")) { // Exp 5.2.3 fine-grained workload variation
+            for (int i = 0; i < stateRange/2; i++) {
+                tupleCCMap.put(i, "Partitioning");
+            }
+            for (int i = stateRange/2; i <= stateRange; i++) {
+                tupleCCMap.put(i, "Offloading");
             }
 
         } else { // Static CC are fixed throughout the runtime
@@ -123,36 +111,11 @@ public class VNFInstance implements Runnable {
             overallStartTime = System.nanoTime();
             while ((line = reader.readLine()) != null) {
                 inputLineCounter++;
-
-                if (ccStrategy.equals("Adaptive") && (!hardcodeSwitch) && (inputLineCounter % perInstanceWorkloadInterval == 0)) {
-                    for (int i = 0; i <= stateRange; i++) {
-                        if (tupleCCMap.get(i).equals("Partitioning")) {
-                            tupleCCMap.put(i, "Offloading");
-                        } else if (tupleCCMap.get(i).equals("Offloading")) {
-                            tupleCCMap.put(i, "Partitioning");
-                        }
-                    }
-                    if (instanceID == 0) {
-                        LOG.info("Instance 0, current workload interval: " + (inputLineCounter / perInstanceWorkloadInterval) + ", switching to: " + tupleCCMap.get(0) + ", total req processed: " + inputLineCounter);
-                    }
-                }
-
                 REC_parsingStartTime();
                 VNFRequest request = createRequest(line);
                 REC_parsingEndTime();
 
-                if (ccStrategy.equals("Adaptive") && !hardcodeSwitch) {
-                    int tupleID = request.getTupleID();
-                    if (isUnderSwitch(tupleID)) {
-                        bufferRequest(request);
-                    } else {
-                        processBufferedRequests(request.getTupleID());
-                        TXN_PROCESS(request); // Main method for txn processing
-                    }
-
-                } else {
-                    TXN_PROCESS(request); // Main method for txn processing
-                }
+                forwardTxnToExecutors(request);
             }
 
             waitForTxnFinish();
@@ -168,6 +131,51 @@ public class VNFInstance implements Runnable {
             } catch (IOException ex) {
                 System.err.println("Error closing file: " + ex.getMessage());
             }
+        }
+    }
+
+
+
+
+
+    private void forwardTxnToExecutors(VNFRequest request) throws InterruptedException {
+        int tupleID = request.getTupleID();
+        String type = request.getType();
+        String scope = request.getScope();
+        String tupleCC = tupleCCMap.get(tupleID);
+        request.setTupleCC(tupleCC);
+
+        if (Objects.equals(scope, "Per-flow")) {
+            localSVCCStateManager.nonBlockingTxnExecution(request);
+            submitFinishedRequest(request);
+            return;
+        }
+
+        if (Objects.equals(tupleCC, "Partitioning")) {
+            VNFManager.submitLocalExecutorRequest(request);
+
+        } else if (Objects.equals(tupleCC, "Replication")) { // Replication: async read, sync write
+            VNFManager.submitLocalExecutorRequest(request);
+
+        } else if (Objects.equals(tupleCC, "Offloading")) {
+            offloadingQueues.get(offloadRequestCount % numOffloadThreads).offer(request);
+            offloadRequestCount++;
+
+        } else if (Objects.equals(tupleCC, "Proactive")) { // Preemptive
+            tpgInputQueues.get(tpgRequestCount % numTPGThreads).offer(new ProactiveVNFRequest(request));
+            tpgRequestCount++;
+
+        } else if (Objects.equals(tupleCC, "OpenNF")) { // OpenNF
+            VNFManager.submitLocalExecutorRequest(request);
+
+        } else if (Objects.equals(tupleCC, "CHC")) { // CHC
+            VNFManager.submitLocalExecutorRequest(request);
+
+        } else if (Objects.equals(tupleCC, "S6")) { // S6
+            VNFManager.submitLocalExecutorRequest(request);
+
+        } else {
+            throw new UnsupportedOperationException("Unsupported CC strategy: " + tupleCC);
         }
     }
 
@@ -207,102 +215,7 @@ public class VNFInstance implements Runnable {
     }
 
 
-    public void startTupleCCSwitch(int tupleID, String newCC) {
-        tupleUnderCCSwitch.put(tupleID, newCC);
-    }
 
-    public void endTupleCCSwitch(int tupleID, String newCC) {
-        tupleCCMap.put(tupleID, newCC);
-        tupleUnderCCSwitch.remove(tupleID);
-    }
-
-
-    private boolean isUnderSwitch(int tupleID) {
-        return tupleUnderCCSwitch.containsKey(tupleID);
-    }
-
-    private void bufferRequest(VNFRequest request) {
-        tupleBufferReqMap.computeIfAbsent(request.getTupleID(), k -> new ConcurrentLinkedQueue<>()).add(request);
-        requestBufferStartTimeMap.put(request.getCreateTime(), System.nanoTime());
-    }
-
-    private void processBufferedRequests(int tupleID) {
-        ConcurrentLinkedQueue<VNFRequest> bufferQueue = tupleBufferReqMap.get(tupleID);
-        if (bufferQueue != null) {
-            while (!bufferQueue.isEmpty()) {
-                VNFRequest bufferedRequest = bufferQueue.poll();
-                try {
-                    AGG_SWITCH_TIME += System.nanoTime() - requestBufferStartTimeMap.get(bufferedRequest.getCreateTime());
-                    TXN_PROCESS(bufferedRequest);
-
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-
-    private void TXN_PROCESS(VNFRequest request) throws InterruptedException {
-        int reqID = request.getReqID();
-        int tupleID = request.getTupleID();
-        String type = request.getType();
-        String scope = request.getScope();
-        String tupleCC = tupleCCMap.get(tupleID);
-        request.setTupleCC(tupleCC);
-        boolean involveWrite = Objects.equals(type, "Write") || Objects.equals(type, "Read-Write");
-
-        if (ccStrategy.equals("Adaptive") && (!hardcodeSwitch)) {
-            REC_metadataStartTime();
-            workloadMonitor.submitMetadata(tupleID, instanceID, type, scope);
-            REC_metadataEndTime();
-        }
-
-        if (Objects.equals(scope, "Per-flow")) { // Per-flow operations, no need to acquire lock. CANNOT be executed together with cross-flow operations
-            REC_usefulStartTime();
-            localSVCCStateManager.nonBlockingTxnExecution(request);
-            REC_usefulEndTime();
-
-            REC_parsingStartTime();
-            submitFinishedRequest(request);
-            REC_parsingEndTime();
-            return;
-        }
-
-        if (Objects.equals(tupleCC, "Partitioning")) {
-            REC_syncStartTime();
-            VNFManager.submitLocalExecutorRequest(request);
-            REC_syncEndTime();
-
-        } else if (Objects.equals(tupleCC, "Replication")) { // Replication: async read, sync write
-            REC_syncStartTime();
-            VNFManager.submitLocalExecutorRequest(request);
-            REC_syncEndTime();
-        } else if (Objects.equals(tupleCC, "Offloading")) {
-            REC_syncStartTime();
-            offloadingQueues.get(offloadRequestCount % numOffloadThreads).offer(request);
-            offloadRequestCount++;
-            REC_syncEndTime();
-
-        } else if (Objects.equals(tupleCC, "Proactive")) { // Preemptive
-            REC_syncStartTime();
-            tpgInputQueues.get(tpgRequestCount % numTPGThreads).offer(new ProactiveVNFRequest(request));
-            tpgRequestCount++;
-            REC_syncEndTime();
-
-        } else if (Objects.equals(tupleCC, "OpenNF")) { // OpenNF
-            VNFManager.submitLocalExecutorRequest(request);
-
-        } else if (Objects.equals(tupleCC, "CHC")) { // CHC
-            VNFManager.submitLocalExecutorRequest(request);
-
-        } else if (Objects.equals(tupleCC, "S6")) { // S6
-            VNFManager.submitLocalExecutorRequest(request);
-
-        } else {
-            throw new UnsupportedOperationException("Unsupported CC strategy: " + tupleCC);
-        }
-    }
 
     public void applyStateSync() throws InterruptedException {
         while (!pendingStateSyncs.isEmpty()) {
@@ -321,24 +234,7 @@ public class VNFInstance implements Runnable {
         }
     }
 
-    private static Transaction constructTransaction(VNFRequest request, String type, int tupleID, long timestamp) {
-        Transaction transaction = new Transaction(request.getCreateTime());
-        if (Objects.equals(type, "Read")) {
-            transaction.addOperation(tupleID, -1, timestamp,false);
-        } else if (Objects.equals(type, "Write")) {
-            transaction.addOperation(tupleID, -1, timestamp, true);
-        } else if (Objects.equals(type, "Read-Write")) {
-            transaction.addOperation(tupleID, -1, timestamp, false);
-            transaction.addOperation(tupleID, -1, timestamp, true);
-        } else {
-            throw new UnsupportedOperationException("Unsupported operation type: " + type);
-        }
-        return transaction;
-    }
-
-
     /** For performance measurements */
-
 
     private void REC_parsingStartTime() {
         if (enableTimeBreakdown) {
@@ -349,42 +245,6 @@ public class VNFInstance implements Runnable {
     private void REC_parsingEndTime() {
         if (enableTimeBreakdown) {
             AGG_PARSE_TIME += System.nanoTime() - parsingStartTime;
-        }
-    }
-
-    private void REC_usefulStartTime() {
-        if (enableTimeBreakdown) {
-            usefulStartTime = System.nanoTime();
-        }
-    }
-
-    private void REC_usefulEndTime() {
-        if (enableTimeBreakdown) {
-            AGG_USEFUL_TIME += System.nanoTime() - usefulStartTime;
-        }
-    }
-
-    private void REC_syncStartTime() {
-        if (enableTimeBreakdown) {
-            syncStartTime = System.nanoTime();
-        }
-    }
-
-    private void REC_syncEndTime() {
-        if (enableTimeBreakdown) {
-            AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
-        }
-    }
-
-    private void REC_metadataStartTime() {
-        if (enableTimeBreakdown) {
-            metadataStartTime = System.nanoTime();
-        }
-    }
-
-    private void REC_metadataEndTime() {
-        if (enableTimeBreakdown) {
-            AGG_METADATA_TIME += System.nanoTime() - metadataStartTime;
         }
     }
 
@@ -428,22 +288,9 @@ public class VNFInstance implements Runnable {
     public Long getAGG_USEFUL_TIME() {
         return AGG_USEFUL_TIME;
     }
-    public long getAGG_CC_SWITCH_TIME() {
-        return AGG_SWITCH_TIME;
-    }
-    public long getAGG_METADATA_TIME() {
-        return AGG_METADATA_TIME;
-    }
 
     public LocalSVCCStateManager getLocalSVCCStateManager() {
         return localSVCCStateManager;
-    }
-    private static void timeout(int microseconds) {
-        long startTime = System.nanoTime();
-        long waitTime = microseconds * 1000L; // Convert microseconds to nanoseconds
-        while (System.nanoTime() - startTime < waitTime) {
-            // Busy-wait loop
-        }
     }
 
     private void waitForTxnFinish() throws BrokenBarrierException, InterruptedException {
@@ -451,23 +298,6 @@ public class VNFInstance implements Runnable {
         assert inputLineCounter == expectedRequestCount;
         while (finishedReqStorage.size() < expectedRequestCount) {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000));  // Sleep for 1 second
-//            if (instanceID == 0) {
-//                int offloadReqCount = 0;
-//                for (OffloadExecutor offloadExecutor : MorphStreamEnv.get().getTransNFVStateManager().getOffloadExecutors().values()) {
-//                    offloadReqCount += offloadExecutor.getOffloadFinishedRequests();
-//                }
-//                int localReqCount = 0;
-//                for (LocalExecutor localExecutor : VNFManager.getLocalExecutorMap().values()) {
-//                    localReqCount += localExecutor.getFinishedReqCount();
-//                }
-//                int totalFinishedReqCount = 0;
-//                for (VNFInstance instance : VNFManager.getAllInstances().values()) {
-//                    totalFinishedReqCount += instance.getFinishedRequestCount();
-//                }
-//                System.out.println("Total finished requests: " + totalFinishedReqCount);
-//                System.out.println("OFF: " + offloadReqCount + ", LOCAL: " + localReqCount);
-//
-//            }
         }
 
         // Compute instance local performance
@@ -484,6 +314,8 @@ public class VNFInstance implements Runnable {
     }
 
     private void sendStopSignals() {
+        MorphStreamEnv.get().vnfExecutionFinished = true;
+
         VNFRequest stopSignal = new VNFRequest(-1, -1, -1, -1, "-1", "-1", -1, -1, -1, -1);
 
         if (Objects.equals(ccStrategy, "Partitioning")) {
@@ -498,26 +330,43 @@ public class VNFInstance implements Runnable {
             for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
                 offloadingQueues.get(offloadQueueIndex).offer(stopSignal);
             }
+
         } else if (Objects.equals(ccStrategy, "Proactive")) {
             for (int tpgQueueIndex = 0; tpgQueueIndex < tpgInputQueues.size(); tpgQueueIndex++) {
                 tpgInputQueues.get(tpgQueueIndex).offer(new ProactiveVNFRequest(stopSignal));
             }
+
         } else if (Objects.equals(ccStrategy, "OpenNF")) {
             VNFManager.stopLocalExecutors();
             openNFStateManager.submitOpenNFReq(stopSignal);
+
         } else if (Objects.equals(ccStrategy, "CHC")) {
             VNFManager.stopLocalExecutors();
             chcStateManager.submitCHCReq(stopSignal);
+
         } else if (Objects.equals(ccStrategy, "S6")) {
             VNFManager.stopLocalExecutors();
             s6StateManager.submitS6Request(stopSignal);
+
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
+            VNFManager.stopLocalExecutors();
+            partitionStateManager.submitPartitioningRequest(stopSignal);
+            replicationStateManager.submitReplicationRequest(stopSignal);
+            for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
+                offloadingQueues.get(offloadQueueIndex).offer(stopSignal);
+            }
+            for (int tpgQueueIndex = 0; tpgQueueIndex < tpgInputQueues.size(); tpgQueueIndex++) {
+                tpgInputQueues.get(tpgQueueIndex).offer(new ProactiveVNFRequest(stopSignal));
+            }
+
+            workloadMonitor.submitMetadata(-1, -1, "-1", "-1");
+
+        } else if (Objects.equals(ccStrategy, "Nested")) {
             VNFManager.stopLocalExecutors();
             partitionStateManager.submitPartitioningRequest(stopSignal);
             for (int offloadQueueIndex = 0; offloadQueueIndex < offloadingQueues.size(); offloadQueueIndex++) {
                 offloadingQueues.get(offloadQueueIndex).offer(stopSignal);
             }
-            workloadMonitor.submitMetadata(-1, -1, "-1", "-1");
 
         } else {
             throw new UnsupportedOperationException("Unsupported CC strategy: " + ccStrategy);

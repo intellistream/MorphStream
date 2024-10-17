@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import os
 import time
@@ -9,16 +10,16 @@ from matplotlib.patches import Patch
 import csv
 
 
-def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path):
+def generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path, root_dir):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
   app="{app}"
   expID="{expID}"
   vnfID="{vnfID}"
-  nfvExperimentPath="{rootDir}"
+  nfvExperimentPath="{exp_dir}"
   numPackets={numPackets}
   numItems={numItems}
   numInstances={numInstances}
@@ -36,7 +37,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --expID $expID \\
           --vnfID $vnfID \\
@@ -56,7 +57,7 @@ function runTStream() {{
           --locality $locality \\
           --scopeRatio $scopeRatio
           "
-  java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --expID $expID \\
     --vnfID $vnfID \\
@@ -94,8 +95,6 @@ ResetParameters
 
     with open(script_path, "w") as file:
         file.write(script_content)
-
-    # Make the script executable
     os.chmod(script_path, 0o755)
 
 def stream_reader(pipe, pipe_name):
@@ -105,17 +104,13 @@ def stream_reader(pipe, pipe_name):
 
 def execute_bash_script(script_path):
     print(f"Executing bash script: {script_path}")
-
-    # Execute the bash script
     process = subprocess.Popen(["bash", script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    # Start threads to read stdout and stderr
     stdout_thread = threading.Thread(target=stream_reader, args=(process.stdout, "STDOUT"))
     stderr_thread = threading.Thread(target=stream_reader, args=(process.stderr, "STDERR"))
     stdout_thread.start()
     stderr_thread.start()
 
-    # Wait for the process to complete
     process.wait()
     stdout_thread.join()
     stderr_thread.join()
@@ -135,11 +130,8 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     colors = ['white', 'white']
     hatches = ['\\\\\\', '////']
     hatch_colors = ['#0060bf', '#8c0b0b']
-
-    # Prepare the structure to hold data
     data = {keySkew: {} for keySkew in keySkewList}
 
-    # Iterate over the patterns and ccStrategies
     for keySkew in keySkewList:
         for ccStrategy in ccStrategyList:
             outputFilePath = f"{nfvExperimentPath}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
@@ -147,8 +139,6 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                  f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategy}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
                  "throughput.csv"
-
-            # Read the CSV file
             try:
                 df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
                 data[keySkew][ccStrategy] = df['Throughput'].iloc[0]
@@ -156,15 +146,11 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
                 print(f"Failed to read {outputFilePath}: {e}")
                 data[keySkew][ccStrategy] = None
 
-    # Convert the data into a NumPy array and normalize by 10^6
     throughput_data = np.array([[data[keySkew][ccStrategy] if data[keySkew][ccStrategy] is not None else 0
                                  for ccStrategy in ccStrategyList] for keySkew in keySkewList]) / 1e6
 
-    # Plotting parameters
     bar_width = 0.2
     index = np.arange(len(keySkewList))
-
-    # Plot the data
     fig, ax = plt.subplots(figsize=(7, 4))
 
     displayedStrategyList = ["Immediate Resolution", "Batch Resolution"]
@@ -172,16 +158,13 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
         ax.bar(index + i * bar_width, throughput_data[:, i], color=colors[i], hatch=hatches[i],
                edgecolor=hatch_colors[i], width=bar_width, label=displayedStrategyList[i])
 
-    # Set x-axis labels and positions
     ax.set_xticks([r + bar_width for r in range(len(keySkewList))])
     ax.set_xticklabels(keySkewList, fontsize=16)
     ax.tick_params(axis='y', labelsize=14)
 
-    # Set labels and title
     ax.set_xlabel('Key Skewness', fontsize=18)
     ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
 
-    # Create custom legend with hatches
     handles = [Patch(facecolor=color, edgecolor=hatchcolor, hatch=hatch, label=label)
                for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, displayedStrategyList)]
     ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=2, fontsize=16)
@@ -189,17 +172,10 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    # Save the figure in the same directory as the script
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.1_keySkew_range={numItems}_complexity={udfComplexity}.pdf'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name = f'5.4.1_keySkew.pdf'
+    figure_dir = os.path.join(nfvExperimentPath, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
-
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))  # Save the figure
 
 
 def plot_keyskew_latency_boxplot(nfvExperimentPath,
@@ -229,8 +205,8 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     fig, ax = plt.subplots(figsize=(7, 4))
     
     boxplot_data = []
-    boxplot_labels = []  # This will hold unique keySkew values
-    colors = ['#0060bf', '#8c0b0b']  # Different colors for different ccStrategies
+    boxplot_labels = []
+    colors = ['#0060bf', '#8c0b0b']
     displayedStrategyList = ["Immediate Resolution", "Batch Resolution"]
     
     positions = []  # Will store x-axis positions for the box plots
@@ -265,63 +241,70 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.1_keySkew_range{numItems}_complexity{udfComplexity}_lat.png'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name = f'5.4.1_keySkew_lat.png'
+    figure_dir = os.path.join(nfvExperimentPath, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
 
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))  # Save the figure
-
     
+app = "nfv_test"
+expID = "5.4.1"
+vnfID = 11
+numItems = 10000
+numPackets = 400000
+numInstances = 4
 
+# Workload chars
+keySkew = 0
+workloadSkew = 0
+readRatio = 50
+locality = 0
+scopeRatio = 0
+
+# System params
+numTPGThreads = 4
+numOffloadThreads = 4
+puncInterval = 1000
+ccStrategy = "Partitioning"
+doMVCC = 0
+udfComplexity = 10
+keySkewList = [0, 50, 100, 150, 200, 250]
+ccStrategyList = ["Offloading", "Proactive"]
+
+
+def run_DR_keySkew_tradeoff(root_dir, exp_dir):
+    shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+    print(f"Shell script path: {shellScriptPath}")
+    generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath, root_dir)
+
+    execute_bash_script(shellScriptPath)
+
+def plot_keySkew_throughput(exp_dir):
+    plot_keyskew_throughput_figure(exp_dir, expID, vnfID, numPackets, numItems, numInstances,
+                                   numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
+                                   workloadSkew, readRatio, locality, scopeRatio, keySkewList, ccStrategyList)
+
+def plot_keySkew_latency(exp_dir):
+    plot_keyskew_latency_boxplot(exp_dir, expID, vnfID, numPackets, numItems, numInstances,
+                                   numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
+                                   workloadSkew, readRatio, locality, scopeRatio, keySkewList, ccStrategyList)
+
+
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    run_DR_keySkew_tradeoff(root_dir, exp_dir)
+    plot_keySkew_throughput(exp_dir)
+    plot_keySkew_latency(exp_dir)
 
 
 if __name__ == "__main__":
-    # Basic params
-    app = "nfv_test"
-    expID = "5.4.1"
-    vnfID = 11
-    numItems = 10000
-    numPackets = 400000
-    numInstances = 4
-
-    # Workload chars
-    keySkew = 0
-    workloadSkew = 0
-    readRatio = 50
-    locality = 0
-    scopeRatio = 0
-
-    # System params
-    numTPGThreads = 4
-    numOffloadThreads = 4
-    puncInterval = 1000
-    ccStrategy = "Partitioning"
-    doMVCC = 0
-    udfComplexity = 10
-    keySkewList = [0, 50, 100, 150, 200, 250]
-    ccStrategyList = ["Offloading", "Proactive"]
-
-    rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    indicatorPath = f"{rootDir}/indicators/{expID}.txt"
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
-
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
-    #
-    # execute_bash_script(shellScriptPath)
-
-    plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
-                                   numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
-                                   workloadSkew, readRatio, locality, scopeRatio, keySkewList, ccStrategyList)
-    
-    plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, numInstances,
-                                   numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
-                                   workloadSkew, readRatio, locality, scopeRatio, keySkewList, ccStrategyList)
-    print("Done")
-
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

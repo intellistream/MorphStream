@@ -1,3 +1,4 @@
+import argparse
 import csv
 import random
 import os
@@ -83,10 +84,10 @@ def update_workload_file_path(indicator_path, workload_path):
     with open(indicator_path, 'w') as file:
         file.write(workload_path)
 
-def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload(exp_dir, expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval):
+    exp_dir = f'{exp_dir}/workload'
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
 
@@ -109,7 +110,24 @@ readRatioList = [0, 25, 50, 75, 100]
 scopeRatio = 0
 locality = 0
 
-for keySkew in keySkewList:
-    for readRatio in readRatioList:
-        generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval)
-        print(f'Generated {expID} workload for keySkew={keySkew}, readRatio={readRatio}')
+def generate(exp_dir):
+    for keySkew in keySkewList:
+        for readRatio in readRatioList:
+            generate_workload(exp_dir, expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval)
+            print(f'Generated {expID} workload for keySkew={keySkew}, readRatio={readRatio}')
+
+
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    generate(exp_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

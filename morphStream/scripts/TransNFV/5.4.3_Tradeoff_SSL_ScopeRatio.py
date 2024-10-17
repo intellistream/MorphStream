@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import os
 import time
@@ -9,9 +10,9 @@ from matplotlib.patches import Patch
 import csv
 
 
-def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategyList, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path):
+def generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategyList,
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path, root_dir):
     ccStrategyList_str = " ".join(map(str, ccStrategyList))
     script_content = f"""#!/bin/bash
 
@@ -19,7 +20,7 @@ function ResetParameters() {{
   app="{app}"
   expID="{expID}"
   vnfID="{vnfID}"
-  nfvExperimentPath="{rootDir}"
+  nfvExperimentPath="{exp_dir}"
   numPackets={numPackets}
   numItems={numItems}
   numInstances={numInstances}
@@ -37,7 +38,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --expID $expID \\
           --vnfID $vnfID \\
@@ -57,7 +58,7 @@ function runTStream() {{
           --locality $locality \\
           --scopeRatio $scopeRatio
           "
-  java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --expID $expID \\
     --vnfID $vnfID \\
@@ -123,9 +124,9 @@ def execute_bash_script(script_path):
         print(f"Bash script completed successfully.")
 
 
-def plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
+def plot_keyskew_throughput_figure(exp_dir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
-                                   keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategyListFull, 
+                                   keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategyListFull,
                                    scopeRatioList, strategyInstanceMap, strategyOffloadExecutorMap):
     
     colors = ['white', 'white', 'white']
@@ -139,7 +140,7 @@ def plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, 
             numInstances = strategyInstanceMap.get(ccStrategyIndex, -1)
             numOffloadThreads = strategyOffloadExecutorMap.get(ccStrategyIndex, -1)
 
-            outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+            outputFilePath = f"{exp_dir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
                  f"scopeRatio={scopeRatioIndex}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
@@ -175,21 +176,15 @@ def plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, 
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_scopeRatio_range={numItems}_complexity={udfComplexity}.pdf'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name = f'{expID}_scopeRatio.pdf'
+    figure_dir = os.path.join(exp_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))
     plt.savefig(os.path.join(figure_dir, figure_name))
 
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))
 
-
-def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, numInstances, 
-                                 numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity, 
+def plot_keyskew_latency_boxplot(exp_dir, expID, vnfID, numPackets, numItems, numInstances,
+                                 numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
                                  keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategyListFull,
                                  scopeRatioList, strategyInstanceMap, strategyOffloadExecutorMap):
     
@@ -200,7 +195,7 @@ def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, nu
             numInstances = strategyInstanceMap.get(ccStrategyIndex, -1)
             numOffloadThreads = strategyOffloadExecutorMap.get(ccStrategyIndex, -1)
 
-            outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+            outputFilePath = f"{exp_dir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                  f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
                  f"scopeRatio={scopeRatioIndex}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
                  f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
@@ -252,38 +247,36 @@ def plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, nu
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.3_scopeRatio_range{numItems}_complexity{udfComplexity}_lat.pdf'
-    figure_name_png = f'5.4.3_scopeRatio_range{numItems}_complexity{udfComplexity}_lat.png'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name_png = f'5.4.3_scopeRatio_lat.png'
+    figure_dir = os.path.join(exp_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name_png))
 
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name_png))
 
 
 
-def runOffloading():
+def runOffloading(root_dir, exp_dir):
+    shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+    print(f"Shell script path: {shellScriptPath}")
     numInstances = strategyInstanceMap.get("Offloading", -1)
     numOffloadThreads = strategyOffloadExecutorMap.get("Offloading", -1)
     ccStrategyList = ["Offloading"]
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+    generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategyList, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath, root_dir)
     
     execute_bash_script(shellScriptPath)
 
 
-def runPATandREP():
+def runPATandREP(root_dir, exp_dir):
+    shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+    print(f"Shell script path: {shellScriptPath}")
     numInstances = strategyInstanceMap.get("Partitioning", -1)
     numOffloadThreads = strategyOffloadExecutorMap.get("Partitioning", -1)
     ccStrategyList = ["Partitioning", "Replication"]
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
+    generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategyList, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath, root_dir)
     
     execute_bash_script(shellScriptPath)
 
@@ -311,21 +304,7 @@ ccStrategy = "Offloading"
 doMVCC = 0
 udfComplexity = 10
 scopeRatioList = [0, 25, 50, 75, 100]
-
-rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
-
 ccStrategyListFull = ["Partitioning", "Replication", "Offloading"]
-# strategyInstanceMap = {
-#     "Offloading": 2,
-#     "Partitioning": 4,
-#     "Replication": 4,
-# }
-# strategyOffloadExecutorMap = {
-#     "Offloading": 2,
-#     "Partitioning": 0,
-#     "Replication": 0,
-# }
 
 strategyInstanceMap = {
     "Offloading": 4,
@@ -338,19 +317,37 @@ strategyOffloadExecutorMap = {
     "Replication": 0,
 }
 
-if __name__ == "__main__":
-    runOffloading()
-    runPATandREP()
+def run_tradeoff(root_dir, exp_dir):
+    runOffloading(root_dir, exp_dir)
+    runPATandREP(root_dir, exp_dir)
 
-    plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
+def plot_throughput(exp_dir):
+    plot_keyskew_throughput_figure(exp_dir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
                                    keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategyListFull, 
                                    scopeRatioList, strategyInstanceMap, strategyOffloadExecutorMap)
-    
-    plot_keyskew_latency_boxplot(rootDir, expID, vnfID, numPackets, numItems, numInstances, 
+
+def plot_latency(exp_dir):
+    plot_keyskew_latency_boxplot(exp_dir, expID, vnfID, numPackets, numItems, numInstances,
                                 numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity, 
                                 keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategyListFull,
                                 scopeRatioList, strategyInstanceMap, strategyOffloadExecutorMap)
 
     print("Done")
 
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    run_tradeoff(root_dir, exp_dir)
+    plot_throughput(exp_dir)
+    plot_latency(exp_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

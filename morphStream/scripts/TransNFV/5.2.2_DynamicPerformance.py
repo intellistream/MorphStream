@@ -1,25 +1,24 @@
+import argparse
 import subprocess
 import os
-import time
 import threading
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import csv
-import itertools
 
 
-def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, 
+def generate_bash_script(app, exp_dir, vnfID, rootDir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+                         doMVCC, udfComplexity,
                          keySkew, workloadSkew, readRatio, locality, scopeRatio,
-                         script_path):
+                         shell_script_path, root_dir):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
   app="{app}"
-  expID="{expID}"
+  expID="{exp_dir}"
   vnfID="{vnfID}"
   nfvExperimentPath="{rootDir}"
   numPackets={numPackets}
@@ -39,7 +38,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --expID $expID \\
           --vnfID $vnfID \\
@@ -59,7 +58,7 @@ function runTStream() {{
           --locality $locality \\
           --scopeRatio $scopeRatio
           "
-  java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --expID $expID \\
     --vnfID $vnfID \\
@@ -92,9 +91,9 @@ Per_Phase_Experiment
 
 """
 
-    with open(script_path, "w") as file:
+    with open(shell_script_path, "w") as file:
         file.write(script_content)
-    os.chmod(script_path, 0o755)
+    os.chmod(shell_script_path, 0o755)
 
 def stream_reader(pipe, pipe_name):
     with pipe:
@@ -119,127 +118,16 @@ def execute_bash_script(script_path):
     else:
         print(f"Bash script completed successfully.")
 
-def draw_throughput_plot_phase_1(expID, keySkew, workloadSkew, readRatio, localityRatioList, scopeRatio):
-    colors = ['white', 'white', 'white', 'white', 'white', 'white', 'white']
-    hatches = ['\\\\\\', '////', '--', '////', '--', '////', '--']
-    hatch_colors = ['#8c0b0b', '#0060bf', '#d97400', '#D1D93B', '#D93BC0', '#43BF45', '#A243BF']
 
-    data = {localityIndex: {} for localityIndex in localityRatioList}
-
-    for localityIndex in localityRatioList:
-        for ccStrategyIndex in ccStrategyList:
-            outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
-                 f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={localityIndex}/" \
-                 f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
-                 f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
-                 "throughput.csv"
-            try:
-                df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
-                data[localityIndex][ccStrategyIndex] = df['Throughput'].iloc[0]
-            except Exception as e:
-                print(f"Failed to read {outputFilePath}: {e}")
-                data[localityIndex][ccStrategyIndex] = None
-
-    throughput_data = np.array([[data[localityIndex][ccStrategyIndex] if data[localityIndex][ccStrategyIndex] is not None else 0
-                                 for ccStrategyIndex in ccStrategyList] for localityIndex in localityRatioList]) / 1e6
-
-    bar_width = 0.05
-    index = np.arange(len(localityRatioList))
-    fig, ax = plt.subplots(figsize=(15, 5))
-
-    for i, strategy in enumerate(ccStrategyList):
-        ax.bar(index + i * bar_width, throughput_data[:, i], color=colors[i], hatch=hatches[i],
-               edgecolor=hatch_colors[i], width=bar_width, label=ccStrategyList[i])
-
-    ax.set_xticks([r + bar_width for r in range(len(localityRatioList))])
-    ax.set_xticklabels(localityRatioList, fontsize=16)
-    ax.tick_params(axis='y', labelsize=14)
-    ax.set_xlabel('Locality Ratio', fontsize=18)
-    ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
-    handles = [Patch(facecolor=color, edgecolor=hatchcolor, hatch=hatch, label=label)
-               for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, ccStrategyList)]
-    ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=7, fontsize=16)
-    # plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_localityRatio_range={numItems}_complexity={udfComplexity}.pdf'
-    figure_dir = os.path.join(script_dir, 'figures')
-    os.makedirs(figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(figure_dir, figure_name))
-    plt.savefig(os.path.join(figure_dir, figure_name))
-
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))
-
-
-
-
-def draw_throughput_plot_phase_234(expID, keySkewList, workloadSkew, readRatioList, locality, scopeRatio):
-    colors = ['white', 'white', 'white', 'white', 'white', 'white', 'white']
-    hatches = ['\\\\\\', '////', '--', '////', '--', '////', '--']
-    hatch_colors = ['#8c0b0b', '#0060bf', '#d97400', '#D1D93B', '#D93BC0', '#43BF45', '#A243BF']
-
-    data = {(keySkew, readRatio): {} for keySkew in keySkewList for readRatio in readRatioList}
-
-    for keySkew in keySkewList:
-        for readRatio in readRatioList:
-            for ccStrategyIndex in ccStrategyList:
-                outputFilePath = f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
-                     f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/" \
-                     f"scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/numOffloadThreads={numOffloadThreads}/" \
-                     f"puncInterval={puncInterval}/ccStrategy={ccStrategyIndex}/doMVCC={doMVCC}/udfComplexity={udfComplexity}/" \
-                     "throughput.csv"
-                try:
-                    df = pd.read_csv(outputFilePath, header=None, names=['Pattern', 'CCStrategy', 'Throughput'])
-                    data[(keySkew, readRatio)][ccStrategyIndex] = df['Throughput'].iloc[0]
-                except Exception as e:
-                    print(f"Failed to read {outputFilePath}: {e}")
-                    data[(keySkew, readRatio)][ccStrategyIndex] = None
-
-    throughput_data = np.array([[data[(keySkew, readRatio)][ccStrategyIndex] if data[(keySkew, readRatio)][ccStrategyIndex] is not None else 0
-                                 for ccStrategyIndex in ccStrategyList] for keySkew in keySkewList for readRatio in readRatioList]) / 1e6
-
-    bar_width = 0.05
-    index = np.arange(len(keySkewList) * len(readRatioList))
-    fig, ax = plt.subplots(figsize=(15, 5))
-
-    for i, strategy in enumerate(ccStrategyList):
-        ax.bar(index + i * bar_width, throughput_data[:, i], color=colors[i], hatch=hatches[i],
-               edgecolor=hatch_colors[i], width=bar_width, label=ccStrategyList[i])
-
-    ax.set_xticks([r + bar_width for r in range(len(keySkewList) * len(readRatioList))])
-    ax.set_xticklabels([f"key{ks}\nread{rr}" for ks in keySkewList for rr in readRatioList], fontsize=10)
-    ax.tick_params(axis='y', labelsize=14)
-    ax.set_xlabel('Key Skew and Read Ratio', fontsize=18)
-    ax.set_ylabel('Throughput (Million req/sec)', fontsize=18)
-    handles = [Patch(facecolor=color, edgecolor=hatchcolor, hatch=hatch, label=label)
-               for color, hatchcolor, hatch, label in zip(colors, hatch_colors, hatches, ccStrategyList)]
-    ax.legend(handles=handles, bbox_to_anchor=(0.5, 1.2), loc='upper center', ncol=7, fontsize=16)
-
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_keySkew_readRatio_range={numItems}_complexity={udfComplexity}.pdf'
-    figure_dir = os.path.join(script_dir, 'figures')
-    os.makedirs(figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(figure_dir, figure_name))
-    plt.savefig(os.path.join(figure_dir, figure_name))
-
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))
-
-
-def get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy):
-    return f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+def get_throughput_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy):
+    return f"{exp_dir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                   f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/" \
                   f"locality={locality}/scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/" \
                   f"numOffloadThreads={numOffloadThreads}/puncInterval={puncInterval}/ccStrategy={ccStrategy}/" \
                   f"doMVCC={doMVCC}/udfComplexity={udfComplexity}/throughput.csv"
 
-def get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy):
-    return f"{rootDir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
+def get_latency_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy):
+    return f"{exp_dir}/results/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/" \
                   f"numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/" \
                   f"locality={locality}/scopeRatio={scopeRatio}/numTPGThreads={numTPGThreads}/" \
                   f"numOffloadThreads={numOffloadThreads}/puncInterval={puncInterval}/ccStrategy={ccStrategy}/" \
@@ -253,7 +141,7 @@ def get_throughput_from_file(outputFilePath):
         print(f"Failed to read {outputFilePath}: {e}")
         return None
 
-def draw_throughput_comparison_plot():
+def draw_throughput_comparison_plot(exp_dir):
     systems = ['TransNFV', 'OpenNF', 'CHC', 'S6']
     colors = ['#AE48C8', '#F44040', '#15DB3F', '#E9AA18']
     markers = ['o', 's', '^', 'D']
@@ -264,19 +152,19 @@ def draw_throughput_comparison_plot():
         
         transnfv_throughputs = []
         for ccStrategy in ["Partitioning", "Replication", "Offloading", "Proactive"]:
-            outputFilePath = get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy)
+            outputFilePath = get_throughput_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy)
             throughput = get_throughput_from_file(outputFilePath)
             if throughput:
                 transnfv_throughputs.append(throughput)
         system_data['TransNFV'].append(max(transnfv_throughputs) / 1e6 if transnfv_throughputs else 0)
 
-        outputFilePath_opennf = get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "OpenNF")
+        outputFilePath_opennf = get_throughput_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "OpenNF")
         system_data['OpenNF'].append(get_throughput_from_file(outputFilePath_opennf) / 1e6 or 0)
 
-        outputFilePath_chc = get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "CHC")
+        outputFilePath_chc = get_throughput_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "CHC")
         system_data['CHC'].append(get_throughput_from_file(outputFilePath_chc) / 1e6 or 0)
 
-        outputFilePath_s6 = get_throughput_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "S6")
+        outputFilePath_s6 = get_throughput_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "S6")
         system_data['S6'].append(get_throughput_from_file(outputFilePath_s6) / 1e6 or 0)
 
     plt.figure(figsize=(7, 4.5))
@@ -300,16 +188,10 @@ def draw_throughput_comparison_plot():
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.2.2_dynamicWorkload_range{numItems}_complexity{udfComplexity}.pdf'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name = f'5.2.2_dynamicWorkload.pdf'
+    figure_dir = os.path.join(exp_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))
-
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))
 
 
 def read_latencies(csv_file_path):
@@ -325,14 +207,13 @@ def read_latencies(csv_file_path):
 
 
 def downsample_data(data, max_points=1000):
-    """Downsamples the data to a maximum of max_points points."""
     if len(data) > max_points:
         indices = np.linspace(0, len(data) - 1, max_points, dtype=int)
         return data[indices]
     return data
 
 
-def draw_latency_comparison_plot(max_points=1000):
+def draw_latency_comparison_plot(exp_dir, max_points=1000):
     systems = ['TransNFV', 'OpenNF', 'CHC', 'S6']
     colors = ['#AE48C8', '#F44040', '#15DB3F', '#E9AA18']
     markers = ['o', 's', '^', 'D']
@@ -346,7 +227,7 @@ def draw_latency_comparison_plot(max_points=1000):
         min_latency_file = None
 
         for ccStrategy in ["Partitioning", "Replication", "Offloading", "Proactive"]:
-            latency_file = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy)
+            latency_file = get_latency_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy)
             latencies = read_latencies(latency_file)
             avg_latency = sum(latencies) / len(latencies) if latencies else float('inf')
             if avg_latency < min_avg_latency:
@@ -355,13 +236,13 @@ def draw_latency_comparison_plot(max_points=1000):
 
         system_latencies['TransNFV'].extend(transnfv_latencies)
 
-        latency_file_opennf = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "OpenNF")
+        latency_file_opennf = get_latency_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "OpenNF")
         system_latencies['OpenNF'].extend(read_latencies(latency_file_opennf))
 
-        latency_file_chc = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "CHC")
+        latency_file_chc = get_latency_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "CHC")
         system_latencies['CHC'].extend(read_latencies(latency_file_chc))
 
-        latency_file_s6 = get_latency_file_path(expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "S6")
+        latency_file_s6 = get_latency_file_path(exp_dir, expID, keySkew, workloadSkew, readRatio, locality, scopeRatio, "S6")
         system_latencies['S6'].extend(read_latencies(latency_file_s6))
 
     plt.figure(figsize=(7, 4.5))
@@ -386,16 +267,10 @@ def draw_latency_comparison_plot(max_points=1000):
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.2.2_dynamicWorkload_range{numItems}_complexity{udfComplexity}_latency.png'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name = f'5.2.2_dynamicWorkload_latency.png'
+    figure_dir = os.path.join(exp_dir, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))
-
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))
 
     
 
@@ -414,7 +289,6 @@ ccStrategy = "Offloading"
 doMVCC = 1
 udfComplexity = 10
 ccStrategyList = ["Partitioning", "Replication", "Offloading", "Proactive", "OpenNF", "CHC", "S6"]
-rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
 
 
 # KeySkew, WorkloadSkew, ReadRatio, Locality, ScopeRatio
@@ -452,46 +326,39 @@ workloadList = [
 ]
 
 
-def run_dynamic_workload():
+def run_dynamic_workload(root_dir, exp_dir):
     for workload in workloadList:
         keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
-        shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
-        generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+        shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+        generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
                              numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity,
                              keySkew, workloadSkew, readRatio, locality, scopeRatio,
-                             shellScriptPath)
+                             shellScriptPath, root_dir)
         execute_bash_script(shellScriptPath)
 
-def run_single_workload(index):
+def run_single_workload(root_dir, exp_dir, index):
     keySkew, workloadSkew, readRatio, locality, scopeRatio = workloadList[index]
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
-    generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
+    shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+    generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
                          numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, doMVCC, udfComplexity,
                          keySkew, workloadSkew, readRatio, locality, scopeRatio,
-                         shellScriptPath)
+                         shellScriptPath, root_dir)
     execute_bash_script(shellScriptPath)
 
 
+def main(root_dir, exp_dir):
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    run_dynamic_workload(root_dir, exp_dir)
+    draw_throughput_comparison_plot(exp_dir)
+    draw_latency_comparison_plot(exp_dir)
+
+
 if __name__ == "__main__":
-    # run_dynamic_workload()
-
-    # run_single_workload(0)
-    # run_single_workload(1)
-    # run_single_workload(2)
-    # run_single_workload(3)
-    # run_single_workload(4)
-    # run_single_workload(5)
-    # run_single_workload(6)
-    # run_single_workload(7)
-    # run_single_workload(8)
-    # run_single_workload(9)
-    # run_single_workload(10)
-    # run_single_workload(11)
-    # run_single_workload(12)
-    # run_single_workload(13)
-    # run_single_workload(14)
-    # run_single_workload(15)
-
-    # draw_throughput_comparison_plot()
-    draw_latency_comparison_plot()
-    print("Done")
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)
+    print("5.2.2 dynamic throughput and latency results generated")

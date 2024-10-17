@@ -4,6 +4,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.storage.StorageManager;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.transNFV.common.PatternData;
+import intellistream.morphstream.transNFV.executors.LocalExecutor;
 import intellistream.morphstream.transNFV.vnf.VNFInstance;
 import intellistream.morphstream.transNFV.vnf.VNFManager;
 import org.slf4j.Logger;
@@ -15,7 +16,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class IterativeWorkloadMonitor implements Runnable {
     private final Logger LOG = LoggerFactory.getLogger(IterativeWorkloadMonitor.class);
@@ -68,7 +69,6 @@ public class IterativeWorkloadMonitor implements Runnable {
     public void submitMetadata(int key, int instanceID, String accessType, String scope) {
         instanceReqCounterMap.compute(key, (k, v) -> (v == null) ? 1 : v + 1);
         patternDataQueue.add(new PatternData(key, instanceID, accessType));
-        //TODO: Complete the logic for workload char update
     }
 
     private int getTotalRequests() { // A rough estimation of total requests
@@ -103,21 +103,21 @@ public class IterativeWorkloadMonitor implements Runnable {
 
                 int totalRequests = getTotalRequests();
 
-                if (totalRequests % monitorWindowSize == 0) {
+                if (totalRequests > 0 && totalRequests % monitorWindowSize == 0) {
                     int currentInterval = totalRequests / workloadInterval; // Actual interval ID of the workload, starting from 0
                     String optimalStrategy = "";
-                    if (currentInterval % 2 == 0) { //TODO: This simulates the prediction of optimal strategy from MLP model
+                    if (currentInterval % 2 == 0) {
                         optimalStrategy = "Partitioning";
                     } else {
-                        optimalStrategy = "Offloading";
+                        optimalStrategy = "Replication";
                     }
 
-                    for (VNFInstance instance : VNFManager.getAllInstances().values()) {
+                    for (LocalExecutor executor : VNFManager.getLocalExecutorMap().values()) {
                         for (int key = 0; key < numItems; key++) {
-                            instance.startTupleCCSwitch(key, optimalStrategy);
+                            executor.startTupleCCSwitch(key, optimalStrategy);
                             TableRecord tableRecord = storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(key));
                             int value = tableRecord.content_.readPreValues(Long.MAX_VALUE).getValues().get(1).getInt();
-                            instance.endTupleCCSwitch(key, optimalStrategy);
+                            executor.endTupleCCSwitch(key, optimalStrategy);
                         }
                     }
 

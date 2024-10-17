@@ -38,6 +38,8 @@ public class MorphStreamEnv {
     private static final HashMap<Integer, Integer> saTypeMap = new HashMap<>(); //State access ID -> state access type
     private static final HashMap<Integer, String> saTableNameMap = new HashMap<>(); //State access ID -> table name
 
+    public boolean vnfExecutionFinished = false;
+
     public void createTransNFVStateManager() {
         if (transNFVStateManager == null) {
             transNFVStateManager = new TransNFVStateManager();

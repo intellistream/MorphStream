@@ -24,8 +24,8 @@ public class TransNFVStateManager {
     private Thread replicationStateManagerThread;
     private final HashMap<Integer, Thread> offloadExecutorThreads = new HashMap<>();
     private final HashMap<Integer, OffloadExecutor> offloadExecutors = new HashMap<>();
-    private final OffloadSVCCStateManager svccStateManager = new OffloadSVCCStateManager();
-    private final OffloadMVCCStateManager mvccStateManager = new OffloadMVCCStateManager();
+    private final OffloadSVCCStateManager svccStateManager;
+    private final OffloadMVCCStateManager mvccStateManager;
 
     private OpenNFStateManager openNFStateManager;
     private Thread openNFThread;
@@ -42,10 +42,7 @@ public class TransNFVStateManager {
     private final LinkedBlockingQueue<VNFRequest> s6Queue = new LinkedBlockingQueue<>();
     public final ConcurrentHashMap<Integer, BlockingQueue<VNFRequest>> offloadInputQueues = new ConcurrentHashMap<>();
     public final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
-    private final HashMap<Integer, Integer> partitionOwnership = new HashMap<>(); //Maps each state partition to its current owner VNF instance.
-    private final int numInstances = MorphStreamEnv.get().configuration().getInt("numInstances");
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
-    private final int tableSize = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
     private final boolean hardcodeSwitch = (MorphStreamEnv.get().configuration().getInt("hardcodeSwitch") == 1);
 
 
@@ -53,12 +50,10 @@ public class TransNFVStateManager {
 
 
     public TransNFVStateManager() {
-        int partitionGap = tableSize / numInstances;
-        for (int i = 0; i < tableSize; i++) {
-            partitionOwnership.put(i, i / partitionGap); //TODO: Refine this
-        }
         String pmmlFilePath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/training_data/mlp_model.pmml";
         modelEvaluator = PerformanceModel.loadPMMLModel(pmmlFilePath);
+        svccStateManager = new OffloadSVCCStateManager();
+        mvccStateManager = new OffloadMVCCStateManager();
     }
 
     public void prepareWorkloadMonitor() {
@@ -111,41 +106,28 @@ public class TransNFVStateManager {
     }
 
     public void prepareAdaptiveCC() {
-        //TODO: Currently we only prepare the partitioning and offloading managers.
-        partitionStateManager = new PartitionStateManager(partitioningQueue);
-        partitionStateManagerThread = new Thread(partitionStateManager);
-
-        for (int i = 0; i < numOffloadThreads; i++) {
-            BlockingQueue<VNFRequest> inputQueue = new LinkedBlockingQueue<>();
-            offloadInputQueues.put(i, inputQueue);
-            OffloadExecutor offloadExecutor = new OffloadExecutor(i, inputQueue, svccStateManager, mvccStateManager);
-            offloadExecutors.put(i, offloadExecutor);
-            Thread offloadExecutorThread = new Thread(offloadExecutor);
-            offloadExecutorThreads.put(i, offloadExecutorThread);
-        }
+        //TODO: Currently we only use the partitioning and replication managers.
+        preparePartitionStateManager();
+        prepareReplicationStateManager();
+        prepareOffloadExecutors();
+        prepareProactiveExecutors();
     }
 
     public void startAdaptiveCC() {
-        partitionStateManagerThread.start();
-        System.out.println("Partitioning controller started");
-
-        for (int i = 0; i < numOffloadThreads; i++) {
-            offloadExecutorThreads.get(i).start();
-        }
-        System.out.println("Offload executors started");
+        startPartitionStateManager();
+        startReplicationStateManager();
+        startOffloadExecutors();
 
         if (!hardcodeSwitch) {
             WorkloadMonitorThread.start();
-            System.out.println("Batch workload monitor started");
+            System.out.println("Iterative workload monitor started");
         }
     }
 
     public void joinAdaptiveCC() {
         try {
             partitionStateManagerThread.join();
-            for (int i = 0; i < numOffloadThreads; i++) {
-                offloadExecutorThreads.get(i).join();
-            }
+            replicationStateManagerThread.join();
             if (!hardcodeSwitch) {
                 WorkloadMonitorThread.join();
             }

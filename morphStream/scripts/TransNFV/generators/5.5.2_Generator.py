@@ -1,3 +1,4 @@
+import argparse
 import csv
 import random
 import os
@@ -75,10 +76,11 @@ def update_workload_file_path(indicator_path, workload_path):
         file.write(workload_path)
 
 
-def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload_with_keySkew(exp_dir, expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
+    exp_dir = f'{exp_dir}/workload'
+    # rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
     workloadConfig = f'temporary/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
 
@@ -95,10 +97,11 @@ def subtract_ranges(a, b, N):
     result = sorted(full_range - subtract_range)
     return result
 
-def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload_with_locality(exp_dir, expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, locality, scopeRatio, puncInterval):
+    exp_dir = f'{exp_dir}/workload'
+    # rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
     workloadConfig = f'temporary/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     readRatio = readRatio / 100
     locality = locality / 100
@@ -161,7 +164,8 @@ def combine_and_randomize_csv(csv_file_list, output_file):
         writer.writerows(combined_lines)
 
 
-def combine_csv_randomly():
+def combine_csv_randomly(combinedWorkloadPath, rootDir):
+    rootDir = f'{rootDir}/workload'
     for workloadInterval in workloadIntervalList:
         perIntervalPath = f'{combinedWorkloadPath}/interval={workloadInterval}' # Each interval has its own file
         os.makedirs(perIntervalPath, exist_ok=True)
@@ -175,8 +179,7 @@ def combine_csv_randomly():
             num_phases = numPackets // workloadInterval
 
             for phaseID in range(num_phases):
-                expID = f'5.6.2_Interval{workloadInterval}_Phase{phaseID}'
-                workloadFilePath = ''
+                expID = f'5.5.2_Interval{workloadInterval}_Phase{phaseID}'
 
                 if phaseID % 2 == 0:
                     workloadFilePath = f'{rootDir}/temporary/{expID}/vnfID={vnfID}/numPackets={workloadInterval}/' \
@@ -209,10 +212,8 @@ defaultReadRatio = 0
 defaultLocality = 0
 defaultScopeRatio = 0
 
-expID = '5.6.2'
-rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
-combinedWorkloadPath = f'{rootDir}/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/' \
-                        f'keySkew={defaultKeySkew}/workloadSkew={defaultWorkloadSkew}/readRatio={defaultReadRatio}/locality={defaultLocality}/scopeRatio={defaultScopeRatio}'
+expID = '5.5.2'
+
 
 Partition_keySkew = 0
 Partition_workloadSkew = 0
@@ -226,24 +227,38 @@ Offloading_readRatio = 50
 Offloading_locality = 0
 Offloading_scopeRatio = 0
 
-for workloadInterval in workloadIntervalList:
-    num_phases = numPackets // workloadInterval
-    for phase in range(num_phases):
-        if (phase % 2 == 0):
-            
-            expID = f'5.6.2_Interval{workloadInterval}_Phase{phase}'
-            generate_workload_with_locality(expID, vnfID, workloadInterval, numInstances, numItems, Partition_keySkew, Partition_workloadSkew, 
-                                            Partition_readRatio, Partition_locality, Partition_scopeRatio, puncInterval)
-            # generate_workload_with_keySkew(expID, vnfID, workloadInterval, numInstances, numItems, Partition_keySkew, Partition_workloadSkew, 
-            #                                 Partition_readRatio, Partition_locality, Partition_scopeRatio, puncInterval)
+def generate(exp_dir):
+    expID = '5.5.2'
+    combinedWorkloadPath = f'{exp_dir}/workload/{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/' \
+                           f'keySkew={defaultKeySkew}/workloadSkew={defaultWorkloadSkew}/readRatio={defaultReadRatio}/locality={defaultLocality}/scopeRatio={defaultScopeRatio}'
+    for workloadInterval in workloadIntervalList:
+        num_phases = numPackets // workloadInterval
+        for phase in range(num_phases):
+            if (phase % 2 == 0):
+                expID = f'5.5.2_Interval{workloadInterval}_Phase{phase}'
+                generate_workload_with_locality(exp_dir, expID, vnfID, workloadInterval, numInstances, numItems, Partition_keySkew, Partition_workloadSkew, 
+                                                Partition_readRatio, Partition_locality, Partition_scopeRatio, puncInterval)
 
-        else:
-           
-            expID = f'5.6.2_Interval{workloadInterval}_Phase{phase}'
-            # generate_workload_with_locality(expID, vnfID, workloadInterval, numInstances, numItems, Offloading_keySkew, Offloading_workloadSkew, 
-            #                                 Offloading_readRatio, Offloading_locality, Offloading_scopeRatio, puncInterval)
-            generate_workload_with_keySkew(expID, vnfID, workloadInterval, numInstances, numItems, Offloading_keySkew, Offloading_workloadSkew, 
-                                            Offloading_readRatio, Offloading_locality, Offloading_scopeRatio, puncInterval)
+            else:
+                expID = f'5.5.2_Interval{workloadInterval}_Phase{phase}'
+                generate_workload_with_keySkew(exp_dir, expID, vnfID, workloadInterval, numInstances, numItems, Offloading_keySkew, Offloading_workloadSkew, 
+                                                Offloading_readRatio, Offloading_locality, Offloading_scopeRatio, puncInterval)
+    
+    
+    combine_csv_randomly(combinedWorkloadPath, exp_dir)
 
 
-combine_csv_randomly()
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    generate(exp_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

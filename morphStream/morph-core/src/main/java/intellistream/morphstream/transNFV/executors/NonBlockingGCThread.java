@@ -11,6 +11,7 @@ public class NonBlockingGCThread implements Runnable {
 
     private static final StorageManager storageManager = MorphStreamEnv.get().database().getStorageManager();
     private static final int NUM_ITEMS = MorphStreamEnv.get().configuration().getInt("NUM_ITEMS");
+    private static boolean enableGC = MorphStreamEnv.get().configuration().getInt("enableGC") == 1;
     private static final long STOP_SIGNAL = -1L; // Special signal to stop the GC thread
 
     private final Queue<Long> taskQueue = new LinkedList<>(); // Queue to hold GC tasks
@@ -22,12 +23,10 @@ public class NonBlockingGCThread implements Runnable {
             long lastBatchEndTimestamp;
             synchronized (lock) {
                 try {
-                    // Wait until a GC task is available in the queue
                     while (taskQueue.isEmpty()) {
                         lock.wait(); // Wait for the signal to start GC
                     }
 
-                    // Get the next task (lastBatchEndTimestamp) from the queue
                     lastBatchEndTimestamp = taskQueue.poll();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -35,18 +34,17 @@ public class NonBlockingGCThread implements Runnable {
                 }
             }
 
-            // Check if we received the stop signal
             if (lastBatchEndTimestamp == STOP_SIGNAL) {
                 System.out.println("Stop signal received. Terminating GC thread.");
-                return; // Exit the thread gracefully
+                return;
             }
 
-            // Perform garbage collection for the specified timestamp
-            for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
-                garbageCollection(tupleID, lastBatchEndTimestamp);
+            if (enableGC) {
+                for (int tupleID = 0; tupleID < NUM_ITEMS; tupleID++) {
+                    garbageCollection(tupleID, lastBatchEndTimestamp);
+                }
             }
-
-//            System.out.println("GC completed for batch with timestamp: " + lastBatchEndTimestamp);
+            System.out.println("GC completed for batch with timestamp: " + lastBatchEndTimestamp);
         }
     }
 
@@ -57,19 +55,15 @@ public class NonBlockingGCThread implements Runnable {
         }
     }
 
-    // Method to stop the GC thread by sending the stop signal
     public void stopGC() {
         startGC(STOP_SIGNAL); // Send the special stop signal to the GC thread
     }
 
     private void garbageCollection(int tupleID, long lastBatchEndTimestamp) {
-        // Uncomment and modify for actual database garbage collection logic
-        /*
         try {
             storageManager.getTable("testTable").SelectKeyRecord(String.valueOf(tupleID)).content_.garbageCollect(lastBatchEndTimestamp);
         } catch (DatabaseException e) {
             throw new RuntimeException(e);
         }
-        */
     }
 }

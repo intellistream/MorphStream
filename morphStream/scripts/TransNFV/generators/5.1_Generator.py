@@ -1,108 +1,183 @@
+import argparse
 import csv
 import random
 import os
-import shutil
-
-class PatternGenerator:
-    def __init__(self, tuple_range=10000, instance_count=4, request_count=100000, pattern_1_prob=0.8, pattern_2_prob=0.5, pattern_3_prob=0.8):
-        self.tuple_range = tuple_range
-        self.instance_count = instance_count
-        self.request_count = request_count
-        self.base_dir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/pattern_files/5.1'
-        self.type_zero_probability = pattern_1_prob  # Probability for type 0 in sharedReaders pattern
-        self.type_one_probability = pattern_2_prob    # Probability for type 1 in sharedWriters pattern
-        self.type_two_probability = pattern_3_prob    # Probability for type 2 in mutualInteractive pattern
-# lines.append([i + 1, keys[i], vnfID, types[i], scopes[i]])
-    def generate_files(self):
-        # Remove existing files and directories before creating new ones
-        if os.path.exists(self.base_dir):
-            shutil.rmtree(self.base_dir)
-        os.makedirs(self.base_dir)
+import numpy as np
+import matplotlib.pyplot as plt
 
 
-        # Define the patterns
-        patterns = {
-            'loneOperative': self.generate_lone_operative,
-            'sharedReaders': self.generate_shared_readers,
-            'sharedWriters': self.generate_shared_writers,
-            'mutualInteractive': self.generate_mutual_interactive  # Placeholder for another pattern
-        }
+def zipfian_distribution(num_keys, zipf_skewness, num_samples):
+    keys = np.arange(0, num_keys)
+    probabilities = 1 / np.power(keys + 1, zipf_skewness)  # keys + 1 to avoid division by zero
+    probabilities /= np.sum(probabilities)  # Normalize to sum to 1
+    key_accesses = np.random.choice(keys, size=num_samples, p=probabilities)
 
-        for pattern_name, generation_method in patterns.items():
-            pattern_dir = os.path.join(self.base_dir, f"instanceNum_{self.instance_count}", pattern_name)
-            if not os.path.exists(pattern_dir):
-                os.makedirs(pattern_dir)
-            generation_method(pattern_dir)
+    return key_accesses
 
-    def generate_lone_operative(self, pattern_dir):
-        partition_size = self.tuple_range // self.instance_count
-        for instance_index in range(self.instance_count):
-            min_range = instance_index * partition_size
-            max_range = (instance_index + 1) * partition_size - 1
-            file_name = os.path.join(pattern_dir, f'instance_{instance_index}.csv')
-            with open(file_name, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                for request_id in range(self.request_count):
-                    tuple_id = random.randint(min_range, max_range)
-                    # type_id = random.randint(0, 2)
-                    type_id = "read" if random.random() <= 0.5 else "write"
-                    scope = "cross-flow"
-                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
-            print(f'Generated file: {file_name}')
 
-    def generate_shared_readers(self, pattern_dir):
-        for instance_index in range(self.instance_count):
-            file_name = os.path.join(pattern_dir, f'instance_{instance_index}.csv')
-            with open(file_name, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                for request_id in range(self.request_count):
-                    tuple_id = random.randint(0, self.tuple_range - 1)
-                    # Generate type based on the class variable probability for type 0 (R)
-                    type_id = "read" if random.random() < self.type_zero_probability else "write"
-                    scope = "cross-flow"
-                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
-            print(f'Generated file: {file_name}')
+def generate_workload_distribution(num_instances, total_requests, workload_skewness, punc_interval):
+    workload_skewness = workload_skewness / 100
+    short_requests = int(total_requests / (punc_interval * num_instances))
+    if workload_skewness == 0:
+        return np.full(num_instances, total_requests // num_instances, dtype=int)
 
-    def generate_shared_writers(self, pattern_dir):
-        for instance_index in range(self.instance_count):
-            file_name = os.path.join(pattern_dir, f'instance_{instance_index}.csv')
-            with open(file_name, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                for request_id in range(self.request_count):
-                    tuple_id = random.randint(0, self.tuple_range - 1)
-                    # Generate type based on the class variable probability for type 1 (W)
-                    type_id = "read" if random.random() < self.type_one_probability else "write"
-                    scope = "cross-flow"
-                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
-            print(f'Generated file: {file_name}')
+    workload_distribution = zipfian_distribution(num_instances, workload_skewness, short_requests)
+    requests_per_instance = np.bincount(workload_distribution, minlength=num_instances)
+    print(requests_per_instance)
+    large_requests_per_instance = [x * punc_interval * num_instances for x in requests_per_instance]
+    print(large_requests_per_instance)
 
-    def generate_mutual_interactive(self, pattern_dir):
-        for instance_index in range(self.instance_count):
-            file_name = os.path.join(pattern_dir, f'instance_{instance_index}.csv')
-            with open(file_name, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                for request_id in range(self.request_count):
-                    tuple_id = random.randint(0, self.tuple_range - 1)
-                    # Generate type based on the class variable probability for type 2 (R&W)
-                    type_id = "read-write" if random.random() < self.type_two_probability else "write"
-                    scope = "cross-flow"
-                    writer.writerow([request_id, tuple_id, 11, type_id, scope])
-            print(f'Generated file: {file_name}')
+    return large_requests_per_instance
 
-    def generate_random(self, pattern_dir):
-        for instance_index in range(self.instance_count):
-            file_name = os.path.join(pattern_dir, f'instance_{instance_index}.csv')
-            with open(file_name, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                for request_id in range(self.request_count):
-                    tuple_id = random.randint(0, self.tuple_range - 1)
-                    scope = "cross-flow"
-                    type_id = "read" if random.random() <= 0.5 else "write"
-                    writer.writerow([request_id, tuple_id, type_id, 11, scope])
-            print(f'Generated file: {file_name}')
 
-# Usage
+def generate_csv_lines(total_requests, num_keys, key_skewness, prob_read_write, prob_scope, vnfID):
+    key_skewness = key_skewness / 100
+    prob_read_write = prob_read_write / 100
+    prob_scope = prob_scope / 100
+
+    keys = zipfian_distribution(num_keys, key_skewness, total_requests)
+    types = np.random.choice(['Read', 'Write'], total_requests, p=[prob_read_write, 1 - prob_read_write])
+    scopes = np.random.choice(['Per-flow', 'Cross-flow'], total_requests, p=[prob_scope, 1 - prob_scope])
+
+    lines = []
+    for i in range(total_requests):
+        lines.append([i + 1, keys[i], vnfID, types[i], scopes[i]])
+
+    return lines
+
+
+def distribute_lines_among_instances(lines, instance_workloads, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+
+    for filename in os.listdir(output_dir):
+        file_path = os.path.join(output_dir, filename)
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            os.rmdir(file_path)
+
+    start_idx = 0
+    for instance_id, workload in enumerate(instance_workloads):
+        end_idx = start_idx + workload
+        instance_lines = lines[start_idx:end_idx]
+        start_idx = end_idx
+
+        file_path = os.path.join(output_dir, f'instance_{instance_id}.csv')
+        with open(file_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(instance_lines)
+
+
+def update_workload_file_path(indicator_path, workload_path):
+    with open(indicator_path, 'w') as file:
+        file.write(workload_path)
+
+
+def generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio,
+                                   locality, scopeRatio, puncInterval, exp_dir):
+    rootDir = f'{exp_dir}/workload'
+    workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
+    workloadDir = f'{rootDir}/{workloadConfig}'
+
+    lines = generate_csv_lines(numPackets, numItems, keySkew, readRatio, scopeRatio, vnfID)
+
+    instance_workloads = generate_workload_distribution(numInstances, numPackets, workloadSkew, puncInterval)
+    distribute_lines_among_instances(lines, instance_workloads, workloadDir)
+    print(
+        f'Generated {expID} workload for keySkew={keySkew}, workloadSkew={workloadSkew}, readRatio={readRatio}, scopeRatio={scopeRatio}, locality={locality}')
+
+
+def subtract_ranges(a, b, N):
+    full_range = set(range(0, N))
+    subtract_range = set(range(a, b))
+    result = sorted(full_range - subtract_range)
+    return result
+
+
+def generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio,
+                                    locality, scopeRatio, puncInterval, exp_dir):
+    rootDir = f'{exp_dir}/workload'
+    workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
+    workloadDir = f'{rootDir}/{workloadConfig}'
+
+    readRatio = readRatio / 100
+    locality = locality / 100
+    scopeRatio = scopeRatio / 100
+
+    os.makedirs(workloadDir, exist_ok=True)
+
+    for instance_id in range(numInstances):
+        file_path = os.path.join(workloadDir, f'instance_{instance_id}.csv')
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        partition_start = instance_id * numItems // numInstances
+        partition_end = (instance_id + 1) * numItems // numInstances
+        intra_partition_keyset = list(range(partition_start, partition_end))
+        cross_partition_keyset = subtract_ranges(partition_start, partition_end, numItems)
+        num_request_instance = numPackets // numInstances
+
+        with open(file_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for request_id in range(num_request_instance):
+                random_locality = random.random()
+                key = -1
+                if (random_locality < locality):
+                    key_index = random.randint(0, len(intra_partition_keyset) - 1)
+                    key = intra_partition_keyset[key_index]
+                else:
+                    key_index = random.randint(0, len(cross_partition_keyset) - 1)
+                    key = cross_partition_keyset[key_index]
+                access_type = 'Read' if random.random() < readRatio else 'Write'
+                scope = 'Per-flow' if random.random() < scopeRatio else 'Cross-flow'
+                writer.writerow([request_id, key, vnfID, access_type, scope])
+
+        print(f'Generated file: {file_path}')
+
+
+puncInterval = 1000  # Used to normalize workload distribution among instances
+vnfID = 11
+numPackets = 400000
+numInstances = 4
+numItems = 1000
+expID = "5.1"
+
+# KeySkew, WorkloadSkew, ReadRatio, Locality, ScopeRatio
+workload1 = [0, 0, 0, 100, 0]
+workload2 = [0, 0, 90, 0, 0]
+workload3 = [0, 0, 0, 0, 0]
+workload4 = [150, 0, 0, 0, 0]
+
+workloadList = [
+    workload1, workload2, workload3, workload4
+]
+
+def generate(exp_dir):
+    for i in range(0, 1):
+        workload = workloadList[i]
+        keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
+        generate_workload_with_locality(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio,
+                                        locality, scopeRatio, puncInterval, exp_dir)
+
+    for i in range(1, 4):
+        workload = workloadList[i]
+        keySkew, workloadSkew, readRatio, locality, scopeRatio = workload
+        generate_workload_with_keySkew(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio,
+                                       locality, scopeRatio, puncInterval, exp_dir)
+
+
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    generate(exp_dir)
+
+
 if __name__ == "__main__":
-    # Example instantiation with a specific probability for type 0 in sharedReaders
-    generator = PatternGenerator()
-    generator.generate_files()
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

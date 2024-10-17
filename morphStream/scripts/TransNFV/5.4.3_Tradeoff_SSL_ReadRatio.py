@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import os
 import time
@@ -9,16 +10,16 @@ from matplotlib.patches import Patch
 import csv
 
 
-def generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances, 
-                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy, 
-                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path):
+def generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, script_path, root_dir):
     script_content = f"""#!/bin/bash
 
 function ResetParameters() {{
   app="{app}"
   expID="{expID}"
   vnfID="{vnfID}"
-  nfvExperimentPath="{rootDir}"
+  nfvExperimentPath="{exp_dir}"
   numPackets={numPackets}
   numItems={numItems}
   numInstances={numInstances}
@@ -36,7 +37,7 @@ function ResetParameters() {{
 }}
 
 function runTStream() {{
-  echo "java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  echo "java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
           --app $app \\
           --expID $expID \\
           --vnfID $vnfID \\
@@ -56,7 +57,7 @@ function runTStream() {{
           --locality $locality \\
           --scopeRatio $scopeRatio
           "
-  java -Xms100g -Xmx100g -Xss10M -jar /home/zhonghao/IdeaProjects/transNFV/morphStream/morph-clients/target/morph-clients-0.1.jar \\
+  java -Xms100g -Xmx100g -Xss10M -jar {root_dir}/morphStream/morph-clients/target/morph-clients-0.1.jar \\
     --app $app \\
     --expID $expID \\
     --vnfID $vnfID \\
@@ -179,17 +180,12 @@ def plot_keyskew_throughput_figure(nfvExperimentPath,
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'{expID}_readRatio_range={numItems}_complexity={udfComplexity}.pdf'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name = f'{expID}_readRatio.pdf'
+    figure_dir = os.path.join(nfvExperimentPath, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
     plt.savefig(os.path.join(figure_dir, figure_name))  # Save the figure
 
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name))  # Save the figure
 
 
 def plot_keyskew_latency_boxplot(nfvExperimentPath,
@@ -254,64 +250,75 @@ def plot_keyskew_latency_boxplot(nfvExperimentPath,
     plt.tight_layout()
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
-    script_dir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    figure_name = f'5.4.3_readRatio_range{numItems}_complexity{udfComplexity}_lat.pdf'
-    figure_name_png = f'5.4.3_readRatio_range{numItems}_complexity{udfComplexity}_lat.png'
-    figure_dir = os.path.join(script_dir, 'figures')
+    figure_name_png = f'5.4.3_readRatio_lat.png'
+    figure_dir = os.path.join(nfvExperimentPath, 'figures')
     os.makedirs(figure_dir, exist_ok=True)
     plt.savefig(os.path.join(figure_dir, figure_name_png))
 
-    local_script_dir = "/home/zhonghao/图片"
-    local_figure_dir = os.path.join(local_script_dir, 'Figures')
-    os.makedirs(local_figure_dir, exist_ok=True)
-    plt.savefig(os.path.join(local_figure_dir, figure_name_png))
 
 
-if __name__ == "__main__":
-    # Basic params
-    app = "nfv_test"
-    expID = "5.4.3"
-    vnfID = 11
-    numItems = 1000
-    numPackets = 400000
-    numInstances = 4
+# Basic params
+app = "nfv_test"
+expID = "5.4.3"
+vnfID = 11
+numItems = 1000
+numPackets = 400000
+numInstances = 4
 
-    # Workload chars
-    keySkew = 50
-    workloadSkew = 0
-    readRatio = 50
-    locality = 0
-    scopeRatio = 0
+# Workload chars
+keySkew = 50
+workloadSkew = 0
+readRatio = 50
+locality = 0
+scopeRatio = 0
 
-    # System params
-    numTPGThreads = 4
-    numOffloadThreads = 4
-    puncInterval = 1000
-    ccStrategy = "Offloading"
-    doMVCC = 0
-    udfComplexity = 10
-    readRatioList = [0, 25, 50, 75, 100]
-    ccStrategyList = ["Partitioning", "Replication", "Offloading"]
+# System params
+numTPGThreads = 4
+numOffloadThreads = 4
+puncInterval = 1000
+ccStrategy = "Offloading"
+doMVCC = 0
+udfComplexity = 10
+readRatioList = [0, 25, 50, 75, 100]
+ccStrategyList = ["Partitioning", "Replication", "Offloading"]
 
-    rootDir = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV"
-    shellScriptPath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/shell_scripts/%s.sh" % expID
 
-    # generate_bash_script(app, expID, vnfID, rootDir, numPackets, numItems, numInstances,
-    #                      numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
-    #                      doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath)
-    #
-    # execute_bash_script(shellScriptPath)
+def run_tradeoff(root_dir, exp_dir):
+    shellScriptPath = os.path.join(exp_dir, "shell_scripts", f"{expID}.sh")
+    print(f"Shell script path: {shellScriptPath}")
+    generate_bash_script(app, expID, vnfID, exp_dir, numPackets, numItems, numInstances,
+                         numTPGThreads, numOffloadThreads, puncInterval, ccStrategy,
+                         doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, scopeRatio, shellScriptPath, root_dir)
+
+    execute_bash_script(shellScriptPath)
 
     
-
-    plot_keyskew_throughput_figure(rootDir, expID, vnfID, numPackets, numItems, numInstances,
+def plot_throughput(exp_dir):
+    plot_keyskew_throughput_figure(exp_dir, expID, vnfID, numPackets, numItems, numInstances,
                                    numTPGThreads, numOffloadThreads, puncInterval, doMVCC, udfComplexity,
                                    keySkew, workloadSkew, readRatio, locality, scopeRatio, ccStrategy,
                                    readRatioList, ccStrategyList)
-    
-    plot_keyskew_latency_boxplot(rootDir,
+
+def plot_latency(exp_dir):
+    plot_keyskew_latency_boxplot(exp_dir,
                                  expID, vnfID, numPackets, numItems, numInstances, numTPGThreads, numOffloadThreads, 
                                  puncInterval, doMVCC, udfComplexity, keySkew, workloadSkew, readRatio, locality, 
                                  scopeRatio, ccStrategy,
                                  readRatioList, ccStrategyList)
 
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    run_tradeoff(root_dir, exp_dir)
+    plot_throughput(exp_dir)
+    plot_latency(exp_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

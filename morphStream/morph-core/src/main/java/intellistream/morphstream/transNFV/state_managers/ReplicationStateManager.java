@@ -20,6 +20,8 @@ public class ReplicationStateManager implements Runnable {
     private final boolean enableTimeBreakdown = (MorphStreamEnv.get().configuration().getInt("enableTimeBreakdown") == 1);
     private long parsingStartTime = 0;
     private long AGG_PARSING_TIME = 0;
+    private long syncStartTime = 0;
+    private long AGG_SYNC_TIME = 0;
 
     public ReplicationStateManager(BlockingQueue<VNFRequest> operationQueue) {
         this.operationQueue = operationQueue;
@@ -59,14 +61,13 @@ public class ReplicationStateManager implements Runnable {
                 }
             }
 
-            REC_parsingStartTime();
+//            REC_parsingStartTime();
             try {
                 VNFManager.getInstance(request.getInstanceID()).submitACK(request);
             } catch (NullPointerException e) {
                 throw new RuntimeException(e);
             }
-            REC_parsingEndTime();
-
+//            REC_parsingEndTime();
         }
     }
 
@@ -80,6 +81,22 @@ public class ReplicationStateManager implements Runnable {
         if (enableTimeBreakdown) {
             AGG_PARSING_TIME += System.nanoTime() - parsingStartTime;
         }
+    }
+
+    private void REC_syncStartTime() {
+        if (enableTimeBreakdown) {
+            syncStartTime = System.nanoTime();
+        }
+    }
+
+    private void REC_syncEndTime() {
+        if (enableTimeBreakdown) {
+            AGG_SYNC_TIME += System.nanoTime() - syncStartTime;
+        }
+    }
+
+    public long getAGG_SYNC_TIME() {
+        return AGG_SYNC_TIME;
     }
 
     public long getAGG_PARSING_TIME() {

@@ -1,3 +1,4 @@
+import argparse
 import csv
 import random
 import os
@@ -10,10 +11,10 @@ def subtract_ranges(a, b, N):
     result = sorted(full_range - subtract_range)
     return result
 
-def generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval):
-    rootDir = '/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/workload'
+def generate_workload(exp_dir, expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval):
+    exp_dir = f"{exp_dir}/workload"
     workloadConfig = f'{expID}/vnfID={vnfID}/numPackets={numPackets}/numInstances={numInstances}/numItems={numItems}/keySkew={keySkew}/workloadSkew={workloadSkew}/readRatio={readRatio}/locality={locality}/scopeRatio={scopeRatio}'
-    workloadDir = f'{rootDir}/{workloadConfig}'
+    workloadDir = f'{exp_dir}/{workloadConfig}'
 
     readRatio = readRatio / 100
     scopeRatio = scopeRatio / 100
@@ -69,7 +70,26 @@ readRatioList = [0, 25, 50, 75, 100]
 scopeRatioList = [0, 25, 50, 75, 100]
 localityList = [0, 25, 50, 75, 100]
 
-for locality in localityList:
-    for readRatio in readRatioList:
-        for scopeRatio in scopeRatioList:
-            generate_workload(expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval)
+
+def generate(exp_dir):
+    for locality in localityList:
+        for readRatio in readRatioList:
+            for scopeRatio in scopeRatioList:
+                generate_workload(exp_dir, expID, vnfID, numPackets, numInstances, numItems, keySkew, workloadSkew, readRatio, scopeRatio, locality, puncInterval)
+
+
+
+def main(root_dir, exp_dir):
+
+    print(f"Root directory: {root_dir}")
+    print(f"Experiment directory: {exp_dir}")
+
+    generate(exp_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process the root directory.")
+    parser.add_argument('--root_dir', type=str, required=True, help="Root directory path")
+    parser.add_argument('--exp_dir', type=str, required=True, help="Experiment directory path")
+    args = parser.parse_args()
+    main(args.root_dir, args.exp_dir)

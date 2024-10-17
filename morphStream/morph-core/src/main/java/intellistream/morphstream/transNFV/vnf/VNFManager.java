@@ -68,7 +68,6 @@ public class VNFManager implements Runnable {
     private static double totalSyncTimeMS = 0;
     private static double totalUsefulTimeMS = 0;
     private static double totalSwitchTimeMS = 0;
-    private static double totalTimeMS = 0;
 
     public VNFManager() {
         initInstances();
@@ -76,7 +75,7 @@ public class VNFManager implements Runnable {
 
     private void initInstances() {
         String universalInputPath;
-        if (expID.equals("5.6.2")) {
+        if (expID.equals("5.6.2") || expID.equals("5.3")) {
             universalInputPath = inputMonitorWorkloadPath;
         } else {
             universalInputPath = inputWorkloadPath;
@@ -122,7 +121,7 @@ public class VNFManager implements Runnable {
 
         for (int i=0; i<numInstances; i++) {
             int localExecutorID = i % numLocalThreads;
-            instanceToLocalExecutorsMap.get(i).add(localExecutorID); //TODO: Assume numLocalThreads always less than numInstances
+            instanceToLocalExecutorsMap.get(i).add(localExecutorID);
         }
 //        System.out.println("All instances and local executors have been initialized.");
 
@@ -142,7 +141,6 @@ public class VNFManager implements Runnable {
     }
     public static void submitLocalExecutorRequest(VNFRequest request) {
         int instanceID = request.getInstanceID();
-        //TODO: Implement iterative request submission when numLocalExecutor > numInstances
         int localExecutorID = instanceToLocalExecutorsMap.get(instanceID).get(0);
         localExecutorInputQueueMap.get(localExecutorID).offer(request);
     }
@@ -165,11 +163,11 @@ public class VNFManager implements Runnable {
 
         switch (expID) {
             case "5.1": // Dynamic workload, throughput, three existing strategies
-                writeCSVThroughput(outputFileDir, overallThroughput); //TODO: To be aligned
+                writeCSVThroughput(outputFileDir, overallThroughput);
                 writeCSVLatency(outputFileDir);
                 break;
             case "5.2.1": // Static workload, throughput and latency
-                writeCSVThroughput(outputFileDir, overallThroughput); //TODO: To be aligned
+                writeCSVThroughput(outputFileDir, overallThroughput);
                 writeCSVLatency(outputFileDir);
                 break;
             case "5.2.2":
@@ -178,14 +176,10 @@ public class VNFManager implements Runnable {
                 writeCSVLatency(outputFileDir);
                 break;
             case "5.3":
-            case "5.3_phase1": // Dynamic workload, Time breakdown
-            case "5.3_phase2":
-            case "5.3_phase3":
-            case "5.3_phase4":
-                writeCSVThroughput(outputFileDir, overallThroughput);
-                writeCSVLatency(outputFileDir);
+                writeCSVThroughput(outputFileDirMonitor, overallThroughput);
+                writeCSVLatency(outputFileDirMonitor);
                 computeTimeBreakdown();
-                writeCSVBreakdown(outputFileDir);
+                writeCSVBreakdown(outputFileDirMonitor);
                 break;
             case "5.4.1": // Static workload, throughput and latency
             case "5.4.2":
@@ -198,10 +192,10 @@ public class VNFManager implements Runnable {
             case "5.5_Inference":
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 break;
-            case "5.6.1": // Dynamic workload, throughput
+            case "5.5.1": // Dynamic workload, throughput
                 writeCSVThroughput(outputFileDir, overallThroughput);
                 break;
-            case "5.6.2":
+            case "5.5.2":
                 writeCSVThroughputMonitor(outputFileDirMonitor, overallThroughput);
                 computeTimeBreakdown();
                 writeCSVBreakdown(outputFileDirMonitor);
@@ -234,7 +228,7 @@ public class VNFManager implements Runnable {
             }
         }
 
-        if (! (ccStrategy.equals("Proactive") || ccStrategy.equals("Offloading")) ) { //TODO: Messy thread management, to be optimized
+        if (! (ccStrategy.equals("Proactive") || ccStrategy.equals("Offloading")) ) {
             try {
                 for (int i = 0; i < numLocalThreads; i++) {
                     localExecutorThreadMap.get(i).join();
@@ -272,62 +266,42 @@ public class VNFManager implements Runnable {
 
     private void computeTimeBreakdown() {
         double aggInstanceParseTime = 0;
-        double aggInstanceSyncTime = 0;
-        double aggInstanceUsefulTime = 0;
 
         double aggLocalExecutorParseTime = 0;
         double aggLocalExecutorSyncTime = 0;
         double aggLocalExecutorUsefulTime = 0;
+        double aggLocalExecutorCCSwitchTime = 0;
+        double agglocalExecutorMetaDataTime = 0;
 
         double aggManagerParseTime = 0;
-        double aggManagerSyncTime = 0;
         double aggManagerUsefulTime = 0;
-        double aggCCSwitchTime = 0;
-        double aggMetaDataTime = 0;
-        double aggTotalTime = 0;
+//        double aggManagerSyncTime = 0;
 
         /** Breakdown at instance level */
         for (int i = 0; i < numInstances; i++) {
             VNFInstance instance = instanceMap.get(i);
             aggInstanceParseTime += (double) instance.getAggParsingTime() / 1E6;
-            aggInstanceSyncTime += (double) instance.getAGG_SYNC_TIME() / 1E6;
-            aggInstanceUsefulTime += (double) instance.getAGG_USEFUL_TIME() / 1E6;
-            aggCCSwitchTime += (double) instance.getAGG_CC_SWITCH_TIME() / 1E6;
-            aggMetaDataTime += (double) instance.getAGG_METADATA_TIME() / 1E6;
-//            for (VNFRequest request : latencyMap.get(i)) {
-//                aggTotalTime += (double) (request.getFinishTime() - request.getCreateTime()) / 1E6;
-//            }
         }
+        aggInstanceParseTime /= numInstances;
 
+        /** Breakdown at local executor level */
         for (int i = 0; i < numLocalThreads; i++) {
             LocalExecutor localExecutor = localExecutorMap.get(i);
             aggLocalExecutorParseTime += (double) localExecutor.getAGG_PARSING_TIME() / 1E6;
             aggLocalExecutorSyncTime += (double) localExecutor.getAGG_SYNC_TIME() / 1E6;
             aggLocalExecutorUsefulTime += (double) localExecutor.getAGG_USEFUL_TIME() / 1E6;
+            aggLocalExecutorCCSwitchTime += (double) localExecutor.getAGG_CC_SWITCH_TIME() / 1E6;
+            agglocalExecutorMetaDataTime += (double) localExecutor.getAGG_METADATA_TIME() / 1E6;
         }
+        aggLocalExecutorParseTime /= numLocalThreads;
+        aggLocalExecutorSyncTime /= numLocalThreads;
+        aggLocalExecutorUsefulTime /= numLocalThreads;
+        aggLocalExecutorCCSwitchTime /= numLocalThreads;
+        agglocalExecutorMetaDataTime /= numLocalThreads;
 
-        aggInstanceParseTime /= numInstances;
-        aggInstanceSyncTime /= numInstances;
-        aggInstanceUsefulTime /= numInstances;
-        aggCCSwitchTime /= numInstances;
-        aggMetaDataTime /= numInstances;
-
-        aggLocalExecutorParseTime /= numInstances;
-        aggLocalExecutorSyncTime /= numInstances;
-        aggLocalExecutorUsefulTime /= numInstances;
 
         /** Breakdown at manager level */
-        if (Objects.equals(ccStrategy, "Partitioning")) {
-            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager().getAGG_PARSING_TIME() / 1E6;
-            aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager().getAGG_USEFUL_TIME() / 1E6;
-        } else if (Objects.equals(ccStrategy, "Replication")) {
-            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getReplicationStateManager().getAGG_PARSING_TIME() / 1E6;
-        } else if (Objects.equals(ccStrategy, "Offloading")) {
-            aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getOffloadAvgAggParsingTime() / 1E6;
-            aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getOffloadAvgAggUsefulTime() / 1E6;
-        } else if (Objects.equals(ccStrategy, "Proactive")) {
-            //TODO: Get time breakdown from TPG threads
-        } else if (Objects.equals(ccStrategy, "OpenNF")) {
+        if (Objects.equals(ccStrategy, "OpenNF")) {
             aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getOpenNFStateManager().getAGG_PARSING_TIME() / 1E6;
             aggManagerUsefulTime = MorphStreamEnv.get().getTransNFVStateManager().getOpenNFStateManager().getAGG_USEFUL_TIME() / 1E6;
         } else if (Objects.equals(ccStrategy, "CHC")) {
@@ -336,14 +310,29 @@ public class VNFManager implements Runnable {
         } else if (Objects.equals(ccStrategy, "S6")) {
             aggManagerParseTime = MorphStreamEnv.get().getTransNFVStateManager().getS6StateManager().getAGG_PARSING_TIME() / 1E6;
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
-            //TODO: Get time breakdown from AdaptiveCC
+            // Partition manager
+            aggManagerParseTime += MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager().getAGG_PARSING_TIME() / 1E6;
+            aggManagerUsefulTime += MorphStreamEnv.get().getTransNFVStateManager().getPartitionStateManager().getAGG_USEFUL_TIME() / 1E6;
+            // Replication manager
+            aggManagerParseTime += MorphStreamEnv.get().getTransNFVStateManager().getReplicationStateManager().getAGG_PARSING_TIME() / 1E6;
         }
 
-        //TODO: Double-check the time breakdown analysis
-        totalParseTimeMS = aggManagerParseTime + aggInstanceParseTime + aggLocalExecutorParseTime;
-        totalUsefulTimeMS = aggManagerUsefulTime + aggInstanceUsefulTime + aggLocalExecutorUsefulTime;
-        totalSyncTimeMS = aggInstanceSyncTime - aggManagerParseTime - aggManagerUsefulTime - aggLocalExecutorParseTime - aggLocalExecutorUsefulTime;
-        totalSwitchTimeMS = aggCCSwitchTime + aggMetaDataTime;
+        System.out.println("\nInstance parse time (ms): " + aggInstanceParseTime);
+        System.out.println("Local executor metadata time (ms): " + agglocalExecutorMetaDataTime);
+        System.out.println("Local executor parse time (ms): " + aggLocalExecutorParseTime);
+        System.out.println("Local executor sync time (ms): " + aggLocalExecutorSyncTime);
+        System.out.println("Local executor useful time (ms): " + aggLocalExecutorUsefulTime);
+        System.out.println("Local executor CC switch time (ms): " + aggLocalExecutorCCSwitchTime);
+        System.out.println("Manager parse time (ms): " + aggManagerParseTime);
+        System.out.println("Manager useful time (ms): " + aggManagerUsefulTime);
+//        System.out.println("Manager sync time (ms): " + aggManagerSyncTime);
+        System.out.println("\n");
+
+        totalParseTimeMS = aggInstanceParseTime + aggLocalExecutorParseTime;
+        totalSyncTimeMS = aggLocalExecutorSyncTime;
+        totalUsefulTimeMS = aggLocalExecutorUsefulTime + aggManagerUsefulTime;
+        totalSwitchTimeMS = aggLocalExecutorCCSwitchTime + agglocalExecutorMetaDataTime;
+
     }
 
     private static void writeCSVThroughput(String outputDir, double throughput) {
@@ -452,7 +441,6 @@ public class VNFManager implements Runnable {
             }
         }
         try (FileWriter fileWriter = new FileWriter(file)) {
-//            String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalCCSwitchTimeMS + "," + totalTimeMS + "\n";
             String lineToWrite = totalParseTimeMS + "," + totalSyncTimeMS + "," + totalUsefulTimeMS + "," + totalSwitchTimeMS + "\n";
             fileWriter.write(lineToWrite);
             System.out.println("Time breakdown data written to CSV file successfully.");

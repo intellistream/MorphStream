@@ -281,11 +281,12 @@ public class JCommanderHandler {
 //    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "OpenNF";
-//    public String ccStrategy = "S6";
 //    public String ccStrategy = "CHC";
+//    public String ccStrategy = "S6";
 //    public String ccStrategy = "Adaptive";
+//    public String ccStrategy = "Nested";
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.2.3";
+    public String expID = "5.4.3";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
     public String vnfID = "11";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
@@ -295,21 +296,23 @@ public class JCommanderHandler {
     @Parameter(names = {"--doMVCC"}, description = "0 - SVCC, 1 - MVCC")
     public int doMVCC = 0;
 //    public int doMVCC = 1;
+    @Parameter(names = {"--enableGC"}, description = "0 - SVCC, 1 - MVCC")
+    public int enableGC = 0;
     @Parameter(names = {"--udfComplexity"}, description = "Simulated UDF complexity in microseconds")
-    public int udfComplexity = 10;
+    public int udfComplexity = 1;
     @Parameter(names = {"--memoryIntervalMS"}, description = "Time interval to perform memory footprint measurement")
     public int memoryIntervalMS = 10;
     @Parameter(names = {"--gcCheckInterval"}, description = "Counter-based interval to align GC batches among instances")
     public int gcCheckInterval = 100;
     @Parameter(names = {"--gcBatchInterval"}, description = "Do GC after the entire batch of transactions has been processed")
     public int gcBatchInterval = 10000;
-    @Parameter(names = {"--monitorWindowSize"}, description = "Do GC after the entire batch of transactions has been processed")
-    public int monitorWindowSize = 10000;
+    @Parameter(names = {"--monitorWindowSize"}, description = "Size of workload monitor window")
+    public int monitorWindowSize = 40000;
     @Parameter(names = {"--workloadInterval"}, description = "Interval for workload shift")
-    public int workloadInterval = 50000;
-    @Parameter(names = {"--hardcodeSwitch"}, description = "Hardcode the optimal strategy switching sequence in VNF instances")
-//    public int hardcodeSwitch = 0;
-    public int hardcodeSwitch = 1;
+    public int workloadInterval = 40000;
+    @Parameter(names = {"--hardcodeSwitch"}, description = "Whether to hardcode the optimal strategy switching sequence in VNF instances")
+    public int hardcodeSwitch = 0;
+//    public int hardcodeSwitch = 1;
 
     /** Parameters controls which csv file to read */
     @Parameter(names = {"--keySkew"})
@@ -319,7 +322,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--readRatio"})
     public int readRatio = 0;
     @Parameter(names = {"--locality"})
-    public int locality = 0;
+    public int locality = 100;
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
     public int scopeRatio = 0;
 
@@ -327,11 +330,11 @@ public class JCommanderHandler {
      * Database configurations
      */
     @Parameter(names = {"--numItems"}, description = "NUM_ITEMS in DB.")
-    public int numItems = 10000;//number of records in each table
+    public int numItems = 1000;//number of records in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "testTable";
-    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = String.valueOf(numItems);
+//    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
+//    public String numberItemsForTables = String.valueOf(numItems);
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
@@ -486,7 +489,8 @@ public class JCommanderHandler {
         config.put("tableNames", tableNames);
         String[] tableNameString = tableNames.split(",");
         for (int i = 0; i < tableNameString.length; i ++) {
-            config.put(tableNameString[i] + "_num_items", Integer.parseInt(numberItemsForTables.split(",")[i]));
+//            config.put(tableNameString[i] + "_num_items", Integer.parseInt(numberItemsForTables.split(",")[i]));
+            config.put(tableNameString[i] + "_num_items", numItems);
             config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(",")[i]);
@@ -541,6 +545,7 @@ public class JCommanderHandler {
         config.put("vnfID", vnfID);
         config.put("enableMemoryFootprint", enableMemoryFootprint);
         config.put("doMVCC", doMVCC);
+        config.put("enableGC", enableGC);
         config.put("udfComplexity", udfComplexity);
         config.put("memoryIntervalMS", memoryIntervalMS);
         config.put("gcCheckInterval", gcCheckInterval);

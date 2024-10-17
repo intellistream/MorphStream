@@ -72,8 +72,12 @@ public class CliFrontend {
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
             env.getTransNFVStateManager().prepareWorkloadMonitor();
             env.getTransNFVStateManager().prepareAdaptiveCC();
-//            env.getTransNFVStateManager().prepareBatchWorkloadMonitor();
-        } else {
+        } else if (Objects.equals(ccStrategy, "Nested")) {
+            env.getTransNFVStateManager().preparePartitionStateManager();
+            env.getTransNFVStateManager().prepareOffloadExecutors();
+        }
+
+        else {
             if (enable_log) LOG.error("Unknown CC strategy: " + ccStrategy);
         }
     }
@@ -152,8 +156,16 @@ public class CliFrontend {
             env.getTransNFVStateManager().joinS6StateManager();
         } else if (Objects.equals(ccStrategy, "Adaptive")) {
             env.getTransNFVStateManager().startAdaptiveCC();
-            startVNF();
+//            startVNF();
+            runTopologyLocally();
             env.getTransNFVStateManager().joinAdaptiveCC();
+
+        } else if (Objects.equals(ccStrategy, "Nested")) {
+            env.getTransNFVStateManager().startPartitionStateManager();
+            env.getTransNFVStateManager().startOffloadExecutors();
+            startVNF();
+            env.getTransNFVStateManager().joinPartitionStateManager();
+            env.getTransNFVStateManager().joinOffloadExecutors();
         } else {
             if (enable_log) LOG.error("Unknown CC strategy: " + ccStrategy);
         }

@@ -291,8 +291,8 @@ def combineWorkload():
     print(f"Combined data saved to {combinedDataPath}")
 
 if __name__ == "__main__":
-    # keySkewExp()
-    # localityExp()
+    keySkewExp()
+    localityExp()
 
     labelKeySkew()
     labelLocality()

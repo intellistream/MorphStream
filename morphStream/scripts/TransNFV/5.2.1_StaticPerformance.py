@@ -1,21 +1,12 @@
-import subprocess
 import os
-import time
-import threading
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-import csv
-import itertools
 
-# VNF names (indexes on x-axis)
 vnf_indices = np.arange(10)
 colors = ['#AE48C8', '#F44040', '#15DB3F', '#E9AA18']
 markers = ['o', 's', '^', 'D']
 vnfLists = ["FW", "NAT", "L4LB", "TD", "PD", "PNM", "SBC", "SIPS", "SCP", "ATS"]
 
-# Throughput data for the four systems across 10 VNFs
 throughput_opennf = [1848.3, 269.4, 255.2, 275.4, 279.5, 268.8, 267.4, 256.9, 265.8, 276.1]
 throughput_s6 = [1811.4, 864.8, 894.9, 314.9, 315.1, 374.9, 934.2, 371.0, 313.4, 923.3]
 throughput_chc = [1823.2, 893.4, 888.4, 315.0, 322.3, 463.4, 930.5, 370.2, 320.0, 876.9]
@@ -33,20 +24,16 @@ throughput_transnfv_scaled = [x / 1000 for x in throughput_transnfv]
 
 
 def plot_vnf_throughput():
-    # Create the line chart
     plt.figure(figsize=(7, 4.5))
+    plt.plot(vnfLists, throughput_opennf_scaled, marker=markers[1], color=colors[1], label='OpenNF', markersize=8,
+            markeredgecolor='black', markeredgewidth=1.5)
+    plt.plot(vnfLists, throughput_chc_scaled, marker=markers[2], color=colors[2], label='CHC', markersize=8,
+            markeredgecolor='black', markeredgewidth=1.5)
+    plt.plot(vnfLists, throughput_s6_scaled, marker=markers[3], color=colors[3], label='S6', markersize=8,
+            markeredgecolor='black', markeredgewidth=1.5)
+    plt.plot(vnfLists, throughput_transnfv_scaled, marker=markers[0], color=colors[0], label='TransNFV', markersize=8,
+            markeredgecolor='black', markeredgewidth=1.5)
 
-    # Plot lines with markers
-    
-    plt.plot(vnfLists, throughput_opennf_scaled, marker=markers[1], color=colors[1], label='OpenNF', markersize=8, 
-            markeredgecolor='black', markeredgewidth=1.5)
-    plt.plot(vnfLists, throughput_chc_scaled, marker=markers[2], color=colors[2], label='CHC', markersize=8, 
-            markeredgecolor='black', markeredgewidth=1.5)
-    plt.plot(vnfLists, throughput_s6_scaled, marker=markers[3], color=colors[3], label='S6', markersize=8, 
-            markeredgecolor='black', markeredgewidth=1.5)
-    plt.plot(vnfLists, throughput_transnfv_scaled, marker=markers[0], color=colors[0], label='TransNFV', markersize=8, 
-            markeredgecolor='black', markeredgewidth=1.5)
-    
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     plt.xlabel('Stateful VNFs', fontsize=18)
@@ -55,7 +42,6 @@ def plot_vnf_throughput():
     plt.grid(True, axis='y', color='gray', linestyle='--', linewidth=0.5, alpha=0.6)
 
     plt.tight_layout()
-    # plt.subplots_adjust(left=0.12, right=0.98, top=0.97, bottom=0.15)
     plt.subplots_adjust(left=0.12, right=0.98, top=0.85, bottom=0.15)
 
 
@@ -77,16 +63,16 @@ def plot_vnf_latency():
     plt.figure(figsize=(7, 4.5))
 
     # Plot lines with markers
-    
-    plt.plot(vnfLists, latency_opennf, marker=markers[1], color=colors[1], label='OpenNF', markersize=8, 
+
+    plt.plot(vnfLists, latency_opennf, marker=markers[1], color=colors[1], label='OpenNF', markersize=8,
             markeredgecolor='black', markeredgewidth=1.5)
-    plt.plot(vnfLists, latency_chc, marker=markers[2], color=colors[2], label='CHC', markersize=8, 
+    plt.plot(vnfLists, latency_chc, marker=markers[2], color=colors[2], label='CHC', markersize=8,
             markeredgecolor='black', markeredgewidth=1.5)
-    plt.plot(vnfLists, latency_s6, marker=markers[3], color=colors[3], label='S6', markersize=8, 
+    plt.plot(vnfLists, latency_s6, marker=markers[3], color=colors[3], label='S6', markersize=8,
             markeredgecolor='black', markeredgewidth=1.5)
-    plt.plot(vnfLists, latency_transnfv, marker=markers[0], color=colors[0], label='TransNFV', markersize=8, 
+    plt.plot(vnfLists, latency_transnfv, marker=markers[0], color=colors[0], label='TransNFV', markersize=8,
             markeredgecolor='black', markeredgewidth=1.5)
-    
+
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     plt.xlabel('Stateful VNFs', fontsize=18)

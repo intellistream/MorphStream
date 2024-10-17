@@ -13,7 +13,7 @@ public class S2PLLockObject {
     private int sharedLockCount = 0;
 
     public S2PLLockObject(int numExecutors) {
-        lockQueue = new PriorityQueue<>(numExecutors, Comparator.comparingLong(lr -> lr.timestamp)); //TODO: Restrict the size of the queue?
+        lockQueue = new PriorityQueue<>(numExecutors, Comparator.comparingLong(lr -> lr.timestamp));
     }
 
     public void acquireLock(long timestamp, boolean isWrite) throws InterruptedException {
@@ -24,7 +24,7 @@ public class S2PLLockObject {
 
             // Blocked
             while (!request.equals(lockQueue.peek())
-//                        || lockQueue.size() < S2PLLockManagerOrdered.numExecutors //TODO: Enforce lock ordering?
+//                        || lockQueue.size() < S2PLLockManagerOrdered.numExecutors
                     || (isWrite && (hasExclusiveLock || sharedLockCount > 0))
                     || (!isWrite && hasExclusiveLock)) {
                 condition.await();  // Wait on the shared condition
