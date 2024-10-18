@@ -152,7 +152,7 @@ def plot_throughput_figure(exp_dir):
                edgecolor=hatch_colors[i], width=bar_width, label=displayedStrategyList[i])
 
     ax.set_xticks([r + bar_width for r in range(len(range(4)))])
-    ax.set_xticklabels([f"Phase {i}" for i in range(4)], fontsize=14)
+    ax.set_xticklabels([f"Phase {i+1}" for i in range(4)], fontsize=14)
     ax.tick_params(axis='y', labelsize=14)
     ax.set_xlabel('Workload with Variations', fontsize=18)
     ax.set_ylabel('Throughput\n(Million req/sec)', fontsize=18, labelpad=15)

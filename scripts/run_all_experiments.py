@@ -256,11 +256,11 @@ def generate_5_5_2():
 
 
 if __name__ == "__main__":
-    # generate_Pre_Study()
-    # run_Pre_Study()
+    generate_Pre_Study()
+    run_Pre_Study()
 
-    generate_5_2_1()
-    run_5_2_1_Static()
+    # generate_5_2_1()
+    # run_5_2_1_Static()
 
     # generate_5_2_2()
     # run_5_2_2_Dynamic_Variation()
