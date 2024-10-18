@@ -1,5 +1,6 @@
 package intellistream.morphstream.transNFV.adaptation;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.jpmml.evaluator.*;
 import org.jpmml.model.PMMLUtil;
 import org.dmg.pmml.FieldName;
@@ -19,10 +20,12 @@ import java.util.Map;
 public class PerformanceModel {
 
     private static Evaluator evaluator;
+    private static final String nfvExperimentPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
 
     public static void loadModel() throws JAXBException, IOException, SAXException {
+        String pmmlFilePath = String.format(nfvExperimentPath + "/training_data/mlp_model.pmml");
         Evaluator newEvaluator = new LoadingModelEvaluatorBuilder()
-                .load(new File("/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/training_data/mlp_model.pmml"))
+                .load(new File(pmmlFilePath))
                 .build();
 
         PerformanceModel.evaluator = newEvaluator;

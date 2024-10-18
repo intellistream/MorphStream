@@ -16,6 +16,15 @@ def run_Pre_Study():
     else:
         print(f"Error: {result.returncode}")
 
+def run_5_2_1_Static():
+    exp_script_path = root_dir / 'morphStream/scripts/TransNFV' / '5.2.1_StaticPerformance.py'
+    command = f"python {exp_script_path} --root_dir {root_dir} --exp_dir {root_dir / 'morphStream/scripts/TransNFV'}"
+    result = subprocess.run(command, shell=True)
+    if result.returncode == 0:
+        print("Done")
+    else:
+        print(f"Error: {result.returncode}")
+
 def run_5_2_2_Dynamic_Variation():
     exp_script_path = root_dir / 'morphStream/scripts/TransNFV' / '5.2.2_DynamicPerformance.py'
     command = f"python {exp_script_path} --root_dir {root_dir} --exp_dir {root_dir / 'morphStream/scripts/TransNFV'}"
@@ -151,6 +160,15 @@ def generate_Pre_Study():
     else:
         print(f"Error: {result.returncode}")
 
+def generate_5_2_1():
+    exp_script_path = root_dir / 'morphStream/scripts/TransNFV/generators' / '5.2.1_Generator.py'
+    command = f"python {exp_script_path} --root_dir {root_dir} --exp_dir {root_dir / 'morphStream/scripts/TransNFV'}"
+    result = subprocess.run(command, shell=True)
+    if result.returncode == 0:
+        print("Done")
+    else:
+        print(f"Error: {result.returncode}")
+
 def generate_5_2_2():
     exp_script_path = root_dir / 'morphStream/scripts/TransNFV/generators' / '5.2.2_Generator.py'
     command = f"python {exp_script_path} --root_dir {root_dir} --exp_dir {root_dir / 'morphStream/scripts/TransNFV'}"
@@ -241,6 +259,9 @@ if __name__ == "__main__":
     # generate_Pre_Study()
     # run_Pre_Study()
 
+    generate_5_2_1()
+    run_5_2_1_Static()
+
     # generate_5_2_2()
     # run_5_2_2_Dynamic_Variation()
 
@@ -266,8 +287,10 @@ if __name__ == "__main__":
     # run_5_4_3_Tradeoff_SSL_ReadRatio()
     # run_5_4_3_Tradeoff_SSL_ScopeRatio()
 
-    generate_5_5_1()
+    # generate_5_5_1()
     # run_5_5_1_System_Scalability()
 
-    generate_5_5_2()
+    # generate_5_5_2()
     # run_5_5_2_Monitor_Window()
+
+    print("Done")

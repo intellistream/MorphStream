@@ -276,8 +276,8 @@ public class JCommanderHandler {
     @Parameter(names = {"--numLocalThreads"}, description = "Number of threads in Offloading CC's executor service thread pool")
     public int numLocalThreads = 4;
     @Parameter(names = {"--ccStrategy"}, description = "Chosen CC strategy") // 0: Partition, 1: Cache, 2: Offload, 3: TPG, 4: OpenNF, 5: CHC, 6: Adaptive
-    public String ccStrategy = "Partitioning";
-//    public String ccStrategy = "Replication";
+//    public String ccStrategy = "Partitioning";
+    public String ccStrategy = "Replication";
 //    public String ccStrategy = "Offloading";
 //    public String ccStrategy = "Proactive";
 //    public String ccStrategy = "OpenNF";
@@ -286,9 +286,9 @@ public class JCommanderHandler {
 //    public String ccStrategy = "Adaptive";
 //    public String ccStrategy = "Nested";
     @Parameter(names = {"--expID"}, description = "The running experiment ID")
-    public String expID = "5.4.3";
+    public String expID = "5.2.1";
     @Parameter(names = {"--vnfID"}, description = "The running experiment ID")
-    public String vnfID = "11";
+    public String vnfID = "1";
     @Parameter(names = {"--enableTimeBreakdown"}, description = "Enable measurement for execution time breakdown analysis or not")
     public int enableTimeBreakdown = 1;
     @Parameter(names = {"--enableMemoryFootprint"}, description = "Measure runtime memory footprint or not")
@@ -322,7 +322,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--readRatio"})
     public int readRatio = 0;
     @Parameter(names = {"--locality"})
-    public int locality = 100;
+    public int locality = 0;
     @Parameter(names = {"--scopeRatio"}, description = "Ratio of per-flow requests")
     public int scopeRatio = 0;
 

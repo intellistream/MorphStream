@@ -44,13 +44,14 @@ public class TransNFVStateManager {
     public final ConcurrentHashMap<Integer, BlockingQueue<TransactionalEvent>> tpgInputQueues = new ConcurrentHashMap<>(); //round-robin input queues for each executor (combo/bolt)
     private final int numOffloadThreads = MorphStreamEnv.get().configuration().getInt("numOffloadThreads");
     private final boolean hardcodeSwitch = (MorphStreamEnv.get().configuration().getInt("hardcodeSwitch") == 1);
+    private static final String nfvExperimentPath = MorphStreamEnv.get().configuration().getString("nfvExperimentPath");
 
 
     private ModelEvaluator<?> modelEvaluator;
 
 
     public TransNFVStateManager() {
-        String pmmlFilePath = "/home/zhonghao/IdeaProjects/transNFV/morphStream/scripts/TransNFV/training_data/mlp_model.pmml";
+        String pmmlFilePath = String.format(nfvExperimentPath + "/training_data/mlp_model.pmml");
         modelEvaluator = PerformanceModel.loadPMMLModel(pmmlFilePath);
         svccStateManager = new OffloadSVCCStateManager();
         mvccStateManager = new OffloadMVCCStateManager();
