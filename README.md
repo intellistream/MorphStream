@@ -39,6 +39,7 @@
 
 2. Third-party Lib: Make sure to install and configure environments all required dependencies as shown below.
    - wget: ```sudo apt install wget -y```
+   - make/cmake/gcc/g++: ```sudo apt install make cmake gcc g++ -y```
    - [JDK 1.8.x](https://www.oracle.com/sg/java/technologies/javase/javase8-archive-downloads.html)
    - Maven 3.8.6: ```sudo apt install maven -y```
    - [Intel Vtune](https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html#gs.ffrana): Configure Vtune path to `/opt/intel/oneapi/vtune/latest/bin64/vtune`, set `/proc/sys/kernel/perf_event_paranoid` to 0.
