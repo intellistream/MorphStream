@@ -84,7 +84,7 @@ wget https://archive.apache.org/dist/flink/flink-1.10.0/flink-1.10.0-bin-scala_2
 tar -zvxf flink-1.10.0-bin-scala_2.11.tgz
 rm flink-1.10.0-bin-scala_2.11.tgz
 mv flink-1.10.0 flink
-mv flink-conf.yaml flink/conf/
+cp flink-conf.yaml flink/conf/
 build
 
 cd -
