@@ -21,17 +21,17 @@ If you use MorphStream in your paper, please cite our work.
 
 * **[Under Review]** Jianjun Zhao, Yancan Mao, Zhonghao Yang, Haikun Liu and Shuhao Zhang. Scalable Window-based Transactional Stream
 Processing with Non-deterministic State Access.
-* **[VLDBJ]** Zhang, S., Soto, J. & Markl, V. A survey on transactional stream processing. The VLDB Journal 33, 451–479 (2024)
-* **[ICDE]** Jianjun Zhao*, Haikun Liu, Shuhao Zhang, Zhuohui Duan, Xiaofei Liao, Hai Jin, Yu Zhang. Fast Parallel Recovery for Transactional Stream Processing on Multicores, ICDE, 2024
-* **[ICDE]** Siqi Xiang*, Zhonghao Yang*, Shuhao Zhang, Jianjun Zhao, Yancan Mao. MorphStream: Scalable Processing of Transactions over Streams, ICDE (Demo), 2024
-* **[SIGMOD]** Yancan Mao and Jianjun Zhao and Shuhao Zhang and Haikun Liu and Volker Markl. MorphStream: Adaptive
-  Scheduling for Scalable Transactional Stream Processing on Multicores, SIGMOD, 2023
+* **[VLDBJ]** Shuhao Zhang, Soto Juan and Volker Markl. A survey on transactional stream processing. The VLDB Journal, 2024
+* **[ICDE]** Jianjun Zhao, Haikun Liu, Shuhao Zhang, Zhuohui Duan, Xiaofei Liao, Hai Jin, Yu Zhang. Fast Parallel Recovery for Transactional Stream Processing on Multicores. ICDE, 2024
+* **[ICDE]** Siqi Xiang, Zhonghao Yang, Shuhao Zhang, Jianjun Zhao, Yancan Mao. MorphStream: Scalable Processing of Transactions over Streams. ICDE (Demo), 2024
+* **[SIGMOD]** Yancan Mao, Jianjun Zhao, Shuhao Zhang, Haikun Liu and Volker Markl. MorphStream: Adaptive
+  Scheduling for Scalable Transactional Stream Processing on Multicores. SIGMOD, 2023
 * **[ICDE]** Shuhao Zhang, Yingjun Wu, Feng Zhang, Bingsheng He. Towards Concurrent Stateful Stream Processing on
   Multicore Processors, ICDE, 2020
 * **[SIGMOD]** Shuhao Zhang, Jiong He, Chi Zhou (Amelie), Bingsheng He. BriskStream: Scaling Stream Processing on
-  Multicore Architectures, SIGMOD, 2019 (code: https://github.com/Xtra-Computing/briskstream)
+  Multicore Architectures. SIGMOD, 2019 (code: https://github.com/Xtra-Computing/briskstream)
 * **[ICDE]** Shuhao Zhang, Bingsheng He, Daniel Dahlmeier, Amelie Chi Zhou, Thomas Heinze. Revisiting the design of data
-  stream processing systems on multi-core processors, ICDE, 2017 (code: https://github.com/ShuhaoZhangTony/ProfilingStudy)
+  stream processing systems on multi-core processors. ICDE, 2017 (code: https://github.com/ShuhaoZhangTony/ProfilingStudy)
 ```
 @article{zhang2024survey,
   title={A survey on transactional stream processing},
