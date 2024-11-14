@@ -1,0 +1,2 @@
+Total number of threads  : 24
+Total Events      : 245760
