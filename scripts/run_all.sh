@@ -4,6 +4,31 @@
 project_Dir="/home/myc/workspace/myc/MorphStream_Reproduce"
 jar_Dir="${project_Dir}/application/target/application-0.0.2-jar-with-dependencies.jar"
 
+# Modify global.sh in the same folder
+echo "Updating global.sh with project_Dir and jar_Dir..."
+global_file="$project_Dir/scripts/global.sh" # Assuming it's in the same directory as run_all.sh
+
+if [[ -f $global_file ]]; then
+    # Use sed to update or append the export statements
+    sed -i "s|^export project_Dir=.*|export project_Dir=\"$project_Dir\"|" "$global_file"
+    sed -i "s|^export jar_Dir=.*|export jar_Dir=\"$jar_Dir\"|" "$global_file"
+
+    # If the variables are not present, append them
+    grep -q "^export project_Dir=" "$global_file" || echo "export project_Dir=\"$project_Dir\"" >> "$global_file"
+    grep -q "^export jar_Dir=" "$global_file" || echo "export jar_Dir=\"$jar_Dir\"" >> "$global_file"
+
+    echo "global.sh updated successfully."
+else
+    echo "global.sh not found. Creating a new one..."
+    echo "export project_Dir=\"$project_Dir\"" > "$global_file"
+    echo "export jar_Dir=\"$jar_Dir\"" >> "$global_file"
+    echo "global.sh created successfully."
+fi
+
+# Source the global.sh to ensure the variables are available
+source "$global_file"
+
+
 # Set Java options
 export JAVA_OPTS="-Xmx300G -Xms300G -XX:+UseG1GC"
 
