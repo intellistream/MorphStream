@@ -1,54 +1,55 @@
-Throughput: 0.0
+Throughput: 258.88900135778596
 AverageTotalTimeBreakdownReport
 thread_id	 total_time	 stream_process	 txn_process	 overheads
-0	NaN       	NaN       	NaN       	NaN       
-1	NaN       	NaN       	NaN       	NaN       
-2	NaN       	NaN       	NaN       	NaN       
-3	NaN       	NaN       	NaN       	NaN       
-4	NaN       	NaN       	NaN       	NaN       
-5	NaN       	NaN       	NaN       	NaN       
-6	NaN       	NaN       	NaN       	NaN       
-7	NaN       	NaN       	NaN       	NaN       
-8	NaN       	NaN       	NaN       	NaN       
-9	NaN       	NaN       	NaN       	NaN       
-10	NaN       	NaN       	NaN       	NaN       
-11	NaN       	NaN       	NaN       	NaN       
-12	NaN       	NaN       	NaN       	NaN       
-13	NaN       	NaN       	NaN       	NaN       
-14	NaN       	NaN       	NaN       	NaN       
-15	NaN       	NaN       	NaN       	NaN       
-16	NaN       	NaN       	NaN       	NaN       
-17	NaN       	NaN       	NaN       	NaN       
-18	NaN       	NaN       	NaN       	NaN       
-19	NaN       	NaN       	NaN       	NaN       
-20	NaN       	NaN       	NaN       	NaN       
-21	NaN       	NaN       	NaN       	NaN       
-22	NaN       	NaN       	NaN       	NaN       
-23	NaN       	NaN       	NaN       	NaN       
+0	92332.86  	1144.65   	73525.78  	17662.43  
+1	92333.49  	1115.90   	73826.65  	17390.93  
+2	92302.18  	1101.81   	73788.57  	17411.79  
+3	92337.92  	1118.93   	73706.53  	17512.45  
+4	92333.32  	1141.17   	73633.80  	17558.35  
+5	92332.50  	1138.43   	73515.65  	17678.42  
+6	92333.67  	1134.94   	72931.80  	18266.93  
+7	92333.66  	1120.20   	73578.85  	17634.61  
+8	92279.47  	1088.65   	73653.82  	17537.00  
+9	92252.30  	1081.31   	73729.04  	17441.95  
+10	92329.78  	1135.93   	72133.62  	19060.24  
+11	92327.58  	1120.79   	73073.57  	18133.22  
+12	92325.18  	1135.48   	72900.76  	18288.94  
+13	92316.11  	1159.53   	73698.30  	17458.29  
+14	92656.77  	319.60    	71066.16  	21271.00  
+15	92312.10  	391.25    	72330.45  	19590.40  
+16	92310.14  	372.77    	73383.04  	18554.33  
+17	92308.42  	343.84    	73526.71  	18437.88  
+18	92305.27  	345.95    	73476.38  	18482.95  
+19	92223.17  	1101.02   	72198.12  	18924.03  
+20	92287.39  	1073.35   	73292.38  	17921.66  
+21	92282.88  	1073.40   	73639.43  	17570.05  
+22	92282.64  	1059.29   	73334.64  	17888.72  
+23	92286.66  	1035.48   	68983.41  	22267.76  
 phase_id	 throughput
+0	259.9602  	
 SchedulerTimeBreakdownReport
 thread_id	 explore_time	 next_time	 useful_time	 notify_time	 construct_time	 first_explore_time	 scheduler_switch
-0	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-1	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-2	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-3	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-4	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-5	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-6	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-7	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-8	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-9	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-10	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-11	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-12	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-13	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-14	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-15	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-16	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-17	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-18	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-19	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-20	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-21	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-22	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-23	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
+0	67008.31  	358.94    	4541.23   	32.23     	14550.08  	50177.83  	0.00      	
+1	67323.05  	370.57    	4534.12   	4.43      	14300.36  	50189.05  	0.00      	
+2	67266.49  	362.33    	4556.37   	3.98      	14355.12  	50218.23  	0.00      	
+3	67188.83  	358.11    	4541.24   	3.54      	14397.64  	50181.99  	0.00      	
+4	67139.66  	395.66    	4530.40   	3.53      	14421.71  	50202.72  	0.00      	
+5	66951.38  	383.07    	4620.55   	4.34      	14441.84  	50180.85  	0.00      	
+6	66309.95  	329.61    	4666.12   	4.33      	14997.86  	50156.98  	0.00      	
+7	67045.70  	389.43    	4560.73   	4.12      	14422.76  	50198.91  	0.00      	
+8	67123.22  	353.11    	4563.20   	4.84      	14368.70  	50170.48  	0.00      	
+9	67198.98  	342.96    	4574.46   	4.25      	14273.64  	50181.38  	0.00      	
+10	65601.77  	341.24    	4578.76   	4.41      	15842.39  	50178.18  	0.00      	
+11	66545.42  	366.20    	4565.31   	5.53      	14839.75  	50153.56  	0.00      	
+12	66269.41  	355.91    	4674.93   	5.30      	15074.87  	50167.12  	0.00      	
+13	67185.94  	467.00    	4557.53   	4.64      	14316.54  	50221.52  	0.00      	
+14	62335.60  	345.40    	4529.43   	4.60      	16053.29  	50181.69  	0.00      	
+15	65091.14  	323.47    	4530.04   	4.33      	16377.82  	50146.13  	0.00      	
+16	65792.95  	296.11    	4640.60   	5.39      	15484.40  	50173.21  	0.00      	
+17	65610.65  	298.44    	4686.37   	4.79      	15676.90  	50168.23  	0.00      	
+18	65575.62  	336.98    	4534.66   	4.74      	15784.78  	50164.43  	0.00      	
+19	65706.88  	413.27    	4518.24   	4.57      	15707.18  	50148.79  	0.00      	
+20	66536.87  	398.93    	4625.61   	4.81      	14681.02  	50175.38  	0.00      	
+21	66828.22  	415.17    	4672.34   	4.71      	14431.62  	50185.76  	0.00      	
+22	66521.20  	419.32    	4666.15   	5.01      	14691.64  	50180.91  	0.00      	
+23	62167.89  	370.30    	4676.28   	5.22      	18952.95  	50202.59  	0.00      	

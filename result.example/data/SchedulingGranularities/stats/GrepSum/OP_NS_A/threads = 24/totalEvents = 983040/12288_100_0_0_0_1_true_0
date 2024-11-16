@@ -1,54 +1,55 @@
-Throughput: 0.0
+Throughput: 595.6534862627124
 AverageTotalTimeBreakdownReport
 thread_id	 total_time	 stream_process	 txn_process	 overheads
-0	NaN       	NaN       	NaN       	NaN       
-1	NaN       	NaN       	NaN       	NaN       
-2	NaN       	NaN       	NaN       	NaN       
-3	NaN       	NaN       	NaN       	NaN       
-4	NaN       	NaN       	NaN       	NaN       
-5	NaN       	NaN       	NaN       	NaN       
-6	NaN       	NaN       	NaN       	NaN       
-7	NaN       	NaN       	NaN       	NaN       
-8	NaN       	NaN       	NaN       	NaN       
-9	NaN       	NaN       	NaN       	NaN       
-10	NaN       	NaN       	NaN       	NaN       
-11	NaN       	NaN       	NaN       	NaN       
-12	NaN       	NaN       	NaN       	NaN       
-13	NaN       	NaN       	NaN       	NaN       
-14	NaN       	NaN       	NaN       	NaN       
-15	NaN       	NaN       	NaN       	NaN       
-16	NaN       	NaN       	NaN       	NaN       
-17	NaN       	NaN       	NaN       	NaN       
-18	NaN       	NaN       	NaN       	NaN       
-19	NaN       	NaN       	NaN       	NaN       
-20	NaN       	NaN       	NaN       	NaN       
-21	NaN       	NaN       	NaN       	NaN       
-22	NaN       	NaN       	NaN       	NaN       
-23	NaN       	NaN       	NaN       	NaN       
+0	40289.09  	1371.19   	22617.92  	16299.98  
+1	40292.61  	1410.12   	22590.60  	16291.90  
+2	40278.22  	1402.70   	23101.12  	15774.40  
+3	40292.49  	1387.80   	21259.96  	17644.73  
+4	40278.13  	1392.51   	22801.12  	16084.50  
+5	40277.90  	1378.88   	19349.36  	19549.66  
+6	40277.96  	1343.19   	22380.34  	16554.43  
+7	39982.60  	1346.59   	22425.13  	16210.88  
+8	40159.41  	1366.46   	22986.19  	15806.76  
+9	40292.57  	1381.59   	23106.68  	15804.30  
+10	40277.99  	1401.98   	22949.52  	15926.49  
+11	40278.13  	1394.64   	22950.09  	15933.41  
+12	40277.03  	1406.15   	22291.28  	16579.60  
+13	40276.63  	1434.91   	21192.61  	17649.10  
+14	40273.52  	1382.15   	22616.00  	16275.37  
+15	40244.01  	1374.18   	22344.35  	16525.48  
+16	40269.97  	1419.77   	22969.53  	15880.66  
+17	40282.88  	1411.50   	22224.44  	16646.94  
+18	40281.08  	1446.41   	22211.53  	16623.14  
+19	40258.87  	1420.30   	22622.12  	16216.44  
+20	40270.79  	1403.53   	22928.01  	15939.25  
+21	40254.35  	1456.31   	23040.27  	15757.76  
+22	40265.93  	1401.01   	22983.60  	15881.33  
+23	40251.23  	1452.30   	22897.23  	15901.69  
 phase_id	 throughput
+0	596.1616  	
 SchedulerTimeBreakdownReport
 thread_id	 explore_time	 next_time	 useful_time	 notify_time	 construct_time	 first_explore_time	 scheduler_switch
-0	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-1	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-2	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-3	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-4	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-5	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-6	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-7	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-8	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-9	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-10	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-11	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-12	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-13	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-14	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-15	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-16	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-17	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-18	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-19	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-20	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-21	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-22	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
-23	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	NaN       	
+0	17595.50  	3174.81   	2714.95   	129.62    	12646.03  	1957.46   	0.00      	
+1	17546.96  	3180.80   	2751.05   	142.59    	12685.22  	1942.38   	0.00      	
+2	18077.42  	3277.05   	2727.96   	116.45    	12310.61  	2035.90   	0.00      	
+3	16246.20  	4516.66   	2708.44   	202.70    	14048.93  	1923.13   	0.00      	
+4	17772.50  	4610.25   	2713.51   	189.15    	12427.58  	1999.82   	0.00      	
+5	13814.35  	3979.63   	3233.70   	220.73    	15948.75  	2194.95   	0.00      	
+6	17037.38  	4486.57   	3013.81   	205.32    	12894.56  	1947.96   	0.00      	
+7	17044.90  	4518.60   	3074.99   	218.36    	12784.41  	1950.16   	0.00      	
+8	17605.50  	4524.70   	3085.78   	214.74    	12326.79  	2017.92   	0.00      	
+9	17805.12  	4538.42   	2996.12   	205.80    	12292.08  	2029.88   	0.00      	
+10	17644.76  	4487.30   	2999.46   	199.60    	12398.22  	2008.59   	0.00      	
+11	17679.15  	4575.55   	2954.97   	130.79    	12405.39  	2002.86   	0.00      	
+12	16963.78  	4382.67   	3032.44   	162.42    	12925.48  	1931.87   	0.00      	
+13	15939.28  	4448.40   	2958.22   	165.98    	14058.63  	1922.62   	0.00      	
+14	17357.94  	4396.09   	2958.33   	145.85    	12601.42  	1998.05   	0.00      	
+15	17115.36  	4261.95   	2937.76   	172.80    	12826.52  	1937.61   	0.00      	
+16	17756.92  	4503.66   	2908.46   	160.75    	12375.52  	2011.21   	0.00      	
+17	17027.74  	4546.95   	2888.57   	161.53    	13063.93  	1935.95   	0.00      	
+18	17063.36  	4583.85   	2851.58   	139.25    	12993.82  	1935.65   	0.00      	
+19	17464.41  	4653.75   	2837.55   	129.89    	12665.27  	1947.98   	0.00      	
+20	17801.38  	4709.61   	2821.36   	127.21    	12399.93  	2001.24   	0.00      	
+21	17961.67  	4709.39   	2781.28   	122.92    	12334.22  	2029.01   	0.00      	
+22	17873.43  	4514.33   	2797.44   	131.36    	12412.97  	2019.80   	0.00      	
+23	17804.87  	4658.28   	2785.42   	119.01    	12428.89  	2009.24   	0.00      	
