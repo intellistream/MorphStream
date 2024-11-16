@@ -58,6 +58,8 @@ function baselineEvaluation() {
   isGroup=1
   groupNum=2
   runTStream
+  move_files_and_delete_folder "OG_DFS_A" "Nested"
+
   ResetParameters
   for scheduler in TStream OG_DFS_A OG_NS
   do
@@ -80,5 +82,35 @@ function group_runner() { # multi-batch exp
  ResetParameters
  patEvluation
 }
+#!/bin/bash
+
+# 定义移动文件并删除原文件夹的函数
+move_files_and_delete_folder() {
+  # 参数: $1 - "OG_DFS_A" 或其他源文件夹名，$2 - "Nested" 或其他目标文件夹名
+  SOURCE_PART="$1"
+  TARGET_PART="$2"
+
+  # 基础路径（公共部分）
+  BASE_PATH="${project_Dir}/data/Multiple/stats/TollProcessing"
+
+  # 源文件夹路径
+  SOURCE_DIR="$BASE_PATH/$SOURCE_PART/threads = 24/totalEvents = 983040/"
+
+  # 目标文件夹路径
+  TARGET_DIR="$BASE_PATH/$TARGET_PART/threads = 24/totalEvents = 983040/"
+
+  # 检查目标文件夹是否存在，如果不存在则创建它
+  if [ ! -d "$TARGET_DIR" ]; then
+    mkdir -p "$TARGET_DIR"
+  fi
+
+  # 移动所有文件到目标文件夹
+  mv "$SOURCE_DIR"* "$TARGET_DIR"
+
+  # 删除源文件夹及其内容
+  rm -r "$SOURCE_DIR"
+}
+
+
 group_runner
 ResetParameters
