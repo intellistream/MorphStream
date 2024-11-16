@@ -88,11 +88,11 @@ function varying_JVMSize() { # multi-batch exp
     app=StreamLedger
     baselineEvaluation
     # 结果源目录
-    sourceDir="result.example/data/VaryingJVMSize/stats/StreamLedger/OG_BFS_A/threads = 24/totalEvents = 3194880"
+    sourceDir="${project_Dir}/result/data/VaryingJVMSize/stats/StreamLedger/OG_BFS_A/threads = 24/totalEvents = 3194880"
 
     # 生成以 JVM 配置命名的目标目录
     safeConf=$(echo "$jvmConf" | sed 's/ /_/g' | sed 's/[^a-zA-Z0-9_]/_/g')
-    targetDir="result.example/data/VaryingJVMSize/stats/StreamLedger/OG_BFS_A/${safeConf}"
+    targetDir="${project_Dir}/result/data/VaryingJVMSize/stats/StreamLedger/OG_BFS_A/threads = 24/totalEvents = 3194880/${safeConf}"
 
     # 创建目标目录
     mkdir -p "$targetDir"
