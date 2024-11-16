@@ -21,7 +21,7 @@ project_Dir = os.environ.get("project_Dir", "/default/path/to/project")
 
 # Paths
 root_path = os.path.join(project_Dir, "scripts/ModernHardware/MicroArchitecturalAnalysis/")
-FIGURE_FOLDER = os.path.join(project_Dir, "result.example/figures")
+FIGURE_FOLDER = os.path.join(project_Dir, "result/figures")
 print(root_path)
 print(FIGURE_FOLDER)
 
@@ -127,4 +127,4 @@ if __name__ == "__main__":
         ])
 
     y_values = np.array(y_values).T.tolist()  # Transpose to match the bar chart structure
-    DrawFigure(x_values, y_values, legend_labels, 'ClockTicks ($x10^{12}$)', '', 'topdown_breakdown', True)
+    DrawFigure(x_values, y_values, legend_labels, 'ClockTicks ($x10^{12}$)', '', 'figure18_a', True)

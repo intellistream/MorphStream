@@ -36,8 +36,13 @@ matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 matplotlib.rcParams['pdf.fonttype'] = 42
 
-FIGURE_FOLDER = './results/'
-FILE_FOLER = '/home/shuhao/TStream/data/stats'
+
+# Fetch environment variables
+project_Dir = os.environ.get("project_Dir", "/default/path/to/project")
+
+# Paths
+# root_path = os.path.join(project_Dir, "scripts/ModernHardware/MicroArchitecturalAnalysis/")
+FIGURE_FOLDER = os.path.join(project_Dir, "result/figures")
 
 
 # there are some embedding problems if directly exporting the pdf figure using matplotlib.
@@ -127,51 +132,80 @@ def DrawLegend(legend_labels, filename):
 
     figlegend.savefig(FIGURE_FOLDER + '/' + filename + '.pdf')
 
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.font_manager import FontProperties
+from matplotlib.ticker import LinearLocator
+
+# Constants for figure styling
+OPT_FONT_NAME = 'Helvetica'
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
+LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
+LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
+TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
+
+COLOR_MAP = ['#2874A6', '#B03A2E', '#239B56', '#7D3C98', '#F1C40F']
+PATTERNS = ["\\", "///", "o", "||", "\\\\"]
+
+# Fetch environment variables
+project_Dir = os.environ.get("project_Dir", "/default/path/to/project")
+FIGURE_FOLDER = os.path.join(project_Dir, "result.example/figures")
+print(f"Figure Folder: {FIGURE_FOLDER}")
+
+# Draw bar chart figure
+def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, allow_legend):
+    fig = plt.figure(figsize=(12, 3))
+    figure = fig.add_subplot(111)
+
+    if not os.path.exists(FIGURE_FOLDER):
+        os.makedirs(FIGURE_FOLDER)
+
+    index = np.arange(len(x_values))
+    width = 0.5
+    bars = []
+
+    for i in range(len(y_values)):
+        bar = plt.bar(index + width / 2, y_values[i], width, hatch=PATTERNS[i],
+                      color=COLOR_MAP[i], label=legend_labels[i], edgecolor='black', linewidth=3)
+        bars.append(bar)
+
+    if allow_legend:
+        handles, labels = figure.get_legend_handles_labels()
+        plt.legend(handles[::-1], labels[::-1], loc='upper center', prop=LEGEND_FP, ncol=3,
+                   bbox_to_anchor=(0.5, 1.2), handletextpad=0.1, borderaxespad=0.0,
+                   handlelength=1.8, labelspacing=0.3, columnspacing=0.3)
+
+    plt.xticks(index + 0.5 * width, x_values, fontproperties=TICK_FP)
+    plt.grid(axis='y', color='gray')
+    figure.yaxis.set_major_locator(LinearLocator(6))
+    figure.get_xaxis().set_tick_params(direction='in', pad=10)
+    figure.get_yaxis().set_tick_params(direction='in', pad=10)
+
+    plt.xlabel(x_label, fontproperties=LABEL_FP)
+    plt.ylabel(y_label, fontproperties=LABEL_FP)
+    plt.savefig(os.path.join(FIGURE_FOLDER, f"{filename}.pdf"), bbox_inches='tight', format='pdf')
+
+# Main entry point
 if __name__ == "__main__":
-    tthread = 24
+    # Experiment Parameters
     NUM_ITEMS = 115200
-    NUM_ACCESS = 10
     deposit_ratio = 25
+    NUM_ACCESS = 10
     key_skewness = 25
     overlap_ratio = 0
     abort_ratio = 100
     batchInterval = 10240
     isCyclic = "false"
     complexity = 1000
-    txn_length = 1
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:")
-    except getopt.GetoptError:
-        print("Error")
-
-    for opt, arg in opts:
-        if opt in ['-i']:
-            NUM_ITEMS = int(arg)
-        elif opt in ['-d']:
-            deposit_ratio = int(arg)
-        elif opt in ['-n']:
-            NUM_ACCESS = int(arg)
-        elif opt in ['-k']:
-            key_skewness = int(arg)
-        elif opt in ['-o']:
-            overlap_ratio = int(arg)
-        elif opt in ['-a']:
-            abort_ratio = int(arg)
-        elif opt in ['-b']:
-            batchInterval = int(arg)
-        elif opt in ['-c']:
-            if int(arg) == 1:
-                isCyclic = "true"
-            else:
-                isCyclic = "false"
-        elif opt in ['-m']:
-            complexity = int(arg)
-
-
-    # for batchInterval in [4096]:
+    # Define data and labels
     legend_labels = ["Throughput"]
     x_values = ["MorphStream", "TStream", "S-Store", "Flink+Redis \n (w/o Locks)", "Flink+Redis \n (w/ Locks)"]
-    y_values = [[176.698, 110.877, 47.194, 14.078, 1.475]]  # data is collected after running all experiments.
-    DrawFigure(x_values, y_values, legend_labels,
-               '', 'Throughput (K/sec)', "overview_comparison_t24_b122880_10240_25_25_0_0_false_10000", False)
+    y_values = [[176.698, 110.877, 47.194, 14.078, 1.475]]
+
+    # Draw the figure
+    DrawFigure(x_values, y_values, legend_labels, '', 'Throughput (K/sec)', "Figure10", False)
+
