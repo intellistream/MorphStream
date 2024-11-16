@@ -93,8 +93,7 @@ function varying_JVMSize() { # multi-batch exp
 
     mkdir -p "$targetDir"
 
-    mv "$sourceDir"/* "$targetDir"
-    touch "$sourceDir/.placeholder"
+    find "$sourceDir" -maxdepth 1 -type f -exec mv {} "$targetDir" \;
     ResetParameters
    done
 }
