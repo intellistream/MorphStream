@@ -70,7 +70,6 @@ function runTStream() {
 function baselineEvaluation() {
   isDynamic=1
   runTStream
-  ResetParameters
 }
 
 
@@ -87,31 +86,27 @@ function varying_JVMSize() { # multi-batch exp
    do
     app=StreamLedger
     baselineEvaluation
-    # 结果源目录
     sourceDir="${project_Dir}/result/data/VaryingJVMSize/stats/StreamLedger/OG_BFS_A/threads = 24/totalEvents = 3194880"
 
-    # 生成以 JVM 配置命名的目标目录
     safeConf=$(echo "$jvmConf" | sed 's/ /_/g' | sed 's/[^a-zA-Z0-9_]/_/g')
     targetDir="${project_Dir}/result/data/VaryingJVMSize/stats/StreamLedger/OG_BFS_A/threads = 24/totalEvents = 3194880/${safeConf}"
 
-    # 创建目标目录
     mkdir -p "$targetDir"
 
-    # 移动结果文件到目标目录
     mv "$sourceDir"/* "$targetDir"
-
-    # 确保源目录清空后仍存在
     touch "$sourceDir/.placeholder"
+    ResetParameters
    done
 }
 function withoutGC() {
   ResetParameters
-  jvmConf="-Xms300g -Xmx300g -Xss100M"
+  jvmConf="-Xms300g -Xmx300g -Xss100M -Xmn150g"
   cleanUp=0
   app=StreamLedger
   baselineEvaluation
   ResetParameters
 }
+
 varying_JVMSize
 withoutGC
 ResetParameters
