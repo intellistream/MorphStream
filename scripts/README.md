@@ -9,6 +9,26 @@
 - To ensure successful compilation, we recommend using a machine with Ubuntu 20.04 with JDK 1.8.0_301, Maven 3.8.1, g++ 13.2.0 and GNU Make 4.3
 - Additionally, we set -Xmx and -Xms to be 300GB and use G1GC as the garbage collector arcoss all the experiments.
 # Experiment Workflow
+
+## One-click Scripts for Experiment and Figures
+
+We provided one-click scripts to allow run all following commands to run experiments, and also help extract structured raw data to draw associated figures in our paper.
+
+Please make sure to configure `global.sh`, ensuring the `$project_Dir` and `$jar_Dir` are properly specified.
+
+To run all experiments, you can simply run:
+
+```
+bash run_all.sh
+```
+
+To draw all figures, you can simply run:
+
+```
+bash draw_figure_all.sh
+```
+
+
 ## Installation
 - Clone the MorphStream repository to your local machine.
 - Once downloaded, you can use the provided scripts to compile the source code and install the JAR artifact by running the following command.
