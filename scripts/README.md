@@ -12,7 +12,7 @@
 
 ## One-click Scripts for Experiment and Figures
 
-We provided one-click scripts to allow run all following commands to run experiments, and also help extract structured raw data to draw associated figures in our paper.
+We provided one-click scripts to allow running all the following experiments, and also help extract structured raw data to draw associated figures in our paper.
 
 Please make sure to configure `global.sh`, ensuring the `$project_Dir` and `$jar_Dir` are properly specified.
 
@@ -27,6 +27,8 @@ To draw all figures, you can simply run:
 ```
 bash draw_figure_all.sh
 ```
+
+After running all these commands, you can find all experiment results in our paper located in `$project_Dir/result/figures/` folder.
 
 
 ## Installation
