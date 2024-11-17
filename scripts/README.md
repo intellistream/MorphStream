@@ -6,7 +6,7 @@
 - For optimal performance, we recommend using a machine with at least 24 cores and 300GB of memory.
 - This configuration should be sufficient to run the MorphStream artifact effectively.
 # Software Dependencies
-- To ensure successful compilation, we recommend using a machine with Ubuntu 20.04 with JDK 1.8.0_301, Maven 3.8.1, g++ 13.2.0 and GNU Make 4.3
+- To ensure successful compilation, we recommend using a machine with Ubuntu 20.04 with JDK 1.8.0_301, Maven 3.8.1, g++ 13.2.0 and GNU Make 4.3, Vtune configured under `/opt/intel/oneapi/vtune/latest/bin64/vtune`.
 - Additionally, we set -Xmx and -Xms to be 300GB and use G1GC as the garbage collector arcoss all the experiments.
 # Experiment Workflow
 
