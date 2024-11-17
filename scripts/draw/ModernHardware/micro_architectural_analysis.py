@@ -20,7 +20,7 @@ PATTERNS = ["\\", "///", "o", "||", "\\\\"]
 project_Dir = os.environ.get("project_Dir", "/default/path/to/project")
 
 # Paths
-root_path = os.path.join(project_Dir, "scripts/ModernHardware/MicroArchitecturalAnalysis/")
+root_path = os.path.join(project_Dir, "result/data/MicroArchitecturalAnalysis/")
 FIGURE_FOLDER = os.path.join(project_Dir, "result/figures")
 print(root_path)
 print(FIGURE_FOLDER)
@@ -119,12 +119,12 @@ if __name__ == "__main__":
         metrics = ReadCsvMetrics(file_path)
         print(metrics)
         y_values.append([
-            metrics["Front-End Bound"] * metrics["Clockticks"] / 100,
-            metrics["Memory Bound"] * metrics["Clockticks"] / 100,
-            metrics["Core Bound"] * metrics["Clockticks"] / 100,
-            metrics["Bad Speculation"] * metrics["Clockticks"] / 100,
-            metrics["Retiring"] * metrics["Clockticks"] / 100,
+            metrics["Front-End Bound"] * metrics["Clockticks"] / 100 / 10**12,
+            metrics["Memory Bound"] * metrics["Clockticks"] / 100 / 10**12,
+            metrics["Core Bound"] * metrics["Clockticks"] / 100 / 10**12,
+            metrics["Bad Speculation"] * metrics["Clockticks"] / 100 / 10**12,
+            metrics["Retiring"] * metrics["Clockticks"] / 100 / 10**12,
         ])
 
     y_values = np.array(y_values).T.tolist()  # Transpose to match the bar chart structure
-    DrawFigure(x_values, y_values, legend_labels, 'ClockTicks ($x10^{12}$)', '', 'figure18_a', True)
+    DrawFigure(x_values, y_values, legend_labels, 'ClockTicks ($x10^{12}$)', '', 'Figure18_a', True)

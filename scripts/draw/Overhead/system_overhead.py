@@ -13,7 +13,7 @@ LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
 
-COLOR_MAP = ['#B03A2E', '#2874A6', '#239B56', '#7D3C98', '#F1C40F', '#E67E22']
+COLOR_MAP = ['#8C1A1C', '#731C8B', '#084C87', '#F6B804', '#9B2E09', '#1D7C36']
 PATTERNS = ["\\", "///", "o", "||", "\\\\", ".."]
 
 # Fetch environment variables
@@ -22,8 +22,6 @@ project_Dir = os.environ.get("project_Dir", "/default/path/to/project")
 # Paths
 root_path = os.path.join(project_Dir, "result/data/SystemOverhead/stats/StreamLedger/")
 FIGURE_FOLDER = os.path.join(project_Dir, "result/figures")
-print(root_path)
-print(FIGURE_FOLDER)
 
 # Draw bar chart figure
 def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, allow_legend):

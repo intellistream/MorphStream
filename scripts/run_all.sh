@@ -5,6 +5,7 @@ project_Dir="/home/myc/workspace/myc/MorphStream_Reproduce"
 jar_Dir="${project_Dir}/application/target/application-0.0.2-jar-with-dependencies.jar"
 
 # Flags for experiments (set to "y" to enable, "n" to skip)
+COMPILE_PROJECT="y"
 RUN_COMPARISON="y"
 RUN_DYNAMIC_WORKLOAD="y"
 RUN_SCHEDULING_STRATEGIES="y"
@@ -45,9 +46,13 @@ source "$global_file"
 export JAVA_OPTS="-Xmx300G -Xms300G -XX:+UseG1GC"
 
 # Compilation and Installation
-echo "Compiling MorphStream..."
-cd "$project_Dir/scripts" || exit
-bash compile.sh
+if [[ $COMPILE_PROJECT == "y" ]]; then
+    echo "Compiling MorphStream..."
+    cd "$project_Dir/scripts" || exit
+    bash compile.sh
+else
+    echo "Skipping compilation of MorphStream."
+fi
 
 # Function to change directory and run specific experiment scripts
 run_experiment() {

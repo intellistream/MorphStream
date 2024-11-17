@@ -1,0 +1,116 @@
+Hierarchy Level	Metric Name	Metric Value
+0	Elapsed Time	46.558814
+1	Clockticks	2303370000000
+1	Instructions Retired	1122015000000
+1	CPI Rate	2.052887
+1	Retiring	13.0
+2	Light Operations	11.3
+3	FP Arithmetic	0.0
+4	FP x87	0.0
+4	FP Scalar	0.0
+4	FP Vector	0.0
+5	128-bit FP Vector	0.0
+5	256-bit FP Vector	0.0
+5	512-bit FP Vector	0.0
+3	Memory Operations	5.1
+3	Fused Instructions	1.4
+3	Non Fused Branches	0.8
+3	Nop Instructions	0.1
+3	Other	4.0
+2	Heavy Operations	1.6
+3	Few Uops Instructions	0.0
+3	Microcode Sequencer	2.0
+4	Assists	0.0
+4	CISC	2.0
+1	Front-End Bound	4.4
+2	Front-End Latency	1.6
+3	ICache Misses	0.0
+3	ITLB Overhead	1.0
+3	Branch Resteers	0.3
+4	Mispredicts Resteers	0.0
+4	Clears Resteers	0.2
+4	Unknown Branches	0.0
+3	DSB Switches	6.3
+3	Length Changing Prefixes	0.0
+3	MS Switches	1.6
+2	Front-End Bandwidth	2.8
+3	Front-End Bandwidth MITE	3.9
+4	Decoder-0 Alone	1.3
+3	Front-End Bandwidth DSB	0.9
+3	(Info) DSB Coverage	32.3
+3	(Info) DSB Misses	100.0
+1	Bad Speculation	1.4
+2	Branch Mispredict	0.0
+2	Machine Clears	1.4
+1	Back-End Bound	81.2
+2	Memory Bound	58.5
+3	L1 Bound	9.4
+4	DTLB Overhead	100.0
+5	Load STLB Hit	100.0
+5	Load STLB Miss	7.0
+4	Loads Blocked by Store Forwarding	0.1
+4	Lock Latency	0.1
+4	Split Loads	0.0
+4	4K Aliasing	0.2
+4	FB Full	0.0
+3	L2 Bound	0.6
+3	L3 Bound	33.2
+4	Contested Accesses	4.2
+4	Data Sharing	0.0
+4	L3 Latency	8.7
+4	SQ Full	0.0
+3	DRAM Bound	14.5
+4	Memory Bandwidth	5.0
+4	Memory Latency	50.1
+5	Local DRAM	8.4
+5	Remote DRAM	1.5
+5	Remote Cache	0.0
+3	Store Bound	8.8
+4	Store Latency	35.6
+4	False Sharing	4.2
+4	Split Stores	0.0
+4	DTLB Store Overhead	0.8
+5	Store STLB Hit	0.4
+5	Store STLB Miss	0.4
+2	Core Bound	22.7
+3	Divider	0.0
+3	Port Utilization	7.6
+4	Cycles of 0 Ports Utilized	38.7
+5	Serializing Operations	37.9
+6	Slow Pause	0.0
+5	Mixing Vectors	0.0
+4	Cycles of 1 Port Utilized	3.4
+4	Cycles of 2 Ports Utilized	3.6
+4	Cycles of 3+ Ports Utilized	6.6
+5	ALU Operation Utilization	9.8
+6	Port 0	7.6
+6	Port 1	7.5
+6	Port 5	8.7
+6	Port 6	15.2
+5	Load Operation Utilization	8.9
+6	Port 2	11.1
+6	Port 3	11.1
+5	Store Operation Utilization	10.3
+6	Port 4	10.3
+6	Port 7	5.9
+4	Vector Capacity Usage (FPU)	0.0
+1	Average CPU Frequency	3509824025.849695
+1	Total Thread Count	112
+1	Paused Time	0.0
+0	Effective Physical Core Utilization	27.7% (13.297 out of 48)
+1	Effective Logical Core Utilization	14.7% (14.090 out of 96)
+0	Collection and Platform Info	
+1	Operating System	5.15.0-84-generic DISTRIB_ID=Ubuntu DISTRIB_RELEASE=20.04 DISTRIB_CODENAME=focal DISTRIB_DESCRIPTION="Ubuntu 20.04.6 LTS"
+1	Computer Name	xacchead
+1	Result Size	111714812
+1	Collection start time	07:48:30 17/11/2024 UTC
+1	Collection stop time	07:49:19 17/11/2024 UTC
+1	Collector Type	Driverless Perf system-wide sampling
+1	CPU	
+2	Name	Intel(R) Xeon(R) Processor code named Cascadelake
+2	Frequency	3000006075
+2	Logical CPU Count	96
+2	LLC size	37486592
+2	Cache Allocation Technology	
+3	Level 2 capability	not detected
+3	Level 3 capability	available
