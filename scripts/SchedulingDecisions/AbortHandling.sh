@@ -73,7 +73,7 @@ function varying_abort_ratio() {
   ResetParameters
     for app in  GrepSum
     do
-        for abort_ratio in 0 1000 2000 5000 7000 9000
+        for abort_ratio in 0 1000 3000 5000 7000 9000
         do
           for scheduler in OP_NS OP_NS_A
           do

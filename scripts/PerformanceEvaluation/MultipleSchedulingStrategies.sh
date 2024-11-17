@@ -91,7 +91,7 @@ move_files_and_delete_folder() {
   TARGET_PART="$2"
 
   # 基础路径（公共部分）
-  BASE_PATH="${project_Dir}/data/Multiple/stats/TollProcessing"
+  BASE_PATH="${project_Dir}/result/data/Multiple/stats/TollProcessing"
 
   # 源文件夹路径
   SOURCE_DIR="$BASE_PATH/$SOURCE_PART/threads = 24/totalEvents = 983040/"
