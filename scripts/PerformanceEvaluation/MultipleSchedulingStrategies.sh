@@ -107,8 +107,8 @@ move_files_and_delete_folder() {
   # 移动所有文件到目标文件夹
   mv "$SOURCE_DIR"* "$TARGET_DIR"
 
-  # 删除源文件夹及其内容
-  rm -r "$SOURCE_DIR"
+  # 删除源文件夹内容
+   find "$SOURCE_DIR" -maxdepth 1 -type f -exec rm -f {} \;
 }
 
 
