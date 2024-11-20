@@ -1,6 +1,8 @@
 ## Draw Figure
 
-We use a tool [prism](https://www.graphpad.com/features) to draw all figures using the experiment raw data stored in `${project_Dir}/result/data`.
+In our paper, we used a tool [prism](https://www.graphpad.com/features) to draw all figures using the experiment raw data stored in `${project_Dir}/result/data`.
+
+To simplify the verification of experimental results, we also created Python scripts to help draw all figures using `matplotlib`, as stated in `scripts/README.md`, you can simply use `draw_figure_all.sh` in the last folder to draw all desirable figures. 
 
 ## Experiment Data Folder Layout
 
