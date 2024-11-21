@@ -31,9 +31,9 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
     public void REINITIALIZE(Context context) {
-        needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        needAbortHandling = false;
     }
 
     @Override
