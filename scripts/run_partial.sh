@@ -6,13 +6,13 @@ jar_Dir="${project_Dir}/application/target/application-0.0.2-jar-with-dependenci
 
 # Flags for experiments (set to "y" to enable, "n" to skip)
 COMPILE_PROJECT="y"
-RUN_COMPARISON="y"
-RUN_DYNAMIC_WORKLOAD="y"
-RUN_SCHEDULING_STRATEGIES="y"
-RUN_SYSTEM_OVERHEAD="y"
+RUN_COMPARISON="n"
+RUN_DYNAMIC_WORKLOAD="n"
+RUN_SCHEDULING_STRATEGIES="n"
+RUN_SYSTEM_OVERHEAD="n"
 RUN_GC_OVERHEAD="y"
 RUN_SCHEDULING_DECISIONS="y"
-RUN_HARDWARE_EVALUATION="y"
+RUN_HARDWARE_EVALUATION="n"
 
 # Clear cached synthetic data colocated with /result/data
 echo "Clearing cached data..."
