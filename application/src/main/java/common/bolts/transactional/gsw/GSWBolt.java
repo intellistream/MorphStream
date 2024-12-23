@@ -57,7 +57,7 @@ public abstract class GSWBolt extends TransactionalBolt {
 
             DataBox keyBox = ref.getRecord().getValues().get(0);
             List<SchemaRecord> schemaRecordRange = readPreValuesRange(windowMap.computeIfAbsent(
-                    keyBox.getString().trim(), k -> new ConcurrentSkipListMap<>()),
+                            keyBox.getString().trim(), k -> new ConcurrentSkipListMap<>()),
                     event.getBid(), AppConfig.windowSize);
             sum += schemaRecordRange.stream().mapToLong(schemaRecord -> schemaRecord.getValues().get(1).getLong()).sum();
 

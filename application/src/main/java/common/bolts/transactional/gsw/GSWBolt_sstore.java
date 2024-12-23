@@ -13,15 +13,19 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import storage.SchemaRecord;
+import storage.SchemaRecordRef;
+import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerSStore;
+import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
@@ -34,6 +38,8 @@ public class GSWBolt_sstore extends GSWBolt_LA {
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<Tuple> tuples = new ArrayDeque<>();
 
+    public ConcurrentHashMap<String, ConcurrentSkipListMap<Long, SchemaRecord>> windowMap = new ConcurrentHashMap<>();
+
     public GSWBolt_sstore(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
@@ -43,6 +49,78 @@ public class GSWBolt_sstore extends GSWBolt_LA {
         super(LOG, fid, null);
 
     }
+
+
+    @Override
+    protected boolean READ_CORE(WindowedMicroEvent event) {
+        long sum = 0;
+
+        // apply function
+        AppConfig.randomDelay();
+
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
+            SchemaRecordRef ref = event.getRecord_refs()[i];
+            if (ref.isEmpty()) {
+                return false;//not yet processed.
+            }
+
+            DataBox keyBox = ref.getRecord().getValues().get(0);
+            List<SchemaRecord> schemaRecordRange = readPreValuesRange(windowMap.computeIfAbsent(
+                            keyBox.getString().trim(), k -> new ConcurrentSkipListMap<>()),
+                    event.getBid(), AppConfig.windowSize);
+            sum += schemaRecordRange.stream().mapToLong(schemaRecord -> schemaRecord.getValues().get(1).getLong()).sum();
+
+
+            DataBox dataBox = ref.getRecord().getValues().get(1);
+            long read_result = Long.parseLong(dataBox.getString().trim());
+            event.result.add(read_result);
+        }
+        return true;
+    }
+
+
+    public List<SchemaRecord> readPreValuesRange(ConcurrentSkipListMap<Long, SchemaRecord> window, long ts, long range) {
+        long start = ts - range < 0 ? 0 : ts - range;
+        ConcurrentNavigableMap<Long, SchemaRecord> schemaRange = window.tailMap(start);
+
+        //not modified in last round
+        if (schemaRange.size() == 0)
+            System.out.println("Empty window");
+        else
+            System.out.println(schemaRange.size());
+
+        return new ArrayList<>(schemaRange.values());
+    }
+
+    @Override
+    protected void WRITE_CORE(WindowedMicroEvent event) {
+//        long start = System.nanoTime();
+        long sum = 0;
+        SchemaRecordRef ref = event.getRecord_refs()[0];
+
+        // insert the write records into the window state
+        DataBox keyBox = ref.getRecord().getValues().get(0);
+        ConcurrentSkipListMap<Long, SchemaRecord> curWindow = windowMap.computeIfAbsent(keyBox.getString().trim(), k -> new ConcurrentSkipListMap<>());
+        curWindow.put(event.getBid(), ref.getRecord());
+
+        DataBox TargetValue_value = ref.getRecord().getValues().get(1);
+
+        int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
+        for (int j = 0; j < event.Txn_Length; ++j) {
+            AppConfig.randomDelay();
+            for (int i = 0; i < NUM_ACCESS; ++i) {
+                int offset = j * NUM_ACCESS + i;
+                SchemaRecordRef recordRef = event.getRecord_refs()[offset];
+                SchemaRecord record = recordRef.getRecord();
+                DataBox Value_value = record.getValues().get(1);
+                final long Value = Value_value.getLong();
+                sum += Value;
+            }
+        }
+        sum /= event.TOTAL_NUM_ACCESS;
+        TargetValue_value.setLong(sum);
+    }
+
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
