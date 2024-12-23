@@ -58,15 +58,30 @@ function runTStream() {
 }
 
 
+# run basic experiment for different algorithms
+function baselineEvaluation() {
+  for scheduler in OP_NS TStream
+  do
+    runTStream
+  done
+}
+
+
+function patEvluation() {
+  CCOption=4 #SSTORE
+  runTStream
+}
 
 ResetParameters
-for window_size in 128 1024 10240
+for window_size in 1000 10000 100000
 do
-  runTStream
+  baselineEvaluation
+  patEvluation
 done
 
 ResetParameters
-for window_trigger_period in 10 100 1000 10000
+for window_trigger_period in 100 1000 10000 100000
 do
-  runTStream
+  baselineEvaluation
+  patEvluation
 done

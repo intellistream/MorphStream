@@ -41,7 +41,7 @@ public abstract class GSWBolt extends TransactionalBolt {
                 return false;//not yet processed.
             }
             DataBox dataBox = ref.getRecord().getValues().get(1);
-            int read_result = Integer.parseInt(dataBox.getString().trim());
+            long read_result = Long.parseLong(dataBox.getString().trim());
             event.result.add(read_result);
         }
         return true;

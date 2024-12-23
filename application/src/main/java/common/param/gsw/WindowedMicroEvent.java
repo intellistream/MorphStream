@@ -24,7 +24,7 @@ public class WindowedMicroEvent extends TxnEvent {
     public int sum;
     public int TOTAL_NUM_ACCESS;
     public int Txn_Length;
-    public List<Integer> result = new ArrayList<>(); // TODO: NUM_ACCESSES will be never used.
+    public List<Long> result = new ArrayList<>(); // TODO: NUM_ACCESSES will be never used.
     private List<DataBox>[] value;//Note, it should be arraylist instead of linkedlist as there's no addOperation/remove later.
     //    public double[] useful_ratio = new double[1];
 

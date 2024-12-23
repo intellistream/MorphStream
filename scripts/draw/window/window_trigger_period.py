@@ -100,7 +100,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
 
     # you may need to tune the xticks position to get the best figure.
     plt.xticks(index + 0.5 * width, x_values)
-    plt.xticks(rotation=20)
+    # plt.xticks(rotation=20)
 
     plt.grid(axis='y', color='gray')
     figure.yaxis.set_major_locator(LinearLocator(6))
@@ -123,7 +123,7 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
 
 
     for window_trigger_period in x_axis:
-        events = tthread * batchInterval
+        events = tthread * batchInterval * 10
         op_gs_path = getPathGS("OP_NS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
@@ -180,7 +180,7 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    x_value = [10, 100, 1000, 10000]
+    x_value = [100, 1000, 10000, 100000]
     legend_labels = ["MorphStream"]
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
     legend = False
