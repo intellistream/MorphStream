@@ -17,7 +17,7 @@ public class TPGNode {
     private String txnType;
     private String targetTable;
     private String targetKey;
-    private List<TPGEdge> edges = new ArrayList<>();
+    private List<TPGEdge> edges = new ArrayList<TPGEdge>();
 
     public TPGNode(String operationID, String txnType, String targetTable, String targetKey) {
         this.operationID = operationID;

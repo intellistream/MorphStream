@@ -108,7 +108,17 @@ public class RdmaDatabaseManager {
 
             LOG.info("Table " + tableNames[i] + " created successfully.");
         }
-
+        //Add a key for compute node to store the log state
+        int logNumber = MorphStreamEnv.get().configuration().getInt("workerNum");
+        String logNamePrefix = "log_status_";
+        Map<ByteString, ByteString> batchData = new HashMap<>();
+        ByteString initStatus = ByteString.copyFromUtf8("0");
+        for (int i = 0; i < logNumber; i++) {
+            ByteString keyByteString = ByteString.copyFrom(logNamePrefix + i, StandardCharsets.UTF_8);
+            batchData.put(keyByteString, initStatus);
+        }
+        rawKVClient.batchPut(batchData);
+        LOG.info("Log status created successfully.");
         rawKVClient.close();
         tiSession.close();
         LOG.info("TiKV database initialized successfully.");
