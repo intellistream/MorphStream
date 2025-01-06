@@ -79,10 +79,15 @@ public class TiKVStorageManager extends RemoteStorageManager{
                 end = interval * (context.thisThreadId + 1);
             }
             Map<ByteString, ByteString> keyValuePairs = new HashMap<>();
+            Map<ByteString, ByteString> snapshotKeyValuePairs = new HashMap<>();
+            StringBuilder snapshotKeys = new StringBuilder();
             for (int i = start; i < end; i++) {
                 keyValuePairs.put(ByteString.copyFromUtf8(tableName + "_" + keys.get(i)), ByteString.copyFromUtf8(this.workerSideOwnershipTables.get(tableName).valueList[i]));
+                snapshotKeyValuePairs.put(ByteString.copyFromUtf8("snapshot" + "_" + keys.get(i)), ByteString.copyFromUtf8(this.workerSideOwnershipTables.get(tableName).valueList[i]));
+                snapshotKeys.append(keys.get(i)).append(",");
             }
-            processBatchUpdateItems(this.rawKVClientList.get(context.thisThreadId), keyValuePairs);
+            snapshotKeyValuePairs.put(ByteString.copyFromUtf8("snapshot" + "_totalKeys"), ByteString.copyFromUtf8(snapshotKeys.toString()));
+            processBatchUpdateItems(this.rawKVClientList.get(context.thisThreadId), keyValuePairs, snapshotKeyValuePairs);
         }
     }
 
@@ -92,8 +97,15 @@ public class TiKVStorageManager extends RemoteStorageManager{
             this.workerSideOwnershipTables.get(tableName).valueList[keyToIndex.get(kvPair.getKey().toStringUtf8())] =  kvPair.getValue().toStringUtf8();
         }
     }
-    public void processBatchUpdateItems(RawKVClient client, Map<ByteString, ByteString> keyValuePairs) {
+    public void processBatchUpdateItems(RawKVClient client, Map<ByteString, ByteString> keyValuePairs, Map<ByteString, ByteString> snapshotKeyValuePairs) {
+       client.put(ByteString.copyFromUtf8("log_status_" + this.workerId), ByteString.copyFromUtf8("0"));
+       LOG.info("Worker {} start commit", this.workerId);
+       client.batchPut(snapshotKeyValuePairs);
+       client.put(ByteString.copyFromUtf8("log_status_" + this.workerId), ByteString.copyFromUtf8("1"));
+       LOG.info("Worker {} commit snapshot", this.workerId);
        client.batchPut(keyValuePairs);
+       client.put(ByteString.copyFromUtf8("log_status_" + this.workerId), ByteString.copyFromUtf8("2"));
+       LOG.info("Worker {} commit", this.workerId);
     }
 
     @Override

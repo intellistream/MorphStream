@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RemoteStorageManager extends StorageManager {
-    private static final Logger LOG = LoggerFactory.getLogger(RemoteStorageManager.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(RemoteStorageManager.class);
     //private final RemoteCallLibrary remoteCallLibrary = new RemoteCallLibrary();
     protected final String[] tableNames;
     protected final ConcurrentHashMap<String, Integer> tableNameToLength;
@@ -38,9 +38,11 @@ public class RemoteStorageManager extends StorageManager {
     public CacheBuffer cacheBuffer;
     public int totalWorker;
     public int totalThread;
+    protected final int workerId;
     public AtomicBoolean ownershipTableReady = new AtomicBoolean(false);
     public final ConcurrentHashMap<String, WorkerSideOwnershipTable> workerSideOwnershipTables = new ConcurrentHashMap<>();//tableName -> WorkerSideOwnershipTable
     public RemoteStorageManager(CacheBuffer cacheBuffer, int totalWorker, int totalThread) {
+        this.workerId = MorphStreamEnv.get().configuration().getInt("workerId");
         this.cacheBuffer = cacheBuffer;
         this.tableNames = this.cacheBuffer.getTableNames();
         this.totalWorker = totalWorker;
