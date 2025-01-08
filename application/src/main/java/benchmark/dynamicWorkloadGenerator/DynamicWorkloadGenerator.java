@@ -1,6 +1,9 @@
 package benchmark.dynamicWorkloadGenerator;
 
 import benchmark.datagenerator.DataGenerator;
+import benchmark.datagenerator.apps.NonGS.TPGTxnGenerator.NonGSTPGDynamicDataGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +17,7 @@ import java.util.List;
  * Created by curry on 16/3/22.
  */
 public abstract class DynamicWorkloadGenerator extends DataGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicWorkloadGenerator.class);
     protected List<String> tranToDecisionConf = new ArrayList<>();
     protected DynamicDataGeneratorConfig dynamicDataConfig;
 

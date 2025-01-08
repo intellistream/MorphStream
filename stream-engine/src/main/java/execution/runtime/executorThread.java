@@ -15,7 +15,6 @@ import java.util.concurrent.CountDownLatch;
 
 import static common.CONTROL.enable_log;
 import static controller.affinity.SequentialBinding.next_cpu;
-import static net.openhft.affinity.Affinity.setAffinity;
 
 public abstract class executorThread extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(executorThread.class);
@@ -199,7 +198,7 @@ public abstract class executorThread extends Thread {
      */
     protected void binding() {
         int cpu = next_cpu();
-        setAffinity(cpu);
+        //setAffinity(cpu);
         LOG.info("Successfully bind " + executor.getOP() + " on cpu: " + cpu);
     }
 }

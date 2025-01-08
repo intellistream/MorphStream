@@ -42,6 +42,7 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
+    public int number_of_non;
     private HashMap<Integer, Integer> idToLevel = new HashMap<>();
     public NonGSTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataGeneratorConfig) {
         super(dynamicDataGeneratorConfig);
@@ -108,6 +109,7 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        LOG.info("Number of non_deterministic transactions generated: " + this.number_of_non);
     }
     private void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / NUM_THREADS;
@@ -198,6 +200,7 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         }
         if (random.nextInt(10000) < Ratio_of_Non_Deterministic_State_Access) {
             isNonDeterministic = true;
+            this.number_of_non ++;
         } else {
             isNonDeterministic = false;
         }

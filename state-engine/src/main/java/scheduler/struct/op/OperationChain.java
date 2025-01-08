@@ -6,6 +6,7 @@ import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * We still call it OperationChain in TPG but with different representation
@@ -125,8 +126,8 @@ public class OperationChain implements Comparable<OperationChain> {
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
         operationWithVirtual.add(op);
     }
-    public void addNonOperation(Vector<Operation> ops) {
-        operationWithVirtual.addAll(ops);
+    public void addNonOperation(ConcurrentSkipListSet<Operation> nonOperations) {
+        operationWithVirtual.addAll(nonOperations);
     }
 
     public MyList<Operation> getOperations() {

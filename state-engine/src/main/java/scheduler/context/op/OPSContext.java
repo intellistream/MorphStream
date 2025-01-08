@@ -101,7 +101,7 @@ public class OPSContext extends OPSchedulerContext {
             updateDependencyLevel(processedOps, root);
         }
 
-        // this procedure is similar to how partition state manager solves the dependnecies among operations,
+        // this procedure is similar to how partition state manager solves the dependencies among operations,
         // where all dependencies of operations are handled by associated thread
         while (processedOps.size() != ops.size()) {
             OnParentUpdatedSignal signal = layerBuildHelperQueue.poll();

@@ -92,12 +92,12 @@
             <!--<scope>compile</scope>-->
         </dependency>
 
-        <dependency>
-            <groupId>intellistream</groupId>
-            <artifactId>affinity</artifactId>
-            <version>3.21ea80-SNAPSHOT</version>
-            <!--<scope>compile</scope>-->
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>intellistream</groupId>-->
+<!--            <artifactId>affinity</artifactId>-->
+<!--            <version>3.21ea80-SNAPSHOT</version>-->
+<!--            &lt;!&ndash;<scope>compile</scope>&ndash;&gt;-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.knowm.xchart</groupId>

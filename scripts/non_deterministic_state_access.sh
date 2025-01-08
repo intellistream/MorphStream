@@ -8,9 +8,10 @@ function ResetParameters() {
   defaultScheduler="OP_BFS"
   CCOption=3 #TSTREAM
   complexity=10000
-  NUM_ITEMS=491520
+  NUM_ITEMS=12288
   nondeterministic_ratio=95
   key_skewness=0
+  number_access=1
 
 
   isCyclic=1
@@ -34,6 +35,7 @@ function runTStream() {
           --complexity $complexity \
           --nondeterministic_ratio $nondeterministic_ratio \
           --key_skewness $key_skewness \
+          --NUM_ACCESS $number_access \
           --isCyclic $isCyclic \
           --rootFilePath $rootFilePath \
           --isDynamic $isDynamic \
@@ -41,7 +43,7 @@ function runTStream() {
           --shiftRate $shiftRate \
           --workloadType $workloadType \
           --schedulerPool $schedulerPool"
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /home/jjzhao/project/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms64g -Xmx64g -Xss100M -XX:+PrintGCDetails -Xmn64g -XX:+UseG1GC -jar -d64 /home/jjzhao/project/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
@@ -52,6 +54,7 @@ function runTStream() {
     --complexity $complexity \
     --nondeterministic_ratio $nondeterministic_ratio \
     --key_skewness $key_skewness \
+    --NUM_ACCESS $number_access \
     --isCyclic $isCyclic \
     --rootFilePath $rootFilePath \
     --isDynamic $isDynamic \
@@ -79,10 +82,10 @@ function patEvluation() {
 function runner() { # multi-batch exp
  ResetParameters
  app=NonGrepSum
- for nondeterministic_ratio in 0 20 40 60 80
+ for nondeterministic_ratio in 0 10
  do
  baselineEvaluation
- patEvluation
+ #patEvluation
  done
 
 }

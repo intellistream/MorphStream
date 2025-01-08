@@ -13,6 +13,8 @@ import utils.lib.ConcurrentHashMap;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
@@ -42,7 +44,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private final int NUM_ITEMS;
     private final int app;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
-    private final Vector<Operation> NonOperations = new Vector<>();
+    private final ConcurrentSkipListSet<Operation> NonOperations = new ConcurrentSkipListSet<>();
     CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
 
@@ -223,12 +225,12 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public void firstTimeExploreTPG(Context context) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
-
+        long startTime = System.nanoTime();
         if (context instanceof OPSContext) {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    oc.addNonOperation(this.NonOperations);
+                    oc.addNonOperation(NonOperations);
                     oc.updateDependencies();
                 }
             }
@@ -245,6 +247,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 }
             }
             context.waitForOtherThreads(context.thisThreadId);
+            log.info("Time before buildBucket " + (System.nanoTime() - startTime) + "threadId:" + threadId);
             ((OPSContext) context).buildBucketPerThread(context.operations, roots);
             context.waitForOtherThreads(context.thisThreadId);
             if (context.thisThreadId == 0) { // gather
@@ -260,6 +263,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (context instanceof OPNSContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
+                    oc.addNonOperation(this.NonOperations);
                     oc.updateDependencies();
                 }
             }
@@ -354,6 +358,20 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private void checkDependencyForNonDeterministicStateAccess(OperationChain curOC, Operation op) {
         //Add Non-deterministic state access operation to all its potential parents
         NonOperations.add(op);
+    }
+    private void updateDependenciesAmongNonDeterministicStateAccess() {
+        Operation prevOperation = null;
+        for (Operation op : NonOperations) {
+            if (prevOperation != null) {
+                updateTDForNon(op, prevOperation);
+            } else {
+                prevOperation = op;
+            }
+        }
+    }
+    private void updateTDForNon(Operation childOperation, Operation parentOperation) {
+        childOperation.addParent(parentOperation, MetaTypes.DependencyType.TD);
+        parentOperation.addChild(childOperation, MetaTypes.DependencyType.TD);
     }
 
     public int getApp() {
