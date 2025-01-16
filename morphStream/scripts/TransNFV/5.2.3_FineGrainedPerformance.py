@@ -145,8 +145,11 @@ def draw_throughput_comparison_plot(exp_dir):
     systems = ['Nested', "Partitioning", "Offloading", 'OpenNF', 'CHC', 'S6']
     system_to_show = ['Nested', "Plain-1", "Plain-2", 'OpenNF', 'CHC', 'S6']
     system_throughputs = []
-    colors = ['#AE48C8', '#de7104', '#0a79f0', '#F44040', '#15DB3F', '#E9AA18']
-    hatches = ['\\\\', '///', '++', "xxx", "---", "oo"]
+    # colors = ['#AE48C8', '#de7104', '#0a79f0', '#F44040', '#15DB3F', '#E9AA18']
+    colors = ['#03045e', '#023e8a', '#0077b6', '#00b4d8', '#90e0ef', '#caf0f8']
+    # colors = ['white', 'white', 'white', 'white', 'white', 'white']
+    # hatch_colors = ['#8c0b0b', '#0060bf', '#d97400', '#b313f2', '#0060bf', '#d97400']
+    hatches = ['o', '+', '//', "xx", "--", "\\\\"]
     hatch_colors = ['black', 'black', 'black', 'black', 'black', 'black']
 
     for system in systems:
@@ -158,7 +161,8 @@ def draw_throughput_comparison_plot(exp_dir):
     # x_positions = np.arange(len(systems))
     x_positions = np.arange(len(systems)) * 0.8
     
-    plt.bar(x_positions, system_throughputs, color=colors[:len(systems)], label=system_to_show, hatch=hatches[:len(systems)], edgecolor=hatch_colors[:len(systems)], width=0.4)
+    # plt.bar(x_positions, system_throughputs, color=colors[:len(systems)], label=system_to_show, hatch=hatches[:len(systems)], edgecolor=hatch_colors[:len(systems)], width=0.35)
+    plt.bar(x_positions, system_throughputs, color=colors[:len(systems)], label=system_to_show, width=0.4)
 
     plt.xticks(x_positions, system_to_show, fontsize=15)
     plt.yticks(fontsize=15)
@@ -276,9 +280,9 @@ def main(root_dir, exp_dir):
     print(f"Root directory: {root_dir}")
     print(f"Experiment directory: {exp_dir}")
 
-    run_fine_grained_exp(root_dir, exp_dir)
+    # run_fine_grained_exp(root_dir, exp_dir)
     draw_throughput_comparison_plot(exp_dir)
-    draw_latency_comparison_plot(exp_dir)
+    # draw_latency_comparison_plot(exp_dir)
 
 
 if __name__ == "__main__":

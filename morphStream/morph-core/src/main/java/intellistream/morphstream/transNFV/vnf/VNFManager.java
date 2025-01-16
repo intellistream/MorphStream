@@ -200,6 +200,11 @@ public class VNFManager implements Runnable {
                 computeTimeBreakdown();
                 writeCSVBreakdown(outputFileDirMonitor);
                 break;
+            case "6_Training":
+            case "6_Testing":
+                writeCSVThroughput(outputFileDir, overallThroughput);
+                writeCSVLatency(outputFileDir);
+                break;
         }
     }
 
