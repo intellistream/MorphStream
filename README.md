@@ -19,8 +19,7 @@
 
 If you use MorphStream in your paper, please cite our work.
 
-* **[Under Review]** Jianjun Zhao, Yancan Mao, Zhonghao Yang, Haikun Liu and Shuhao Zhang. Scalable Window-based Transactional Stream
-Processing with Non-deterministic State Access.
+* **[TKDE]** Jianjun Zhao, Yancan Mao, Zhonghao Yang, Haikun Liu and Shuhao Zhang. Scalable Transactional Stream Processing on Multicores. TKDE, 2025
 * **[VLDBJ]** Shuhao Zhang, Soto Juan and Volker Markl. A survey on transactional stream processing. The VLDB Journal, 2024
 * **[ICDE]** Jianjun Zhao, Haikun Liu, Shuhao Zhang, Zhuohui Duan, Xiaofei Liao, Hai Jin, Yu Zhang. Fast Parallel Recovery for Transactional Stream Processing on Multicores. ICDE, 2024
 * **[ICDE]** Siqi Xiang, Zhonghao Yang, Shuhao Zhang, Jianjun Zhao, Yancan Mao. MorphStream: Scalable Processing of Transactions over Streams. ICDE (Demo), 2024
