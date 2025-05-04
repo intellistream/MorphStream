@@ -18,11 +18,6 @@ pd_servers:
     peer_port: 2382
     deploy_dir: "/home/jjzhao/db/pd-deploy"
     data_dir: "/home/jjzhao/db/pd-data"
-#  - host: 10.192.168.122
-#    client_port: 2379
-#    peer_port: 2380
-#    deploy_dir: "/mnt/pmem0/pd-deploy"
-#    data_dir: "/mnt/pmem0/pd-data"
 
 tikv_servers:
   - host: 10.192.168.110
@@ -40,8 +35,3 @@ tikv_servers:
     status_port: 2384
     data_dir: "/home/jjzhao/db/tidb-data"
     deploy_dir: "/home/jjzhao/db/tidb-deploy"
-#  - host: 10.192.168.122
-#    port: 2383
-#    status_port: 2384
-#    data_dir: "/mnt/pmem0/tidb-data"
-#    deploy_dir: "/mnt/pmem0/tidb-deploy"
