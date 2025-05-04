@@ -2,6 +2,7 @@ package intellistream.morphstream.api.input.statistic;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.zeromq.ZFrame;
 
@@ -29,6 +30,8 @@ public class Statistic {
     private final ConcurrentHashMap<Integer, Map<Integer, Integer>> tempVoteCount = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ConcurrentSkipListSet<String>> tempKeys = new ConcurrentHashMap<>();//Table name -> keys
     private final ConcurrentHashMap<String, Integer> deltaMap = new ConcurrentHashMap<>();
+    @Getter @Setter
+    private long connectTime = 0;
     public Statistic(int workerNum, int shuffleType, String[] tableNames, int frontendNumber) {
         this.tableNames = tableNames;
         for (String tableName : tableNames) {

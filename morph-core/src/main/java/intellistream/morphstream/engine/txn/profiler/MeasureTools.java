@@ -226,7 +226,7 @@ public class MeasureTools {
 
 
 
-    private static void WriteThroughput(double throughput) {
+    private static void WriteThroughput(double throughput, long connectTime) {
         try {
             File file = new File(MetricsDirectory + "overall.txt");
             file.mkdirs();
@@ -240,6 +240,7 @@ public class MeasureTools {
             }
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("Throughput (k DAGs/s): " + throughput + "\n");
+            fileWriter.write("Connect Time (s): " + connectTime / 1000.0 + "\n");
             fileWriter.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -468,8 +469,8 @@ public class MeasureTools {
             throw new RuntimeException(e);
         }
     }
-    public static void DRIVER_METRICS_REPORT(int frontendNumber, double throughput, DescriptiveStatistics latencyStatistics) {
-        WriteThroughput(throughput);
+    public static void DRIVER_METRICS_REPORT(int frontendNumber, double throughput, DescriptiveStatistics latencyStatistics, long connectionTime) {
+        WriteThroughput(throughput, connectionTime);
         WriteLatency(latencyStatistics);
         WriteDriverMetrics(frontendNumber);
     }

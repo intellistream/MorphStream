@@ -30,6 +30,8 @@ public class MorphStreamDriver extends Thread {
     private final List<MorphStreamFrontend> frontends = new ArrayList<>();
     private final RdmaDriverManager rdmaDriverManager;
     private final Statistic statistic;
+    private final long startConnectTime;
+    private long endConnectTime;
     public MorphStreamDriver() throws Exception {
         this.numFrontend = env.configuration().getInt("frontendNum");
         frontend = zContext.createSocket(SocketType.ROUTER);//  Frontend socket talks to clients over TCP
@@ -39,7 +41,7 @@ public class MorphStreamDriver extends Thread {
         backend = zContext.createSocket(SocketType.DEALER); // Backend socket talks to workers over inproc
         backend.bind("inproc://backend");
         statistic = new Statistic(MorphStreamEnv.get().configuration().getInt("workerNum",4), MorphStreamEnv.get().configuration().getInt("shuffleType", 0), MorphStreamEnv.get().configuration().getString("tableNames","table1,table2").split(";"), this.numFrontend);
-
+        startConnectTime = System.currentTimeMillis();
         rdmaDriverManager = new RdmaDriverManager(true, env.configuration(), statistic);
         workerLatch = MorphStreamEnv.get().workerLatch();
     }
@@ -61,6 +63,9 @@ public class MorphStreamDriver extends Thread {
             frontends.get(i).start();
             frontends.get(i).setSystemStartTime(System.nanoTime());
         }
+        endConnectTime = System.currentTimeMillis();
+        this.statistic.setConnectTime(endConnectTime - startConnectTime);
+        LOG.info("Total Connection Time: " + (endConnectTime - startConnectTime) + " ms");
         ZMQ.proxy(frontend, backend, null);//Connect backend to frontend via a proxy
     }
     public void MorphStreamDriverJoin() {
@@ -82,7 +87,7 @@ public class MorphStreamDriver extends Thread {
             LOG.info("MorphStreamDriver is finished with throughput: " + statistic.getThroughput() + " k DAGs/s");
             LOG.info("MorphStreamDriver is finished with average latency: " + statistic.getLatency() + " ms");
             LOG.info("MorphStreamDriver is finished with 99th latency: " + statistic.getLatency(99) + " ms");
-            MeasureTools.DRIVER_METRICS_REPORT(numFrontend, statistic.getThroughput(), statistic.getLatencyStatistics());
+            MeasureTools.DRIVER_METRICS_REPORT(numFrontend, statistic.getThroughput(), statistic.getLatencyStatistics(), statistic.getConnectTime());
             System.exit(0);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
