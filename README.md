@@ -2,7 +2,7 @@
 
 # MorphStream
 
-![Java CI with Maven](https://github.com/intellistream/MorphStream/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+[![Java CI with Maven](https://github.com/DataSysResearch/MorphStream/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/DataSysResearch/MorphStream/actions/workflows/maven.yml)
 
 - This project aims at building a scalable transactional stream processing engine on modern hardware. It allows ACID
   transactions to be run directly on streaming data. It shares similar project vision with
@@ -11,9 +11,37 @@
   processors.
 - MorphStream is built based on our previous work of TStream (ICDE'20) but with significant changes: the codebase are
   exclusive.
-- The code is still under active development and more features will be introduced. We are also actively maintaining the
-  project [wiki](https://github.com/intellistream/MorphStream/wiki). Please checkout it for more detailed desciptions.
-- We welcome your contributions, if you are interested to contribute to the project, please fork and submit a PR. 
+- The code is still under active development and more features will be introduced. See the project
+  [wiki](https://github.com/DataSysResearch/MorphStream/wiki) for more detailed descriptions.
+- We welcome contributions through [issues](https://github.com/DataSysResearch/MorphStream/issues) and pull requests.
+
+## Project status
+
+MorphStream is an active research system maintained in the
+[DataSys](https://github.com/DataSysResearch) organization. The automated build uses Maven with JDK 11.
+
+## Quick start
+
+```bash
+git clone https://github.com/DataSysResearch/MorphStream.git
+cd MorphStream
+mvn -B package --file pom.xml
+```
+
+For experiment-specific instructions and design documentation, see the project
+[wiki](https://github.com/DataSysResearch/MorphStream/wiki) and the tagged releases.
+
+## Ecosystem and ownership
+
+MorphStream graduated from [IntelliStream](https://github.com/intellistream) and is maintained by DataSys as a
+framework-neutral transactional stream-processing engine. It can provide data-system capabilities to application and
+workflow systems such as SAGE, while model execution and hardware acceleration remain in the vLLM-HUST layer.
+
+## Contributing and license
+
+Maintainer access is managed by the DataSys organization. Please use GitHub issues for proposals and bug reports, and
+submit code changes through pull requests. MorphStream is licensed under the
+[Apache License 2.0](LICENSE).
 
 ## How to Cite MorphStream
 
@@ -71,7 +99,7 @@ If you use MorphStream in your paper, please cite our work.
 	bibtex_show  = {true},
 	selected     = {true},
 	pdf          = {papers/MorphStream.pdf},
-	code         = {https://github.com/intellistream/MorphStream},
+	code         = {https://github.com/DataSysResearch/MorphStream},
 	tag          = {full paper}
 }
 @inproceedings{zhang2020towards,
