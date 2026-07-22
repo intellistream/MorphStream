@@ -1,6 +1,6 @@
 package intellistream.morphstream.common.io.Rdma.Shuffle.RW;
 
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Iterator;
 
