@@ -2,7 +2,7 @@ package intellistream.morphstream.common.io.Rdma.Msg;
 
 import intellistream.morphstream.common.io.Rdma.ByteBufferBackedInputStream;
 import intellistream.morphstream.common.io.Rdma.RdmaByteBufferManagedBuffer;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -38,7 +38,7 @@ public interface RdmaRpcMsg {
             } catch (IOException e) {
                 // 处理异常
             }
-            outsList.add(new Pair<>(out, arrSegmentLengths[bufferIndex]));
+            outsList.add(Pair.of(out, arrSegmentLengths[bufferIndex]));
         }
 
         Iterator<Pair<DataOutputStream, Integer>> outs = outsList.iterator();
@@ -65,5 +65,4 @@ public interface RdmaRpcMsg {
     }
 
 }
-
 

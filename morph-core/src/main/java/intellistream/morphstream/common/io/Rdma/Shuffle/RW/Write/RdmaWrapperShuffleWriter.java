@@ -7,7 +7,7 @@ import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.RdmaBaseShuffleHa
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.ShuffleDependency;
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.ShuffleHandle;
 import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleWriter;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

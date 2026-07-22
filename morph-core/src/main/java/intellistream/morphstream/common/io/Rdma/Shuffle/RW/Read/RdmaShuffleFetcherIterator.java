@@ -8,7 +8,7 @@ import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.RdmaShuffleManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReaderStats;
 import intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read.Result.FetchResult;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,7 +149,7 @@ public class RdmaShuffleFetcherIterator implements Iterator<InputStream> {
                     }
                     if (!filteredList.isEmpty()) {
                         totalRemainingLocations.addAndGet(filteredList.size());
-                        groupedBlocksByAddress.add(new Pair<>(pair.getKey(), filteredList));
+                        groupedBlocksByAddress.add(Pair.of(pair.getKey(), filteredList));
                     }
                 }
             }
