@@ -2,7 +2,7 @@
 
 # MorphStream
 
-![Java CI with Maven](https://github.com/intellistream/MorphStream/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+![Java CI with Maven](https://github.com/DataSysResearch/MorphStream/actions/workflows/maven.yml/badge.svg?branch=main)
 
 - This project aims at building a scalable transactional stream processing engine on modern hardware. It allows ACID
   transactions to be run directly on streaming data. It shares similar project vision with
@@ -12,7 +12,7 @@
 - MorphStream is built based on our previous work of TStream (ICDE'20) but with significant changes: the codebase are
   exclusive.
 - The code is still under active development and more features will be introduced. We are also actively maintaining the
-  project [wiki](https://github.com/intellistream/MorphStream/wiki). Please checkout it for more detailed desciptions.
+  project [wiki](https://github.com/DataSysResearch/MorphStream/wiki). Please check it for more detailed descriptions.
 - We welcome your contributions, if you are interested to contribute to the project, please fork and submit a PR. 
 
 ## How to Cite MorphStream
@@ -71,7 +71,7 @@ If you use MorphStream in your paper, please cite our work.
 	bibtex_show  = {true},
 	selected     = {true},
 	pdf          = {papers/MorphStream.pdf},
-	code         = {https://github.com/intellistream/MorphStream},
+	code         = {https://github.com/DataSysResearch/MorphStream},
 	tag          = {full paper}
 }
 @inproceedings{zhang2020towards,

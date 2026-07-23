@@ -8,7 +8,7 @@ import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.RdmaShuffleManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReaderStats;
 import intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read.Result.FetchResult;
-import javafx.util.Pair;
+import intellistream.morphstream.common.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
