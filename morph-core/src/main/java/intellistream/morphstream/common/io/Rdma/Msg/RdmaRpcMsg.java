@@ -2,7 +2,7 @@ package intellistream.morphstream.common.io.Rdma.Msg;
 
 import intellistream.morphstream.common.io.Rdma.ByteBufferBackedInputStream;
 import intellistream.morphstream.common.io.Rdma.RdmaByteBufferManagedBuffer;
-import javafx.util.Pair;
+import intellistream.morphstream.common.util.Pair;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -65,5 +65,4 @@ public interface RdmaRpcMsg {
     }
 
 }
-
 
