@@ -19,18 +19,18 @@
 
 If you use MorphStream in your paper, please cite our work.
 
-* **[TKDE]** Jianjun Zhao, Yancan Mao, Zhonghao Yang, Haikun Liu and Shuhao Zhang. Scalable Transactional Stream Processing on Multicores. TKDE, 2025
-* **[VLDBJ]** Shuhao Zhang, Soto Juan and Volker Markl. A survey on transactional stream processing. The VLDB Journal, 2024
-* **[ICDE]** Jianjun Zhao, Haikun Liu, Shuhao Zhang, Zhuohui Duan, Xiaofei Liao, Hai Jin, Yu Zhang. Fast Parallel Recovery for Transactional Stream Processing on Multicores. ICDE, 2024
-* **[ICDE]** Siqi Xiang, Zhonghao Yang, Shuhao Zhang, Jianjun Zhao, Yancan Mao. MorphStream: Scalable Processing of Transactions over Streams. ICDE (Demo), 2024
+* **[TKDE]** Jianjun Zhao, Yancan Mao, Zhonghao Yang, Haikun Liu and Shuhao Zhang. [Scalable Transactional Stream Processing on Multicore Processors](https://doi.org/10.1109/TKDE.2025.3556741). TKDE, 2025
+* **[VLDBJ]** Shuhao Zhang, Juan Soto and Volker Markl. [A survey on transactional stream processing](https://doi.org/10.1007/s00778-023-00814-z). The VLDB Journal, 2024
+* **[ICDE]** Jianjun Zhao, Haikun Liu, Shuhao Zhang, Zhuohui Duan, Xiaofei Liao, Hai Jin, Yu Zhang. [Fast Parallel Recovery for Transactional Stream Processing on Multicores](https://doi.org/10.1109/ICDE60146.2024.00122). ICDE, 2024
+* **[ICDE]** Siqi Xiang, Zhonghao Yang, Shuhao Zhang, Jianjun Zhao, Yancan Mao. [MorphStream: Scalable Processing of Transactions over Streams](https://doi.org/10.1109/ICDE60146.2024.00434). ICDE (Demo), 2024
 * **[SIGMOD]** Yancan Mao, Jianjun Zhao, Shuhao Zhang, Haikun Liu and Volker Markl. MorphStream: Adaptive
-  Scheduling for Scalable Transactional Stream Processing on Multicores. SIGMOD, 2023
+  [Scheduling for Scalable Transactional Stream Processing on Multicores](https://doi.org/10.1145/3588913). SIGMOD, 2023
 * **[ICDE]** Shuhao Zhang, Yingjun Wu, Feng Zhang, Bingsheng He. Towards Concurrent Stateful Stream Processing on
-  Multicore Processors, ICDE, 2020
+  [Multicore Processors](https://doi.org/10.1109/ICDE48307.2020.00136), ICDE, 2020
 * **[SIGMOD]** Shuhao Zhang, Jiong He, Chi Zhou (Amelie), Bingsheng He. BriskStream: Scaling Stream Processing on
-  Multicore Architectures. SIGMOD, 2019 (code: https://github.com/Xtra-Computing/briskstream)
+  [Multicore Architectures](https://doi.org/10.1145/3299869.3300067). SIGMOD, 2019 (code: https://github.com/Xtra-Computing/briskstream)
 * **[ICDE]** Shuhao Zhang, Bingsheng He, Daniel Dahlmeier, Amelie Chi Zhou, Thomas Heinze. Revisiting the design of data
-  stream processing systems on multi-core processors. ICDE, 2017 (code: https://github.com/ShuhaoZhangTony/ProfilingStudy)
+  [stream processing systems on multi-core processors](https://doi.org/10.1109/ICDE.2017.119). ICDE, 2017 (code: https://github.com/ShuhaoZhangTony/ProfilingStudy)
 ```
 @article{zhang2024survey,
   title={A survey on transactional stream processing},
@@ -40,7 +40,8 @@ If you use MorphStream in your paper, please cite our work.
   number={2},
   pages={451--479},
   year={2024},
-  publisher={Springer}
+  publisher={Springer},
+  doi={10.1007/s00778-023-00814-z}
 }
 @inproceedings{zhao2024fast,
   title={Fast Parallel Recovery for Transactional Stream Processing on Multicores},
@@ -48,7 +49,8 @@ If you use MorphStream in your paper, please cite our work.
   booktitle={2024 IEEE 40th International Conference on Data Engineering (ICDE)},
   pages={1478--1491},
   year={2024},
-  organization={IEEE}
+  organization={IEEE},
+  doi={10.1109/ICDE60146.2024.00122}
 }
 @inproceedings{xiang2024morphstream,
   title={MorphStream: Scalable Processing of Transactions over Streams},
@@ -56,7 +58,8 @@ If you use MorphStream in your paper, please cite our work.
   booktitle={2024 IEEE 40th International Conference on Data Engineering (ICDE)},
   pages={5485--5488},
   year={2024},
-  organization={IEEE}
+  organization={IEEE},
+  doi={10.1109/ICDE60146.2024.00434}
 }
 @inproceedings{mao2023morphstream,
 	title        = {MorphStream: Adaptive Scheduling for Scalable Transactional Stream Processing on Multicores},
@@ -72,6 +75,7 @@ If you use MorphStream in your paper, please cite our work.
 	selected     = {true},
 	pdf          = {papers/MorphStream.pdf},
 	code         = {https://github.com/DataSysResearch/MorphStream},
+	doi          = {10.1145/3588913},
 	tag          = {full paper}
 }
 @inproceedings{zhang2020towards,
@@ -89,7 +93,8 @@ If you use MorphStream in your paper, please cite our work.
   author={Zhang, Shuhao and He, Jiong and Zhou, Amelie Chi and He, Bingsheng},
   booktitle={Proceedings of the 2019 International Conference on Management of Data},
   pages={705--722},
-  year={2019}
+  year={2019},
+  doi={10.1145/3299869.3300067}
 }
 @inproceedings{zhang2017revisiting,
   title={Revisiting the design of data stream processing systems on multi-core processors},
@@ -97,6 +102,7 @@ If you use MorphStream in your paper, please cite our work.
   booktitle={2017 IEEE 33rd International conference on data engineering (ICDE)},
   pages={659--670},
   year={2017},
-  organization={IEEE}
+  organization={IEEE},
+  doi={10.1109/ICDE.2017.119}
 }
 ```
